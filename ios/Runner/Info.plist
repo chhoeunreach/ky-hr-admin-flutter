@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleDisplayName</key>
+	<string>KY CHECKIN</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>KY CHECKIN</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(FLUTTER_BUILD_NAME)</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleVersion</key>
+	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>FDAllFilesDownloadedMessage</key>
+	<string>All files have been downloaded</string>
+	<key>FDMaximumConcurrentTasks</key>
+	<integer>5</integer>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>NFCReaderUsageDescription</key>
+	<string>KY CHECKIN uses NFC to scan tags and sync them with the server.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_dartobservatory._tcp</string>
+		<string>_dartVmService._tcp</string>
+	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>KY CHECKIN uses the camera to scan QR codes and support facial recognition.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>KY CHECKIN uses Face ID to help you check in and check out securely.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>KY CHECKIN uses the local network during development to connect Flutter debugging services.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>KY CHECKIN needs your location to validate check-in and check-out.</string>
+	<key>NSLocationUsageDescription</key>
+	<string>KY CHECKIN needs your location to validate check-in and check-out.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>KY CHECKIN needs your location to validate check-in and check-out.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>KY CHECKIN needs microphone access so you can send voice messages in chat.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>KY CHECKIN needs photo library access so you can send photos in chat.</string>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>remote-notification</string>
+		<string>location</string>
+	</array>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	<key>UIMainStoryboardFile</key>
+	<string>Main</string>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<false/>
+	<key>com.apple.developer.nfc.readersession.felica.systemcodes</key>
+	<array>
+		<string>8005</string>
+		<string>8008</string>
+		<string>0003</string>
+		<string>fe00</string>
+		<string>90b7</string>
+		<string>927a</string>
+		<string>86a7</string>
+		<string>12FC</string>
+	</array>
+	<key>com.apple.developer.nfc.readersession.iso7816.select-identifiers</key>
+	<array>
+		<string>A0000002471001</string>
+		<string>A000000003101001</string>
+		<string>A000000003101002</string>
+		<string>A0000000041010</string>
+		<string>A0000000042010</string>
+		<string>A0000000044010</string>
+		<string>44464D46412E44466172653234313031</string>
+		<string>D2760000850100</string>
+		<string>D2760000850101</string>
+		<string>00000000000000</string>
+	</array>
+</dict>
+</plist>

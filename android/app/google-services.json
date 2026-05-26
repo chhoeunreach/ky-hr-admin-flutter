@@ -1,0 +1,125 @@
+{
+  "project_info": {
+    "project_number": "301107511165",
+    "firebase_url": "https://fishing-6385d.firebaseio.com",
+    "project_id": "fishing-6385d",
+    "storage_bucket": "fishing-6385d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:301107511165:android:6407e3c47631ae5331d614",
+        "android_client_info": {
+          "package_name": "com.cyclonenepal.digitalhrs"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBaNDzrTPHJZ7DFxmKTMWsAcDz-R-jba90"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:301107511165:android:424102ac584c585b31d614",
+        "android_client_info": {
+          "package_name": "com.kneayerng.hrms"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBaNDzrTPHJZ7DFxmKTMWsAcDz-R-jba90"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:301107511165:android:4f0996c1dbff0e2331d614",
+        "android_client_info": {
+          "package_name": "com.kneayerng.kycheck"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBaNDzrTPHJZ7DFxmKTMWsAcDz-R-jba90"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:301107511165:android:d79114f7b827443431d614",
+        "android_client_info": {
+          "package_name": "com.kneayerng.scanme"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBaNDzrTPHJZ7DFxmKTMWsAcDz-R-jba90"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:301107511165:android:b517599c35262e3b31d614",
+        "android_client_info": {
+          "package_name": "com.scanme.com"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBaNDzrTPHJZ7DFxmKTMWsAcDz-R-jba90"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:301107511165:android:6bb49dbc8e2ebdc831d614",
+        "android_client_info": {
+          "package_name": "com.scanme1.com"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBaNDzrTPHJZ7DFxmKTMWsAcDz-R-jba90"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,20 @@
+{
+  "buildFiles": [
+    "/Users/chhoeunreach/development/flutter/packages/flutter_tools/gradle/src/main/groovy/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/Users/chhoeunreach/Library/Android/sdk/cmake/3.22.1/bin/ninja",
+      "-C",
+      "/Users/chhoeunreach/development/digitalhr-15oct25/Digital HRS/hrky-flutter/android/app/.cxx/Debug/1s1g5afq/x86_64",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/Users/chhoeunreach/Library/Android/sdk/cmake/3.22.1/bin/ninja",
+    "-C",
+    "/Users/chhoeunreach/development/digitalhr-15oct25/Digital HRS/hrky-flutter/android/app/.cxx/Debug/1s1g5afq/x86_64",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {}
+}
