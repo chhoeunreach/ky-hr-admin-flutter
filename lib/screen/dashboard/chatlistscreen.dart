@@ -180,13 +180,15 @@ class _ChatListState extends State<ChatList> {
     if (onlineUsernames.isNotEmpty) {
       return contacts
           .where((contact) =>
-              contact.isEmployee &&
+              !contact.usesAdminThread &&
+              !_isCurrentUser(contact) &&
               onlineUsernames.contains(contact.username.trim()))
           .toList();
     }
 
     return contacts
-        .where((contact) => contact.isEmployee && contact.isOnline)
+        .where((contact) =>
+            !contact.usesAdminThread && !_isCurrentUser(contact) && contact.isOnline)
         .toList();
   }
 
@@ -195,11 +197,14 @@ class _ChatListState extends State<ChatList> {
 
   List<ChatContact> _filteredContacts(List<ChatContact> contacts) {
     final provider = Provider.of<TeamSheetProvider>(context, listen: false);
+    final sanitizedContacts = _uniqueContacts(
+      contacts.where((contact) => !_isCurrentUser(contact)).toList(),
+    );
     final selectedContacts = switch (_selectedFilter) {
-      _ChatFilter.all => allContacts(contacts),
+      _ChatFilter.all => allContacts(sanitizedContacts),
       _ChatFilter.online =>
-        onlineContacts(contacts, provider.onlineChatContacts),
-      _ChatFilter.admin => adminContacts(contacts),
+        onlineContacts(sanitizedContacts, provider.onlineChatContacts),
+      _ChatFilter.admin => adminContacts(sanitizedContacts),
     };
 
     final filtered = selectedContacts
@@ -226,6 +231,49 @@ class _ChatListState extends State<ChatList> {
     });
 
     return filtered;
+  }
+
+  bool _isCurrentUser(ChatContact contact) {
+    return contact.username.trim().isNotEmpty &&
+        contact.username.trim() == _currentUsername.trim();
+  }
+
+  List<ChatContact> _uniqueContacts(List<ChatContact> contacts) {
+    final unique = <String, ChatContact>{};
+
+    for (final contact in contacts) {
+      final key = _contactThreadKey(contact).trim().isNotEmpty
+          ? _contactThreadKey(contact).trim()
+          : contact.username.trim();
+      if (key.isEmpty) {
+        continue;
+      }
+
+      final existing = unique[key];
+      if (existing == null) {
+        unique[key] = contact;
+        continue;
+      }
+
+      // Prefer richer records from the backend when duplicates point to the same user.
+      final replacementScore = _contactScore(contact);
+      final existingScore = _contactScore(existing);
+      if (replacementScore > existingScore) {
+        unique[key] = contact;
+      }
+    }
+
+    return unique.values.toList();
+  }
+
+  int _contactScore(ChatContact contact) {
+    var score = 0;
+    if (contact.name.trim().isNotEmpty) score += 1;
+    if (contact.avatar.trim().isNotEmpty) score += 1;
+    if (contact.post.trim().isNotEmpty) score += 1;
+    if (contact.department.trim().isNotEmpty) score += 1;
+    if (contact.isOnline) score += 1;
+    return score;
   }
 
   void _openChat(ChatContact contact) {
@@ -279,8 +327,9 @@ class _ChatListState extends State<ChatList> {
   Widget build(BuildContext context) {
     final provider = Provider.of<TeamSheetProvider>(context);
     final contactList = _filteredContacts(provider.chatContacts);
-    final onlineContactList =
-        onlineContacts(provider.chatContacts, provider.onlineChatContacts)
+    final onlineContactList = onlineContacts(
+            _uniqueContacts(provider.chatContacts),
+            provider.onlineChatContacts)
             .take(12)
             .toList();
 

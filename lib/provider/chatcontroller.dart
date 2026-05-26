@@ -24,6 +24,7 @@ class ChatController extends GetxController {
   var hostUsername = "";
   var hostImage = "";
   var hostEmployeeId = "";
+  var currentUsername = "";
   var convoId = "";
   final chatController = TextEditingController();
   final scrollController = ScrollController();
@@ -31,6 +32,7 @@ class ChatController extends GetxController {
   final ChatMediaUploadService _mediaUploadService = ChatMediaUploadService();
   final VoiceRecorderService _voiceRecorderService = VoiceRecorderService();
   Timer? _recordingTimer;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _chatSubscription;
   VoiceRecordingResult? _pendingVoiceRecording;
 
   var chatList = <Chat>[].obs;
@@ -47,8 +49,9 @@ class ChatController extends GetxController {
     hostImage = Get.arguments["avatar"];
     hostUsername = Get.arguments["username"];
     hostEmployeeId = Get.arguments["employeeId"]?.toString() ?? "";
+    currentUsername = await pref.getUsername();
 
-    setConversationDetail(hostUsername, await pref.getUsername());
+    setConversationDetail(hostUsername, currentUsername);
     await ChatBadgeController.ensureRegistered().setActiveConversation(convoId);
     super.onReady();
   }
@@ -93,9 +96,15 @@ class ChatController extends GetxController {
         "reciever": hostUsername
       });
 
-      await sendPushNotifiation(
-          senderUsername, message, convoId, "chat", "", hostUsername,
-          messageType: "text");
+      unawaited(_sendPushNotificationSafely(
+        senderUsername,
+        message,
+        convoId,
+        "chat",
+        "",
+        hostUsername,
+        messageType: "text",
+      ));
     } catch (e) {
       showToast(e.toString());
     }
@@ -122,7 +131,10 @@ class ChatController extends GetxController {
         pushMessage: "Sent a photo",
       );
     } catch (e) {
-      showToast(e.toString());
+      final message = e is TimeoutException
+          ? "Photo upload took too long. Please try again."
+          : e.toString();
+      showToast(message);
     } finally {
       isUploading.value = false;
     }
@@ -241,7 +253,8 @@ class ChatController extends GetxController {
         pushMessage: "Sent a voice message",
         durationSeconds: _durationSeconds(recording.duration),
       );
-      await _resetRecordingState(deletePendingFile: true);
+      _clearPendingVoiceUi();
+      unawaited(_deleteRecordingFile(recording.path));
     } catch (e) {
       await _resetRecordingState(deletePendingFile: true);
       showToast(e.toString());
@@ -277,7 +290,7 @@ class ChatController extends GetxController {
         "reciever": hostUsername
       });
 
-      await sendPushNotifiation(
+      unawaited(_sendPushNotificationSafely(
         senderUsername,
         "Shared a location",
         convoId,
@@ -286,7 +299,7 @@ class ChatController extends GetxController {
         hostUsername,
         messageType: "location",
         mediaUrl: mapsUrl,
-      );
+      ));
     } catch (e) {
       showToast(e.toString());
     } finally {
@@ -319,7 +332,7 @@ class ChatController extends GetxController {
       "reciever": hostUsername
     });
 
-    await sendPushNotifiation(
+    unawaited(_sendPushNotificationSafely(
       senderUsername,
       pushMessage,
       convoId,
@@ -328,17 +341,64 @@ class ChatController extends GetxController {
       hostUsername,
       messageType: type,
       mediaUrl: upload.url,
-    );
+    ));
+  }
+
+  Future<void> _sendPushNotificationSafely(
+    String title,
+    String message,
+    String conversationId,
+    String type,
+    String projectId,
+    String username, {
+    String messageType = "text",
+    String mediaUrl = "",
+  }) async {
+    try {
+      await sendPushNotifiation(
+        title,
+        message,
+        conversationId,
+        type,
+        projectId,
+        username,
+        messageType: messageType,
+        mediaUrl: mediaUrl,
+      ).timeout(const Duration(seconds: 12));
+    } catch (error) {
+      debugPrint('[CHAT_PUSH] skipped after message sent: $error');
+    }
   }
 
   Future<void> listenChat() async {
+    await _chatSubscription?.cancel();
+
     final docRef = FirebaseFirestore.instance
         .collection("messages")
         .where("id", isEqualTo: convoId)
         .snapshots();
 
-    docRef.listen(
+    _chatSubscription = docRef.listen(
       (event) {
+        final justSentByCurrentUser = event.docChanges.any((change) {
+          if (change.type != DocumentChangeType.added) {
+            return false;
+          }
+          final data = change.doc.data();
+          if (data == null) {
+            return false;
+          }
+          return (data["sender"]?.toString().trim() ?? "") ==
+              currentUsername.trim();
+        });
+
+        if (justSentByCurrentUser) {
+          isUploading.value = false;
+          if (!isRecording.value && hasPendingVoiceRecording.value) {
+            _clearPendingVoiceUi();
+          }
+        }
+
         print("triiger");
         final chatDb = <Chat>[];
         for (var item in event.docs) {
@@ -495,12 +555,25 @@ class ChatController extends GetxController {
     isRecording.value = false;
 
     final pendingRecording = _pendingVoiceRecording;
+    _clearPendingVoiceUi();
+
+    if (deletePendingFile && pendingRecording != null) {
+      await _deleteRecordingFile(pendingRecording.path);
+    }
+  }
+
+  void _clearPendingVoiceUi() {
     _pendingVoiceRecording = null;
     hasPendingVoiceRecording.value = false;
     recordingSeconds.value = 0;
+    isRecording.value = false;
+  }
 
-    if (deletePendingFile && pendingRecording != null) {
-      await _voiceRecorderService.delete(pendingRecording.path);
+  Future<void> _deleteRecordingFile(String path) async {
+    try {
+      await _voiceRecorderService.delete(path);
+    } catch (error) {
+      debugPrint('[VOICE_RECORD] delete failed: $error');
     }
   }
 
@@ -543,6 +616,7 @@ class ChatController extends GetxController {
   @override
   void onClose() {
     ChatBadgeController.ensureRegistered().clearActiveConversation(convoId);
+    _chatSubscription?.cancel();
     _recordingTimer?.cancel();
     _voiceRecorderService.dispose();
     chatController.dispose();

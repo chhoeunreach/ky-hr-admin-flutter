@@ -166,7 +166,8 @@ class ChatMediaUploadService {
         contentType: MediaType.parse(mimeType),
       ));
 
-    final streamedResponse = await request.send();
+    final streamedResponse =
+        await request.send().timeout(const Duration(seconds: 45));
     final response = await http.Response.fromStream(streamedResponse);
 
     debugPrint('[CHAT_UPLOAD] response status=${response.statusCode}');
@@ -183,6 +184,19 @@ class ChatMediaUploadService {
       appUrl: appUrl,
     );
     if (upload.url.trim().isEmpty) {
+      if (upload.path.trim().isNotEmpty) {
+        return ChatMediaUpload(
+          url: _absoluteUrl(
+            upload.path,
+            appUrl: appUrl,
+            preferStoragePath: true,
+          ),
+          type: upload.type,
+          path: upload.path,
+          width: upload.width,
+          height: upload.height,
+        );
+      }
       throw const ChatMediaUploadException(
         'Media upload did not return a file URL',
       );
