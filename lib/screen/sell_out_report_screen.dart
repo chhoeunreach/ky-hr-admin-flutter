@@ -206,12 +206,8 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
   }
 
   Widget _buildFilterSummary(List<SellOutReport> reports) {
-    final totalAmount =
-        reports.fold<double>(0, (sum, report) => sum + report.totalAmount);
     final totalQty =
         reports.fold<int>(0, (sum, report) => sum + report.totalQty);
-    final totalCommission =
-        reports.fold<double>(0, (sum, report) => sum + report.commission);
 
     return Card(
       color: _sellOutSurface,
@@ -284,13 +280,12 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
             const SizedBox(height: 16),
             LayoutBuilder(
               builder: (context, constraints) {
-                final itemWidth = (constraints.maxWidth - 10) / 2;
                 return Wrap(
                   spacing: 10,
                   runSpacing: 10,
                   children: [
                     SizedBox(
-                      width: itemWidth,
+                      width: (constraints.maxWidth - 10) / 2,
                       child: _buildSummaryTile(
                         'Reports',
                         reports.length.toString(),
@@ -298,27 +293,11 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
                       ),
                     ),
                     SizedBox(
-                      width: itemWidth,
+                      width: (constraints.maxWidth - 10) / 2,
                       child: _buildSummaryTile(
                         'Qty',
                         totalQty.toString(),
                         Icons.inventory_2_outlined,
-                      ),
-                    ),
-                    SizedBox(
-                      width: itemWidth,
-                      child: _buildSummaryTile(
-                        'Total',
-                        '\$${totalAmount.toStringAsFixed(2)}',
-                        Icons.attach_money,
-                      ),
-                    ),
-                    SizedBox(
-                      width: itemWidth,
-                      child: _buildSummaryTile(
-                        'Commission',
-                        '\$${totalCommission.toStringAsFixed(2)}',
-                        Icons.payments_outlined,
                       ),
                     ),
                   ],
@@ -564,21 +543,19 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
                   style: const TextStyle(color: _sellOutMuted, fontSize: 12),
                 ),
               ],
+              if (report.lines.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                ...report.lines.map(_buildReportLineSummary),
+              ],
               const SizedBox(height: 10),
               Wrap(
                 spacing: 8,
                 runSpacing: 6,
                 children: [
-                  _buildChip(Icons.person,
-                      report.sellerName.isEmpty ? '-' : report.sellerName),
                   _buildChip(Icons.people,
                       report.customerName.isEmpty ? '-' : report.customerName),
                   if (report.customerPhone.isNotEmpty)
                     _buildChip(Icons.phone, report.customerPhone),
-                  if (report.serviceType.isNotEmpty)
-                    _buildChip(Icons.category, report.serviceType),
-                  _buildChip(Icons.business,
-                      report.branchName.isEmpty ? '-' : report.branchName),
                   _buildChip(Icons.inventory_2, '${report.itemCount} item(s)'),
                   _buildChip(Icons.payments_outlined,
                       'Commission \$${report.commission.toStringAsFixed(2)}'),
@@ -594,6 +571,49 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildReportLineSummary(SellOutReportLine line) {
+    final productName =
+        line.productName.trim().isEmpty ? 'Product pending' : line.productName;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              productName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: _sellOutText,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            'Qty ${line.qty}',
+            style: const TextStyle(
+              color: _sellOutMuted,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            '\$${line.unitPrice.toStringAsFixed(2)}',
+            style: const TextStyle(
+              color: _sellOutBlue,
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1452,16 +1472,19 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: _sellOutBackground,
       appBar: AppBar(
         title: Text(widget.serviceType.isEmpty
             ? 'Sell Out Report'
             : 'Sell Out - ${widget.serviceType}'),
-        backgroundColor: HexColor('#011754'),
+        centerTitle: true,
+        backgroundColor: _sellOutNavy,
         foregroundColor: Colors.white,
+        systemOverlayStyle: SystemUiOverlayStyle.light,
         elevation: 0,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 18, 16, 32),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -1486,8 +1509,8 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
         title,
         style: TextStyle(
           fontSize: 16,
-          fontWeight: FontWeight.w700,
-          color: HexColor('#011754'),
+          fontWeight: FontWeight.w800,
+          color: _sellOutText,
         ),
       ),
     );
@@ -1508,7 +1531,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
           children: [
             Icon(
               expanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
-              color: HexColor('#036eb7'),
+              color: _sellOutBlue,
             ),
             const SizedBox(width: 4),
             Expanded(
@@ -1516,15 +1539,19 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                 title,
                 style: TextStyle(
                   fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: HexColor('#011754'),
+                  fontWeight: FontWeight.w800,
+                  color: _sellOutText,
                 ),
               ),
             ),
             if (trailingText != null)
               Text(
                 trailingText,
-                style: const TextStyle(fontSize: 13, color: Colors.grey),
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: _sellOutMuted,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
           ],
         ),
@@ -1534,8 +1561,13 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
 
   Widget _buildHeaderForm() {
     return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 2,
+      color: _sellOutSurface,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: const BorderSide(color: _sellOutBorder),
+      ),
+      elevation: 0,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -1610,20 +1642,39 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
       maxLines: maxLines,
       readOnly: readOnly,
       keyboardType: keyboardType,
+      style: const TextStyle(
+        color: _sellOutText,
+        fontSize: 15,
+        fontWeight: FontWeight.w600,
+      ),
+      cursorColor: _sellOutBlue,
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icon, color: HexColor('#036eb7')),
-        filled: readOnly,
-        fillColor: readOnly ? Colors.grey.shade100 : null,
+        labelStyle: const TextStyle(
+          color: _sellOutMuted,
+          fontWeight: FontWeight.w500,
+        ),
+        floatingLabelStyle: const TextStyle(
+          color: _sellOutBlue,
+          fontWeight: FontWeight.w700,
+        ),
+        prefixIcon: Icon(icon, color: _sellOutBlue),
+        filled: true,
+        fillColor: readOnly ? const Color(0xfff7faff) : Colors.white,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: _sellOutBorder),
+        ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: _sellOutBorder),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: HexColor('#036eb7'), width: 2),
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: _sellOutBlue, width: 1.5),
         ),
         contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
     );
   }
@@ -1653,7 +1704,11 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
         const SizedBox(height: 8),
         Text(
           '${_invoicePhotoPaths.length} invoice photo(s) selected',
-          style: const TextStyle(fontSize: 12, color: Colors.grey),
+          style: const TextStyle(
+            fontSize: 12,
+            color: _sellOutMuted,
+            fontWeight: FontWeight.w500,
+          ),
         ),
         const SizedBox(height: 12),
         Align(
@@ -1668,7 +1723,10 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
             ),
             label:
                 Text(_showInvoiceOcrText ? 'Hide OCR Text' : 'Show OCR Text'),
-            style: TextButton.styleFrom(foregroundColor: HexColor('#036eb7')),
+            style: TextButton.styleFrom(
+              foregroundColor: _sellOutBlue,
+              textStyle: const TextStyle(fontWeight: FontWeight.w700),
+            ),
           ),
         ),
         AnimatedCrossFade(
@@ -1684,17 +1742,30 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                   labelText: 'Invoice OCR Text',
                   hintText: 'Invoice OCR text will appear here...',
                   alignLabelWithHint: true,
+                  filled: true,
+                  fillColor: Colors.white,
+                  labelStyle: const TextStyle(color: _sellOutMuted),
+                  floatingLabelStyle: const TextStyle(
+                    color: _sellOutBlue,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  hintStyle: const TextStyle(color: _sellOutMuted),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: _sellOutBorder),
+                  ),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(8),
                     borderSide:
-                        BorderSide(color: HexColor('#036eb7'), width: 2),
+                        const BorderSide(color: _sellOutBlue, width: 1.5),
                   ),
                   contentPadding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
+                style: const TextStyle(color: _sellOutText, fontSize: 13),
               ),
               const SizedBox(height: 8),
               SizedBox(
@@ -1715,11 +1786,12 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                       ? 'Extracting...'
                       : 'Extract Invoice Info'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: HexColor('#036eb7'),
+                    backgroundColor: _sellOutBlue,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
+                        borderRadius: BorderRadius.circular(8)),
                     padding: const EdgeInsets.symmetric(vertical: 12),
+                    textStyle: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                 ),
               ),
@@ -1731,11 +1803,14 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                   icon: const Icon(Icons.auto_fix_high, size: 18),
                   label: const Text('Auto Fill Invoice Info'),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: HexColor('#036eb7'),
-                    side: BorderSide(color: HexColor('#036eb7')),
+                    foregroundColor: _sellOutBlue,
+                    backgroundColor: _sellOutBlue.withValues(alpha: 0.06),
+                    side:
+                        BorderSide(color: _sellOutBlue.withValues(alpha: 0.45)),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
+                        borderRadius: BorderRadius.circular(8)),
                     padding: const EdgeInsets.symmetric(vertical: 12),
+                    textStyle: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                 ),
               ),
@@ -1747,11 +1822,14 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                   icon: const Icon(Icons.copy, size: 18),
                   label: const Text('Copy OCR Text'),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: HexColor('#036eb7'),
-                    side: BorderSide(color: HexColor('#036eb7')),
+                    foregroundColor: _sellOutBlue,
+                    backgroundColor: _sellOutBlue.withValues(alpha: 0.06),
+                    side:
+                        BorderSide(color: _sellOutBlue.withValues(alpha: 0.45)),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
+                        borderRadius: BorderRadius.circular(8)),
                     padding: const EdgeInsets.symmetric(vertical: 12),
+                    textStyle: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                 ),
               ),
@@ -1770,12 +1848,18 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
     return OutlinedButton.icon(
       onPressed: onTap,
       icon: Icon(icon, size: 20),
-      label: Text(label, style: const TextStyle(fontSize: 13)),
+      label: Text(
+        label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+      ),
       style: OutlinedButton.styleFrom(
-        foregroundColor: HexColor('#036eb7'),
-        side: BorderSide(color: HexColor('#036eb7')),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        foregroundColor: _sellOutBlue,
+        backgroundColor: _sellOutBlue.withValues(alpha: 0.06),
+        side: BorderSide(color: _sellOutBlue.withValues(alpha: 0.45)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 8),
       ),
     );
   }
@@ -1826,8 +1910,13 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
 
   Widget _buildProductLinesSection() {
     return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 2,
+      color: _sellOutSurface,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: const BorderSide(color: _sellOutBorder),
+      ),
+      elevation: 0,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -1839,7 +1928,11 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                 _buildSectionTitle('Product Lines'),
                 Text(
                   '${_report.lines.length} line(s)',
-                  style: const TextStyle(fontSize: 13, color: Colors.grey),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: _sellOutMuted,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
@@ -1860,11 +1953,13 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                 icon: const Icon(Icons.add, size: 18),
                 label: const Text('Add Product Line'),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: HexColor('#036eb7'),
-                  side: BorderSide(color: HexColor('#036eb7')),
+                  foregroundColor: _sellOutBlue,
+                  backgroundColor: _sellOutBlue.withValues(alpha: 0.06),
+                  side: BorderSide(color: _sellOutBlue.withValues(alpha: 0.45)),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
+                      borderRadius: BorderRadius.circular(8)),
                   padding: const EdgeInsets.symmetric(vertical: 12),
+                  textStyle: const TextStyle(fontWeight: FontWeight.w700),
                 ),
               ),
             ),
@@ -1878,11 +1973,13 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
       int index, SellOutReportLine line, _LineControllers ctrls) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
+      color: Colors.white,
+      surfaceTintColor: Colors.transparent,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-        side: BorderSide(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(8),
+        side: const BorderSide(color: _sellOutBorder),
       ),
-      elevation: 1,
+      elevation: 0,
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
@@ -1905,7 +2002,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                             ctrls.isExpanded
                                 ? Icons.keyboard_arrow_down
                                 : Icons.keyboard_arrow_right,
-                            color: HexColor('#036eb7'),
+                            color: _sellOutBlue,
                           ),
                           const SizedBox(width: 4),
                           Expanded(
@@ -1914,16 +2011,16 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                                   ? 'Product #${index + 1}'
                                   : line.productName.trim(),
                               style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                color: HexColor('#011754'),
+                                fontWeight: FontWeight.w800,
+                                color: _sellOutText,
                               ),
                             ),
                           ),
                           Text(
                             '\$${line.subtotal.toStringAsFixed(2)}',
                             style: TextStyle(
-                              color: HexColor('#036eb7'),
-                              fontWeight: FontWeight.w600,
+                              color: _sellOutBlue,
+                              fontWeight: FontWeight.w800,
                               fontSize: 13,
                             ),
                           ),
@@ -1939,6 +2036,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                   style: TextButton.styleFrom(
                     foregroundColor: Colors.red,
                     padding: const EdgeInsets.symmetric(horizontal: 8),
+                    textStyle: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                 ),
               ],
@@ -1948,7 +2046,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
               secondChild: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Divider(height: 4),
+                  const Divider(height: 4, color: _sellOutBorder),
                   const SizedBox(height: 8),
                   _buildProductOcrControls(index, ctrls),
                   const SizedBox(height: 12),
@@ -2019,8 +2117,8 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                   Text(
                     'Subtotal: \$${line.subtotal.toStringAsFixed(2)}',
                     style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: HexColor('#036eb7'),
+                      fontWeight: FontWeight.w800,
+                      color: _sellOutBlue,
                       fontSize: 14,
                     ),
                   ),
@@ -2039,20 +2137,20 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
 
   Widget _buildProductOcrControls(int index, _LineControllers ctrls) {
     return Container(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(10),
+        color: const Color(0xfff7faff),
+        border: Border.all(color: const Color(0xffe5edf8)),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Product Photos',
-            style: TextStyle(
-              color: HexColor('#011754'),
-              fontWeight: FontWeight.w600,
+            style: const TextStyle(
+              color: _sellOutText,
+              fontWeight: FontWeight.w800,
               fontSize: 13,
             ),
           ),
@@ -2096,7 +2194,10 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
               ),
               label:
                   Text(ctrls.showOcrText ? 'Hide OCR Text' : 'Show OCR Text'),
-              style: TextButton.styleFrom(foregroundColor: HexColor('#036eb7')),
+              style: TextButton.styleFrom(
+                foregroundColor: _sellOutBlue,
+                textStyle: const TextStyle(fontWeight: FontWeight.w700),
+              ),
             ),
           ),
           AnimatedCrossFade(
@@ -2110,13 +2211,30 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                     labelText: 'Product OCR Text',
                     hintText: 'Product OCR text will appear here...',
                     alignLabelWithHint: true,
+                    filled: true,
+                    fillColor: Colors.white,
+                    labelStyle: const TextStyle(color: _sellOutMuted),
+                    floatingLabelStyle: const TextStyle(
+                      color: _sellOutBlue,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    hintStyle: const TextStyle(color: _sellOutMuted),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: _sellOutBorder),
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide:
+                          const BorderSide(color: _sellOutBlue, width: 1.5),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
                   ),
-                  style: const TextStyle(fontSize: 13),
+                  style: const TextStyle(color: _sellOutText, fontSize: 13),
                 ),
                 const SizedBox(height: 8),
                 SizedBox(
@@ -2141,10 +2259,10 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                           : 'Extract & Auto Fill Product',
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: HexColor('#036eb7'),
+                      backgroundColor: _sellOutBlue,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
@@ -2158,12 +2276,15 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                     icon: const Icon(Icons.auto_fix_high, size: 18),
                     label: const Text('Auto Fill Product From OCR'),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: HexColor('#036eb7'),
-                      side: BorderSide(color: HexColor('#036eb7')),
+                      foregroundColor: _sellOutBlue,
+                      backgroundColor: Colors.white,
+                      side: BorderSide(
+                          color: _sellOutBlue.withValues(alpha: 0.45)),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 10),
+                      textStyle: const TextStyle(fontWeight: FontWeight.w700),
                     ),
                   ),
                 ),
@@ -2187,20 +2308,43 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
       decoration: InputDecoration(
         labelText: label,
         isDense: true,
+        filled: true,
+        fillColor: Colors.white,
+        labelStyle: const TextStyle(color: _sellOutMuted),
+        floatingLabelStyle: const TextStyle(
+          color: _sellOutBlue,
+          fontWeight: FontWeight.w700,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: _sellOutBorder),
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: _sellOutBorder),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: _sellOutBlue, width: 1.5),
+        ),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
       ),
-      style: const TextStyle(fontSize: 13),
+      cursorColor: _sellOutBlue,
+      style: const TextStyle(
+        color: _sellOutText,
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+      ),
     );
   }
 
   Widget _buildTotalSection() {
     return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 2,
-      color: HexColor('#011754'),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      elevation: 0,
+      color: _sellOutNavy,
+      surfaceTintColor: Colors.transparent,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -2291,10 +2435,9 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
             : const Icon(Icons.send),
         label: Text(_isSubmitting ? 'Submitting...' : 'Submit Report'),
         style: ElevatedButton.styleFrom(
-          backgroundColor: HexColor('#036eb7'),
+          backgroundColor: _sellOutBlue,
           foregroundColor: Colors.white,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           padding: const EdgeInsets.symmetric(vertical: 16),
           textStyle: const TextStyle(
             fontSize: 16,
