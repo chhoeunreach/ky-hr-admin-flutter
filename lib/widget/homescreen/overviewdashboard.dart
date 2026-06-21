@@ -3,6 +3,7 @@ import 'package:cnattendance/screen/awards/awardsscreen.dart';
 import 'package:cnattendance/screen/dashboard/projectscreen.dart';
 import 'package:cnattendance/screen/eventscreen/eventlistscreen.dart';
 import 'package:cnattendance/screen/profile/holidayscreen.dart';
+import 'package:cnattendance/screen/sell_out_report_screen.dart';
 import 'package:cnattendance/screen/traning/traningscreen.dart';
 import 'package:flutter/material.dart';
 import 'package:cnattendance/widget/homescreen/cardoverview.dart';
@@ -11,7 +12,7 @@ import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
 import 'package:provider/provider.dart';
 
 class OverviewDashboard extends StatelessWidget {
-  PersistentTabController controller;
+  final PersistentTabController controller;
 
   OverviewDashboard(this.controller);
 
@@ -128,11 +129,31 @@ class OverviewDashboard extends StatelessWidget {
                         withNavBar: true,
                         pageTransitionAnimation: PageTransitionAnimation.fade);
                   },
-                )
+                ),
+              _serviceCard(context, 'លក់', Icons.point_of_sale),
+              _serviceCard(context, 'សម្ភារ', Icons.inventory_2_outlined),
+              _serviceCard(context, 'អ៊ុត', Icons.local_laundry_service),
+              _serviceCard(context, 'ជួសជុល', Icons.build_circle_outlined),
             ],
           ),
         ],
       ),
+    );
+  }
+
+  Widget _serviceCard(BuildContext context, String serviceType, IconData icon) {
+    return CardOverView(
+      type: serviceType,
+      value: '0',
+      icon: icon,
+      callback: () {
+        pushScreen(
+          context,
+          screen: SellOutReportScreen(serviceType: serviceType),
+          withNavBar: false,
+          pageTransitionAnimation: PageTransitionAnimation.fade,
+        );
+      },
     );
   }
 }

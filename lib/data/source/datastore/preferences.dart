@@ -13,6 +13,7 @@ class Preferences with ChangeNotifier {
   final String USER_EMAIL = "user_email";
   final String USER_NAME = "user_name";
   final String USER_FULLNAME = "user_fullname";
+  final String USER_BRANCH = "user_branch";
   final String USER_AUTH = "user_auth";
   final String WORKSPACE = "workspace_type";
   final String APP_IN_ENGLISH = "eng_date";
@@ -56,6 +57,7 @@ class Preferences with ChangeNotifier {
     await prefs.setString(USER_EMAIL, user.email);
     await prefs.setString(USER_NAME, user.username);
     await prefs.setString(USER_FULLNAME, user.name);
+    await prefs.setString(USER_BRANCH, '');
     await prefs.setString(WORKSPACE, user.workspace_type);
 
     notifyListeners();
@@ -72,6 +74,7 @@ class Preferences with ChangeNotifier {
     await prefs.setString(USER_EMAIL, user.email);
     await prefs.setString(USER_NAME, user.username);
     await prefs.setString(USER_FULLNAME, user.name);
+    await prefs.setString(USER_BRANCH, user.branch);
     await prefs.setString(WORKSPACE, user.workspace_type);
 
     notifyListeners();
@@ -159,6 +162,7 @@ class Preferences with ChangeNotifier {
     await prefs.setString(USER_EMAIL, '');
     await prefs.setString(USER_NAME, '');
     await prefs.setString(USER_FULLNAME, '');
+    await prefs.setString(USER_BRANCH, '');
     await prefs.setBool(USER_AUTH, false);
     await prefs.setBool(APP_IN_ENGLISH, true);
     await prefs.setString(WORKSPACE, "1");
@@ -311,6 +315,11 @@ class Preferences with ChangeNotifier {
   Future<String> getFullName() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(USER_FULLNAME) ?? "";
+  }
+
+  Future<String> getBranchName() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(USER_BRANCH) ?? "";
   }
 
   Future<String> getWorkSpace() async {

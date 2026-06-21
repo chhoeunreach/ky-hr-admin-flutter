@@ -132,6 +132,8 @@ class Constant {
 
   static const EMPLOYEE_DEPARTMENT_URL = "$API_URL/department-employees/";
 
+  static const SELL_OUT_REPORT_URL = "$API_URL/sell-out-reports";
+
   static const TOTAL_WORKING_HOUR = 8;
 }
 

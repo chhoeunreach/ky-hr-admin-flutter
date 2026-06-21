@@ -20,6 +20,7 @@ import 'package:cnattendance/screen/profile/profilescreen.dart';
 import 'package:cnattendance/screen/profile/ssfhistoryscreen.dart';
 import 'package:cnattendance/screen/profile/supportscreen.dart';
 import 'package:cnattendance/screen/profile/teamsheetscreen.dart';
+import 'package:cnattendance/screen/sell_out_report_screen.dart';
 import 'package:cnattendance/screen/tadascreen/TadaScreen.dart';
 import 'package:cnattendance/screen/traning/traningscreen.dart';
 import 'package:cnattendance/screen/warningscreen/warningscreen.dart';
@@ -459,6 +460,11 @@ class MoreScreenState extends State<MoreScreen> {
                               Icons.language,
                               ProfileScreen(),
                               control: 4,
+                            ),
+                            Services(
+                              "Sell Out Report",
+                              Icons.receipt_long,
+                              SellOutReportScreen(),
                             ),
                             features["resignation"] != "1"
                                 ? SizedBox.shrink()

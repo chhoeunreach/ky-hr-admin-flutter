@@ -26,6 +26,7 @@ import 'package:cnattendance/screen/profile/groupchatscreen.dart';
 import 'package:cnattendance/screen/profile/payslipdetailscreen.dart';
 import 'package:cnattendance/screen/profile/profilescreen.dart';
 import 'package:cnattendance/screen/profile/meetingdetailscreen.dart';
+import 'package:cnattendance/screen/sell_out_report_screen.dart';
 import 'package:cnattendance/screen/splashscreen.dart';
 import 'package:cnattendance/utils/app_badge_sync.dart';
 import 'package:cnattendance/utils/chat_unread_store.dart';
@@ -859,6 +860,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                     EditProfileScreen.routeName: (_) => EditProfileScreen(),
                     MeetingDetailScreen.routeName: (_) => MeetingDetailScreen(),
                     PaySlipDetailScreen.routeName: (_) => PaySlipDetailScreen(),
+                    SellOutReportScreen.routeName: (_) => SellOutReportScreen(),
                   },
                   builder: EasyLoading.init(),
                 ),
