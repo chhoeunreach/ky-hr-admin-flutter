@@ -27,6 +27,100 @@ class OcrService {
     return combined.toString().trim();
   }
 
+  String formatProductOcrText(String extractedText) {
+    final text = extractedText.trim();
+    if (text.isEmpty) return '';
+
+    final fields = autoDetectFields(text);
+    final rows = <String>[];
+
+    void addRow(String label, String value) {
+      final cleanedValue = value.trim();
+      if (cleanedValue.isEmpty) return;
+      rows.add('$label: $cleanedValue');
+    }
+
+    addRow('Model Name', fields['product_name'] ?? '');
+    addRow('Model Number', fields['model_number'] ?? '');
+    addRow(
+      'Serial Number',
+      fields['serial_number']!.isNotEmpty
+          ? fields['serial_number']!
+          : _extractDisplaySerialNumber(text),
+    );
+    addRow('Coverage', _extractDisplayLabeledValue(text, 'coverage'));
+    if (_containsLabel(text, 'parts & service history')) {
+      rows.add('Parts & Service History');
+    }
+    addRow('Songs', _extractDisplayLabeledValue(text, 'songs'));
+    addRow('Videos', _extractDisplayLabeledValue(text, 'videos'));
+    addRow('Photos', _extractDisplayLabeledValue(text, 'photos'));
+    addRow('Applications', _extractDisplayLabeledValue(text, 'applications'));
+    addRow('Capacity', fields['storage'] ?? '');
+    addRow('Available', _extractDisplayLabeledValue(text, 'available'));
+    addRow('IMEI', fields['imei'] ?? '');
+    addRow('IMEI2', fields['imei2'] ?? '');
+
+    if (rows.isEmpty) {
+      return text
+          .split('\n')
+          .map((line) => line.trim())
+          .where((line) => line.isNotEmpty)
+          .join('\n');
+    }
+
+    return rows.toSet().join('\n');
+  }
+
+  Map<String, String> autoDetectICloudFields(String extractedText) {
+    final text = extractedText.trim();
+    final lines = text
+        .split('\n')
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty)
+        .toList();
+
+    final fields = <String, String>{
+      'account_name': '',
+      'apple_id': '',
+      'icloud_storage': '',
+      'trusted_phone': '',
+      'devices': '',
+    };
+
+    fields['apple_id'] = _extractEmail(text);
+    fields['trusted_phone'] = _extractPhoneNumber(text);
+    fields['icloud_storage'] = _extractICloudStorage(lines);
+    fields['account_name'] = _extractAppleAccountName(lines, fields['apple_id']!);
+    fields['devices'] = _extractICloudDevices(lines);
+
+    return fields;
+  }
+
+  String formatICloudOcrText(String extractedText) {
+    final fields = autoDetectICloudFields(extractedText);
+    final rows = <String>[];
+
+    void addRow(String label, String value) {
+      final cleanedValue = value.trim();
+      if (cleanedValue.isEmpty) return;
+      rows.add('$label: $cleanedValue');
+    }
+
+    addRow('Account Name', fields['account_name'] ?? '');
+    addRow('Apple ID', fields['apple_id'] ?? '');
+    addRow('iCloud Storage', fields['icloud_storage'] ?? '');
+    addRow('Trusted Phone', fields['trusted_phone'] ?? '');
+    addRow('Devices', fields['devices'] ?? '');
+
+    if (rows.isNotEmpty) return rows.join('\n');
+    return extractedText
+        .split('\n')
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty)
+        .join('\n');
+  }
+
   Map<String, String> autoDetectFields(String extractedText) {
     final fields = <String, String>{
       'invoice_no': '',
@@ -102,14 +196,16 @@ class OcrService {
         fields['storage'] = _extractCapacity(trimmed);
       }
 
+      final hasImeiLabel = _hasImeiLabel(trimmed);
       _extractLabeledImeis(trimmed, fields);
 
-      if (fields['imei']!.isEmpty && _isImei(trimmed)) {
+      if (!hasImeiLabel && fields['imei']!.isEmpty && _isImei(trimmed)) {
         fields['imei'] = _cleanImei(trimmed);
         continue;
       }
 
-      if (fields['imei2']!.isEmpty &&
+      if (!hasImeiLabel &&
+          fields['imei2']!.isEmpty &&
           fields['imei']!.isNotEmpty &&
           _isImei(trimmed)) {
         fields['imei2'] = _cleanImei(trimmed);
@@ -217,6 +313,14 @@ class OcrService {
     return matches.isEmpty ? '' : matches.first;
   }
 
+  String _extractEmail(String text) {
+    final match = RegExp(
+      r'\b[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}\b',
+      caseSensitive: false,
+    ).firstMatch(text);
+    return match?.group(0)?.trim() ?? '';
+  }
+
   bool _isCambodianPhoneNumber(String value) {
     final digits = value.replaceAll(RegExp(r'[^0-9]'), '');
     if (_isImei(digits) || RegExp(r'^(19|20)\d{6,}').hasMatch(digits)) {
@@ -303,6 +407,87 @@ class OcrService {
     return '';
   }
 
+  String _extractAppleAccountName(List<String> lines, String email) {
+    final ignored = {
+      'apple account',
+      'personal information',
+      'sign-in & security',
+      'payment & shipping',
+      'subscriptions',
+      'icloud',
+      'family',
+      'find my',
+      'media & purchases',
+      'sign in with apple',
+      'two-factor authentication',
+      'verify using',
+      'trusted phone number',
+      'add a trusted phone number',
+    };
+
+    for (final line in lines) {
+      final lower = line.toLowerCase();
+      if (line == email ||
+          lower.contains('@') ||
+          ignored.any((value) => lower.contains(value)) ||
+          lower.contains(RegExp(r'\biphone|\bipad|\bmacbook')) ||
+          _extractPhoneNumber(line).isNotEmpty ||
+          RegExp(r'^\d+\s*(gb|tb)$', caseSensitive: false).hasMatch(line)) {
+        continue;
+      }
+      if (line.length >= 3 && line.length <= 40) return line;
+    }
+    return '';
+  }
+
+  String _extractICloudStorage(List<String> lines) {
+    for (final line in lines) {
+      final match = RegExp(
+        r'\bicloud\b\s*(\d+(?:\.\d+)?\s*(?:GB|TB))',
+        caseSensitive: false,
+      ).firstMatch(line);
+      if (match != null) return match.group(1)!.trim();
+    }
+    for (int i = 0; i < lines.length; i++) {
+      if (lines[i].toLowerCase() != 'icloud') continue;
+      for (int j = i + 1; j < lines.length && j <= i + 2; j++) {
+        final match =
+            RegExp(r'\b\d+(?:\.\d+)?\s*(?:GB|TB)\b', caseSensitive: false)
+                .firstMatch(lines[j]);
+        if (match != null) return match.group(0)!.trim();
+      }
+    }
+    return '';
+  }
+
+  String _extractICloudDevices(List<String> lines) {
+    final devices = <String>[];
+    final devicePattern = RegExp(
+      r'\b(iPhone|iPad|MacBook|iMac|Apple Watch|AirPods)\b',
+      caseSensitive: false,
+    );
+
+    for (int i = 0; i < lines.length; i++) {
+      final line = lines[i];
+      final lower = line.toLowerCase();
+      if (!devicePattern.hasMatch(line) ||
+          lower.contains('apple account') ||
+          lower.contains('two-factor authentication')) {
+        continue;
+      }
+
+      final next = i + 1 < lines.length ? lines[i + 1] : '';
+      final combined = next.isNotEmpty &&
+              devicePattern.hasMatch(next) &&
+              !devicePattern.hasMatch(line)
+          ? '$line - $next'
+          : line;
+      if (!devices.contains(combined)) devices.add(combined);
+    }
+
+    return devices.join('\n');
+  }
+
   String _extractModelName(String text) {
     final labeled = RegExp(
       r'(?:model name)\s*[:\-]?\s*((?:iPhone|iPad|MacBook|Samsung|Galaxy|Oppo|Vivo|Xiaomi|Redmi|Huawei|Honor|Pixel).*)',
@@ -344,11 +529,13 @@ class OcrService {
 
   String _extractSerialNumber(String text) {
     final labeled = RegExp(
-      r'(?:serial number|\(s\)\s*serial no\.?|s\/n|sn|serial)\s*[:\(\-]?\s*([A-Za-z0-9]{6,25})',
+      r'(?:serial\s+(?:number|no\.?)|\([s5]\)\s*serial\s*no\.?|s\/n|sn|serial(?!\s*(?:number|no\.?)))\s*[:\(\-]?\s*([A-Za-z0-9]{6,25})',
       caseSensitive: false,
     ).firstMatch(text);
     final value = labeled?.group(1)?.trim() ?? '';
-    if (value.isEmpty || _isBadLabeledIdentifier(value)) return '';
+    if (value.isEmpty || !_isLabeledSerialValue(value)) {
+      return '';
+    }
     return _normalizeSerialNumber(value);
   }
 
@@ -373,9 +560,12 @@ class OcrService {
   String _extractSerialNumberNearLabel(List<String> lines) {
     for (int i = 0; i < lines.length; i++) {
       final line = lines[i].trim();
-      if (!RegExp(r'^serial\s+number$', caseSensitive: false).hasMatch(line)) {
+      if (!_hasSerialLabel(line)) {
         continue;
       }
+
+      final inlineSerial = _extractSerialNumber(line);
+      if (inlineSerial.isNotEmpty) return inlineSerial;
 
       final nearbyIndexes = <int>[
         for (int j = i + 1; j < lines.length && j <= i + 3; j++) j,
@@ -392,12 +582,12 @@ class OcrService {
 
   String _serialCandidate(String text) {
     final value = text.trim();
-    if (_isBadLabeledIdentifier(value) || _looksLikeAppleModelNumber(value)) {
+    if (!_isSerialCandidate(value, highConfidence: true)) {
       return '';
     }
     final serialNumber = _extractSerialNumber(value);
     if (serialNumber.isNotEmpty) return serialNumber;
-    return _isSerialNumber(value) ? _normalizeSerialNumber(value) : '';
+    return _normalizeSerialNumber(value);
   }
 
   String _normalizeModelNumber(String value) {
@@ -414,6 +604,7 @@ class OcrService {
     return value
         .trim()
         .toUpperCase()
+        .replaceAll(RegExp(r'[^A-Z0-9]'), '')
         .replaceAllMapped(RegExp(r'(?<=[A-Z])O(?=\d{2})'), (_) => '0');
   }
 
@@ -425,6 +616,45 @@ class OcrService {
         lower == 'model name' ||
         lower == 'model number' ||
         lower == 'serial number';
+  }
+
+  bool _hasSerialLabel(String text) {
+    final lower = text.toLowerCase().replaceAll(RegExp(r'\s+'), ' ').trim();
+    return RegExp(r'(^|[^a-z0-9])serial\s*(number|no\.?|#)?([^a-z0-9]|$)')
+            .hasMatch(lower) ||
+        RegExp(r'(^|[^a-z0-9])s\s*/\s*n([^a-z0-9]|$)').hasMatch(lower) ||
+        RegExp(r'^\([s5]\)\s*serial').hasMatch(lower);
+  }
+
+  String _extractDisplaySerialNumber(String text) {
+    final labeled = RegExp(
+      r'(?:serial\s+(?:number|no\.?)|\([s5]\)\s*serial\s*no\.?|s\/n|sn|serial(?!\s*(?:number|no\.?)))\s*[:\(\-]?\s*([A-Za-z0-9]{6,25})',
+      caseSensitive: false,
+    ).firstMatch(text);
+    final value = labeled?.group(1)?.trim() ?? '';
+    return _isLabeledSerialValue(value) ? _normalizeSerialNumber(value) : '';
+  }
+
+  bool _containsLabel(String text, String label) {
+    final compactText = text.toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+    final compactLabel = label.toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+    return compactText.contains(compactLabel);
+  }
+
+  String _extractDisplayLabeledValue(String text, String label) {
+    final escapedLabel = RegExp.escape(label).replaceAll(r'\ ', r'\s+');
+    for (final line in text.split('\n')) {
+      final trimmed = line.trim();
+      final match = RegExp(
+        '^$escapedLabel\\s*[:\\-]?\\s*(.+)\$',
+        caseSensitive: false,
+      ).firstMatch(trimmed);
+      final value = match?.group(1)?.trim() ?? '';
+      if (value.isNotEmpty && value.toLowerCase() != label.toLowerCase()) {
+        return value;
+      }
+    }
+    return '';
   }
 
   String _extractCapacity(String text) {
@@ -439,7 +669,7 @@ class OcrService {
   void _extractLabeledImeis(String text, Map<String, String> fields) {
     final normalized = text.replaceAll(RegExp(r'\s+'), ' ');
     final imei2 = RegExp(
-      r'(?:imei\s*2|imei2)\D*([0-9]{14,15})',
+      r'(?:^|[^A-Z0-9])IMEI\s*(?:2|II)\b\D*([0-9]{14,15})',
       caseSensitive: false,
     ).firstMatch(normalized);
     if (imei2 != null && fields['imei2']!.isEmpty) {
@@ -447,12 +677,18 @@ class OcrService {
     }
 
     final imei = RegExp(
-      r'(?:imei(?:/meid)?)(?!\s*2)\D*([0-9]{14,15})',
+      r'(?:^|[^A-Z0-9])IMEI(?:/MEID)?\b(?!\s*(?:2|II)\b)\D*([0-9]{14,15})',
       caseSensitive: false,
     ).firstMatch(normalized);
     if (imei != null && fields['imei']!.isEmpty) {
       fields['imei'] = imei.group(1)!;
     }
+  }
+
+  bool _hasImeiLabel(String text) {
+    return RegExp(r'(^|[^A-Z0-9])IMEI(?:\s*(?:2|II)|/MEID)?\b',
+            caseSensitive: false)
+        .hasMatch(text);
   }
 
   bool _isImei(String text) {
@@ -465,16 +701,64 @@ class OcrService {
   }
 
   bool _isSerialNumber(String text) {
-    if (_looksLikeAppleModelNumber(text)) return false;
-    return text.contains(RegExp(r'^[A-Za-z0-9]{10,20}$')) &&
-        text.contains(RegExp(r'[A-Za-z]')) &&
-        text.contains(RegExp(r'[0-9]'));
+    return _isSerialCandidate(text);
+  }
+
+  bool _isLabeledSerialValue(String text) {
+    final normalized = _normalizeSerialNumber(text);
+    return RegExp(r'^[A-Z0-9]{6,25}$').hasMatch(normalized) &&
+        normalized.contains(RegExp(r'[A-Z]')) &&
+        !_looksLikeAppleModelNumber(normalized) &&
+        !_isImei(normalized);
+  }
+
+  bool _isSerialCandidate(String text, {bool highConfidence = false}) {
+    if (_looksLikeProductInfoLabel(text)) return false;
+
+    final normalized = _normalizeSerialNumber(text);
+    if (_isBadLabeledIdentifier(normalized) ||
+        _looksLikeAppleModelNumber(normalized) ||
+        _isImei(normalized) ||
+        RegExp(r'^\d+$').hasMatch(normalized)) {
+      return false;
+    }
+
+    if (highConfidence) {
+      return RegExp(r'^[A-Z0-9]{10}$').hasMatch(normalized) &&
+          normalized.contains(RegExp(r'[A-Z]'));
+    }
+
+    return RegExp(r'^[A-Z0-9]{10}$').hasMatch(normalized) &&
+        normalized.contains(RegExp(r'[A-Z]')) &&
+        normalized.contains(RegExp(r'[0-9]'));
+  }
+
+  bool _looksLikeProductInfoLabel(String text) {
+    final lower = text.toLowerCase();
+    const labels = [
+      'model name',
+      'model number',
+      'coverage',
+      'parts',
+      'service history',
+      'songs',
+      'videos',
+      'photos',
+      'applications',
+      'capacity',
+      'available',
+      'imei',
+      'meid',
+      'upc',
+      'eid',
+    ];
+    return labels.any(lower.contains);
   }
 
   bool _looksLikeAppleModelNumber(String text) {
     final normalized = text.trim().toUpperCase();
     return RegExp(r'^[A-Z0-9]{5,8}/[A-Z]$').hasMatch(normalized) ||
-        RegExp(r'^[A-Z0-9]{8,9}[A-Z]$').hasMatch(normalized) ||
+        RegExp(r'^[A-Z0-9]{7}[J1I][A-Z]$').hasMatch(normalized) ||
         RegExp(r'^A\d{4}$').hasMatch(normalized);
   }
 
@@ -639,20 +923,21 @@ class OcrService {
 
   String _extractSerialFromInvoiceText(String text) {
     final labeled = RegExp(
-      r'(?:s\/n|sn|serial)\s*[:\(\-]?\s*([A-Za-z0-9]{6,25})',
+      r'(?:serial\s+(?:number|no\.?)|\([s5]\)\s*serial\s*no\.?|s\/n|sn|serial(?!\s*(?:number|no\.?)))\s*[:\(\-]?\s*([A-Za-z0-9]{6,25})',
       caseSensitive: false,
     ).firstMatch(text);
-    if (labeled != null) return labeled.group(1)!.trim();
+    final labeledValue = labeled?.group(1)?.trim() ?? '';
+    if (_isSerialCandidate(labeledValue, highConfidence: true)) {
+      return _normalizeSerialNumber(labeledValue);
+    }
 
     final matches = RegExp(r'\b[A-Z0-9]{8,20}\b')
         .allMatches(text.toUpperCase())
         .map((m) => m.group(0)!)
-        .where((value) =>
-            value.contains(RegExp(r'[A-Z]')) &&
-            value.contains(RegExp(r'[0-9]')))
+        .where((value) => _isSerialCandidate(value))
         .toList();
     if (matches.isEmpty) return '';
-    return matches.last;
+    return _normalizeSerialNumber(matches.last);
   }
 
   String _extractColor(String text) {

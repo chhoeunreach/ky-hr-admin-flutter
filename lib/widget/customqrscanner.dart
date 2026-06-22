@@ -6,9 +6,15 @@ Future<String?> showCustomQrScanner(BuildContext context) async {
   return showDialog<String>(
     context: context,
     builder: (context) {
+      final theme = Theme.of(context);
+      final colorScheme = theme.colorScheme;
+
       return AlertDialog(
-        backgroundColor: Colors.black,
-        title: Text('Scan QR Code',style: TextStyle(color: Colors.white,fontSize: 14),),
+        backgroundColor: colorScheme.surface,
+        title: Text(
+          'Scan QR Code',
+          style: TextStyle(color: colorScheme.onSurface, fontSize: 14),
+        ),
         content: SizedBox(
           width: 200,
           height: 200,
@@ -25,9 +31,13 @@ Future<String?> showCustomQrScanner(BuildContext context) async {
             },
             style: ElevatedButton.styleFrom(
               shape: ButtonBorder(),
-              backgroundColor: Colors.blue, // Background color
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
             ),
-            child: Container(width: double.infinity,child: Center(child: Text('Cancel',style: TextStyle(color: Colors.white),))),
+            child: Container(
+              width: double.infinity,
+              child: Center(child: Text('Cancel')),
+            ),
           ),
         ],
       );

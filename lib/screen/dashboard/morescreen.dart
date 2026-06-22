@@ -22,10 +22,13 @@ import 'package:cnattendance/screen/profile/supportscreen.dart';
 import 'package:cnattendance/screen/profile/teamsheetscreen.dart';
 import 'package:cnattendance/screen/sell_out_report_screen.dart';
 import 'package:cnattendance/screen/tadascreen/TadaScreen.dart';
+import 'package:cnattendance/theme/app_theme_mode.dart';
+import 'package:cnattendance/theme/theme_provider.dart';
 import 'package:cnattendance/screen/traning/traningscreen.dart';
 import 'package:cnattendance/screen/warningscreen/warningscreen.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:cnattendance/widget/headerprofile.dart';
+import 'package:cnattendance/widgets/theme_selector.dart';
 import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:cnattendance/widget/morescreen/services.dart';
@@ -46,7 +49,8 @@ class MoreScreenState extends State<MoreScreen> {
     final attendanceType = context.watch<PrefProvider>().attendanceType;
     final features = context.watch<MoreScreenProvider>().features;
     final showNfc = context.watch<MoreScreenProvider>().showNfc;
-    final attendanceMethod = context.watch<DashboardProvider>().attendanceMethods;
+    final attendanceMethod =
+        context.watch<DashboardProvider>().attendanceMethods;
 
     void changeAttendanceType(String type) {
       context.read<PrefProvider>().saveAttendanceType(type);
@@ -54,7 +58,8 @@ class MoreScreenState extends State<MoreScreen> {
     }
 
     void showFeatureDebug() {
-      final text = features.entries.map((e) => "${e.key}: ${e.value}").join("\n");
+      final text =
+          features.entries.map((e) => "${e.key}: ${e.value}").join("\n");
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
@@ -99,18 +104,18 @@ class MoreScreenState extends State<MoreScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             HeaderProfile(),
-                            if(attendanceMethod.isNotEmpty)
-                            Padding(
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: 20, vertical: 10),
-                                child: Text(
-                                  translate(
-                                      'more_screen.attendance_default_method'),
-                                  style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.bold),
-                                )),
+                            if (attendanceMethod.isNotEmpty)
+                              Padding(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 20, vertical: 10),
+                                  child: Text(
+                                    translate(
+                                        'more_screen.attendance_default_method'),
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.bold),
+                                  )),
                             Padding(
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 20),
@@ -118,89 +123,90 @@ class MoreScreenState extends State<MoreScreen> {
                                 mainAxisAlignment: MainAxisAlignment.start,
                                 spacing: 10,
                                 children: [
-                                  if(attendanceMethod.contains("default"))
-                                  GestureDetector(
-                                    onTap: () {
-                                      changeAttendanceType("Default");
-                                    },
-                                    child: Chip(
-                                        backgroundColor:
-                                            attendanceType != "Default"
-                                                ? HexColor("#000")
-                                                : HexColor("#036eb7"),
-                                        avatar: Icon(
-                                          Icons.fingerprint,
-                                          color: Colors.white,
-                                        ),
-                                        label: Text(
-                                          translate('more_screen.default'),
-                                          style: TextStyle(color: Colors.white),
-                                        ),
-                                        elevation: 0,
-                                        shape: RoundedRectangleBorder(
-                                            side: BorderSide(
-                                                color: HexColor("#036eb7")),
-                                            borderRadius: BorderRadius.only(
-                                                topLeft: Radius.circular(10),
-                                                bottomRight:
-                                                    Radius.circular(10)))),
-                                  ),
-                                  if(attendanceMethod.contains("nfc"))
-                                  GestureDetector(
-                                    onTap: () {
-                                      changeAttendanceType("NFC");
-                                    },
-                                    child: Chip(
-                                        backgroundColor:
-                                        attendanceType != "NFC"
-                                            ? HexColor("#000")
-                                            : HexColor("#036eb7"),
-                                        avatar: Icon(
-                                          Icons.nfc,
-                                          color: Colors.white,
-                                        ),
-                                        label: Text(
-                                          translate('more_screen.nfc'),
-                                          style:
-                                          TextStyle(color: Colors.white),
-                                        ),
-                                        elevation: 0,
-                                        shape: RoundedRectangleBorder(
-                                            side: BorderSide(
-                                                color: HexColor("#036eb7")),
-                                            borderRadius: BorderRadius.only(
-                                                topLeft: Radius.circular(10),
-                                                bottomRight:
-                                                Radius.circular(10)))),
-                                  ),
-                                  if(attendanceMethod.contains("qr"))
-                                  GestureDetector(
-                                    onTap: () {
-                                      changeAttendanceType("QR");
-                                    },
-                                    child: Chip(
-                                        backgroundColor:
-                                        attendanceType != "QR"
-                                            ? HexColor("#000")
-                                            : HexColor("#036eb7"),
-                                        label: Text(
-                                          translate('more_screen.qr_code'),
-                                          style:
-                                          TextStyle(color: Colors.white),
-                                        ),
-                                        avatar: Icon(
-                                          Icons.qr_code,
-                                          color: Colors.white,
-                                        ),
-                                        elevation: 0,
-                                        shape: RoundedRectangleBorder(
-                                            side: BorderSide(
-                                                color: HexColor("#036eb7")),
-                                            borderRadius: BorderRadius.only(
-                                                topLeft: Radius.circular(10),
-                                                bottomRight:
-                                                Radius.circular(10)))),
-                                  ),
+                                  if (attendanceMethod.contains("default"))
+                                    GestureDetector(
+                                      onTap: () {
+                                        changeAttendanceType("Default");
+                                      },
+                                      child: Chip(
+                                          backgroundColor:
+                                              attendanceType != "Default"
+                                                  ? HexColor("#000")
+                                                  : HexColor("#036eb7"),
+                                          avatar: Icon(
+                                            Icons.fingerprint,
+                                            color: Colors.white,
+                                          ),
+                                          label: Text(
+                                            translate('more_screen.default'),
+                                            style:
+                                                TextStyle(color: Colors.white),
+                                          ),
+                                          elevation: 0,
+                                          shape: RoundedRectangleBorder(
+                                              side: BorderSide(
+                                                  color: HexColor("#036eb7")),
+                                              borderRadius: BorderRadius.only(
+                                                  topLeft: Radius.circular(10),
+                                                  bottomRight:
+                                                      Radius.circular(10)))),
+                                    ),
+                                  if (attendanceMethod.contains("nfc"))
+                                    GestureDetector(
+                                      onTap: () {
+                                        changeAttendanceType("NFC");
+                                      },
+                                      child: Chip(
+                                          backgroundColor:
+                                              attendanceType != "NFC"
+                                                  ? HexColor("#000")
+                                                  : HexColor("#036eb7"),
+                                          avatar: Icon(
+                                            Icons.nfc,
+                                            color: Colors.white,
+                                          ),
+                                          label: Text(
+                                            translate('more_screen.nfc'),
+                                            style:
+                                                TextStyle(color: Colors.white),
+                                          ),
+                                          elevation: 0,
+                                          shape: RoundedRectangleBorder(
+                                              side: BorderSide(
+                                                  color: HexColor("#036eb7")),
+                                              borderRadius: BorderRadius.only(
+                                                  topLeft: Radius.circular(10),
+                                                  bottomRight:
+                                                      Radius.circular(10)))),
+                                    ),
+                                  if (attendanceMethod.contains("qr"))
+                                    GestureDetector(
+                                      onTap: () {
+                                        changeAttendanceType("QR");
+                                      },
+                                      child: Chip(
+                                          backgroundColor:
+                                              attendanceType != "QR"
+                                                  ? HexColor("#000")
+                                                  : HexColor("#036eb7"),
+                                          label: Text(
+                                            translate('more_screen.qr_code'),
+                                            style:
+                                                TextStyle(color: Colors.white),
+                                          ),
+                                          avatar: Icon(
+                                            Icons.qr_code,
+                                            color: Colors.white,
+                                          ),
+                                          elevation: 0,
+                                          shape: RoundedRectangleBorder(
+                                              side: BorderSide(
+                                                  color: HexColor("#036eb7")),
+                                              borderRadius: BorderRadius.only(
+                                                  topLeft: Radius.circular(10),
+                                                  bottomRight:
+                                                      Radius.circular(10)))),
+                                    ),
                                 ],
                               ),
                             ),
@@ -251,9 +257,9 @@ class MoreScreenState extends State<MoreScreen> {
                             features["assets"] != "1"
                                 ? SizedBox.shrink()
                                 : Services(
-                                translate('common.assets'),
-                                Icons.production_quantity_limits,
-                                AssetScreen()),
+                                    translate('common.assets'),
+                                    Icons.production_quantity_limits,
+                                    AssetScreen()),
                             /*features["training"] != "1"
                                 ? SizedBox.shrink()
                                 : Services(translate('more_screen.training'),
@@ -303,8 +309,8 @@ class MoreScreenState extends State<MoreScreen> {
                                     Icons.payments_outlined, PaySlipScreen()),
                             features["payroll-management"] != "1"
                                 ? SizedBox.shrink()
-                                : Services("SSF History",
-                                    Icons.payments, SsfHistoryScreen()),
+                                : Services("SSF History", Icons.payments,
+                                    SsfHistoryScreen()),
                             features["advance-salary"] != "1"
                                 ? SizedBox.shrink()
                                 : Services(
@@ -369,12 +375,14 @@ class MoreScreenState extends State<MoreScreen> {
                                       children: [
                                         ListTile(
                                           trailing: Switch(
-                                            activeColor: Colors.blue,
+                                            activeThumbColor: Colors.blue,
                                             value: !getAppTheme(),
                                             onChanged: (value) {
-                                              final box = GetStorage();
-                                              box.write('theme',
-                                                  !(box.read("theme") ?? true));
+                                              context
+                                                  .read<ThemeProvider>()
+                                                  .setMode(value
+                                                      ? AppThemeMode.dark
+                                                      : AppThemeMode.light);
                                             },
                                           ),
                                           dense: true,
@@ -390,9 +398,11 @@ class MoreScreenState extends State<MoreScreen> {
                                                 fontSize: 15),
                                           ),
                                           onTap: () {
-                                            final box = GetStorage();
-                                            box.write('theme',
-                                                !(box.read("theme") ?? true));
+                                            context
+                                                .read<ThemeProvider>()
+                                                .setMode(getAppTheme()
+                                                    ? AppThemeMode.dark
+                                                    : AppThemeMode.light);
                                           },
                                           selected: true,
                                         ),
@@ -405,6 +415,7 @@ class MoreScreenState extends State<MoreScreen> {
                                       ],
                                     ),
                                   ),
+                            const ThemeSelector(),
                             Padding(
                               padding: EdgeInsets.symmetric(
                                   horizontal: 10, vertical: 0),
@@ -412,7 +423,7 @@ class MoreScreenState extends State<MoreScreen> {
                                 children: [
                                   ListTile(
                                     trailing: Switch(
-                                      activeColor: Colors.blue,
+                                      activeThumbColor: Colors.blue,
                                       value: getAnimation(),
                                       onChanged: (value) {
                                         final box = GetStorage();

@@ -52,6 +52,12 @@
     "fri": "Cum",
     "sat": "Cmt",
     "note": "Not (İsteğe Bağlı)",
+    "service_sell": "Sell",
+    "service_material": "Material",
+    "service_iron": "Iron",
+    "service_repair": "Repair",
+    "service_buy_in": "Buy In",
+    "service_icloud_cus": "iCloud Cus",
     "event": "Etkinlik"
   },
   "leave_screen": {

@@ -4,12 +4,11 @@ import 'package:cnattendance/screen/dashboard/homescreen.dart';
 import 'package:cnattendance/screen/dashboard/leavescreen.dart';
 import 'package:cnattendance/screen/dashboard/attendancescreen.dart';
 import 'package:cnattendance/screen/dashboard/morescreen.dart';
-import 'package:cnattendance/utils/constant.dart';
+import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
 import 'package:provider/provider.dart';
-import 'package:hexcolor/hexcolor.dart';
 
 class DashboardScreen extends StatefulWidget {
   static const String routeName = '/dashboard';
@@ -52,7 +51,7 @@ class DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       body: PersistentTabView(
         controller: _controller,
-        backgroundColor: HexColor(getAppTheme() ? radialBoxTheme : "#000000"),
+        backgroundColor: themedChromeColor(),
         handleAndroidBackButtonPress: true,
         // Default is true.
         resizeToAvoidBottomInset: true,
@@ -95,8 +94,7 @@ class DashboardScreenState extends State<DashboardScreen> {
         navBarBuilder: (NavBarConfig) {
           return Style9BottomNavBar(
             navBarConfig: NavBarConfig,
-            navBarDecoration: NavBarDecoration(
-                color: HexColor(getAppTheme() ? radialBoxTheme : "#000000")),
+            navBarDecoration: NavBarDecoration(color: themedChromeColor()),
           );
         },
       ),

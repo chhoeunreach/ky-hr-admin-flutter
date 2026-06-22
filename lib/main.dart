@@ -28,6 +28,9 @@ import 'package:cnattendance/screen/profile/profilescreen.dart';
 import 'package:cnattendance/screen/profile/meetingdetailscreen.dart';
 import 'package:cnattendance/screen/sell_out_report_screen.dart';
 import 'package:cnattendance/screen/splashscreen.dart';
+import 'package:cnattendance/theme/app_theme_data.dart';
+import 'package:cnattendance/theme/app_theme_mode.dart';
+import 'package:cnattendance/theme/theme_provider.dart';
 import 'package:cnattendance/utils/app_badge_sync.dart';
 import 'package:cnattendance/utils/chat_unread_store.dart';
 import 'package:cnattendance/utils/chat/notification_payload_parser.dart';
@@ -811,6 +814,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           ChangeNotifierProvider(
             create: (ctx) => SSFProvider(),
           ),
+          ChangeNotifierProvider(
+            create: (ctx) => ThemeProvider()..load(),
+          ),
         ],
         child: Portal(
           child: InAppNotification(
@@ -822,47 +828,46 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
               },
               child: LocalizationProvider(
                 state: LocalizationProvider.of(context).state,
-                child: GetMaterialApp(
-                  navigatorKey: NavigationService.navigatorKey,
-                  debugShowCheckedModeBanner: false,
-                  localizationsDelegates: [
-                    GlobalMaterialLocalizations.delegate,
-                    GlobalWidgetsLocalizations.delegate,
-                    GlobalCupertinoLocalizations.delegate,
-                    localizationDelegate
-                  ],
-                  supportedLocales: localizationDelegate.supportedLocales,
-                  locale: Locale(storage.read("language") ?? "en"),
-                  theme: ThemeData(
-                      canvasColor: const Color.fromRGBO(255, 255, 255, 1),
-                      fontFamily: 'GoogleSans',
-                      primarySwatch: Colors.blue,
-                      brightness: Brightness.dark,
-                      elevatedButtonTheme: ElevatedButtonThemeData(
-                          style: ElevatedButton.styleFrom(
-                              textStyle: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 15,
-                                  fontFamily: "GoogleSans"))),
-                      appBarTheme: AppBarTheme(
-                          actionsIconTheme: IconThemeData(color: Colors.white),
-                          iconTheme: IconThemeData(color: Colors.white),
-                          titleTextStyle: TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontFamily: "GoogleSans"))),
-                  initialRoute: '/',
-                  routes: {
-                    '/': (_) => SplashScreen(),
-                    LoginScreen.routeName: (_) => LoginScreen(),
-                    DashboardScreen.routeName: (_) => DashboardScreen(),
-                    ProfileScreen.routeName: (_) => ProfileScreen(),
-                    EditProfileScreen.routeName: (_) => EditProfileScreen(),
-                    MeetingDetailScreen.routeName: (_) => MeetingDetailScreen(),
-                    PaySlipDetailScreen.routeName: (_) => PaySlipDetailScreen(),
-                    SellOutReportScreen.routeName: (_) => SellOutReportScreen(),
+                child: Consumer<ThemeProvider>(
+                  builder: (context, themeProvider, _) {
+                    return AnimatedTheme(
+                      data: themeProvider.themeData,
+                      duration: AppThemeData.animationDuration,
+                      child: GetMaterialApp(
+                        navigatorKey: NavigationService.navigatorKey,
+                        debugShowCheckedModeBanner: false,
+                        localizationsDelegates: [
+                          GlobalMaterialLocalizations.delegate,
+                          GlobalWidgetsLocalizations.delegate,
+                          GlobalCupertinoLocalizations.delegate,
+                          localizationDelegate
+                        ],
+                        supportedLocales: localizationDelegate.supportedLocales,
+                        locale: Locale(storage.read("language") ?? "en"),
+                        theme: themeProvider.themeData,
+                        darkTheme: themeProvider.darkTheme,
+                        themeMode: themeProvider.mode == AppThemeMode.dark
+                            ? ThemeMode.dark
+                            : ThemeMode.light,
+                        initialRoute: '/',
+                        routes: {
+                          '/': (_) => SplashScreen(),
+                          LoginScreen.routeName: (_) => LoginScreen(),
+                          DashboardScreen.routeName: (_) => DashboardScreen(),
+                          ProfileScreen.routeName: (_) => ProfileScreen(),
+                          EditProfileScreen.routeName: (_) =>
+                              EditProfileScreen(),
+                          MeetingDetailScreen.routeName: (_) =>
+                              MeetingDetailScreen(),
+                          PaySlipDetailScreen.routeName: (_) =>
+                              PaySlipDetailScreen(),
+                          SellOutReportScreen.routeName: (_) =>
+                              SellOutReportScreen(),
+                        },
+                        builder: EasyLoading.init(),
+                      ),
+                    );
                   },
-                  builder: EasyLoading.init(),
                 ),
               ),
             ),

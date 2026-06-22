@@ -12,7 +12,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:hexcolor/hexcolor.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
 import 'package:nepali_date_picker/nepali_date_picker.dart';
@@ -38,6 +37,46 @@ class CheckAttendance extends StatefulWidget {
 }
 
 class CheckAttendanceState extends State<CheckAttendance> {
+  double _contrastRatio(Color first, Color second) {
+    final firstLum = first.computeLuminance();
+    final secondLum = second.computeLuminance();
+    final lighter = firstLum > secondLum ? firstLum : secondLum;
+    final darker = firstLum > secondLum ? secondLum : firstLum;
+    return (lighter + 0.05) / (darker + 0.05);
+  }
+
+  Color _readableColor(Color background, Color preferred, Color fallback) {
+    return _contrastRatio(background, preferred) >=
+            _contrastRatio(background, fallback)
+        ? preferred
+        : fallback;
+  }
+
+  Widget _attendanceIcon({
+    required String attendanceType,
+    required bool repeat,
+    required Color color,
+  }) {
+    return Lottie.asset(
+      attendanceType == "QR"
+          ? 'assets/raw/qr.json'
+          : attendanceType == "NFC"
+              ? 'assets/raw/nfc.json'
+              : 'assets/raw/fingerprint.json',
+      width: 60,
+      height: 60,
+      repeat: repeat,
+      delegates: LottieDelegates(
+        values: [
+          ValueDelegate.colorFilter(
+            ['**'],
+            value: ColorFilter.mode(color, BlendMode.srcATop),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<bool> _ensureWithinScanDistanceIfPossible() async {
     final provider = context.read<DashboardProvider>();
     final distance = await provider.getWorkspaceDistanceMeters(
@@ -99,7 +138,7 @@ class CheckAttendanceState extends State<CheckAttendance> {
             context: context,
             useRootNavigator: true,
             isScrollControlled: true,
-              builder: (context) {
+            builder: (context) {
               return NoteBottomSheet(result, "qr");
             });
       } else {
@@ -141,8 +180,7 @@ class CheckAttendanceState extends State<CheckAttendance> {
       );
     } catch (e) {
       final message = e.toString();
-      final extra =
-          await provider.buildWorkspaceDistanceInfoIfNeeded(message);
+      final extra = await provider.buildWorkspaceDistanceInfoIfNeeded(message);
       if (!mounted) return;
       EasyLoading.dismiss(animation: true);
       showDialog(
@@ -163,8 +201,24 @@ class CheckAttendanceState extends State<CheckAttendance> {
         Provider.of<DashboardProvider>(context).attendanceList;
     final attandanceType = context.watch<PrefProvider>().attendanceType;
     final isAD = context.watch<DashboardProvider>().isAD;
-    final attendanceMethod = context.watch<DashboardProvider>().attendanceMethods;
+    final attendanceMethod =
+        context.watch<DashboardProvider>().attendanceMethods;
     final animated = context.watch<DashboardProvider>().animated;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isCheckedIn =
+        attendanceList['check-in'] != "-" && attendanceList['check-out'] == "-";
+    final qrCircleColor =
+        isCheckedIn ? colorScheme.tertiary : colorScheme.primary;
+    final qrIconColor = _readableColor(
+        qrCircleColor, colorScheme.onPrimary, colorScheme.surface);
+    final qrRingColor = qrCircleColor.withValues(alpha: 0.25);
+    final qrGlowColor = colorScheme.secondary.withValues(alpha: 0.18);
+    final panelTextColor = _readableColor(
+        colorScheme.primary, colorScheme.onPrimary, colorScheme.onSurface);
+    final progressBackgroundColor = panelTextColor.withValues(alpha: 0.24);
+    final productionProgressColor =
+        isCheckedIn ? colorScheme.tertiary : colorScheme.secondary;
     context.read<PrefProvider>().getAttendanceType(attendanceMethod);
 
     return Container(
@@ -189,7 +243,7 @@ class CheckAttendanceState extends State<CheckAttendance> {
                           textScaleFactor: .9,
                           format: "a",
                           padding: EdgeInsets.symmetric(vertical: 10),
-                          digitalClockTextColor: Colors.white,
+                          digitalClockTextColor: panelTextColor,
                           decoration: const BoxDecoration(
                             color: Colors.transparent,
                           ),
@@ -201,7 +255,7 @@ class CheckAttendanceState extends State<CheckAttendance> {
                         textScaleFactor: 2.2,
                         format: "HH:mm",
                         padding: EdgeInsets.symmetric(vertical: 10),
-                        digitalClockTextColor: Colors.white,
+                        digitalClockTextColor: panelTextColor,
                         decoration: const BoxDecoration(
                             color: Colors.transparent,
                             shape: BoxShape.rectangle,
@@ -217,7 +271,7 @@ class CheckAttendanceState extends State<CheckAttendance> {
                           textScaleFactor: .9,
                           format: "ss",
                           padding: EdgeInsets.zero,
-                          digitalClockTextColor: Colors.white,
+                          digitalClockTextColor: panelTextColor,
                           decoration: const BoxDecoration(
                               color: Colors.transparent,
                               shape: BoxShape.rectangle,
@@ -233,17 +287,14 @@ class CheckAttendanceState extends State<CheckAttendance> {
           Center(
               child: Text(
             isAD ? widget.formattedDate : widget.nepaliFormattedDate,
-            style: TextStyle(color: Colors.white),
+            style: TextStyle(color: panelTextColor),
           )),
           if (animated && attendanceMethod.isNotEmpty)
             Center(
               child: Container(
                 width: 280,
                 child: RippleWave(
-                  color: attendanceList['check-in'] != "-" &&
-                          attendanceList['check-out'] == "-"
-                      ? HexColor("#762150")
-                      : HexColor("#225788"),
+                  color: qrGlowColor,
                   repeat: animated,
                   waveCount: 5,
                   child: SizedBox(
@@ -255,10 +306,18 @@ class CheckAttendanceState extends State<CheckAttendance> {
                         borderRadius: BorderRadius.all(Radius.circular(90)),
                         child: Container(
                           padding: const EdgeInsets.all(20),
-                          color: attendanceList['check-in'] != "-" &&
-                                  attendanceList['check-out'] == "-"
-                              ? HexColor("#762150")
-                              : HexColor("#225788"),
+                          decoration: BoxDecoration(
+                            color: qrCircleColor,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: qrRingColor, width: 3),
+                            boxShadow: [
+                              BoxShadow(
+                                color: qrGlowColor,
+                                blurRadius: 24,
+                                spreadRadius: 4,
+                              ),
+                            ],
+                          ),
                           child: IconButton(
                               iconSize: 70,
                               onPressed: () async {
@@ -293,15 +352,10 @@ class CheckAttendanceState extends State<CheckAttendance> {
                                       });
                                 }
                               },
-                              icon: Lottie.asset(
-                                  attandanceType == "QR"
-                                      ? 'assets/raw/qr.json'
-                                      : attandanceType == "NFC"
-                                          ? 'assets/raw/nfc.json'
-                                          : 'assets/raw/fingerprint.json',
-                                  width: 60,
-                                  height: 60,
-                                  repeat: animated)),
+                              icon: _attendanceIcon(
+                                  attendanceType: attandanceType,
+                                  repeat: animated,
+                                  color: qrIconColor)),
                         ),
                       ),
                     ),
@@ -320,10 +374,18 @@ class CheckAttendanceState extends State<CheckAttendance> {
                     borderRadius: BorderRadius.all(Radius.circular(90)),
                     child: Container(
                       padding: const EdgeInsets.all(20),
-                      color: attendanceList['check-in'] != "-" &&
-                              attendanceList['check-out'] == "-"
-                          ? HexColor("#762150")
-                          : HexColor("#225788"),
+                      decoration: BoxDecoration(
+                        color: qrCircleColor,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: qrRingColor, width: 3),
+                        boxShadow: [
+                          BoxShadow(
+                            color: qrGlowColor,
+                            blurRadius: 24,
+                            spreadRadius: 4,
+                          ),
+                        ],
+                      ),
                       child: IconButton(
                           iconSize: 70,
                           onPressed: () async {
@@ -358,26 +420,21 @@ class CheckAttendanceState extends State<CheckAttendance> {
                                   });
                             }
                           },
-                          icon: Lottie.asset(
-                              attandanceType == "QR"
-                                  ? 'assets/raw/qr.json'
-                                  : attandanceType == "NFC"
-                                      ? 'assets/raw/nfc.json'
-                                      : 'assets/raw/fingerprint.json',
-                              width: 60,
-                              height: 60,
-                              repeat: animated)),
+                          icon: _attendanceIcon(
+                              attendanceType: attandanceType,
+                              repeat: animated,
+                              color: qrIconColor)),
                     ),
                   ),
                 ),
               ),
             ),
           if (attendanceMethod.isNotEmpty)
-          Center(
-              child: Text(
-            "${translate('home_screen.check_in')} | ${translate('home_screen.check_out')}",
-            style: TextStyle(color: Colors.white, fontSize: 15),
-          )),
+            Center(
+                child: Text(
+              "${translate('home_screen.check_in')} | ${translate('home_screen.check_out')}",
+              style: TextStyle(color: panelTextColor, fontSize: 15),
+            )),
           SizedBox(
             height: 15,
           ),
@@ -391,14 +448,11 @@ class CheckAttendanceState extends State<CheckAttendance> {
               percent: attendanceList['production-time']!,
               center: Text(
                 attendanceList['production_hour'],
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: panelTextColor),
               ),
               barRadius: const Radius.circular(20),
-              backgroundColor: HexColor("#3dFFFFFF"),
-              progressColor: attendanceList['check-in'] != "-" &&
-                      attendanceList['check-out'] == "-"
-                  ? HexColor("#e82e5f")
-                  : HexColor("#3b98cc"),
+              backgroundColor: progressBackgroundColor,
+              progressColor: productionProgressColor,
             ),
           ),
           Container(
@@ -408,11 +462,11 @@ class CheckAttendanceState extends State<CheckAttendance> {
                 children: [
                   Text(
                     attendanceList['check-in']!,
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(color: panelTextColor),
                   ),
                   Text(
                     attendanceList['check-out']!,
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(color: panelTextColor),
                   ),
                 ]),
           ),

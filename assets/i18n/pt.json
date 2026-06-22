@@ -51,7 +51,13 @@
     "thu": "Qui",
     "fri": "Sex",
     "sat": "Sáb",
-    "note": "Nota (Opcional)"
+    "note": "Nota (Opcional)",
+    "service_sell": "Sell",
+    "service_material": "Material",
+    "service_iron": "Iron",
+    "service_repair": "Repair",
+    "service_buy_in": "Buy In",
+    "service_icloud_cus": "iCloud Cus"
   },
   "leave_screen": {
     "leave": "Licença",

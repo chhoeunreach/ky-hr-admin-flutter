@@ -52,7 +52,13 @@
     "thu": "ព្រហស្បតិ៍",
     "fri": "សុក្រ",
     "sat": "សៅរ៍",
-    "note": "ចំណាំ (ស្រេចចិត្ត)"
+    "note": "ចំណាំ (ស្រេចចិត្ត)",
+    "service_sell": "លក់",
+    "service_material": "សម្ភារ",
+    "service_iron": "អ៊ុត",
+    "service_repair": "ជួសជុល",
+    "service_buy_in": "ទិញចូល",
+    "service_icloud_cus": "iCloud Cus"
   },
   "leave_screen": {
     "leave": "ការឈប់សម្រាក",
