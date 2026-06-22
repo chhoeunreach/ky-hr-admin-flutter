@@ -7,6 +7,13 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Preferences with ChangeNotifier {
+  SharedPreferences? _prefs;
+
+  Future<SharedPreferences> get _sharedPrefs async {
+    _prefs ??= await SharedPreferences.getInstance();
+    return _prefs!;
+  }
+
   final String USER_ID = "user_id";
   final String USER_AVATAR = "user_avatar";
   final String USER_TOKEN = "user_token";
@@ -48,8 +55,8 @@ class Preferences with ChangeNotifier {
 
   Future<bool> saveUser(Login data) async {
     // Obtain shared preferences.
-    User user = data.user;
-    final prefs = await SharedPreferences.getInstance();
+    final user = data.user;
+    final prefs = await _sharedPrefs;
 
     await prefs.setString(USER_TOKEN, data.tokens);
     await prefs.setInt(USER_ID, user.id);
@@ -67,7 +74,7 @@ class Preferences with ChangeNotifier {
 
   Future<bool> saveUserDashboard(DashboardUser.User user) async {
     // Obtain shared preferences.
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _sharedPrefs;
 
     await prefs.setInt(USER_ID, user.id);
     await prefs.setString(USER_AVATAR, user.avatar);
@@ -83,7 +90,7 @@ class Preferences with ChangeNotifier {
   }
 
   Future<void> setFeatures(Map<String, String> features) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _sharedPrefs;
 
     await prefs.setString(
         PROJECT_MANAGEMENT, features["project-management"] ?? "0");
@@ -112,8 +119,8 @@ class Preferences with ChangeNotifier {
   }
 
   Future<Map<String, String>> getFeatures() async {
-    Map<String, String> features = <String, String>{};
-    final prefs = await SharedPreferences.getInstance();
+    final features = <String, String>{};
+    final prefs = await _sharedPrefs;
 
     features["project-management"] =
         await prefs.getString(PROJECT_MANAGEMENT) ?? "1";
@@ -142,7 +149,7 @@ class Preferences with ChangeNotifier {
   }
 
   void saveBasicUser(User user) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _sharedPrefs;
 
     await prefs.setInt(USER_ID, user.id);
     await prefs.setString(USER_AVATAR, user.avatar);
@@ -154,7 +161,7 @@ class Preferences with ChangeNotifier {
   }
 
   Future<void> clearPrefs() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _sharedPrefs;
 
     await prefs.setInt(USER_ID, 0);
     await prefs.setString(USER_TOKEN, '');
@@ -174,71 +181,71 @@ class Preferences with ChangeNotifier {
   }
 
   void saveUserAuth(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _sharedPrefs;
     await prefs.setBool(USER_AUTH, value);
   }
 
   void saveShowNfc(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _sharedPrefs;
     await prefs.setBool(SHOW_NFC, value);
   }
 
-  void saveHardReset(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
+  Future<void> saveHardReset(bool value) async {
+    final prefs = await _sharedPrefs;
     await prefs.setBool(HARD_RESET_APP, value);
   }
 
   void saveAppUrl(String value) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _sharedPrefs;
     await prefs.setString(APP_URL, value);
   }
 
   Future<void> saveAttendanceType(String value) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _sharedPrefs;
     await prefs.setString(ATTENDANCE_TYPE, value);
     notifyListeners();
   }
 
   Future<void> saveAttendanceTypeAsUserChoice(String value) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _sharedPrefs;
     await prefs.setBool(ATTENDANCE_TYPE_USER_SET, true);
     await prefs.setString(ATTENDANCE_TYPE, value);
     notifyListeners();
   }
 
   Future<void> saveAttendanceTypeUserSet(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _sharedPrefs;
     await prefs.setBool(ATTENDANCE_TYPE_USER_SET, value);
     notifyListeners();
   }
 
   Future<bool> getAttendanceTypeUserSet() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _sharedPrefs;
     return prefs.getBool(ATTENDANCE_TYPE_USER_SET) ?? false;
   }
 
   void saveAppEng(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _sharedPrefs;
     await prefs.setBool(APP_IN_ENGLISH, value);
   }
 
   void saveBirthdayWished(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _sharedPrefs;
     await prefs.setBool(BIRTHDAY_WISHED, value);
   }
 
   void saveNote(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _sharedPrefs;
     await prefs.setBool(SHOWNOTE, value);
   }
 
   void saveEmployeeLocation(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _sharedPrefs;
     await prefs.setBool(SHOWLOCATION, value);
   }
 
   Future<User> getUser() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _sharedPrefs;
 
     return User(
         id: prefs.getInt(USER_ID) ?? 0,
@@ -250,95 +257,95 @@ class Preferences with ChangeNotifier {
   }
 
   Future<String> getToken() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _sharedPrefs;
 
     return prefs.getString(USER_TOKEN) ?? "";
   }
 
   Future<bool> getNote() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _sharedPrefs;
 
     return prefs.getBool(SHOWNOTE) ?? false;
   }
 
   Future<bool> getEnableLocation() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _sharedPrefs;
 
     return prefs.getBool(SHOWLOCATION) ?? false;
   }
 
   Future<String> getAttendanceType() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _sharedPrefs;
 
     return prefs.getString(ATTENDANCE_TYPE) ?? "Default";
   }
 
   Future<bool> getUserAuth() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _sharedPrefs;
 
     return prefs.getBool(USER_AUTH) ?? false;
   }
 
   Future<int> getUserId() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _sharedPrefs;
 
     return prefs.getInt(USER_ID) ?? 0;
   }
 
   Future<bool> getShowNfc() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _sharedPrefs;
 
     return prefs.getBool(SHOW_NFC) ?? true;
   }
 
   Future<bool> getBirthdayWished() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _sharedPrefs;
 
     return prefs.getBool(BIRTHDAY_WISHED) ?? false;
   }
 
   Future<String> getUsername() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _sharedPrefs;
     return prefs.getString(USER_NAME) ?? "";
   }
 
   Future<String> getEmail() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _sharedPrefs;
     return prefs.getString(USER_EMAIL) ?? "";
   }
 
   Future<String> getAvatar() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _sharedPrefs;
     return prefs.getString(USER_AVATAR) ?? "";
   }
 
   Future<String> getFullName() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _sharedPrefs;
     return prefs.getString(USER_FULLNAME) ?? "";
   }
 
   Future<String> getBranchName() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _sharedPrefs;
     return prefs.getString(USER_BRANCH) ?? "";
   }
 
   Future<String> getWorkSpace() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _sharedPrefs;
     return prefs.getString(WORKSPACE) ?? "1";
   }
 
   Future<bool> getEnglishDate() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _sharedPrefs;
     return prefs.getBool(APP_IN_ENGLISH) ?? true;
   }
 
   Future<String> getAppUrl() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _sharedPrefs;
     return prefs.getString(APP_URL) ?? Constant.appUrl;
   }
 
   Future<bool> getHardReset() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _sharedPrefs;
     return prefs.getBool(HARD_RESET_APP) ?? true;
   }
 }

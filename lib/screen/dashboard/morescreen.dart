@@ -20,22 +20,21 @@ import 'package:cnattendance/screen/profile/profilescreen.dart';
 import 'package:cnattendance/screen/profile/ssfhistoryscreen.dart';
 import 'package:cnattendance/screen/profile/supportscreen.dart';
 import 'package:cnattendance/screen/profile/teamsheetscreen.dart';
-import 'package:cnattendance/screen/sell_out_report_screen.dart';
 import 'package:cnattendance/screen/tadascreen/TadaScreen.dart';
 import 'package:cnattendance/theme/app_theme_mode.dart';
+import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/theme/theme_provider.dart';
-import 'package:cnattendance/screen/traning/traningscreen.dart';
+import 'package:cnattendance/screen/training/trainingscreen.dart';
 import 'package:cnattendance/screen/warningscreen/warningscreen.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:cnattendance/widget/headerprofile.dart';
 import 'package:cnattendance/widgets/theme_selector.dart';
-import 'package:cnattendance/widget/radialDecoration.dart';
+import 'package:cnattendance/widget/premium_background.dart';
 import 'package:flutter/material.dart';
 import 'package:cnattendance/widget/morescreen/services.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:focus_detector/focus_detector.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:hexcolor/hexcolor.dart';
 import 'package:provider/provider.dart';
 
 class MoreScreen extends StatefulWidget {
@@ -51,6 +50,8 @@ class MoreScreenState extends State<MoreScreen> {
     final showNfc = context.watch<MoreScreenProvider>().showNfc;
     final attendanceMethod =
         context.watch<DashboardProvider>().attendanceMethods;
+    final selectedThemeMode = context.watch<ThemeProvider>().mode;
+    final enterprise = EnterpriseTheme.of(context);
 
     void changeAttendanceType(String type) {
       context.read<PrefProvider>().saveAttendanceType(type);
@@ -80,12 +81,72 @@ class MoreScreenState extends State<MoreScreen> {
       );
     }
 
+    Widget attendanceMethodChip({
+      required String type,
+      required IconData icon,
+      required String label,
+    }) {
+      final isSelected = attendanceType == type;
+      final foregroundColor =
+          isSelected || enterprise.isDark ? Colors.white : enterprise.text;
+      final borderColor = isSelected
+          ? Colors.white.withValues(alpha: 0.58)
+          : enterprise.accent.withValues(alpha: enterprise.isDark ? 0.46 : 0.68);
+      final fillColor = enterprise.surface.withValues(
+        alpha: enterprise.isDark ? 0.70 : 0.88,
+      );
+
+      return InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => changeAttendanceType(type),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOut,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+          decoration: BoxDecoration(
+            color: isSelected ? null : fillColor,
+            gradient: isSelected
+                ? LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [enterprise.primary, enterprise.accent],
+                  )
+                : null,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: borderColor, width: 1.2),
+            boxShadow: [
+              BoxShadow(
+                color: (isSelected ? enterprise.accent : Colors.black)
+                    .withValues(alpha: isSelected ? 0.28 : 0.12),
+                blurRadius: isSelected ? 18 : 10,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: foregroundColor, size: 18),
+              const SizedBox(width: 7),
+              Text(
+                label,
+                style: TextStyle(
+                  color: foregroundColor,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return FocusDetector(
       onFocusGained: () {
         context.read<MoreScreenProvider>().getFeatures();
       },
-      child: Container(
-        decoration: RadialDecoration(),
+      child: PremiumBackground(
         child: Scaffold(
           resizeToAvoidBottomInset: true,
           backgroundColor: Colors.transparent,
@@ -124,88 +185,22 @@ class MoreScreenState extends State<MoreScreen> {
                                 spacing: 10,
                                 children: [
                                   if (attendanceMethod.contains("default"))
-                                    GestureDetector(
-                                      onTap: () {
-                                        changeAttendanceType("Default");
-                                      },
-                                      child: Chip(
-                                          backgroundColor:
-                                              attendanceType != "Default"
-                                                  ? HexColor("#000")
-                                                  : HexColor("#036eb7"),
-                                          avatar: Icon(
-                                            Icons.fingerprint,
-                                            color: Colors.white,
-                                          ),
-                                          label: Text(
-                                            translate('more_screen.default'),
-                                            style:
-                                                TextStyle(color: Colors.white),
-                                          ),
-                                          elevation: 0,
-                                          shape: RoundedRectangleBorder(
-                                              side: BorderSide(
-                                                  color: HexColor("#036eb7")),
-                                              borderRadius: BorderRadius.only(
-                                                  topLeft: Radius.circular(10),
-                                                  bottomRight:
-                                                      Radius.circular(10)))),
+                                    attendanceMethodChip(
+                                      type: "Default",
+                                      icon: Icons.fingerprint,
+                                      label: translate('more_screen.default'),
                                     ),
                                   if (attendanceMethod.contains("nfc"))
-                                    GestureDetector(
-                                      onTap: () {
-                                        changeAttendanceType("NFC");
-                                      },
-                                      child: Chip(
-                                          backgroundColor:
-                                              attendanceType != "NFC"
-                                                  ? HexColor("#000")
-                                                  : HexColor("#036eb7"),
-                                          avatar: Icon(
-                                            Icons.nfc,
-                                            color: Colors.white,
-                                          ),
-                                          label: Text(
-                                            translate('more_screen.nfc'),
-                                            style:
-                                                TextStyle(color: Colors.white),
-                                          ),
-                                          elevation: 0,
-                                          shape: RoundedRectangleBorder(
-                                              side: BorderSide(
-                                                  color: HexColor("#036eb7")),
-                                              borderRadius: BorderRadius.only(
-                                                  topLeft: Radius.circular(10),
-                                                  bottomRight:
-                                                      Radius.circular(10)))),
+                                    attendanceMethodChip(
+                                      type: "NFC",
+                                      icon: Icons.nfc,
+                                      label: translate('more_screen.nfc'),
                                     ),
                                   if (attendanceMethod.contains("qr"))
-                                    GestureDetector(
-                                      onTap: () {
-                                        changeAttendanceType("QR");
-                                      },
-                                      child: Chip(
-                                          backgroundColor:
-                                              attendanceType != "QR"
-                                                  ? HexColor("#000")
-                                                  : HexColor("#036eb7"),
-                                          label: Text(
-                                            translate('more_screen.qr_code'),
-                                            style:
-                                                TextStyle(color: Colors.white),
-                                          ),
-                                          avatar: Icon(
-                                            Icons.qr_code,
-                                            color: Colors.white,
-                                          ),
-                                          elevation: 0,
-                                          shape: RoundedRectangleBorder(
-                                              side: BorderSide(
-                                                  color: HexColor("#036eb7")),
-                                              borderRadius: BorderRadius.only(
-                                                  topLeft: Radius.circular(10),
-                                                  bottomRight:
-                                                      Radius.circular(10)))),
+                                    attendanceMethodChip(
+                                      type: "QR",
+                                      icon: Icons.qr_code,
+                                      label: translate('more_screen.qr_code'),
                                     ),
                                 ],
                               ),
@@ -376,7 +371,8 @@ class MoreScreenState extends State<MoreScreen> {
                                         ListTile(
                                           trailing: Switch(
                                             activeThumbColor: Colors.blue,
-                                            value: !getAppTheme(),
+                                            value: selectedThemeMode ==
+                                                AppThemeMode.dark,
                                             onChanged: (value) {
                                               context
                                                   .read<ThemeProvider>()
@@ -400,9 +396,10 @@ class MoreScreenState extends State<MoreScreen> {
                                           onTap: () {
                                             context
                                                 .read<ThemeProvider>()
-                                                .setMode(getAppTheme()
-                                                    ? AppThemeMode.dark
-                                                    : AppThemeMode.light);
+                                                .setMode(selectedThemeMode ==
+                                                        AppThemeMode.dark
+                                                    ? AppThemeMode.light
+                                                    : AppThemeMode.dark);
                                           },
                                           selected: true,
                                         ),
@@ -471,11 +468,6 @@ class MoreScreenState extends State<MoreScreen> {
                               Icons.language,
                               ProfileScreen(),
                               control: 4,
-                            ),
-                            Services(
-                              "Sell Out Report",
-                              Icons.receipt_long,
-                              SellOutReportScreen(),
                             ),
                             features["resignation"] != "1"
                                 ? SizedBox.shrink()

@@ -273,7 +273,7 @@ String findKey(Map<String, dynamic> map) {
 
 final List<Month> engMonth = [
   Month(0, 'January'),
-  Month(1, 'Febuary'),
+  Month(1, 'February'),
   Month(2, 'March'),
   Month(3, 'April'),
   Month(4, 'May'),
@@ -301,14 +301,6 @@ final List<Month> nepaliMonth = [
   Month(11, 'Chaitra'),
 ];
 
-int calc() {
-  return 10 - 5;
-}
-
-void value() {
-  calc();
-}
-
 bool getAppTheme() {
   final box = GetStorage();
   return box.read('theme') ?? true;
@@ -319,13 +311,6 @@ bool getAnimation() {
   return box.read('animation') ?? true;
 }
 
-String appTheme = "#011754";
-String appAlternateTheme = "#041033";
-
-String radialBoxTheme = appAlternateTheme;
-
-//light theme constant
-String ltextColor = "#000000";
-
-//dark theme constant
-String dtextColor = "#ffffff";
+const String appTheme = "#011754";
+const String appAlternateTheme = "#041033";
+const String radialBoxTheme = "#041033";

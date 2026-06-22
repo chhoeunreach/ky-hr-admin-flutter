@@ -6,7 +6,7 @@ import 'package:cnattendance/widget/leavescreen/leave_list_detail_dashboard.dart
 import 'package:cnattendance/widget/leavescreen/leavebutton.dart';
 import 'package:cnattendance/widget/leavescreen/leavetypefilter.dart';
 import 'package:cnattendance/widget/leavescreen/toggleleavetime.dart';
-import 'package:cnattendance/widget/radialDecoration.dart';
+import 'package:cnattendance/widget/premium_background.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:focus_detector/focus_detector.dart';
@@ -76,8 +76,7 @@ class LeaveScreenState extends State<LeaveScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: RadialDecoration(),
+    return PremiumBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: FocusDetector(
@@ -110,17 +109,25 @@ class LeaveScreenState extends State<LeaveScreen> with WidgetsBindingObserver {
                           padding: EdgeInsets.symmetric(horizontal: 20),
                           child: LeaveButton()),
                     ),
-                    SizedBox(height: 20,),
+                    SizedBox(
+                      height: 20,
+                    ),
                     Visibility(
                       visible: showDetails,
-                      child: Text(translate('leave_screen.recent_leave_activity'),style: TextStyle(color: Colors.white,fontSize: 20),),
+                      child: Text(
+                        translate('leave_screen.recent_leave_activity'),
+                        style: TextStyle(color: Colors.white, fontSize: 20),
+                      ),
                     ),
-                    SizedBox(height: 10,),
+                    SizedBox(
+                      height: 10,
+                    ),
                     Stack(
                       children: [
                         Align(
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 15,vertical: 25),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 15, vertical: 25),
                             child: Card(
                               color: Colors.white12,
                               shape: ButtonBorder(),
@@ -136,7 +143,8 @@ class LeaveScreenState extends State<LeaveScreen> with WidgetsBindingObserver {
                                           child: LeavetypeFilter()),
                                     ),
                                     Visibility(
-                                        visible: showDetails, child: LeaveListdetailDashboard()),
+                                        visible: showDetails,
+                                        child: LeaveListdetailDashboard()),
                                   ],
                                 ),
                               ),

@@ -1,6 +1,6 @@
 import 'package:cnattendance/provider/prefprovider.dart';
-import 'package:cnattendance/screen/traning/trainingdetailcontroller.dart';
-import 'package:cnattendance/screen/traning/trainingdetailsscreen.dart';
+import 'package:cnattendance/screen/training/trainingdetailcontroller.dart';
+import 'package:cnattendance/screen/training/trainingdetailsscreen.dart';
 import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';

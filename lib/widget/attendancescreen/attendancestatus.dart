@@ -1,7 +1,7 @@
 import 'package:cnattendance/provider/attendancereportprovider.dart';
+import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
-import 'package:hexcolor/hexcolor.dart';
 import 'package:percent_indicator/linear_percent_indicator.dart';
 import 'package:provider/provider.dart';
 
@@ -9,17 +9,28 @@ class AttendanceStatus extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final status = Provider.of<AttendanceReportProvider>(context).todayReport;
+    final enterprise = EnterpriseTheme.of(context);
+    final active =
+        status['check_in_at'] != "-" && status['check_out_at'] == "-";
+    final progressColor = active ? enterprise.accent : enterprise.secondary;
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(20),
-      child: Padding(
-        padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.all(20),
+      child: EnterpriseGlass(
+        radius: 24,
+        padding: const EdgeInsets.all(18),
+        glowColor: progressColor,
+        glowOpacity: 0.10,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Text(
               '${translate('attendance_screen.check_in')} | ${translate('attendance_screen.check_out')}',
-              style: TextStyle(fontSize: 15, color: Colors.white),
+              style: TextStyle(
+                fontSize: 15,
+                color: enterprise.text,
+                fontWeight: FontWeight.w800,
+              ),
             ),
             Container(
               width: double.infinity,
@@ -32,12 +43,16 @@ class AttendanceStatus extends StatelessWidget {
                 percent: status['production_percent']!,
                 center: Text(
                   status['production_hour']!,
-                  style: TextStyle(color: Colors.white),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
                 barRadius: const Radius.circular(20),
-                backgroundColor: HexColor("#3dFFFFFF"),
-                progressColor: status['check_in_at']!= "-"&&status['check_out_at'] == "-" ? HexColor(
-                    "#e82e5f").withOpacity(.5) : HexColor("#3b98cc")
+                backgroundColor: enterprise.text.withValues(alpha: 0.12),
+                linearGradient: LinearGradient(
+                  colors: [progressColor, enterprise.accent],
+                ),
               ),
             ),
             Container(
@@ -47,11 +62,17 @@ class AttendanceStatus extends StatelessWidget {
                   children: [
                     Text(
                       status['check_in_at']!,
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(
+                        color: enterprise.mutedText,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     Text(
                       status['check_out_at']!,
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(
+                        color: enterprise.mutedText,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ]),
             ),

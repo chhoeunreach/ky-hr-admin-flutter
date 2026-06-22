@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:cnattendance/data/source/datastore/preferences.dart';
 import 'package:cnattendance/screen/auth/login_screen.dart';
 import 'package:cnattendance/screen/dashboard/dashboard_screen.dart';
@@ -15,19 +13,20 @@ class SplashState extends State<SplashScreen> {
   @override
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
-          Preferences preferences = Preferences();
-          if (await preferences.getHardReset()) {
-            preferences.clearPrefs();
-            Navigator.pushReplacementNamed(context, LoginScreen.routeName);
-            preferences.saveHardReset(false);
-          } else {
-            if (await preferences.getToken() == '') {
-              Navigator.pushReplacementNamed(context, LoginScreen.routeName);
-            } else {
-              Navigator.pushReplacementNamed(context, DashboardScreen.routeName);
-            }
-          }
-    },);
+      final preferences = Preferences();
+      if (await preferences.getHardReset()) {
+        await preferences.clearPrefs();
+        await preferences.saveHardReset(false);
+        if (!mounted) return;
+        Navigator.pushReplacementNamed(context, LoginScreen.routeName);
+      } else {
+        final routeName = await preferences.getToken() == ''
+            ? LoginScreen.routeName
+            : DashboardScreen.routeName;
+        if (!mounted) return;
+        Navigator.pushReplacementNamed(context, routeName);
+      }
+    });
     super.initState();
   }
 

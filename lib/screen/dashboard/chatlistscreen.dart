@@ -7,7 +7,8 @@ import 'package:cnattendance/model/chat_contact.dart';
 import 'package:cnattendance/provider/teamsheetprovider.dart';
 import 'package:cnattendance/screen/profile/admin_chat_thread_screen.dart';
 import 'package:cnattendance/screen/profile/chatscreen.dart';
-import 'package:cnattendance/widget/radialDecoration.dart';
+import 'package:cnattendance/theme/enterprise_theme.dart';
+import 'package:cnattendance/widget/premium_background.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
@@ -188,7 +189,9 @@ class _ChatListState extends State<ChatList> {
 
     return contacts
         .where((contact) =>
-            !contact.usesAdminThread && !_isCurrentUser(contact) && contact.isOnline)
+            !contact.usesAdminThread &&
+            !_isCurrentUser(contact) &&
+            contact.isOnline)
         .toList();
   }
 
@@ -328,13 +331,11 @@ class _ChatListState extends State<ChatList> {
     final provider = Provider.of<TeamSheetProvider>(context);
     final contactList = _filteredContacts(provider.chatContacts);
     final onlineContactList = onlineContacts(
-            _uniqueContacts(provider.chatContacts),
-            provider.onlineChatContacts)
-            .take(12)
-            .toList();
+            _uniqueContacts(provider.chatContacts), provider.onlineChatContacts)
+        .take(12)
+        .toList();
 
-    return Container(
-      decoration: RadialDecoration(),
+    return PremiumBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: SafeArea(
@@ -413,13 +414,14 @@ class _ChatListState extends State<ChatList> {
 class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final enterprise = EnterpriseTheme.of(context);
     return Row(
       children: [
         Expanded(
           child: Text(
             translate('dashboard_screen.chat'),
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: enterprise.text,
               fontSize: 30,
               fontWeight: FontWeight.w800,
             ),
@@ -427,7 +429,7 @@ class _Header extends StatelessWidget {
         ),
         IconButton(
           onPressed: () {},
-          icon: const Icon(Icons.edit_square, color: Colors.white),
+          icon: Icon(Icons.edit_square, color: enterprise.text),
         ),
       ],
     );
@@ -445,22 +447,28 @@ class _SearchField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      onChanged: onChanged,
-      style: const TextStyle(color: Colors.white),
-      cursorColor: Colors.white,
-      decoration: InputDecoration(
-        hintText: translate('chat_list_screen.search'),
-        hintStyle: const TextStyle(color: Colors.white54),
-        prefixIcon: const Icon(Icons.search, color: Colors.white54),
-        filled: true,
-        fillColor: Colors.white12,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(28),
-          borderSide: BorderSide.none,
+    final enterprise = EnterpriseTheme.of(context);
+    return EnterpriseGlass(
+      radius: 24,
+      padding: EdgeInsets.zero,
+      glowOpacity: 0.08,
+      child: TextField(
+        controller: controller,
+        onChanged: onChanged,
+        style: TextStyle(color: enterprise.text, fontWeight: FontWeight.w700),
+        cursorColor: enterprise.accent,
+        decoration: InputDecoration(
+          hintText: translate('chat_list_screen.search'),
+          hintStyle: TextStyle(color: enterprise.mutedText),
+          prefixIcon: Icon(Icons.search, color: enterprise.mutedText),
+          filled: true,
+          fillColor: Colors.transparent,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(24),
+            borderSide: BorderSide.none,
+          ),
+          contentPadding: const EdgeInsets.symmetric(vertical: 0),
         ),
-        contentPadding: const EdgeInsets.symmetric(vertical: 0),
       ),
     );
   }
@@ -558,19 +566,24 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final enterprise = EnterpriseTheme.of(context);
     return InkWell(
       borderRadius: BorderRadius.circular(18),
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: selected ? Colors.white : Colors.white12,
+          gradient: selected
+              ? LinearGradient(colors: [enterprise.primary, enterprise.accent])
+              : null,
+          color: selected ? null : enterprise.glassFill,
           borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: enterprise.glassStroke),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: selected ? Colors.black : Colors.white,
+            color: selected ? Colors.white : enterprise.text,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -590,41 +603,48 @@ class _ChatListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(8),
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        child: Row(
-          children: [
-            _Avatar(contact: contact, size: 58, showActive: true),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    contact.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 17,
-                      fontWeight: FontWeight.w700,
+    final enterprise = EnterpriseTheme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(22),
+        onTap: onTap,
+        child: EnterpriseGlass(
+          radius: 22,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          glowOpacity: 0.06,
+          child: Row(
+            children: [
+              _Avatar(contact: contact, size: 58, showActive: true),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      contact.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: enterprise.text,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    contact.post.isEmpty ? contact.department : contact.post,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Colors.white60, fontSize: 14),
-                  ),
-                ],
+                    const SizedBox(height: 3),
+                    Text(
+                      contact.post.isEmpty ? contact.department : contact.post,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style:
+                          TextStyle(color: enterprise.mutedText, fontSize: 14),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const Icon(Icons.chevron_right, color: Colors.white38),
-          ],
+              Icon(Icons.chevron_right, color: enterprise.mutedText),
+            ],
+          ),
         ),
       ),
     );
@@ -656,31 +676,32 @@ class _Avatar extends StatelessWidget {
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        ClipOval(child: _hasValidNetworkImage(avatarUrl)
-            ? CachedNetworkImage(
-                imageUrl: avatarUrl,
-                width: size,
-                height: size,
-                fit: BoxFit.cover,
-                errorWidget: (_, __, ___) => Container(
+        ClipOval(
+          child: _hasValidNetworkImage(avatarUrl)
+              ? CachedNetworkImage(
+                  imageUrl: avatarUrl,
+                  width: size,
+                  height: size,
+                  fit: BoxFit.cover,
+                  errorWidget: (_, __, ___) => Container(
+                    width: size,
+                    height: size,
+                    color: Colors.white12,
+                    child: Icon(Icons.person,
+                        color: Colors.white, size: size * .48),
+                  ),
+                )
+              : Container(
                   width: size,
                   height: size,
                   color: Colors.white12,
-                  child:
-                      Icon(Icons.person, color: Colors.white, size: size * .48),
+                  child: Icon(
+                    Icons.person,
+                    color: Colors.white,
+                    size: size * .48,
+                  ),
                 ),
-              )
-            : Container(
-                width: size,
-                height: size,
-                color: Colors.white12,
-                child: Icon(
-                  Icons.person,
-                  color: Colors.white,
-                  size: size * .48,
-                ),
-              ),
-          ),
+        ),
         if (showActive)
           Positioned(
             right: 0,

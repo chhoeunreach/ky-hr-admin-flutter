@@ -1,3 +1,4 @@
+import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:flutter/material.dart';
 
 class LeaveRow extends StatelessWidget {
@@ -10,12 +11,13 @@ class LeaveRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(10), bottomRight: Radius.circular(10)),
+    final enterprise = EnterpriseTheme.of(context);
+    return EnterpriseGlass(
+      radius: 20,
+      padding: EdgeInsets.zero,
+      glowOpacity: 0.08,
       child: Container(
-        color: Colors.white12,
-        padding: EdgeInsets.all(10),
+        padding: const EdgeInsets.all(12),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
@@ -23,7 +25,11 @@ class LeaveRow extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
               name,
-              style: TextStyle(fontSize: 15, color: Colors.white),
+              style: TextStyle(
+                fontSize: 15,
+                color: enterprise.text,
+                fontWeight: FontWeight.w800,
+              ),
             ),
             Row(
               mainAxisSize: MainAxisSize.min,
@@ -32,24 +38,24 @@ class LeaveRow extends StatelessWidget {
               children: [
                 Text(
                   used.toString() == "null" ? "0" : used.toString(),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 35,
-                    color: Colors.white,
+                    color: enterprise.accent,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 Visibility(
                   visible: (allocated == "0") ? false : true,
-                  child: const Text(
+                  child: Text(
                     '/',
-                    style: TextStyle(fontSize: 20, color: Colors.white),
+                    style: TextStyle(fontSize: 20, color: enterprise.mutedText),
                   ),
                 ),
                 Visibility(
                   visible: (allocated == "0") ? false : true,
                   child: Text(
                     allocated.toString(),
-                    style: TextStyle(fontSize: 20, color: Colors.white),
+                    style: TextStyle(fontSize: 20, color: enterprise.mutedText),
                   ),
                 ),
               ],

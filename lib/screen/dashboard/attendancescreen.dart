@@ -1,13 +1,12 @@
 import 'package:cnattendance/provider/attendancereportprovider.dart';
 import 'package:cnattendance/widget/headerprofile.dart';
-import 'package:cnattendance/widget/radialDecoration.dart';
+import 'package:cnattendance/widget/premium_background.dart';
 import 'package:flutter/material.dart';
 import 'package:cnattendance/widget/attendancescreen/attendancestatus.dart';
 import 'package:cnattendance/widget/attendancescreen/attendancetoggle.dart';
 import 'package:cnattendance/widget/attendancescreen/reportlistview.dart';
 import 'package:focus_detector/focus_detector.dart';
 import 'package:provider/provider.dart';
-import 'package:nepali_utils/nepali_utils.dart';
 
 class AttendanceScreen extends StatefulWidget {
   @override
@@ -21,7 +20,7 @@ class AttendanceScreenState extends State<AttendanceScreen> {
   Future<void> didChangeDependencies() async {
     if (initial) {
       final provider =
-      Provider.of<AttendanceReportProvider>(context, listen: false);
+          Provider.of<AttendanceReportProvider>(context, listen: false);
       provider.getDate();
       loadAttendanceReport();
       initial = false;
@@ -41,14 +40,13 @@ class AttendanceScreenState extends State<AttendanceScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: RadialDecoration(),
+    return PremiumBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: FocusDetector(
           onVisibilityGained: () {
             final provider =
-            Provider.of<AttendanceReportProvider>(context, listen: false);
+                Provider.of<AttendanceReportProvider>(context, listen: false);
             provider.getDate();
           },
           child: SafeArea(

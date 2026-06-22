@@ -8,9 +8,9 @@ class AppThemeData {
   static final Map<AppThemeMode, AppThemeInfo> themes = {
     AppThemeMode.light: AppThemeInfo(
       id: AppThemeMode.light.id,
-      name: 'Light Mode',
+      name: 'Original Mode',
       icon: Icons.light_mode,
-      description: 'Original clean light experience',
+      description: 'Original clean Digital HRS experience',
       colors: const ThemeColors(
         primaryColor: Color(0xff2563eb),
         secondaryColor: Color(0xff1d4ed8),

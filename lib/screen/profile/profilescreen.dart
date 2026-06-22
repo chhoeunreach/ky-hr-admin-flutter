@@ -2,7 +2,7 @@ import 'package:cnattendance/provider/profileprovider.dart';
 import 'package:cnattendance/widget/profile/basicdetail.dart';
 import 'package:cnattendance/widget/profile/bankdetail.dart';
 import 'package:cnattendance/widget/profile/companydetail.dart';
-import 'package:cnattendance/widget/radialDecoration.dart';
+import 'package:cnattendance/widget/premium_background.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:provider/provider.dart';
@@ -49,8 +49,7 @@ class ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final userProfile =
         Provider.of<ProfileProvider>(context, listen: false).profile;
-    return Container(
-      decoration: RadialDecoration(),
+    return PremiumBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
@@ -82,14 +81,14 @@ class ProfileScreenState extends State<ProfileScreen> {
                 userProfile.post != '' ? BasicDetail() : SizedBox(),
                 userProfile.post != ''
                     ? Container(
-                  padding: const EdgeInsets.only(
-                      left: 30, right: 30, top: 20, bottom: 10),
-                  width: double.infinity,
-                  child: Text(
-                    translate('profile_screen.company_details'),
-                    style: TextStyle(color: Colors.white38, fontSize: 15),
-                  ),
-                )
+                        padding: const EdgeInsets.only(
+                            left: 30, right: 30, top: 20, bottom: 10),
+                        width: double.infinity,
+                        child: Text(
+                          translate('profile_screen.company_details'),
+                          style: TextStyle(color: Colors.white38, fontSize: 15),
+                        ),
+                      )
                     : SizedBox(),
                 userProfile.post != '' ? CompanyDetail() : SizedBox(),
                 userProfile.bankName != ''

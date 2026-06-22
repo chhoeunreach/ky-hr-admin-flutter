@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:cnattendance/data/source/datastore/preferences.dart';
 import 'package:cnattendance/provider/morescreenprovider.dart';
+import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:cnattendance/widget/customalertdialog.dart';
 import 'package:cnattendance/widget/customnfcdialog.dart';
@@ -34,11 +35,11 @@ class ServicesState extends State<Services> {
     try {
       setState(() {
         EasyLoading.show(
-            status: translate('loader.requesting'), maskType: EasyLoadingMaskType.black);
+            status: translate('loader.requesting'),
+            maskType: EasyLoadingMaskType.black);
       });
 
-      final response =
-          await context.read<MoreScreenProvider>().addNfcApi("nfc", identifier);
+      await context.read<MoreScreenProvider>().addNfcApi("nfc", identifier);
       if (!mounted) {
         return;
       }
@@ -102,80 +103,105 @@ class ServicesState extends State<Services> {
       }
     }
 
+    final enterprise = EnterpriseTheme.of(context);
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-      child: Column(
-        children: [
-          ListTile(
-            dense: true,
-            minLeadingWidth: 5,
-            leading: Icon(
-              widget.icon,
-              color: Colors.white,
-            ),
-            title: Text(
-              widget.name,
-              style: TextStyle(color: Colors.white, fontSize: 15),
-            ),
-            onTap: () async {
-              if (widget.control == 1) {
-                Preferences pref = Preferences();
-                openBrowserTab(await pref.getAppUrl());
-              } else if (widget.control == 2) {
-                showModalBottomSheet(
-                    context: context,
-                    useRootNavigator: true,
-                    builder: (context) {
-                      return LogOutBottomSheet();
-                    });
-              } else if (widget.control == 3) {
-                bool isAvailable = await NfcManager.instance.isAvailable();
-                if (!isAvailable) {
-                  showToast(
-                      "NFC is not found. Please enable or try from another device.");
-                  return;
-                }
-                showNfcScanner();
-              } else if (widget.control == 4) {
-                showModalBottomSheet(
-                    context: context,
-                    useRootNavigator: true,
-                    builder: (context) {
-                      return ShowLanguage();
-                    });
-              }else if (widget.control == 5) {
-                showModalBottomSheet(
-                    elevation: 0,
-                    context: context,
-                    useRootNavigator: true,
-                    isScrollControlled: true,
-                    shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(20),
-                            topRight: Radius.circular(20))),
-                    builder: (context) {
-                      return Padding(
-                        padding: MediaQuery.of(context)
-                            .viewInsets,
-                        child: IssueResignationSheet(),
-                      );
-                    });
-              } else {
-                pushScreen(context,
-                    screen: widget.route,
-                    withNavBar: false,
-                    pageTransitionAnimation: PageTransitionAnimation.fade);
-              }
-            },
-            selected: true,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () async {
+          if (widget.control == 1) {
+            final pref = Preferences();
+            openBrowserTab(await pref.getAppUrl());
+          } else if (widget.control == 2) {
+            showModalBottomSheet(
+                context: context,
+                useRootNavigator: true,
+                builder: (context) {
+                  return LogOutBottomSheet();
+                });
+          } else if (widget.control == 3) {
+            final isAvailable = await NfcManager.instance.isAvailable();
+            if (!isAvailable) {
+              showToast(
+                  "NFC is not found. Please enable or try from another device.");
+              return;
+            }
+            showNfcScanner();
+          } else if (widget.control == 4) {
+            showModalBottomSheet(
+                context: context,
+                useRootNavigator: true,
+                builder: (context) {
+                  return ShowLanguage();
+                });
+          } else if (widget.control == 5) {
+            showModalBottomSheet(
+                elevation: 0,
+                context: context,
+                useRootNavigator: true,
+                isScrollControlled: true,
+                shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(20),
+                        topRight: Radius.circular(20))),
+                builder: (context) {
+                  return Padding(
+                    padding: MediaQuery.of(context).viewInsets,
+                    child: IssueResignationSheet(),
+                  );
+                });
+          } else {
+            pushScreen(context,
+                screen: widget.route,
+                withNavBar: false,
+                pageTransitionAnimation: PageTransitionAnimation.fade);
+          }
+        },
+        child: EnterpriseGlass(
+          radius: 20,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          glowOpacity: 0.11,
+          child: Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(15),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [enterprise.primary, enterprise.accent],
+                  ),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.24),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: enterprise.accent.withValues(alpha: 0.30),
+                      blurRadius: 18,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Icon(widget.icon, color: Colors.white, size: 21),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  widget.name,
+                  style: TextStyle(
+                    color: enterprise.text,
+                    fontSize: 15.5,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              Icon(Icons.chevron_right_rounded,
+                  color: enterprise.mutedText, size: 22),
+            ],
           ),
-          const Divider(
-            height: 1,
-            color: Colors.white24,
-            indent: 15,
-            endIndent: 15,
-          ),
-        ],
+        ),
       ),
     );
   }

@@ -19,7 +19,7 @@ import 'package:cnattendance/widget/homescreen/recentEvent.dart';
 import 'package:cnattendance/widget/homescreen/recentTraining.dart';
 import 'package:cnattendance/widget/homescreen/upcomingholiday.dart';
 import 'package:cnattendance/widget/homescreen/weeklyreportchart.dart';
-import 'package:cnattendance/widget/radialDecoration.dart';
+import 'package:cnattendance/widget/premium_background.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -134,7 +134,7 @@ class HomeScreenState extends State<HomeScreen> {
 
   void locationStatus() async {
     try {
-      Preferences preferences = Preferences();
+      final preferences = Preferences();
       final position = await LocationStatus()
           .determinePosition(await preferences.getWorkSpace());
 
@@ -153,7 +153,7 @@ class HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> onCheckInShortCut() async {
-    Preferences pref = Preferences();
+    final pref = Preferences();
     if ((await pref.getToken()).isNotEmpty) {
       if ((await pref.getUserAuth())) {
         return;
@@ -166,7 +166,7 @@ class HomeScreenState extends State<HomeScreen> {
               status: translate('loader.requesting'),
               maskType: EasyLoadingMaskType.black);
         });
-        var status = await provider.getCheckInStatus();
+        final status = await provider.getCheckInStatus();
         if (status) {
           final response = await provider.checkInAttendance();
           isEnabled = true;
@@ -193,7 +193,8 @@ class HomeScreenState extends State<HomeScreen> {
       } catch (e) {
         print(e);
         final message = e.toString();
-        final extra = await provider.buildWorkspaceDistanceInfoIfNeeded(message);
+        final extra =
+            await provider.buildWorkspaceDistanceInfoIfNeeded(message);
         setState(() {
           EasyLoading.dismiss(animation: true);
           isLoading = false;
@@ -214,7 +215,7 @@ class HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> onCheckOutShortCut() async {
-    Preferences pref = Preferences();
+    final pref = Preferences();
     if ((await pref.getToken()).isNotEmpty) {
       if ((await pref.getUserAuth())) {
         return;
@@ -226,7 +227,7 @@ class HomeScreenState extends State<HomeScreen> {
           EasyLoading.show(
               status: "Requesting...", maskType: EasyLoadingMaskType.black);
         });
-        var status = await provider.getCheckInStatus();
+        final status = await provider.getCheckInStatus();
         if (status) {
           final response = await provider.checkOutAttendance();
           isEnabled = true;
@@ -253,7 +254,8 @@ class HomeScreenState extends State<HomeScreen> {
       } catch (e) {
         print(e);
         final message = e.toString();
-        final extra = await provider.buildWorkspaceDistanceInfoIfNeeded(message);
+        final extra =
+            await provider.buildWorkspaceDistanceInfoIfNeeded(message);
         setState(() {
           EasyLoading.dismiss(animation: true);
           isLoading = false;
@@ -341,8 +343,7 @@ class HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final features = context.watch<DashboardProvider>().features;
-    return Container(
-      decoration: RadialDecoration(),
+    return PremiumBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: FocusDetector(
@@ -361,20 +362,25 @@ class HomeScreenState extends State<HomeScreen> {
             },
             child: SafeArea(
                 child: SingleChildScrollView(
-              child: Container(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    HeaderProfile(),
-                    CheckAttendance(),
-                    OverviewDashboard(controller),
-                    UpcomingHoliday(),
-                    if (features["award"] == "1") RecentAward(),
-                    if (features["event"] == "1") RecentEvent(),
-                    if (features["training"] == "1") RecentTraining(),
-                    WeeklyReportChart(),
-                    MyTeam()
-                  ],
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 760),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      HeaderProfile(),
+                      CheckAttendance(),
+                      OverviewDashboard(controller),
+                      UpcomingHoliday(),
+                      if (features["award"] == "1") RecentAward(),
+                      if (features["event"] == "1") RecentEvent(),
+                      if (features["training"] == "1") RecentTraining(),
+                      WeeklyReportChart(),
+                      MyTeam(),
+                      const SizedBox(height: 24),
+                    ],
+                  ),
                 ),
               ),
             )),

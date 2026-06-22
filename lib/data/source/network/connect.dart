@@ -13,7 +13,7 @@ class Connect {
     String language = storage.read("language") ?? "en";
 
     headers.addEntries({
-      "langauge": language,
+      "language": language,
     }.entries);
 
     final http.Client client = LoggingMiddleware(http.Client());
@@ -28,7 +28,7 @@ class Connect {
     String language = storage.read("language") ?? "en";
 
     headers.addEntries({
-      "langauge": language,
+      "language": language,
     }.entries);
 
     final http.Client client = LoggingMiddleware(http.Client());
@@ -43,7 +43,7 @@ class Connect {
     String language = storage.read("language") ?? "en";
 
     headers.addEntries({
-      "langauge": language,
+      "language": language,
     }.entries);
 
     final http.Client client = LoggingMiddleware(http.Client());

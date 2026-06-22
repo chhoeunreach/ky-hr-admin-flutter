@@ -4,7 +4,8 @@ import 'package:cnattendance/screen/dashboard/projectscreen.dart';
 import 'package:cnattendance/screen/eventscreen/eventlistscreen.dart';
 import 'package:cnattendance/screen/profile/holidayscreen.dart';
 import 'package:cnattendance/screen/sell_out_report_screen.dart';
-import 'package:cnattendance/screen/traning/traningscreen.dart';
+import 'package:cnattendance/screen/training/trainingscreen.dart';
+import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:cnattendance/widget/homescreen/cardoverview.dart';
 import 'package:flutter_translate/flutter_translate.dart';
@@ -21,26 +22,51 @@ class OverviewDashboard extends StatelessWidget {
     final _overview = Provider.of<DashboardProvider>(context).overviewList;
     final features = context.watch<DashboardProvider>().features;
     final width = MediaQuery.sizeOf(context).width;
+    final enterprise = EnterpriseTheme.of(context);
+    final crossAxisCount = width >= 720
+        ? 3
+        : width > 340
+            ? 2
+            : 1;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            translate('home_screen.overview'),
-            style: TextStyle(color: Colors.white, fontSize: 20),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  translate('home_screen.overview'),
+                  style: TextStyle(
+                    color: enterprise.text,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              Container(
+                width: 34,
+                height: 4,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(99),
+                  gradient: LinearGradient(
+                    colors: [enterprise.accent, enterprise.primary],
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(
-            height: 10,
-          ),
+          const SizedBox(height: 14),
           GridView(
             shrinkWrap: true,
             primary: false,
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: width > 320 ? 2 : 1,
-              childAspectRatio:
-                  width > 320 ? 2.3 : 4, // Adjust height-to-width ratio
+              crossAxisCount: crossAxisCount,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              mainAxisExtent: 96,
             ),
             children: [
               CardOverView(

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:hexcolor/hexcolor.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cnattendance/data/source/datastore/preferences.dart';
 import 'package:cnattendance/models/sell_out_report.dart';
@@ -10,10 +11,10 @@ import 'package:cnattendance/models/sell_out_report_line.dart';
 import 'package:cnattendance/screen/invoice_live_text_scanner_screen.dart';
 import 'package:cnattendance/services/ocr_service.dart';
 import 'package:cnattendance/services/sell_out_api_service.dart';
+import 'package:cnattendance/widget/premium_background.dart';
 
 const Color _sellOutNavy = Color(0xff011754);
 const Color _sellOutBlue = Color(0xff036eb7);
-const Color _sellOutBackground = Color(0xfff4f7fb);
 const Color _sellOutSurface = Colors.white;
 const Color _sellOutText = Color(0xff172033);
 const Color _sellOutMuted = Color(0xff697386);
@@ -107,82 +108,84 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _sellOutBackground,
-      appBar: AppBar(
-        title: Text(widget.serviceType.isEmpty
-            ? 'Sell Out Report'
-            : 'Sell Out - ${widget.serviceType}'),
-        centerTitle: true,
-        backgroundColor: _sellOutNavy,
-        foregroundColor: Colors.white,
-        systemOverlayStyle: SystemUiOverlayStyle.light,
-        elevation: 0,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: TextButton.icon(
-              onPressed: _openCreate,
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+    return PremiumBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: Text(widget.serviceType.isEmpty
+              ? 'Sell Out Report'
+              : 'Sell Out - ${widget.serviceType}'),
+          centerTitle: true,
+          backgroundColor: _sellOutNavy,
+          foregroundColor: Colors.white,
+          systemOverlayStyle: SystemUiOverlayStyle.light,
+          elevation: 0,
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: TextButton.icon(
+                onPressed: _openCreate,
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text(
+                  'Add New',
+                  style: TextStyle(fontWeight: FontWeight.w600),
                 ),
               ),
-              icon: const Icon(Icons.add, size: 18),
-              label: const Text(
-                'Add New',
-                style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+        body: FutureBuilder<List<SellOutReport>>(
+          future: _reportsFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (snapshot.hasError) {
+              return _buildErrorState(snapshot.error.toString());
+            }
+
+            final reports = snapshot.data ?? [];
+            final filteredReports = _filterReportsByDate(reports);
+            return RefreshIndicator(
+              color: _sellOutBlue,
+              onRefresh: _refresh,
+              child: ListView.separated(
+                padding: const EdgeInsets.fromLTRB(16, 18, 16, 104),
+                itemCount:
+                    filteredReports.isEmpty ? 2 : filteredReports.length + 1,
+                separatorBuilder: (_, __) => const SizedBox(height: 14),
+                itemBuilder: (context, index) {
+                  if (index == 0) {
+                    return _buildFilterSummary(filteredReports);
+                  }
+                  if (index == 1 && filteredReports.isEmpty) {
+                    return _buildEmptyCard();
+                  }
+                  return _buildReportCard(filteredReports[index - 1]);
+                },
               ),
-            ),
+            );
+          },
+        ),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: _openCreate,
+          backgroundColor: _sellOutBlue,
+          foregroundColor: Colors.white,
+          icon: const Icon(Icons.add),
+          elevation: 3,
+          label: const Text(
+            'Add New',
+            style: TextStyle(fontWeight: FontWeight.w700),
           ),
-        ],
-      ),
-      body: FutureBuilder<List<SellOutReport>>(
-        future: _reportsFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (snapshot.hasError) {
-            return _buildErrorState(snapshot.error.toString());
-          }
-
-          final reports = snapshot.data ?? [];
-          final filteredReports = _filterReportsByDate(reports);
-          return RefreshIndicator(
-            color: _sellOutBlue,
-            onRefresh: _refresh,
-            child: ListView.separated(
-              padding: const EdgeInsets.fromLTRB(16, 18, 16, 104),
-              itemCount:
-                  filteredReports.isEmpty ? 2 : filteredReports.length + 1,
-              separatorBuilder: (_, __) => const SizedBox(height: 14),
-              itemBuilder: (context, index) {
-                if (index == 0) {
-                  return _buildFilterSummary(filteredReports);
-                }
-                if (index == 1 && filteredReports.isEmpty) {
-                  return _buildEmptyCard();
-                }
-                return _buildReportCard(filteredReports[index - 1]);
-              },
-            ),
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _openCreate,
-        backgroundColor: _sellOutBlue,
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.add),
-        elevation: 3,
-        label: const Text(
-          'Add New',
-          style: TextStyle(fontWeight: FontWeight.w700),
         ),
       ),
     );
@@ -698,109 +701,113 @@ class _SellOutReportDetailScreenState extends State<SellOutReportDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Sell Out Detail'),
-        backgroundColor: HexColor('#011754'),
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
-      body: FutureBuilder<SellOutReport>(
-        future: _reportFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text(
-                  snapshot.error.toString(),
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.red),
+    return PremiumBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('Sell Out Detail'),
+          backgroundColor: HexColor('#011754'),
+          foregroundColor: Colors.white,
+          elevation: 0,
+        ),
+        body: FutureBuilder<SellOutReport>(
+          future: _reportFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.hasError) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Text(
+                    snapshot.error.toString(),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.red),
+                  ),
                 ),
-              ),
-            );
-          }
+              );
+            }
 
-          final report = snapshot.data ?? widget.report;
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              _detailCard(
-                'Header',
-                [
-                  _detailRow('Invoice', report.invoiceNo),
-                  _detailRow('Original Invoice', report.originalInvoiceNo),
-                  _detailRow('Seller', report.sellerName),
-                  _detailRow('Branch', report.branchName),
-                  _detailRow('Customer', report.customerName),
-                  _detailRow('Customer Phone', report.customerPhone),
-                  _detailRow('Service Type', report.serviceType),
-                  _detailRow('Payment', report.paymentMethod),
-                  _detailRow(
-                      'Total', '\$${report.totalAmount.toStringAsFixed(2)}'),
-                  _detailRow('Commission',
-                      '\$${report.commission.toStringAsFixed(2)}'),
-                  _detailRow('Created At', report.createdAt),
-                ],
-              ),
-              const SizedBox(height: 12),
-              _detailCard(
-                'Product Lines',
-                report.lines.map((line) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          line.productName.isEmpty
-                              ? 'Product'
-                              : line.productName,
-                          style: TextStyle(
-                            color: HexColor('#011754'),
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        _detailRow('SKU', line.sku),
-                        _detailRow('IMEI', line.imei),
-                        _detailRow('IMEI2', line.imei2),
-                        _detailRow('Serial', line.serialNumber),
-                        _detailRow('Model', line.modelNumber),
-                        _detailRow('Color', line.color),
-                        _detailRow('Storage', line.storage),
-                        _detailRow('Qty', line.qty.toString()),
-                        _detailRow('Unit Price',
-                            '\$${line.unitPrice.toStringAsFixed(2)}'),
-                        _detailRow('Subtotal',
-                            '\$${line.subtotal.toStringAsFixed(2)}'),
-                      ],
-                    ),
-                  );
-                }).toList(),
-              ),
-              if (report.photoUrls.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                _buildPhotoUrlCard(report.photoUrls),
-              ],
-              if (report.note.isNotEmpty ||
-                  report.extractedText.isNotEmpty) ...[
-                const SizedBox(height: 12),
+            final report = snapshot.data ?? widget.report;
+            return ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
                 _detailCard(
-                  'Notes',
+                  'Header',
                   [
-                    if (report.note.isNotEmpty) _textBlock('Note', report.note),
-                    if (report.extractedText.isNotEmpty)
-                      _textBlock('OCR Text', report.extractedText),
+                    _detailRow('Invoice', report.invoiceNo),
+                    _detailRow('Original Invoice', report.originalInvoiceNo),
+                    _detailRow('Seller', report.sellerName),
+                    _detailRow('Branch', report.branchName),
+                    _detailRow('Customer', report.customerName),
+                    _detailRow('Customer Phone', report.customerPhone),
+                    _detailRow('Service Type', report.serviceType),
+                    _detailRow('Payment', report.paymentMethod),
+                    _detailRow(
+                        'Total', '\$${report.totalAmount.toStringAsFixed(2)}'),
+                    _detailRow('Commission',
+                        '\$${report.commission.toStringAsFixed(2)}'),
+                    _detailRow('Created At', report.createdAt),
                   ],
                 ),
+                const SizedBox(height: 12),
+                _detailCard(
+                  'Product Lines',
+                  report.lines.map((line) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            line.productName.isEmpty
+                                ? 'Product'
+                                : line.productName,
+                            style: TextStyle(
+                              color: HexColor('#011754'),
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          _detailRow('SKU', line.sku),
+                          _detailRow('IMEI', line.imei),
+                          _detailRow('IMEI2', line.imei2),
+                          _detailRow('Serial', line.serialNumber),
+                          _detailRow('Model', line.modelNumber),
+                          _detailRow('Color', line.color),
+                          _detailRow('Storage', line.storage),
+                          _detailRow('Qty', line.qty.toString()),
+                          _detailRow('Unit Price',
+                              '\$${line.unitPrice.toStringAsFixed(2)}'),
+                          _detailRow('Subtotal',
+                              '\$${line.subtotal.toStringAsFixed(2)}'),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+                if (report.photoUrls.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  _buildPhotoUrlCard(report.photoUrls),
+                ],
+                if (report.note.isNotEmpty ||
+                    report.extractedText.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  _detailCard(
+                    'Notes',
+                    [
+                      if (report.note.isNotEmpty)
+                        _textBlock('Note', report.note),
+                      if (report.extractedText.isNotEmpty)
+                        _textBlock('OCR Text', report.extractedText),
+                    ],
+                  ),
+                ],
               ],
-            ],
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
@@ -1176,6 +1183,40 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
     }
   }
 
+  Future<String> _cropPhoto(String photoPath) async {
+    final cropped = await ImageCropper().cropImage(
+      sourcePath: photoPath,
+      compressFormat: ImageCompressFormat.jpg,
+      compressQuality: 92,
+      uiSettings: [
+        AndroidUiSettings(
+          toolbarTitle: 'Crop Photo',
+          toolbarColor: _sellOutBlue,
+          toolbarWidgetColor: Colors.white,
+          activeControlsWidgetColor: _sellOutBlue,
+          initAspectRatio: CropAspectRatioPreset.original,
+          lockAspectRatio: false,
+        ),
+        IOSUiSettings(
+          title: 'Crop Photo',
+          doneButtonTitle: 'Use Photo',
+          cancelButtonTitle: 'Cancel',
+          aspectRatioLockEnabled: false,
+        ),
+      ],
+    );
+
+    return cropped?.path ?? photoPath;
+  }
+
+  Future<List<String>> _cropPhotos(Iterable<XFile> photos) async {
+    final paths = <String>[];
+    for (final photo in photos) {
+      paths.add(await _cropPhoto(photo.path));
+    }
+    return paths;
+  }
+
   Future<void> _takeInvoicePhoto() async {
     final result = await Navigator.push<InvoiceLiveTextResult>(
       context,
@@ -1185,8 +1226,11 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
     );
     if (result == null) return;
 
+    final croppedPhotoPath = await _cropPhoto(result.photoPath);
+    if (!mounted) return;
+
     setState(() {
-      _invoicePhotoPaths.add(result.photoPath);
+      _invoicePhotoPaths.add(croppedPhotoPath);
       _syncPhotoPaths();
       _showInvoiceOcrText = true;
     });
@@ -1204,10 +1248,11 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
   Future<void> _pickInvoiceFromGallery() async {
     final List<XFile> photos = await _imagePicker.pickMultiImage();
     if (photos.isNotEmpty) {
+      final croppedPhotoPaths = await _cropPhotos(photos);
+      if (!mounted) return;
+
       setState(() {
-        for (final photo in photos) {
-          _invoicePhotoPaths.add(photo.path);
-        }
+        _invoicePhotoPaths.addAll(croppedPhotoPaths);
         _syncPhotoPaths();
       });
       await _extractInvoiceText();
@@ -1225,8 +1270,11 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
     final XFile? photo =
         await _imagePicker.pickImage(source: ImageSource.camera);
     if (photo != null && index < _lineControllers.length) {
+      final croppedPhotoPath = await _cropPhoto(photo.path);
+      if (!mounted || index >= _lineControllers.length) return;
+
       setState(() {
-        _lineControllers[index].photoPaths.add(photo.path);
+        _lineControllers[index].photoPaths.add(croppedPhotoPath);
         _syncPhotoPaths();
       });
       await _extractProductText(index);
@@ -1236,10 +1284,11 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
   Future<void> _pickProductFromGallery(int index) async {
     final List<XFile> photos = await _imagePicker.pickMultiImage();
     if (photos.isNotEmpty && index < _lineControllers.length) {
+      final croppedPhotoPaths = await _cropPhotos(photos);
+      if (!mounted || index >= _lineControllers.length) return;
+
       setState(() {
-        for (final photo in photos) {
-          _lineControllers[index].photoPaths.add(photo.path);
-        }
+        _lineControllers[index].photoPaths.addAll(croppedPhotoPaths);
         _syncPhotoPaths();
       });
       await _extractProductText(index);
@@ -1258,8 +1307,11 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
     final XFile? photo =
         await _imagePicker.pickImage(source: ImageSource.camera);
     if (photo != null) {
+      final croppedPhotoPath = await _cropPhoto(photo.path);
+      if (!mounted) return;
+
       setState(() {
-        _iCloudPhotoPaths.add(photo.path);
+        _iCloudPhotoPaths.add(croppedPhotoPath);
         _syncPhotoPaths();
       });
       await _extractICloudText();
@@ -1269,10 +1321,11 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
   Future<void> _pickICloudFromGallery() async {
     final List<XFile> photos = await _imagePicker.pickMultiImage();
     if (photos.isNotEmpty) {
+      final croppedPhotoPaths = await _cropPhotos(photos);
+      if (!mounted) return;
+
       setState(() {
-        for (final photo in photos) {
-          _iCloudPhotoPaths.add(photo.path);
-        }
+        _iCloudPhotoPaths.addAll(croppedPhotoPaths);
         _syncPhotoPaths();
       });
       await _extractICloudText();
@@ -1689,37 +1742,39 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _sellOutBackground,
-      appBar: AppBar(
-        title: Text(widget.serviceType.isEmpty
-            ? 'Sell Out Report'
-            : 'Sell Out - ${widget.serviceType}'),
-        centerTitle: true,
-        backgroundColor: _sellOutNavy,
-        foregroundColor: Colors.white,
-        systemOverlayStyle: SystemUiOverlayStyle.light,
-        elevation: 0,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 18, 16, 32),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildHeaderForm(),
-            const SizedBox(height: 16),
-            if (_isICloudCustomer) ...[
-              _buildICloudInfoSection(),
-              const SizedBox(height: 24),
-            ] else ...[
-              _buildProductLinesSection(),
+    return PremiumBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: Text(widget.serviceType.isEmpty
+              ? 'Sell Out Report'
+              : 'Sell Out - ${widget.serviceType}'),
+          centerTitle: true,
+          backgroundColor: _sellOutNavy,
+          foregroundColor: Colors.white,
+          systemOverlayStyle: SystemUiOverlayStyle.light,
+          elevation: 0,
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 18, 16, 32),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildHeaderForm(),
               const SizedBox(height: 16),
-              _buildTotalSection(),
-              const SizedBox(height: 24),
+              if (_isICloudCustomer) ...[
+                _buildICloudInfoSection(),
+                const SizedBox(height: 24),
+              ] else ...[
+                _buildProductLinesSection(),
+                const SizedBox(height: 16),
+                _buildTotalSection(),
+                const SizedBox(height: 24),
+              ],
+              _buildSubmitButton(),
+              const SizedBox(height: 32),
             ],
-            _buildSubmitButton(),
-            const SizedBox(height: 32),
-          ],
+          ),
         ),
       ),
     );

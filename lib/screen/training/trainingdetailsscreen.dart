@@ -1,5 +1,5 @@
 import 'package:cnattendance/data/source/network/model/trainingresponse/trainingresponse.dart';
-import 'package:cnattendance/screen/traning/trainingdetailcontroller.dart';
+import 'package:cnattendance/screen/training/trainingdetailcontroller.dart';
 import 'package:cnattendance/widget/buttonborder.dart';
 import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
