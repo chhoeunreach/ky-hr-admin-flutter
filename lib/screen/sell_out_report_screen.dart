@@ -305,6 +305,8 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
   Widget _buildFilterSummary(List<SellOutReport> reports) {
     final totalQty =
         reports.fold<int>(0, (sum, report) => sum + report.totalQty);
+    final totalCommission =
+        reports.fold<double>(0, (sum, report) => sum + report.commission);
 
     return Card(
       color: _sellOutSurface,
@@ -395,6 +397,14 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
                         'Qty',
                         totalQty.toString(),
                         Icons.inventory_2_outlined,
+                      ),
+                    ),
+                    SizedBox(
+                      width: (constraints.maxWidth - 10) / 2,
+                      child: _buildSummaryTile(
+                        'Commission',
+                        '\$${totalCommission.toStringAsFixed(2)}',
+                        Icons.payments_outlined,
                       ),
                     ),
                   ],

@@ -64,7 +64,6 @@
 	</array>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
-		<string>offline_image_upload_task</string>
 		<string>offline_image_upload_periodic_task</string>
 	</array>
 	<key>UILaunchStoryboardName</key>

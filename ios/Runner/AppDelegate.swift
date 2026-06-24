@@ -3,6 +3,7 @@ import Flutter
 import UserNotifications
 import FirebaseCore
 import FirebaseMessaging
+import workmanager_apple
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, MessagingDelegate {
@@ -29,6 +30,14 @@ import FirebaseMessaging
             FirebaseApp.configure()
             logPush("Firebase configured natively for production-safe APNs registration")
         }
+
+        WorkmanagerPlugin.setPluginRegistrantCallback { registry in
+            GeneratedPluginRegistrant.register(with: registry)
+        }
+        WorkmanagerPlugin.registerPeriodicTask(
+            withIdentifier: "offline_image_upload_periodic_task",
+            frequency: NSNumber(value: 15 * 60)
+        )
 
         GeneratedPluginRegistrant.register(with: self)
         UNUserNotificationCenter.current().delegate = self

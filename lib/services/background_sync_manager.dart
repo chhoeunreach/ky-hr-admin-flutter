@@ -1,6 +1,7 @@
 import 'dart:developer' as developer;
 
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/services.dart';
 import 'package:workmanager/workmanager.dart';
 
 import 'image_service.dart';
@@ -49,14 +50,24 @@ class BackgroundSyncManager {
 
   Future<void> initialize() async {
     if (_initialized) return;
-    await Workmanager().initialize(backgroundSyncCallbackDispatcher);
-    _initialized = true;
+    try {
+      await Workmanager().initialize(backgroundSyncCallbackDispatcher);
+      _initialized = true;
+    } on MissingPluginException catch (error, stackTrace) {
+      developer.log(
+        'Workmanager native plugin is unavailable; background sync disabled',
+        name: 'BackgroundSync',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
   }
 
   /// Fires once, as soon as the constraints (network) are met. Call this
   /// right after queueing a new image so it uploads promptly instead of
   /// waiting for the next periodic tick.
   Future<void> scheduleOneOffUpload() async {
+    if (!_initialized) return;
     await Workmanager().registerOneOffTask(
       kUploadTaskName,
       kUploadTaskName,
@@ -69,6 +80,7 @@ class BackgroundSyncManager {
   /// missed (e.g. the app was killed before a one-off task could run).
   /// Android enforces a 15-minute minimum interval for periodic tasks.
   Future<void> schedulePeriodicUpload() async {
+    if (!_initialized) return;
     await Workmanager().registerPeriodicTask(
       kPeriodicUploadTaskName,
       kPeriodicUploadTaskName,
@@ -77,5 +89,8 @@ class BackgroundSyncManager {
     );
   }
 
-  Future<void> cancelAll() => Workmanager().cancelAll();
+  Future<void> cancelAll() async {
+    if (!_initialized) return;
+    await Workmanager().cancelAll();
+  }
 }
