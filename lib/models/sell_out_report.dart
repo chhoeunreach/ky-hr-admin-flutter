@@ -1,6 +1,23 @@
 import 'sell_out_report_line.dart';
 
 class SellOutReport {
+  static const double commissionPerItem = 0.25;
+  static const Set<String> commissionableServiceTypes = {
+    'លក់',
+    'អ៊ុត',
+    'Sell',
+    'Scots',
+  };
+  static const Set<String> serialNumberRequiredServiceTypes = {
+    'លក់',
+    'Sell',
+    'ទិញ',
+    'ទិញចូល',
+    'Buy',
+    'Buy In',
+  };
+  static final RegExp serialNumberPattern = RegExp(r'^[A-Za-z0-9]+$');
+
   int? id;
   String invoiceNo;
   String originalInvoiceNo;
@@ -93,7 +110,43 @@ class SellOutReport {
     return lines.fold<int>(0, (sum, line) => sum + line.qty);
   }
 
-  double get commission => totalQty * 0.25;
+  bool get isCommissionable {
+    return commissionableServiceTypes.contains(serviceType.trim());
+  }
+
+  bool get requiresSerialNumberValidation {
+    return serialNumberRequiredServiceTypes.contains(serviceType.trim());
+  }
+
+  double get commission {
+    if (!isCommissionable) return 0;
+    return totalQty * commissionPerItem;
+  }
+
+  static String? validateSerialNumber(String value) {
+    final serialNumber = value.trim();
+    if (serialNumber.isEmpty) {
+      return 'Serial Number is required.';
+    }
+    if (serialNumber.length != 10) {
+      return 'Serial Number must be exactly 10 characters.';
+    }
+    if (!serialNumberPattern.hasMatch(serialNumber)) {
+      return 'Serial Number must contain only letters and numbers.';
+    }
+    return null;
+  }
+
+  String? validateSerialNumbers() {
+    if (!requiresSerialNumberValidation) return null;
+    for (int i = 0; i < lines.length; i++) {
+      final message = validateSerialNumber(lines[i].serialNumber);
+      if (message != null) {
+        return 'Product #${i + 1}: $message';
+      }
+    }
+    return null;
+  }
 
   void reset() {
     id = null;

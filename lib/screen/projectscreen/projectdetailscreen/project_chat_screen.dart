@@ -1,16 +1,15 @@
-
-import 'package:cnattendance/screen/projectscreen/projectdetailscreen/widget/teambottomsheet.dart';
-import 'package:cnattendance/provider/groupchatcontroller.dart';
+import 'package:cnattendance/model/member.dart';
+import 'package:cnattendance/provider/old_group_chat_controller.dart';
 import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
-class GroupChatScreen extends StatelessWidget {
+class ProjectChatScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final model = Get.put(GroupChatController());
+    final model = Get.put(OldGroupChatController());
     return Container(
       decoration: RadialDecoration(),
       child: Scaffold(
@@ -24,13 +23,6 @@ class GroupChatScreen extends StatelessWidget {
               Text(model.host.value),
             ],
           )),
-          actions: [IconButton(onPressed: () {
-            Get.bottomSheet(TeamBottomSheet(model.leaders,model.members,),
-                isDismissible: true,
-                enableDrag: true,
-                isScrollControlled: false,
-                ignoreSafeArea: true);
-          }, icon: Icon(Icons.person,color: Colors.white,))],
         ),
         body: SafeArea(
           child: Column(
@@ -45,11 +37,11 @@ class GroupChatScreen extends StatelessWidget {
                     itemCount: model.chatList.length,
                     itemBuilder: (context, index) {
                       final message = model.chatList[index];
-          
+
                       bool isSameDate = true;
                       final DateTime date = DateTime(message.dateTime.year,
                           message.dateTime.month, message.dateTime.day);
-          
+
                       if (index == 0) {
                         isSameDate = false;
                       } else {
@@ -59,7 +51,7 @@ class GroupChatScreen extends StatelessWidget {
                             model.chatList[index - 1].dateTime.day);
                         isSameDate = date.isAtSameMomentAs(prevDate);
                       }
-          
+
                       return Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [

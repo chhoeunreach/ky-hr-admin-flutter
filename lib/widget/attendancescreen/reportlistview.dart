@@ -1,6 +1,6 @@
 import 'package:cnattendance/model/employeeattendancereport.dart';
 import 'package:cnattendance/provider/attendancereportprovider.dart';
-import 'package:cnattendance/widget/buttonborder.dart';
+import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:provider/provider.dart';
@@ -54,93 +54,124 @@ class ReportListView extends StatelessWidget {
   }
 
   Widget attendanceSummary(Map<String, dynamic> currentMonth) {
-    return Row(
-      children: [
-        Expanded(
-          child: ClipRRect(
-            borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(10), bottomRight: Radius.circular(10)),
-            child: Container(
-              color: Colors.white12,
-              padding: EdgeInsets.all(10),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Text(
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                    translate('attendance_screen.present_days'),
-                    style: TextStyle(fontSize: 15, color: Colors.white),
+    return Builder(builder: (context) {
+      final enterprise = EnterpriseTheme.of(context);
+      final cardColor = enterprise.isDark
+          ? Colors.white.withValues(alpha: 0.12)
+          : Colors.white.withValues(alpha: 0.94);
+      final labelColor = enterprise.isDark
+          ? Colors.white
+          : enterprise.text.withValues(alpha: 0.78);
+
+      Widget summaryCard({
+        required IconData icon,
+        required String label,
+        required String value,
+      }) {
+        return Expanded(
+          child: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: cardColor,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: enterprise.primary.withValues(alpha: 0.16),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: enterprise.primary.withValues(
+                    alpha: enterprise.isDark ? 0.12 : 0.10,
                   ),
-                  SizedBox(
-                    height: 5,
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: enterprise.primary.withValues(alpha: 0.10),
+                    shape: BoxShape.circle,
                   ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
+                  child: Icon(icon, color: enterprise.primary, size: 25),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        currentMonth["present_days"],
-                        style: const TextStyle(
+                        label,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: labelColor,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        value,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
                           fontSize: 24,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
+                          color: enterprise.primary,
+                          fontWeight: FontWeight.w900,
                         ),
                       ),
                     ],
-                  )
-                ],
-              ),
+                  ),
+                ),
+              ],
             ),
           ),
-        ),
-        SizedBox(
-          width: 10,
-        ),
-        Expanded(
-          child: ClipRRect(
-            borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(10), bottomRight: Radius.circular(10)),
-            child: Container(
-              color: Colors.white12,
-              padding: EdgeInsets.all(10),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Text(
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                    translate('attendance_screen.worked_hours'),
-                    style: TextStyle(fontSize: 15, color: Colors.white),
-                  ),
-                  SizedBox(
-                    height: 5,
-                  ),
-                  Text(
-                    currentMonth["worked_hour"],
-                    style: const TextStyle(
-                      fontSize: 24,
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  )
-                ],
-              ),
-            ),
+        );
+      }
+
+      return Row(
+        children: [
+          summaryCard(
+            icon: Icons.event_available_rounded,
+            label: translate('attendance_screen.present_days'),
+            value: currentMonth["present_days"],
           ),
-        ),
-      ],
-    );
+          const SizedBox(
+            width: 10,
+          ),
+          summaryCard(
+            icon: Icons.access_time_rounded,
+            label: translate('attendance_screen.worked_hours'),
+            value: currentMonth["worked_hour"],
+          ),
+        ],
+      );
+    });
   }
 
   Widget attendanceReportTitle() {
-    return Card(
-      elevation: 0,
-      color: Colors.black38,
-      shape: ButtonBorder(),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 5),
+    return Builder(builder: (context) {
+      final enterprise = EnterpriseTheme.of(context);
+      return Container(
+        margin: const EdgeInsets.only(top: 4, bottom: 3),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+            colors: [enterprise.primary, enterprise.accent],
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: enterprise.primary.withValues(alpha: 0.24),
+              blurRadius: 16,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
         child: Row(
           children: [
             Expanded(
@@ -160,7 +191,7 @@ class ReportListView extends StatelessWidget {
               ),
             ),
             Expanded(
-              flex: 2,
+              flex: 3,
               child: Container(
                 child: Text(translate('attendance_screen.start_time'),
                     style: TextStyle(fontSize: 14, color: Colors.white),
@@ -168,9 +199,19 @@ class ReportListView extends StatelessWidget {
               ),
             ),
             Expanded(
-              flex: 2,
+              flex: 3,
               child: Container(
                 child: Text(translate('attendance_screen.end_time'),
+                    style: TextStyle(fontSize: 14, color: Colors.white),
+                    textAlign: TextAlign.center),
+              ),
+            ),
+            Expanded(
+              flex: 2,
+              child: Container(
+                child: Text('Status',
+                    maxLines: 1,
+                    overflow: TextOverflow.clip,
                     style: TextStyle(fontSize: 14, color: Colors.white),
                     textAlign: TextAlign.center),
               ),
@@ -187,7 +228,7 @@ class ReportListView extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
+      );
+    });
   }
 }

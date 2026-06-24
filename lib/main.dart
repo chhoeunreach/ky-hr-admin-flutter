@@ -13,6 +13,8 @@ import 'package:cnattendance/provider/payslipprovider.dart';
 import 'package:cnattendance/provider/prefprovider.dart';
 import 'package:cnattendance/provider/profileprovider.dart';
 import 'package:cnattendance/provider/ssfprovider.dart';
+import 'package:cnattendance/services/background_sync_manager.dart';
+import 'package:cnattendance/services/database_helper.dart';
 import 'package:cnattendance/services/push_notification_service.dart';
 import 'package:cnattendance/screen/auth/login_screen.dart';
 import 'package:cnattendance/screen/dashboard/dashboard_screen.dart';
@@ -81,6 +83,13 @@ Future<void> main() async {
     }
 
     await PushNotificationService.initialize();
+
+    // Offline-first image upload queue: clear out any rows left stuck in
+    // `uploading` from a previous process kill, then start the background
+    // sync worker so queued images keep retrying even if the app is closed.
+    await DatabaseHelper.instance.resetStuckUploadingToPending();
+    await BackgroundSyncManager.instance.initialize();
+    unawaited(BackgroundSyncManager.instance.schedulePeriodicUpload());
 
     runApp(LocalizedApp(delegate, MyApp()));
     Future.microtask(() => IncomingChatListener.instance.start());

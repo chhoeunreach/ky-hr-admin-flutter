@@ -1,4 +1,4 @@
-import 'package:cnattendance/screen/profile/groupchatscreen.dart';
+import 'package:cnattendance/screen/projectscreen/projectdetailscreen/project_chat_screen.dart';
 import 'package:cnattendance/screen/projectscreen/projectdetailscreen/projectdetailcontroller.dart';
 import 'package:cnattendance/screen/projectscreen/projectdetailscreen/widget/attachmentsection.dart';
 import 'package:cnattendance/screen/projectscreen/projectdetailscreen/widget/descriptionsection.dart';
@@ -21,15 +21,15 @@ class ProjectDetailScreen extends StatelessWidget {
             backgroundColor: Colors.transparent,
             elevation: 0,
             actions: [
-             IconButton(onPressed: () {
-               Get.to(GroupChatScreen(), arguments: {
-                 "projectId": model.project.value.id,
-                 "projectName": model.project.value.name,
-                 "projectSlug": model.project.value.slug,
-                 "leader": model.project.value.leaders,
-                 "member": model.project.value.members,
-               });
-             }, icon: Icon(Icons.messenger_outline,color: Colors.white,))
+              IconButton(onPressed: () {
+                Get.to(ProjectChatScreen(), arguments: {
+                  "projectId": model.project.value.id,
+                  "projectName": model.project.value.name,
+                  "projectSlug": model.project.value.slug,
+                  "leader": model.project.value.leaders,
+                  "member": model.project.value.members,
+                });
+              }, icon: Icon(Icons.messenger_outline,color: Colors.white,))
             ],
           ),
           body: SafeArea(

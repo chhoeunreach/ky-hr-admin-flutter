@@ -57,9 +57,59 @@ class SellOutApiService {
   }
 
   Future<Map<String, dynamic>> submitReport(SellOutReport report) async {
+    _validateReport(report);
     final token = await _preferences.getToken();
     final baseUrl = await _preferences.getAppUrl();
+    final formData = await _buildFormData(report);
 
+    try {
+      final response = await _dio.post(
+        '${baseUrl}${Constant.SELL_OUT_REPORT_URL}',
+        data: formData,
+        options: Options(
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      return response.data is Map
+          ? response.data as Map<String, dynamic>
+          : {'status': true, 'message': 'Submitted successfully'};
+    } on DioException catch (e) {
+      throw _toException(e, 'Submission failed');
+    }
+  }
+
+  Future<Map<String, dynamic>> updateReport(SellOutReport report) async {
+    _validateReport(report);
+    final token = await _preferences.getToken();
+    final baseUrl = await _preferences.getAppUrl();
+    final formData = await _buildFormData(report);
+    formData.fields.add(const MapEntry('_method', 'PUT'));
+
+    try {
+      final response = await _dio.post(
+        '${baseUrl}${Constant.SELL_OUT_REPORT_URL}/${report.id}',
+        data: formData,
+        options: Options(
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      return response.data is Map
+          ? response.data as Map<String, dynamic>
+          : {'status': true, 'message': 'Updated successfully'};
+    } on DioException catch (e) {
+      throw _toException(e, 'Update failed');
+    }
+  }
+
+  Future<FormData> _buildFormData(SellOutReport report) async {
     final formData = FormData();
 
     formData.fields.add(MapEntry('seller_name', report.sellerName));
@@ -93,40 +143,34 @@ class SellOutApiService {
       formData.files.add(MapEntry('photos[]', file));
     }
 
-    try {
-      final response = await _dio.post(
-        '${baseUrl}${Constant.SELL_OUT_REPORT_URL}',
-        data: formData,
-        options: Options(
-          headers: {
-            'Accept': 'application/json',
-            'Authorization': 'Bearer $token',
-          },
-        ),
-      );
+    return formData;
+  }
 
-      return response.data is Map
-          ? response.data as Map<String, dynamic>
-          : {'status': true, 'message': 'Submitted successfully'};
-    } on DioException catch (e) {
-      if (e.response != null) {
-        final data = e.response!.data;
-        if (data is Map) {
-          final message = data['message'] ?? 'Submission failed';
-          final errors = data['errors'];
-          if (errors is Map) {
-            final errorMessages = (errors as Map<String, dynamic>)
-                .values
-                .map((e) => e is List ? e.join(', ') : e.toString())
-                .join('\n');
-            throw Exception('$message\n$errorMessages');
-          }
-          throw Exception(message.toString());
-        }
-        throw Exception('Submission failed (${e.response!.statusCode})');
-      }
-      throw Exception('Network error: ${e.message}');
+  void _validateReport(SellOutReport report) {
+    final serialError = report.validateSerialNumbers();
+    if (serialError != null) {
+      throw Exception(serialError);
     }
+  }
+
+  Exception _toException(DioException e, String fallbackMessage) {
+    if (e.response != null) {
+      final data = e.response!.data;
+      if (data is Map) {
+        final message = data['message'] ?? fallbackMessage;
+        final errors = data['errors'];
+        if (errors is Map) {
+          final errorMessages = (errors as Map<String, dynamic>)
+              .values
+              .map((e) => e is List ? e.join(', ') : e.toString())
+              .join('\n');
+          return Exception('$message\n$errorMessages');
+        }
+        return Exception(message.toString());
+      }
+      return Exception('$fallbackMessage (${e.response!.statusCode})');
+    }
+    return Exception('Network error: ${e.message}');
   }
 
   String _getExtension(String path) {

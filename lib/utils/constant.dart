@@ -134,6 +134,10 @@ class Constant {
 
   static const SELL_OUT_REPORT_URL = "$API_URL/sell-out-reports";
 
+  static const GROUP_CHAT = "$API_URL/chat/groups";
+  static const GROUP_CHAT_MESSAGES = "$API_URL/chat/groups"; // append /{id}/messages
+  static const GROUP_CHAT_MEDIA_UPLOAD = "$API_URL/chat/groups/media-upload";
+
   static const TOTAL_WORKING_HOUR = 8;
 }
 

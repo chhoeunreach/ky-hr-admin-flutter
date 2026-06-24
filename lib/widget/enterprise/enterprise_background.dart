@@ -14,30 +14,18 @@ class PremiumBackground extends StatefulWidget {
   State<PremiumBackground> createState() => _PremiumBackgroundState();
 }
 
-class _PremiumBackgroundState extends State<PremiumBackground>
-    with SingleTickerProviderStateMixin {
+class _PremiumBackgroundState extends State<PremiumBackground> {
   static const _worldMapProvider = AssetImage('assets/images/world_map.png');
-  late final AnimationController _controller;
 
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 20),
-    )..repeat(reverse: true);
-  }
+  // Fixed midpoint of the old perpetual animation: keeps the same look as a
+  // single frame instead of repainting + re-blurring the whole screen at
+  // 60fps forever, which was driving sustained high GPU/CPU usage and heat.
+  static const double _staticProgress = 0.5;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     precacheImage(_worldMapProvider, context);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
   }
 
   @override
@@ -47,15 +35,10 @@ class _PremiumBackgroundState extends State<PremiumBackground>
     return Stack(
       children: [
         RepaintBoundary(
-          child: AnimatedBuilder(
-            animation: _controller,
-            builder: (context, _) {
-              return _AnimatedPremiumLayers(
-                enterprise: enterprise,
-                recipe: recipe,
-                progress: _controller.value,
-              );
-            },
+          child: _AnimatedPremiumLayers(
+            enterprise: enterprise,
+            recipe: recipe,
+            progress: _staticProgress,
           ),
         ),
         Positioned.fill(

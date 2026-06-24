@@ -35,8 +35,10 @@ class SellOutReportScreen extends StatefulWidget {
 
 class _SellOutReportListScreenState extends State<SellOutReportScreen> {
   final _apiService = SellOutApiService();
+  final _searchController = TextEditingController();
   late Future<List<SellOutReport>> _reportsFuture;
   late DateTimeRange _dateRange;
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -45,6 +47,12 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
     final todayDate = DateTime(today.year, today.month, today.day);
     _dateRange = DateTimeRange(start: todayDate, end: todayDate);
     _reportsFuture = _apiService.fetchReports();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _refresh() async {
@@ -72,6 +80,26 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
       MaterialPageRoute(
           builder: (_) => SellOutReportDetailScreen(report: report)),
     );
+  }
+
+  bool _isEditableToday(SellOutReport report) {
+    final created = DateTime.tryParse(report.createdAt);
+    if (created == null) return false;
+    return _dateOnly(created.toLocal()) == _dateOnly(DateTime.now());
+  }
+
+  Future<void> _openEdit(SellOutReport report) async {
+    final updated = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => SellOutReportCreateScreen(
+          serviceType: widget.serviceType,
+          existingReport: report,
+        ),
+      ),
+    );
+    if (updated == true && mounted) {
+      _refresh();
+    }
   }
 
   Future<void> _pickDateRange() async {
@@ -114,7 +142,7 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
         appBar: AppBar(
           title: Text(widget.serviceType.isEmpty
               ? 'Sell Out Report'
-              : 'Sell Out - ${widget.serviceType}'),
+              : widget.serviceType),
           centerTitle: true,
           backgroundColor: _sellOutNavy,
           foregroundColor: Colors.white,
@@ -142,39 +170,47 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
             ),
           ],
         ),
-        body: FutureBuilder<List<SellOutReport>>(
-          future: _reportsFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-
-            if (snapshot.hasError) {
-              return _buildErrorState(snapshot.error.toString());
-            }
-
-            final reports = snapshot.data ?? [];
-            final filteredReports = _filterReportsByDate(reports);
-            return RefreshIndicator(
-              color: _sellOutBlue,
-              onRefresh: _refresh,
-              child: ListView.separated(
-                padding: const EdgeInsets.fromLTRB(16, 18, 16, 104),
-                itemCount:
-                    filteredReports.isEmpty ? 2 : filteredReports.length + 1,
-                separatorBuilder: (_, __) => const SizedBox(height: 14),
-                itemBuilder: (context, index) {
-                  if (index == 0) {
-                    return _buildFilterSummary(filteredReports);
+        body: Column(
+          children: [
+            _buildSearchField(),
+            Expanded(
+              child: FutureBuilder<List<SellOutReport>>(
+                future: _reportsFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
                   }
-                  if (index == 1 && filteredReports.isEmpty) {
-                    return _buildEmptyCard();
+
+                  if (snapshot.hasError) {
+                    return _buildErrorState(snapshot.error.toString());
                   }
-                  return _buildReportCard(filteredReports[index - 1]);
+
+                  final reports = snapshot.data ?? [];
+                  final filteredReports = _filterReportsByDate(reports);
+                  return RefreshIndicator(
+                    color: _sellOutBlue,
+                    onRefresh: _refresh,
+                    child: ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(16, 18, 16, 104),
+                      itemCount: filteredReports.isEmpty
+                          ? 2
+                          : filteredReports.length + 1,
+                      separatorBuilder: (_, __) => const SizedBox(height: 14),
+                      itemBuilder: (context, index) {
+                        if (index == 0) {
+                          return _buildFilterSummary(filteredReports);
+                        }
+                        if (index == 1 && filteredReports.isEmpty) {
+                          return _buildEmptyCard();
+                        }
+                        return _buildReportCard(filteredReports[index - 1]);
+                      },
+                    ),
+                  );
                 },
               ),
-            );
-          },
+            ),
+          ],
         ),
         floatingActionButton: FloatingActionButton.extended(
           onPressed: _openCreate,
@@ -192,6 +228,7 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
   }
 
   List<SellOutReport> _filterReportsByDate(List<SellOutReport> reports) {
+    final query = _searchQuery.trim().toLowerCase();
     return reports.where((report) {
       if (widget.serviceType.isNotEmpty &&
           report.serviceType != widget.serviceType) {
@@ -200,9 +237,65 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
       final created = DateTime.tryParse(report.createdAt);
       if (created == null) return false;
       final createdDate = _dateOnly(created.toLocal());
-      return !createdDate.isBefore(_dateRange.start) &&
-          !createdDate.isAfter(_dateRange.end);
+      if (createdDate.isBefore(_dateRange.start) ||
+          createdDate.isAfter(_dateRange.end)) {
+        return false;
+      }
+      if (query.isNotEmpty) {
+        final haystack = [
+          report.invoiceNo,
+          report.originalInvoiceNo,
+          report.customerName,
+          report.customerPhone,
+          report.sellerName,
+          report.branchName,
+          report.note,
+        ].join(' ').toLowerCase();
+        if (!haystack.contains(query)) return false;
+      }
+      return true;
     }).toList();
+  }
+
+  Widget _buildSearchField() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+      child: TextField(
+        controller: _searchController,
+        onChanged: (value) => setState(() => _searchQuery = value),
+        style: const TextStyle(color: _sellOutText, fontSize: 14),
+        decoration: InputDecoration(
+          hintText: 'Search invoice, customer, phone...',
+          hintStyle: const TextStyle(color: _sellOutMuted, fontSize: 14),
+          prefixIcon: const Icon(Icons.search, color: _sellOutMuted),
+          suffixIcon: _searchQuery.isEmpty
+              ? null
+              : IconButton(
+                  icon: const Icon(Icons.clear, color: _sellOutMuted),
+                  onPressed: () {
+                    _searchController.clear();
+                    setState(() => _searchQuery = '');
+                  },
+                ),
+          filled: true,
+          fillColor: _sellOutSurface,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: _sellOutBorder),
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: _sellOutBorder),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: _sellOutBlue, width: 1.5),
+          ),
+        ),
+      ),
+    );
   }
 
   DateTime _dateOnly(DateTime value) {
@@ -538,6 +631,18 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
                       fontSize: 15,
                     ),
                   ),
+                  if (_isEditableToday(report)) ...[
+                    const SizedBox(width: 4),
+                    InkWell(
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: () => _openEdit(report),
+                      child: const Padding(
+                        padding: EdgeInsets.all(4),
+                        child: Icon(Icons.edit_outlined,
+                            size: 18, color: _sellOutMuted),
+                      ),
+                    ),
+                  ],
                 ],
               ),
               if (originalInvoice.isNotEmpty) ...[
@@ -667,9 +772,13 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
 
 class SellOutReportCreateScreen extends StatefulWidget {
   final String serviceType;
+  final SellOutReport? existingReport;
 
-  const SellOutReportCreateScreen({Key? key, this.serviceType = ''})
-      : super(key: key);
+  const SellOutReportCreateScreen({
+    Key? key,
+    this.serviceType = '',
+    this.existingReport,
+  }) : super(key: key);
 
   @override
   State<SellOutReportCreateScreen> createState() =>
@@ -800,7 +909,7 @@ class _SellOutReportDetailScreenState extends State<SellOutReportDetailScreen> {
                       if (report.note.isNotEmpty)
                         _textBlock('Note', report.note),
                       if (report.extractedText.isNotEmpty)
-                        _textBlock('OCR Text', report.extractedText),
+                        _textBlock('Extracted Text', report.extractedText),
                     ],
                   ),
                 ],
@@ -989,7 +1098,7 @@ class _LineControllers {
 }
 
 class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
-  final _report = SellOutReport();
+  late final SellOutReport _report;
   final _imagePicker = ImagePicker();
   final _ocrService = OcrService();
   final _apiService = SellOutApiService();
@@ -1005,6 +1114,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
   bool _isICloudExpanded = true;
   bool _showInvoiceOcrText = false;
   bool _showICloudOcrText = false;
+  bool _showSerialValidationErrors = false;
 
   final _sellerNameCtrl = TextEditingController();
   final _branchNameCtrl = TextEditingController();
@@ -1021,13 +1131,44 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
 
   List<_LineControllers> _lineControllers = [];
 
+  bool get _isEditing => widget.existingReport != null;
+
   @override
   void initState() {
     super.initState();
-    _report.serviceType = widget.serviceType;
+    final existing = widget.existingReport;
+    if (existing != null) {
+      _report = SellOutReport(
+        id: existing.id,
+        invoiceNo: existing.invoiceNo,
+        originalInvoiceNo: existing.originalInvoiceNo,
+        sellerName: existing.sellerName,
+        branchName: existing.branchName,
+        customerName: existing.customerName,
+        customerPhone: existing.customerPhone,
+        serviceType: existing.serviceType,
+        paymentMethod: existing.paymentMethod,
+        note: existing.note,
+        extractedText: existing.extractedText,
+        serverTotalAmount: existing.serverTotalAmount,
+        createdAt: existing.createdAt,
+        lines: existing.lines.map((l) => l.copyWith()).toList(),
+        photoUrls: List<String>.from(existing.photoUrls),
+      );
+      _sellerNameCtrl.text = _report.sellerName;
+      _branchNameCtrl.text = _report.branchName;
+      _customerNameCtrl.text = _report.customerName;
+      _customerPhoneCtrl.text = _report.customerPhone;
+      _paymentMethodCtrl.text = _report.paymentMethod;
+      _noteCtrl.text = _report.note;
+      _extractedTextController.text = _report.extractedText;
+    } else {
+      _report = SellOutReport();
+      _report.serviceType = widget.serviceType;
+      _prefillCurrentUser();
+    }
     _serviceTypeCtrl.text = widget.serviceType;
     _rebuildControllers();
-    _prefillCurrentUser();
   }
 
   Future<void> _prefillCurrentUser() async {
@@ -1097,6 +1238,27 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
 
   bool get _isICloudCustomer =>
       widget.serviceType == _iCloudCustomerServiceType;
+
+  bool get _requiresSerialNumberValidation {
+    final serviceType = widget.serviceType.isNotEmpty
+        ? widget.serviceType
+        : _report.serviceType;
+    return SellOutReport.serialNumberRequiredServiceTypes
+        .contains(serviceType.trim());
+  }
+
+  String? _serialNumberError(_LineControllers ctrls) {
+    if (!_requiresSerialNumberValidation) return null;
+    final text = ctrls.serialNumber.text;
+    // Don't nag with "required" until the user has tried to submit or typed
+    // something — but once they've typed, validate live on every keystroke.
+    if (text.isEmpty) {
+      return _showSerialValidationErrors
+          ? SellOutReport.validateSerialNumber(text)
+          : null;
+    }
+    return SellOutReport.validateSerialNumber(text);
+  }
 
   void _syncICloudInfoToReport() {
     final info = _formatICloudInfo();
@@ -1373,7 +1535,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
       _report.extractedText = extracted;
       _autoFillInvoiceFromText(extracted);
     } catch (e) {
-      _showError('Invoice OCR Failed', e.toString());
+      _showError('Invoice Extract Failed', e.toString());
     } finally {
       setState(() => _isInvoiceOcrLoading = false);
     }
@@ -1404,7 +1566,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
   void _autoFillInvoiceFromOcr() {
     final text = _extractedTextController.text.trim();
     if (text.isEmpty) {
-      _showError('No Invoice OCR Text', 'Extract invoice text first.');
+      _showError('No Invoice Text', 'Extract invoice text first.');
       return;
     }
 
@@ -1415,7 +1577,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
   Future<void> _copyInvoiceOcrText() async {
     final text = _extractedTextController.text.trim();
     if (text.isEmpty) {
-      _showError('No Invoice OCR Text', 'Extract invoice text first.');
+      _showError('No Invoice Text', 'Extract invoice text first.');
       return;
     }
 
@@ -1423,7 +1585,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Invoice OCR text copied'),
+        content: Text('Invoice text copied'),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -1449,7 +1611,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
           _ocrService.formatICloudOcrText(extracted);
       _autoFillICloudFromText(extracted);
     } catch (e) {
-      _showError('iCloud OCR Failed', e.toString());
+      _showError('iCloud Extract Failed', e.toString());
     } finally {
       setState(() => _isICloudOcrLoading = false);
     }
@@ -1482,7 +1644,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
   void _autoFillICloudFromOcr() {
     final text = _iCloudOcrTextController.text.trim();
     if (text.isEmpty) {
-      _showError('No iCloud OCR Text', 'Extract iCloud text first.');
+      _showError('No iCloud Text', 'Extract iCloud text first.');
       return;
     }
     _autoFillICloudFromText(text);
@@ -1510,7 +1672,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
       _replaceProductExtractedText(index, extracted);
       _autoFillProductLineFromText(index, extracted);
     } catch (e) {
-      _showError('Product OCR Failed', e.toString());
+      _showError('Product Extract Failed', e.toString());
     } finally {
       setState(() => ctrls.isOcrLoading = false);
     }
@@ -1564,7 +1726,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
     if (index >= _lineControllers.length) return;
     final text = _lineControllers[index].ocrText.text.trim();
     if (text.isEmpty) {
-      _showError('No Product OCR Text', 'Extract product text first.');
+      _showError('No Product Text', 'Extract product text first.');
       return;
     }
     _autoFillProductLineFromText(index, text);
@@ -1631,11 +1793,19 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
       _showError('Validation Error', 'Seller name is required.');
       return;
     }
+    final serialError = _report.validateSerialNumbers();
+    if (serialError != null) {
+      setState(() => _showSerialValidationErrors = true);
+      _showError('Validation Error', serialError);
+      return;
+    }
     setState(() => _isSubmitting = true);
-    EasyLoading.show(status: 'Submitting...');
+    EasyLoading.show(status: _isEditing ? 'Updating...' : 'Submitting...');
 
     try {
-      final response = await _apiService.submitReport(_report);
+      final response = _isEditing
+          ? await _apiService.updateReport(_report)
+          : await _apiService.submitReport(_report);
       EasyLoading.dismiss();
       setState(() => _isSubmitting = false);
 
@@ -1646,7 +1816,8 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
       EasyLoading.dismiss();
       setState(() => _isSubmitting = false);
       if (mounted) {
-        _showError('Submission Failed', e.toString());
+        _showError(
+            _isEditing ? 'Update Failed' : 'Submission Failed', e.toString());
       }
     }
   }
@@ -1746,9 +1917,11 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
-          title: Text(widget.serviceType.isEmpty
-              ? 'Sell Out Report'
-              : 'Sell Out - ${widget.serviceType}'),
+          title: Text(_isEditing
+              ? 'Edit Report'
+              : (widget.serviceType.isEmpty
+                  ? 'Sell Out Report'
+                  : widget.serviceType)),
           centerTitle: true,
           backgroundColor: _sellOutNavy,
           foregroundColor: Colors.white,
@@ -1999,8 +2172,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
               _showInvoiceOcrText ? Icons.visibility_off : Icons.visibility,
               size: 18,
             ),
-            label:
-                Text(_showInvoiceOcrText ? 'Hide OCR Text' : 'Show OCR Text'),
+            label: Text(_showInvoiceOcrText ? 'Hide Text' : 'Show Text'),
             style: TextButton.styleFrom(
               foregroundColor: _sellOutBlue,
               textStyle: const TextStyle(fontWeight: FontWeight.w700),
@@ -2017,8 +2189,8 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                 maxLines: 5,
                 onChanged: (value) => _report.extractedText = value,
                 decoration: InputDecoration(
-                  labelText: 'Invoice OCR Text',
-                  hintText: 'Invoice OCR text will appear here...',
+                  labelText: 'Invoice Text',
+                  hintText: 'Invoice text will appear here...',
                   alignLabelWithHint: true,
                   filled: true,
                   fillColor: Colors.white,
@@ -2098,7 +2270,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                 child: OutlinedButton.icon(
                   onPressed: _copyInvoiceOcrText,
                   icon: const Icon(Icons.copy, size: 18),
-                  label: const Text('Copy OCR Text'),
+                  label: const Text('Copy Text'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: _sellOutBlue,
                     backgroundColor: _sellOutBlue.withValues(alpha: 0.06),
@@ -2293,9 +2465,8 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                               : Icons.visibility,
                           size: 18,
                         ),
-                        label: Text(_showICloudOcrText
-                            ? 'Hide OCR Text'
-                            : 'Show OCR Text'),
+                        label: Text(
+                            _showICloudOcrText ? 'Hide Text' : 'Show Text'),
                         style: TextButton.styleFrom(
                           foregroundColor: _sellOutBlue,
                           textStyle:
@@ -2311,8 +2482,8 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                             controller: _iCloudOcrTextController,
                             maxLines: 5,
                             decoration: InputDecoration(
-                              labelText: 'iCloud OCR Text',
-                              hintText: 'iCloud OCR text will appear here...',
+                              labelText: 'iCloud Text',
+                              hintText: 'iCloud text will appear here...',
                               alignLabelWithHint: true,
                               filled: true,
                               fillColor: Colors.white,
@@ -2592,8 +2763,23 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                   Row(
                     children: [
                       Expanded(
-                        child: _buildLineField(ctrls.serialNumber,
-                            'Serial Number', (v) => line.serialNumber = v),
+                        child: _buildLineField(
+                          ctrls.serialNumber,
+                          'Serial Number',
+                          (v) {
+                            line.serialNumber = v;
+                            setState(() {});
+                          },
+                          errorText: _serialNumberError(ctrls),
+                          keyboardType: TextInputType.visiblePassword,
+                          inputFormatters: _requiresSerialNumberValidation
+                              ? [
+                                  FilteringTextInputFormatter.allow(
+                                      RegExp(r'[A-Za-z0-9]')),
+                                  LengthLimitingTextInputFormatter(10),
+                                ]
+                              : null,
+                        ),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
@@ -2700,8 +2886,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                 ctrls.showOcrText ? Icons.visibility_off : Icons.visibility,
                 size: 18,
               ),
-              label:
-                  Text(ctrls.showOcrText ? 'Hide OCR Text' : 'Show OCR Text'),
+              label: Text(ctrls.showOcrText ? 'Hide Text' : 'Show Text'),
               style: TextButton.styleFrom(
                 foregroundColor: _sellOutBlue,
                 textStyle: const TextStyle(fontWeight: FontWeight.w700),
@@ -2716,8 +2901,8 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                   controller: ctrls.ocrText,
                   maxLines: 3,
                   decoration: InputDecoration(
-                    labelText: 'Product OCR Text',
-                    hintText: 'Product OCR text will appear here...',
+                    labelText: 'Product Text',
+                    hintText: 'Product text will appear here...',
                     alignLabelWithHint: true,
                     filled: true,
                     fillColor: Colors.white,
@@ -2782,7 +2967,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                   child: OutlinedButton.icon(
                     onPressed: () => _autoFillProductFromOcr(index),
                     icon: const Icon(Icons.auto_fix_high, size: 18),
-                    label: const Text('Auto Fill Product From OCR'),
+                    label: const Text('Auto Fill Product'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: _sellOutBlue,
                       backgroundColor: Colors.white,
@@ -2809,12 +2994,18 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
   }
 
   Widget _buildLineField(TextEditingController controller, String label,
-      Function(String) onChanged) {
+      Function(String) onChanged,
+      {String? errorText,
+      TextInputType? keyboardType,
+      List<TextInputFormatter>? inputFormatters}) {
     return TextField(
       controller: controller,
       onChanged: onChanged,
+      keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
       decoration: InputDecoration(
         labelText: label,
+        errorText: errorText,
         isDense: true,
         filled: true,
         fillColor: Colors.white,
@@ -2941,7 +3132,9 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                 ),
               )
             : const Icon(Icons.send),
-        label: Text(_isSubmitting ? 'Submitting...' : 'Submit Report'),
+        label: Text(_isSubmitting
+            ? (_isEditing ? 'Updating...' : 'Submitting...')
+            : (_isEditing ? 'Update Report' : 'Submit Report')),
         style: ElevatedButton.styleFrom(
           backgroundColor: _sellOutBlue,
           foregroundColor: Colors.white,

@@ -1,163 +1,275 @@
 import 'dart:convert';
+import 'dart:io';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cnattendance/data/source/datastore/preferences.dart';
-import 'package:cnattendance/model/chat.dart';
-import 'package:cnattendance/model/member.dart';
+import 'package:cnattendance/model/group_chat.dart';
+import 'package:cnattendance/model/group_chat_detail.dart';
+import 'package:cnattendance/model/group_chat_member.dart';
+import 'package:cnattendance/model/group_chat_message.dart';
 import 'package:cnattendance/provider/chatbadgecontroller.dart';
-import 'package:http/http.dart' as http;
+import 'package:cnattendance/repositories/group_chat_repository.dart';
 import 'package:cnattendance/utils/constant.dart';
+import 'package:cnattendance/services/chat_media_upload_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
-import 'package:http_interceptor_plus/http_interceptor_plus.dart';
-import 'package:uuid/uuid.dart';
 
 class GroupChatController extends GetxController {
-  var host = "".obs;
-  var convoId = "";
+  final GroupChatRepository _repository = GroupChatRepository();
+
   final chatController = TextEditingController();
   final scrollController = ScrollController();
-  var projectId = 0;
 
-  var chatList = <Chat>[].obs;
-  var sender = "";
+  var isLoading = false.obs;
+  var isSending = false.obs;
+  var groups = <GroupChat>[].obs;
+  var chatMessages = <GroupChatMessage>[].obs;
+  var currentGroup = Rx<GroupChatDetail?>(null);
 
-  List<Member> leaders = [];
-  List<Member> members = [];
+  var currentGroupId = 0.obs;
+  var currentGroupName = "".obs;
 
+  String sender = "";
   Preferences pref = Preferences();
 
   @override
   Future<void> onReady() async {
-    host.value = Get.arguments["projectName"];
-    convoId = Get.arguments["projectSlug"];
-    leaders = Get.arguments["leader"] ?? [];
-    members = Get.arguments["member"] ?? [];
-    projectId = Get.arguments["projectId"] ?? 0;
-
     sender = await pref.getUsername();
-    listenChat();
-    await ChatBadgeController.ensureRegistered().setActiveConversation(convoId);
     super.onReady();
   }
 
-  Future<void> sendMessage(String message) async {
+  Future<void> loadGroups() async {
     try {
-      await FirebaseFirestore.instance
-          .collection('messages')
-          .doc(Uuid().v4())
-          .set({
-        "id": convoId,
-        "date": DateTime.now(),
-        "message": base64.encode(utf8.encode(message)),
-        "sender": sender,
-        "reciever": convoId
-      });
+      isLoading.value = true;
+      final result = await _repository.getGroups();
+      groups.value = result;
+    } catch (e) {
+      showToast(e.toString());
+    } finally {
+      isLoading.value = false;
+    }
+  }
 
-      final currentUser = await pref.getUser();
-      var users = <int>[];
-      for (var member in members) {
-        if (member.id != currentUser.id) {
-          users.add(member.id);
-        }
-      }
+  Future<void> loadGroupDetail(int groupId) async {
+    try {
+      isLoading.value = true;
+      currentGroupId.value = groupId;
+      final detail = await _repository.getGroupDetail(groupId);
+      currentGroup.value = detail;
+      currentGroupName.value = detail.name;
+    } catch (e) {
+      showToast(e.toString());
+    } finally {
+      isLoading.value = false;
+    }
+  }
 
-      await sendPushNotifiation("New message recieved in ${host.value}",
-          message, convoId, "group_chat", projectId.toString(), users);
+  Future<void> loadMessages(int groupId) async {
+    try {
+      isLoading.value = true;
+      currentGroupId.value = groupId;
+      final messages = await _repository.getMessages(groupId);
+      chatMessages.value = messages;
+      await ChatBadgeController.ensureRegistered()
+          .setActiveConversation('group_$groupId');
+      _scrollToBottom();
+    } catch (e) {
+      showToast(e.toString());
+    } finally {
+      isLoading.value = false;
+    }
+  }
 
+  Future<void> sendTextMessage(int groupId, String text) async {
+    if (text.trim().isEmpty) return;
+    try {
+      isSending.value = true;
+      final message = await _repository.sendMessage(groupId, text);
+      chatMessages.add(message);
       chatController.clear();
+      _scrollToBottom();
+    } catch (e) {
+      showToast(e.toString());
+    } finally {
+      isSending.value = false;
+    }
+  }
+
+  Future<void> sendImageMessage(int groupId, String filePath) async {
+    try {
+      isSending.value = true;
+      final upload = await _repository.uploadMedia(filePath, 'image');
+      final message = await _repository.sendMediaMessage(
+        groupId,
+        type: 'image',
+        mediaUrl: upload['url'] ?? '',
+        mediaPath: upload['path'],
+        mediaWidth: upload['width'] as int?,
+        mediaHeight: upload['height'] as int?,
+      );
+      chatMessages.add(message);
+      _scrollToBottom();
+    } catch (e) {
+      showToast(e.toString());
+    } finally {
+      isSending.value = false;
+    }
+  }
+
+  Future<void> sendVoiceMessage(int groupId, String filePath,
+      {int? durationSeconds}) async {
+    try {
+      isSending.value = true;
+      final upload = await _repository.uploadMedia(filePath, 'voice');
+      final message = await _repository.sendMediaMessage(
+        groupId,
+        type: 'voice',
+        mediaUrl: upload['url'] ?? '',
+        mediaPath: upload['path'],
+        durationSeconds: durationSeconds,
+      );
+      chatMessages.add(message);
+      _scrollToBottom();
+    } catch (e) {
+      showToast(e.toString());
+    } finally {
+      isSending.value = false;
+    }
+  }
+
+  Future<void> sendFileMessage(int groupId, String filePath,
+      {String? fileName}) async {
+    try {
+      isSending.value = true;
+      final upload = await _repository.uploadMedia(filePath, 'file');
+      final message = await _repository.sendMediaMessage(
+        groupId,
+        type: 'file',
+        mediaUrl: upload['url'] ?? '',
+        mediaPath: upload['path'],
+        fileName: fileName,
+      );
+      chatMessages.add(message);
+      _scrollToBottom();
+    } catch (e) {
+      showToast(e.toString());
+    } finally {
+      isSending.value = false;
+    }
+  }
+
+  Future<void> sendLocationMessage(
+      int groupId, double latitude, double longitude) async {
+    try {
+      isSending.value = true;
+      final message = await _repository.sendLocation(
+        groupId,
+        latitude: latitude,
+        longitude: longitude,
+      );
+      chatMessages.add(message);
+      _scrollToBottom();
+    } catch (e) {
+      showToast(e.toString());
+    } finally {
+      isSending.value = false;
+    }
+  }
+
+  Future<void> addMembers(int groupId, List<int> userIds) async {
+    try {
+      await _repository.addMembers(groupId, userIds);
+      await loadGroupDetail(groupId);
+      showToast('Members added successfully');
     } catch (e) {
       showToast(e.toString());
     }
   }
 
-  Future<void> listenChat() async {
-    final docRef = FirebaseFirestore.instance
-        .collection("messages")
-        .where("id", isEqualTo: convoId)
-        .snapshots();
-
-    docRef.listen(
-      (event) {
-        print("triiger");
-        final chatDb = <Chat>[];
-        for (var item in event.docs) {
-          Timestamp firebaseTimestamp = item["date"];
-          chatDb.add(Chat(
-              item["id"],
-              utf8.decode(base64.decode(item["message"])),
-              item["sender"],
-              item["reciever"],
-              firebaseTimestamp.toDate()));
-        }
-
-        chatDb.sort((a, b) => a.dateTime.compareTo(b.dateTime));
-        chatList.value = chatDb;
-
-        Future.delayed(Duration(milliseconds: 500)).then((_) {
-          if (!scrollController.hasClients) {
-            return;
-          }
-          scrollController.animateTo(
-            scrollController.position.maxScrollExtent,
-            duration: Duration(milliseconds: 1000),
-            curve: Curves.fastOutSlowIn,
-          );
-        });
-      },
-      onError: (error) => print("Listen failed: $error"),
-    );
-  }
-
-  Future<void> sendPushNotifiation(
-      String title,
-      String message,
-      String converstion_id,
-      String type,
-      String project_id,
-      List<int> usernames) async {
-    Preferences preferences = Preferences();
-    var uri = Uri.parse(
-        await preferences.getAppUrl() + Constant.SEND_PUSH_NOTIFICATION);
-
-    String token = await preferences.getToken();
-
-    Map<String, String> headers = {
-      'Accept': 'application/json; charset=UTF-8',
-      'Authorization': 'Bearer $token'
-    };
-
-    final http.Client client = LoggingMiddleware(http.Client());
-
-    final response = await client.post(uri, headers: headers, body: {
-      "title": title,
-      "message": message,
-      "conversation_id": converstion_id,
-      "type": type,
-      "project_id": project_id,
-      "usernames": jsonEncode(usernames),
-    });
-
-    final responseData = json.decode(response.body);
-    final responseMessage = responseData['message']?.toString() ?? "";
-
-    if (response.statusCode == 200) {
-    } else if (_isMissingRegistrationTokenError(responseMessage)) {
-      print("Push skipped: $responseMessage");
-    } else {
-      var errorMessage = responseData['message'];
-      throw errorMessage;
+  Future<void> removeMember(int groupId, int userId) async {
+    try {
+      await _repository.removeMember(groupId, userId);
+      await loadGroupDetail(groupId);
+      showToast('Member removed');
+    } catch (e) {
+      showToast(e.toString());
     }
   }
 
-  bool _isMissingRegistrationTokenError(String message) {
-    final normalized = message.toLowerCase();
-    return normalized.contains("no registration tokens provided");
+  Future<void> promoteToAdmin(int groupId, int userId) async {
+    try {
+      await _repository.updateMemberRole(groupId, userId, 'admin');
+      await loadGroupDetail(groupId);
+      showToast('Member promoted to admin');
+    } catch (e) {
+      showToast(e.toString());
+    }
+  }
+
+  Future<void> demoteToMember(int groupId, int userId) async {
+    try {
+      await _repository.updateMemberRole(groupId, userId, 'member');
+      await loadGroupDetail(groupId);
+      showToast('Member demoted to member');
+    } catch (e) {
+      showToast(e.toString());
+    }
+  }
+
+  Future<void> leaveGroup(int groupId) async {
+    try {
+      await _repository.leaveGroup(groupId);
+      groups.removeWhere((g) => g.id == groupId);
+      Get.back();
+      showToast('You left the group');
+    } catch (e) {
+      showToast(e.toString());
+    }
+  }
+
+  Future<void> deleteGroup(int groupId) async {
+    try {
+      await _repository.deleteGroup(groupId);
+      groups.removeWhere((g) => g.id == groupId);
+      Get.back();
+      showToast('Group deleted');
+    } catch (e) {
+      showToast(e.toString());
+    }
+  }
+
+  String? get chatMessagePreview {
+    if (chatMessages.isEmpty) return null;
+    final last = chatMessages.last;
+    switch (last.messageType) {
+      case 'image':
+        return 'Sent a photo';
+      case 'voice':
+        return 'Sent a voice message';
+      case 'file':
+        return 'Sent a file';
+      case 'location':
+        return 'Sent a location';
+      default:
+        return last.message;
+    }
+  }
+
+  void _scrollToBottom() {
+    Future.delayed(const Duration(milliseconds: 300)).then((_) {
+      if (scrollController.hasClients) {
+        scrollController.animateTo(
+          scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
   }
 
   @override
   void onClose() {
-    ChatBadgeController.ensureRegistered().clearActiveConversation(convoId);
+    ChatBadgeController.ensureRegistered()
+        .clearActiveConversation('group_${currentGroupId.value}');
     chatController.dispose();
     scrollController.dispose();
     super.onClose();

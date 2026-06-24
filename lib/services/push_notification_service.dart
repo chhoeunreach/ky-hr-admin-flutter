@@ -10,7 +10,7 @@ import 'package:cnattendance/provider/notificationcontroller.dart';
 import 'package:cnattendance/screen/general/generalscreen.dart';
 import 'package:cnattendance/screen/profile/admin_chat_thread_screen.dart';
 import 'package:cnattendance/screen/profile/chatscreen.dart';
-import 'package:cnattendance/screen/profile/groupchatscreen.dart';
+import 'package:cnattendance/screen/profile/group_chat_screen.dart';
 import 'package:cnattendance/utils/app_badge_sync.dart';
 import 'package:cnattendance/utils/chat_unread_store.dart';
 import 'package:cnattendance/utils/chat/notification_payload_parser.dart';
@@ -277,13 +277,14 @@ class PushNotificationService {
     }
 
     if (type == "group_chat") {
-      Get.to(GroupChatScreen(), arguments: {
-        "projectName": payload["title"] ?? "Notification",
-        "projectId": payload["project_id"],
-        "projectSlug": payload["conversation_id"],
-        "leader": [],
-        "member": [],
-      });
+      final conversationId = payload["conversation_id"] ?? "";
+      final groupId = int.tryParse(conversationId.replaceAll("group_", "")) ?? 0;
+      if (groupId > 0) {
+        Get.to(GroupChatScreen(
+          groupId: groupId,
+          groupName: payload["title"] ?? "Group",
+        ));
+      }
       return;
     }
 

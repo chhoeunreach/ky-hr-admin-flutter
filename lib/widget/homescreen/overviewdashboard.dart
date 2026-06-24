@@ -74,7 +74,7 @@ class OverviewDashboard extends StatelessWidget {
                 value: _overview['present']!,
                 icon: "assets/icons/present_icon.png",
                 callback: () {
-                  controller.jumpToTab(2);
+                  controller.jumpToTab(3);
                 },
               ),
               CardOverView(
@@ -93,7 +93,7 @@ class OverviewDashboard extends StatelessWidget {
                 value: _overview['leave']!,
                 icon: Icons.sick,
                 callback: () {
-                  controller.jumpToTab(1);
+                  controller.jumpToTab(2);
                 },
               ),
               if (features["event"] == "1")

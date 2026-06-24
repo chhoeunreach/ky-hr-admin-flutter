@@ -1,10 +1,9 @@
-import 'dart:ui';
-
 import 'package:cnattendance/model/auth.dart';
 import 'package:cnattendance/screen/dashboard/dashboard_screen.dart';
-import 'package:cnattendance/utils/constant.dart';
 import 'package:cnattendance/widget/buttonborder.dart';
 import 'package:cnattendance/widget/customqrscanner.dart';
+import 'package:cnattendance/theme/enterprise_theme.dart';
+import 'package:cnattendance/widget/premium_background.dart';
 import 'package:cnattendance/widget/showlanguage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -12,7 +11,6 @@ import 'package:flutter_translate/flutter_translate.dart';
 import 'package:flutter_web_browser/flutter_web_browser.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
-import 'package:hexcolor/hexcolor.dart';
 // import 'package:qr_bar_code_scanner_dialog/qr_bar_code_scanner_dialog.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -139,8 +137,7 @@ class loginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     bool hasUrl = context.watch<Auth>().appUrl.isNotEmpty;
-    return Container(
-      decoration: backgroundDecoration(),
+    return PremiumBackground(
       child: Scaffold(
         extendBody: true,
         backgroundColor: Colors.transparent,
@@ -174,9 +171,7 @@ class loginScreenState extends State<LoginScreen> {
           child: SingleChildScrollView(
             child: IgnorePointer(
               ignoring: _isLoading,
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                child: !hasUrl
+              child: !hasUrl
                     ? Container(
                         color: Colors.transparent,
                         height: MediaQuery.of(context).size.height,
@@ -223,7 +218,9 @@ class loginScreenState extends State<LoginScreen> {
                                             child: TextButton(
                                                 style: TextButton.styleFrom(
                                                   backgroundColor:
-                                                      HexColor("#036eb7"),
+                                                      EnterpriseTheme.of(
+                                                              context)
+                                                          .primary,
                                                   padding: EdgeInsets.zero,
                                                   shape: ButtonBorder(),
                                                 ),
@@ -433,7 +430,6 @@ class loginScreenState extends State<LoginScreen> {
                             ],
                           ),
                         ),
-                    ),
               ),
             ),
           ),
@@ -460,19 +456,6 @@ class loginScreenState extends State<LoginScreen> {
     );
   }
 
-  BoxDecoration backgroundDecoration() {
-    return BoxDecoration(
-        image: DecorationImage(
-      colorFilter: ColorFilter.mode(
-          getAppTheme() ? Colors.blueGrey : Colors.black54,
-          BlendMode.softLight),
-      image: AssetImage(
-        "assets/images/login.jpg",
-      ),
-      fit: BoxFit.cover,
-    ));
-  }
-
   Widget gaps(double value) {
     return SizedBox(
       height: value,
@@ -491,7 +474,7 @@ class loginScreenState extends State<LoginScreen> {
       width: MediaQuery.of(context).size.width,
       child: TextButton(
           style: TextButton.styleFrom(
-            backgroundColor: HexColor("#036eb7"),
+            backgroundColor: EnterpriseTheme.of(context).primary,
             padding: EdgeInsets.zero,
             shape: ButtonBorder(),
           ),

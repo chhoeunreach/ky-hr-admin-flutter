@@ -15,6 +15,14 @@ class EmployeeAttendanceReport with ChangeNotifier {
   double worked_hours_min;
   double working_hours_min;
 
+  String get statusLabel {
+    if (isUnderTime) return 'Early';
+    if (isOverTime) return 'Overtime';
+    return 'On Time';
+  }
+
+  bool get isPositiveStatus => !isUnderTime;
+
   EmployeeAttendanceReport({
     required this.id,
     required this.attendance_date,
@@ -33,11 +41,11 @@ class EmployeeAttendanceReport with ChangeNotifier {
 
   static Map<String, List<EmployeeAttendanceReport>> groupAttendanceByDate(
       List<EmployeeAttendanceReport> attendanceList) {
-    Map<String, List<EmployeeAttendanceReport>> groupedAttendance = {};
+    final Map<String, List<EmployeeAttendanceReport>> groupedAttendance = {};
 
-    for (var attendance in attendanceList) {
+    for (final attendance in attendanceList) {
       // Get the attendance date as the key
-      String date = attendance.attendance_date;
+      final String date = attendance.attendance_date;
 
       // If the date is not yet a key in the map, initialize an empty list
       if (!groupedAttendance.containsKey(date)) {
