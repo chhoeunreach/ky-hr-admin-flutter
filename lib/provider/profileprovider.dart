@@ -49,7 +49,7 @@ class ProfileProvider with ChangeNotifier {
     Preferences preferences = Preferences();
     var uri = Uri.parse(await preferences.getAppUrl() + Constant.PROFILE_URL);
 
-    checkValueInPref(preferences);
+    await checkValueInPref(preferences);
 
     String token = await preferences.getToken();
 
@@ -116,7 +116,7 @@ class ProfileProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void checkValueInPref(Preferences preferences) async {
+  Future<void> checkValueInPref(Preferences preferences) async {
     final user = await preferences.getUser();
     _profile.name = user.name;
     _profile.username = user.username;
@@ -177,18 +177,17 @@ class ProfileProvider with ChangeNotifier {
 
         response = await requests.send();
 
-        await response.stream.transform(utf8.decoder).listen((value) {
-          final responseJson = Profileresponse.fromJson(json.decode(value));
-          if (responseJson.statusCode == 200) {
-            parseUser(responseJson.data);
-            return responseJson;
-          } else {
-            var errorMessage = responseJson.message;
-            throw errorMessage;
-          }
-        });
-
-        return Future.error('error');
+        final responseBody =
+            await response.stream.transform(utf8.decoder).join();
+        final responseJson =
+            Profileresponse.fromJson(json.decode(responseBody));
+        if (responseJson.statusCode == 200) {
+          parseUser(responseJson.data);
+          return responseJson;
+        } else {
+          var errorMessage = responseJson.message;
+          throw errorMessage;
+        }
       } else {
         Map<String, String> headers = {
           'Accept': 'application/json; charset=UTF-8',

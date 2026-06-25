@@ -84,6 +84,7 @@ class ChatController extends GetxController {
       print(fcm);
 
       final senderUsername = await pref.getUsername();
+      final senderName = await _senderDisplayName(senderUsername);
 
       chatController.clear();
       await FirebaseFirestore.instance
@@ -102,7 +103,7 @@ class ChatController extends GetxController {
       });
 
       unawaited(_sendPushNotificationSafely(
-        senderUsername,
+        senderName,
         message,
         convoId,
         "chat",
@@ -273,6 +274,7 @@ class ChatController extends GetxController {
       isUploading.value = true;
       final position = await _determineCurrentPosition();
       final senderUsername = await pref.getUsername();
+      final senderName = await _senderDisplayName(senderUsername);
       final latitude = position.latitude;
       final longitude = position.longitude;
       final mapsUrl = _mapsUrl(latitude, longitude);
@@ -296,7 +298,7 @@ class ChatController extends GetxController {
       });
 
       unawaited(_sendPushNotificationSafely(
-        senderUsername,
+        senderName,
         "Shared a location",
         convoId,
         "chat",
@@ -319,6 +321,7 @@ class ChatController extends GetxController {
     int? durationSeconds,
   }) async {
     final senderUsername = await pref.getUsername();
+    final senderName = await _senderDisplayName(senderUsername);
 
     await FirebaseFirestore.instance
         .collection('messages')
@@ -338,7 +341,7 @@ class ChatController extends GetxController {
     });
 
     unawaited(_sendPushNotificationSafely(
-      senderUsername,
+      senderName,
       pushMessage,
       convoId,
       "chat",
@@ -347,6 +350,11 @@ class ChatController extends GetxController {
       messageType: type,
       mediaUrl: upload.url,
     ));
+  }
+
+  Future<String> _senderDisplayName(String senderUsername) async {
+    final fullName = await pref.getFullName();
+    return fullName.trim().isNotEmpty ? fullName.trim() : senderUsername;
   }
 
   Future<void> _sendPushNotificationSafely(

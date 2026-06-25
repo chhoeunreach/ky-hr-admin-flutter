@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -26,6 +27,7 @@ class OldGroupChatController extends GetxController {
   List<Member> members = [];
 
   Preferences pref = Preferences();
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _chatSubscription;
 
   @override
   Future<void> onReady() async {
@@ -77,7 +79,8 @@ class OldGroupChatController extends GetxController {
         .where("id", isEqualTo: convoId)
         .snapshots();
 
-    docRef.listen(
+    await _chatSubscription?.cancel();
+    _chatSubscription = docRef.listen(
       (event) {
         final chatDb = <Chat>[];
         for (var item in event.docs) {
@@ -157,6 +160,7 @@ class OldGroupChatController extends GetxController {
   @override
   void onClose() {
     ChatBadgeController.ensureRegistered().clearActiveConversation(convoId);
+    _chatSubscription?.cancel();
     chatController.dispose();
     scrollController.dispose();
     super.onClose();
