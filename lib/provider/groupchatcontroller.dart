@@ -1,15 +1,13 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:cnattendance/data/source/datastore/preferences.dart';
 import 'package:cnattendance/model/group_chat.dart';
 import 'package:cnattendance/model/group_chat_detail.dart';
-import 'package:cnattendance/model/group_chat_member.dart';
 import 'package:cnattendance/model/group_chat_message.dart';
 import 'package:cnattendance/provider/chatbadgecontroller.dart';
 import 'package:cnattendance/repositories/group_chat_repository.dart';
 import 'package:cnattendance/utils/constant.dart';
-import 'package:cnattendance/services/chat_media_upload_service.dart';
+import 'package:cnattendance/utils/chat_background_store.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 
@@ -21,12 +19,15 @@ class GroupChatController extends GetxController {
 
   var isLoading = false.obs;
   var isSending = false.obs;
+  var isAtBottom = true.obs;
+  var backgroundPath = "".obs;
   var groups = <GroupChat>[].obs;
   var chatMessages = <GroupChatMessage>[].obs;
   var currentGroup = Rx<GroupChatDetail?>(null);
 
   var currentGroupId = 0.obs;
   var currentGroupName = "".obs;
+  var currentUserId = 0.obs;
 
   String sender = "";
   Preferences pref = Preferences();
@@ -34,7 +35,13 @@ class GroupChatController extends GetxController {
   @override
   Future<void> onReady() async {
     sender = await pref.getUsername();
+    currentUserId.value = await pref.getUserId();
     super.onReady();
+  }
+
+  Future<void> loadCurrentUser() async {
+    sender = await pref.getUsername();
+    currentUserId.value = await pref.getUserId();
   }
 
   Future<void> loadGroups() async {
@@ -67,6 +74,7 @@ class GroupChatController extends GetxController {
     try {
       isLoading.value = true;
       currentGroupId.value = groupId;
+      await loadBackground(groupId);
       final messages = await _repository.getMessages(groupId);
       chatMessages.value = messages;
       await ChatBadgeController.ensureRegistered()
@@ -175,6 +183,67 @@ class GroupChatController extends GetxController {
     }
   }
 
+  bool canModifyMessage(GroupChatMessage message) {
+    if (message.senderId != currentUserId.value || message.isDeleted) {
+      return false;
+    }
+    final createdAt = message.createdAt;
+    if (createdAt == null) return false;
+    try {
+      return DateTime.now().difference(DateTime.parse(createdAt)).inMinutes < 15;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> loadBackground(int groupId) async {
+    backgroundPath.value =
+        await ChatBackgroundStore.getBackground('group_$groupId') ?? "";
+  }
+
+  Future<void> setBackground(int groupId, String filePath) async {
+    await ChatBackgroundStore.setBackground('group_$groupId', filePath);
+    backgroundPath.value = filePath;
+  }
+
+  Future<void> resetBackground(int groupId) async {
+    await ChatBackgroundStore.resetBackground('group_$groupId');
+    backgroundPath.value = "";
+  }
+
+  Future<void> editMessage(
+      int groupId, GroupChatMessage message, String text) async {
+    if (!canModifyMessage(message) || !message.isText) {
+      showToast('Text messages can only be edited within 15 minutes.');
+      return;
+    }
+    try {
+      final updated = await _repository.editMessage(groupId, message.id, text);
+      final index = chatMessages.indexWhere((item) => item.id == message.id);
+      if (index != -1) {
+        chatMessages[index] = updated;
+      }
+    } catch (e) {
+      showToast(e.toString());
+    }
+  }
+
+  Future<void> deleteMessage(int groupId, GroupChatMessage message) async {
+    if (!canModifyMessage(message)) {
+      showToast('Messages can only be deleted within 15 minutes.');
+      return;
+    }
+    try {
+      final updated = await _repository.deleteMessage(groupId, message.id);
+      final index = chatMessages.indexWhere((item) => item.id == message.id);
+      if (index != -1) {
+        chatMessages[index] = updated;
+      }
+    } catch (e) {
+      showToast(e.toString());
+    }
+  }
+
   Future<void> addMembers(int groupId, List<int> userIds) async {
     try {
       await _repository.addMembers(groupId, userIds);
@@ -237,6 +306,34 @@ class GroupChatController extends GetxController {
     }
   }
 
+  Future<void> updateGroupInfo(int groupId, {String? name, String? description}) async {
+    try {
+      await _repository.updateGroup(groupId, name: name, description: description);
+      await loadGroupDetail(groupId);
+      showToast('Group updated');
+    } catch (e) {
+      showToast(e.toString());
+    }
+  }
+
+  Future<void> updateGroupAvatar(int groupId, File avatarFile) async {
+    try {
+      await _repository.updateGroupAvatar(groupId, avatarFile);
+      await loadGroupDetail(groupId);
+      showToast('Avatar updated');
+    } catch (e) {
+      showToast(e.toString());
+    }
+  }
+
+  void onScroll() {
+    if (scrollController.hasClients) {
+      final maxScroll = scrollController.position.maxScrollExtent;
+      final currentScroll = scrollController.position.pixels;
+      isAtBottom.value = (maxScroll - currentScroll) < 100;
+    }
+  }
+
   String? get chatMessagePreview {
     if (chatMessages.isEmpty) return null;
     final last = chatMessages.last;
@@ -264,6 +361,10 @@ class GroupChatController extends GetxController {
         );
       }
     });
+  }
+
+  void scrollToBottom() {
+    _scrollToBottom();
   }
 
   @override

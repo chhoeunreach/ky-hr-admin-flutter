@@ -4,14 +4,19 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cnattendance/data/source/datastore/preferences.dart';
 import 'package:cnattendance/model/chat_contact.dart';
+import 'package:cnattendance/model/group_chat.dart';
+import 'package:cnattendance/provider/groupchatcontroller.dart';
 import 'package:cnattendance/provider/teamsheetprovider.dart';
 import 'package:cnattendance/screen/profile/admin_chat_thread_screen.dart';
 import 'package:cnattendance/screen/profile/chatscreen.dart';
+import 'package:cnattendance/screen/profile/group_chat_screen.dart';
+import 'package:cnattendance/screen/profile/new_message_screen.dart';
 import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/widget/premium_background.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 class ChatListScreen extends StatelessWidget {
@@ -29,7 +34,7 @@ class ChatList extends StatefulWidget {
   State<ChatList> createState() => _ChatListState();
 }
 
-enum _ChatFilter { all, online, admin }
+enum _ChatFilter { all, online, admin, groups }
 
 class _ChatListState extends State<ChatList> {
   final TextEditingController _searchController = TextEditingController();
@@ -39,6 +44,8 @@ class _ChatListState extends State<ChatList> {
   final Map<String, DateTime> _latestChatAt = {};
   final List<StreamSubscription<QuerySnapshot<Map<String, dynamic>>>>
       _chatSubscriptions = [];
+  final GroupChatController _groupController =
+      Get.put(GroupChatController(), tag: 'group_list');
   bool _initialState = true;
   bool _isLoading = false;
   _ChatFilter _selectedFilter = _ChatFilter.all;
@@ -51,6 +58,7 @@ class _ChatListState extends State<ChatList> {
     if (_initialState) {
       _initialState = false;
       _loadTeam();
+      _loadGroups();
     }
   }
 
@@ -78,6 +86,13 @@ class _ChatListState extends State<ChatList> {
       setState(() {
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _loadGroups() async {
+    await _groupController.loadGroups();
+    if (mounted) {
+      setState(() {});
     }
   }
 
@@ -208,6 +223,7 @@ class _ChatListState extends State<ChatList> {
       _ChatFilter.online =>
         onlineContacts(sanitizedContacts, provider.onlineChatContacts),
       _ChatFilter.admin => adminContacts(sanitizedContacts),
+      _ChatFilter.groups => <ChatContact>[],
     };
 
     final filtered = selectedContacts
@@ -335,6 +351,12 @@ class _ChatListState extends State<ChatList> {
         .take(12)
         .toList();
 
+    final filteredGroups = _groupController.groups
+        .where((g) =>
+            _query.isEmpty ||
+            g.name.toLowerCase().contains(_query.toLowerCase()))
+        .toList();
+
     return PremiumBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
@@ -342,66 +364,86 @@ class _ChatListState extends State<ChatList> {
           child: RefreshIndicator(
             color: Colors.white,
             backgroundColor: Colors.blueGrey,
-            onRefresh: _loadTeam,
-            child: ListView(
+            onRefresh: () async {
+              await _loadTeam();
+              await _loadGroups();
+            },
+            child: CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-              children: [
-                _Header(),
-                const SizedBox(height: 14),
-                _SearchField(
-                  controller: _searchController,
-                  onChanged: (value) {
-                    setState(() {
-                      _query = value;
-                    });
-                  },
-                ),
-                const SizedBox(height: 16),
-                if (onlineContactList.isNotEmpty)
-                  _ActiveStories(onlineContactList, _openChat),
-                if (onlineContactList.isNotEmpty) const SizedBox(height: 18),
-                _Filters(
-                  selectedFilter: _selectedFilter,
-                  onAllTap: () {
-                    setState(() {
-                      _selectedFilter = _ChatFilter.all;
-                    });
-                  },
-                  onOnlineTap: () {
-                    setState(() {
-                      _selectedFilter = _ChatFilter.online;
-                    });
-                  },
-                  onAdminTap: () {
-                    setState(() {
-                      _selectedFilter = _ChatFilter.admin;
-                    });
-                  },
-                ),
-                const SizedBox(height: 10),
-                if (_isLoading && provider.chatContacts.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 60),
-                    child: Center(
-                      child: CircularProgressIndicator(color: Colors.white),
+              slivers: [
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                  sliver: SliverToBoxAdapter(
+                    child: Column(
+                      children: [
+                        _Header(onCompose: () {
+                          Get.to(() => const NewMessageScreen())?.then((_) {
+                            _loadGroups();
+                            _loadTeam();
+                          });
+                        }),
+                        const SizedBox(height: 14),
+                        _SearchField(
+                          controller: _searchController,
+                          onChanged: (value) {
+                            setState(() {
+                              _query = value;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        if (_selectedFilter != _ChatFilter.groups &&
+                            onlineContactList.isNotEmpty)
+                          _ActiveStories(onlineContactList, _openChat),
+                        if (_selectedFilter != _ChatFilter.groups &&
+                            onlineContactList.isNotEmpty)
+                          const SizedBox(height: 18),
+                        _Filters(
+                          selectedFilter: _selectedFilter,
+                          onAllTap: () {
+                            setState(() {
+                              _selectedFilter = _ChatFilter.all;
+                            });
+                          },
+                          onOnlineTap: () {
+                            setState(() {
+                              _selectedFilter = _ChatFilter.online;
+                            });
+                          },
+                          onAdminTap: () {
+                            setState(() {
+                              _selectedFilter = _ChatFilter.admin;
+                            });
+                          },
+                          onGroupsTap: () {
+                            setState(() {
+                              _selectedFilter = _ChatFilter.groups;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 10),
+                        if (_selectedFilter != _ChatFilter.groups &&
+                            filteredGroups.isNotEmpty &&
+                            _selectedFilter == _ChatFilter.all) ...[
+                          _SectionHeader(
+                              label: translate('chat_list_screen.groups')),
+                          ...filteredGroups.map((group) => _GroupChatTile(
+                                group: group,
+                                onTap: () => Get.to(() => GroupChatScreen(
+                                    groupId: group.id,
+                                    groupName: group.name)),
+                              )),
+                          const SizedBox(height: 8),
+                        ],
+                      ],
                     ),
-                  )
-                else if (contactList.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 60),
-                    child: Center(
-                      child: Text(
-                        translate('chat_list_screen.no_chats'),
-                        style: const TextStyle(color: Colors.white70),
-                      ),
-                    ),
-                  )
+                  ),
+                ),
+                if (_selectedFilter == _ChatFilter.groups)
+                  ..._groupsSlivers(filteredGroups)
                 else
-                  ...contactList.map((contact) => _ChatListTile(
-                        contact: contact,
-                        onTap: () => _openChat(contact),
-                      )),
+                  ..._contactsSlivers(contactList, provider, filteredGroups),
+                const SliverPadding(padding: EdgeInsets.only(bottom: 20)),
               ],
             ),
           ),
@@ -409,9 +451,108 @@ class _ChatListState extends State<ChatList> {
       ),
     );
   }
+
+  List<Widget> _groupsSlivers(List<GroupChat> groups) {
+    if (_groupController.isLoading.value) {
+      return const [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.only(top: 60),
+            child: Center(
+              child: CircularProgressIndicator(color: Colors.white),
+            ),
+          ),
+        ),
+      ];
+    }
+    if (groups.isEmpty) {
+      return [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 60),
+            child: Center(
+              child: Text(
+                translate('chat_list_screen.no_groups'),
+                style: const TextStyle(color: Colors.white70),
+              ),
+            ),
+          ),
+        ),
+      ];
+    }
+    return [
+      SliverPadding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        sliver: SliverList.builder(
+          itemCount: groups.length,
+          itemBuilder: (context, index) {
+            final group = groups[index];
+            return _GroupChatTile(
+              key: ValueKey('group_${group.id}'),
+              group: group,
+              onTap: () => Get.to(() =>
+                  GroupChatScreen(groupId: group.id, groupName: group.name)),
+            );
+          },
+        ),
+      ),
+    ];
+  }
+
+  List<Widget> _contactsSlivers(List<ChatContact> contactList,
+      TeamSheetProvider provider, List<GroupChat> filteredGroups) {
+    if (_isLoading && provider.chatContacts.isEmpty) {
+      return const [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.only(top: 60),
+            child: Center(
+              child: CircularProgressIndicator(color: Colors.white),
+            ),
+          ),
+        ),
+      ];
+    }
+    if (contactList.isEmpty &&
+        (_selectedFilter != _ChatFilter.all || filteredGroups.isEmpty)) {
+      return [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 60),
+            child: Center(
+              child: Text(
+                translate('chat_list_screen.no_chats'),
+                style: const TextStyle(color: Colors.white70),
+              ),
+            ),
+          ),
+        ),
+      ];
+    }
+    return [
+      SliverPadding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        sliver: SliverList.builder(
+          itemCount: contactList.length,
+          itemBuilder: (context, index) {
+            final contact = contactList[index];
+            return _ChatListTile(
+              key: ValueKey('contact_${contact.id}_${contact.username}'),
+              contact: contact,
+              onTap: () => _openChat(contact),
+            );
+          },
+        ),
+      ),
+    ];
+  }
 }
 
 class _Header extends StatelessWidget {
+  final VoidCallback onCompose;
+
+  const _Header({required this.onCompose});
+
   @override
   Widget build(BuildContext context) {
     final enterprise = EnterpriseTheme.of(context);
@@ -428,7 +569,7 @@ class _Header extends StatelessWidget {
           ),
         ),
         IconButton(
-          onPressed: () {},
+          onPressed: onCompose,
           icon: Icon(Icons.edit_square, color: enterprise.text),
         ),
       ],
@@ -519,12 +660,14 @@ class _Filters extends StatelessWidget {
   final VoidCallback onAllTap;
   final VoidCallback onOnlineTap;
   final VoidCallback onAdminTap;
+  final VoidCallback onGroupsTap;
 
   const _Filters({
     required this.selectedFilter,
     required this.onAllTap,
     required this.onOnlineTap,
     required this.onAdminTap,
+    required this.onGroupsTap,
   });
 
   @override
@@ -547,6 +690,12 @@ class _Filters extends StatelessWidget {
           label: translate('chat_list_screen.admin'),
           selected: selectedFilter == _ChatFilter.admin,
           onTap: onAdminTap,
+        ),
+        const SizedBox(width: 10),
+        _FilterChip(
+          label: translate('chat_list_screen.groups'),
+          selected: selectedFilter == _ChatFilter.groups,
+          onTap: onGroupsTap,
         ),
       ],
     );
@@ -597,6 +746,7 @@ class _ChatListTile extends StatelessWidget {
   final VoidCallback onTap;
 
   const _ChatListTile({
+    super.key,
     required this.contact,
     required this.onTap,
   });
@@ -717,6 +867,144 @@ class _Avatar extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  final String label;
+
+  const _SectionHeader({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8, bottom: 4, left: 8),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white54,
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.8,
+        ),
+      ),
+    );
+  }
+}
+
+class _GroupChatTile extends StatelessWidget {
+  final GroupChat group;
+  final VoidCallback onTap;
+
+  const _GroupChatTile({
+    super.key,
+    required this.group,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final enterprise = EnterpriseTheme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(22),
+        onTap: onTap,
+        child: EnterpriseGlass(
+          radius: 22,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          glowOpacity: 0.06,
+          child: Row(
+            children: [
+              ClipOval(
+                child: group.avatar != null && group.avatar!.isNotEmpty
+                    ? CachedNetworkImage(
+                        imageUrl: group.avatar!,
+                        width: 58,
+                        height: 58,
+                        fit: BoxFit.cover,
+                        errorWidget: (_, __, ___) => _GroupAvatarPlaceholder(),
+                      )
+                    : _GroupAvatarPlaceholder(),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      group.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: enterprise.text,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      group.lastMessage != null
+                          ? '${group.lastMessage!.senderName}: ${_lastMessagePreview(group.lastMessage!)}'
+                          : '${group.memberCount} members',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style:
+                          TextStyle(color: enterprise.mutedText, fontSize: 14),
+                    ),
+                  ],
+                ),
+              ),
+              if (group.lastMessageAt != null)
+                Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: Text(
+                    _formatGroupTime(group.lastMessageAt!),
+                    style: TextStyle(color: enterprise.mutedText, fontSize: 11),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _lastMessagePreview(dynamic lastMessage) {
+    final type = lastMessage.messageType;
+    if (type == 'image') return 'Sent a photo';
+    if (type == 'voice') return 'Sent a voice message';
+    if (type == 'file') return 'Sent a file';
+    if (type == 'location') return 'Sent a location';
+    return lastMessage.message ?? '';
+  }
+
+  String _formatGroupTime(String isoTime) {
+    try {
+      final dt = DateTime.parse(isoTime);
+      final now = DateTime.now();
+      if (dt.day == now.day && dt.month == now.month && dt.year == now.year) {
+        return DateFormat('hh:mm a').format(dt);
+      }
+      return DateFormat('MMM dd').format(dt);
+    } catch (_) {
+      return '';
+    }
+  }
+}
+
+class _GroupAvatarPlaceholder extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 58,
+      height: 58,
+      decoration: const BoxDecoration(
+        color: Colors.white12,
+        shape: BoxShape.circle,
+      ),
+      child: const Icon(Icons.group, color: Colors.white54, size: 30),
     );
   }
 }

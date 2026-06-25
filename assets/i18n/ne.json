@@ -11,7 +11,9 @@
     "all": "सबै",
     "online": "अनलाइन",
     "admin": "Admin",
-    "no_chats": "कुनै च्याट भेटिएन"
+    "groups": "समूहहरू",
+    "no_chats": "कुनै च्याट भेटिएन",
+    "no_groups": "अहिलेसम्म कुनै समूह छैन"
   },
   "welcome_screen": {
     "verify_button": "कम्पनी सत्यापित गर्नुहोस्",
@@ -100,6 +102,7 @@
     "account": "खाता",
     "profile": "प्रोफाइल",
     "team_sheet": "टोलीको तालिका",
+    "groups": "समूहहरू",
     "project_management": "परियोजना प्रबन्धन",
     "change_password": "पासवर्ड परिवर्तन",
     "awards": "पुरस्कारहरू",

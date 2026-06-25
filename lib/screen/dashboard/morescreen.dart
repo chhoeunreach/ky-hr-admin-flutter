@@ -19,6 +19,7 @@ import 'package:cnattendance/screen/profile/payslipscreen.dart';
 import 'package:cnattendance/screen/profile/profilescreen.dart';
 import 'package:cnattendance/screen/profile/ssfhistoryscreen.dart';
 import 'package:cnattendance/screen/profile/supportscreen.dart';
+import 'package:cnattendance/screen/profile/group_list_screen.dart';
 import 'package:cnattendance/screen/profile/teamsheetscreen.dart';
 import 'package:cnattendance/screen/tadascreen/TadaScreen.dart';
 import 'package:cnattendance/theme/app_theme_mode.dart';
@@ -231,6 +232,8 @@ class MoreScreenState extends State<MoreScreen> {
                                 )),
                             Services(translate('more_screen.team_sheet'),
                                 Icons.group, TeamSheetScreen()),
+                            Services(translate('more_screen.groups'),
+                                Icons.forum, GroupListScreen()),
                             features["project-management"] != "1"
                                 ? SizedBox.shrink()
                                 : Services(

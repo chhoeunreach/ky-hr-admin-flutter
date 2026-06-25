@@ -11,7 +11,9 @@
     "all": "الكل",
     "online": "متصل",
     "admin": "Admin",
-    "no_chats": "لم يتم العثور على دردشات"
+    "groups": "المجموعات",
+    "no_chats": "لم يتم العثور على دردشات",
+    "no_groups": "لا توجد مجموعات بعد"
   },
   "welcome_screen": {
     "verify_button": "تحقق من الشركة",
@@ -100,6 +102,7 @@
     "account": "الحساب",
     "profile": "الملف الشخصي",
     "team_sheet": "جدول الفريق",
+    "groups": "المجموعات",
     "project_management": "إدارة المشاريع",
     "change_password": "تغيير كلمة المرور",
     "awards": "الجوائز",

@@ -342,7 +342,6 @@ class HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final features = context.watch<DashboardProvider>().features;
     return PremiumBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
@@ -373,9 +372,18 @@ class HomeScreenState extends State<HomeScreen> {
                       CheckAttendance(),
                       OverviewDashboard(controller),
                       UpcomingHoliday(),
-                      if (features["award"] == "1") RecentAward(),
-                      if (features["event"] == "1") RecentEvent(),
-                      if (features["training"] == "1") RecentTraining(),
+                      Selector<DashboardProvider, Map<String, String>>(
+                        selector: (_, provider) => provider.features,
+                        builder: (_, features, __) => Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (features["award"] == "1") RecentAward(),
+                            if (features["event"] == "1") RecentEvent(),
+                            if (features["training"] == "1")
+                              RecentTraining(),
+                          ],
+                        ),
+                      ),
                       WeeklyReportChart(),
                       MyTeam(),
                       const SizedBox(height: 24),

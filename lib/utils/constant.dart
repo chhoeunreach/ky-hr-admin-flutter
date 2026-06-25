@@ -59,6 +59,7 @@ class Constant {
   static const CHANGE_PASSWORD_API = "$API_URL/users/change-password";
   static const RULES_API = "$API_URL/company-rules";
   static const EDIT_PROFILE_URL = "$API_URL/users/update-profile";
+  static const UPDATE_FCM_TOKEN_URL = "$API_URL/users/update-fcm-token";
   static const NOTIFICATION_URL = "$API_URL/notifications";
   static const NOTICE_URL = "$API_URL/notices";
   static const MEETING_URL = "$API_URL/team-meetings";

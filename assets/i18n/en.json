@@ -11,7 +11,9 @@
     "all": "All",
     "online": "Online",
     "admin": "Admin",
-    "no_chats": "No chats found"
+    "groups": "Groups",
+    "no_chats": "No chats found",
+    "no_groups": "No groups yet"
   },
   "welcome_screen": {
     "verify_button": "Verify Company",
@@ -103,6 +105,7 @@
     "account": "Account",
     "profile": "Profile",
     "team_sheet": "Team Sheet",
+    "groups": "Groups",
     "project_management": "Project Management",
     "change_password": "Change Password",
     "awards": "Awards",

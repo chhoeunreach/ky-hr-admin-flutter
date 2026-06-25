@@ -11,7 +11,9 @@
     "all": "Tümü",
     "online": "Çevrimiçi",
     "admin": "Admin",
-    "no_chats": "Sohbet bulunamadı"
+    "groups": "Gruplar",
+    "no_chats": "Sohbet bulunamadı",
+    "no_groups": "Henüz grup yok"
   },
   "welcome_screen": {
     "verify_button": "Şirketi Doğrula",
@@ -103,6 +105,7 @@
     "account": "Hesap",
     "profile": "Profil",
     "team_sheet": "Takım Sayfası",
+    "groups": "Gruplar",
     "project_management": "Proje Yönetimi",
     "change_password": "Parolayı Değiştir",
     "awards": "Ödüller",

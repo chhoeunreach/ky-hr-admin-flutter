@@ -11,7 +11,9 @@
     "all": "همه",
     "online": "آنلاین",
     "admin": "Admin",
-    "no_chats": "گپی یافت نشد"
+    "groups": "گروه‌ها",
+    "no_chats": "گپی یافت نشد",
+    "no_groups": "هنوز گروهی وجود ندارد"
   },
   "welcome_screen": {
     "verify_button": "تأیید شرکت",
@@ -100,6 +102,7 @@
     "account": "حساب کاربری",
     "profile": "پروفایل",
     "team_sheet": "لیست تیم",
+    "groups": "گروه‌ها",
     "project_management": "مدیریت پروژه",
     "change_password": "تغییر رمز عبور",
     "awards": "جوایز",

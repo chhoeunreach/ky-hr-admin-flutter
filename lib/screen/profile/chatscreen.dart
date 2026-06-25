@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:cnattendance/model/chat.dart';
 import 'package:cnattendance/provider/chatcontroller.dart';
 import 'package:cnattendance/screen/profile/employeedetailscreen.dart';
@@ -134,6 +136,11 @@ class ChatScreen extends StatelessWidget {
       ),
       actions: [
         _HeaderActionButton(
+          icon: Icons.wallpaper_rounded,
+          iconColor: _accentPurple,
+          onPressed: () => _showBackgroundOptions(model),
+        ),
+        _HeaderActionButton(
           icon: Icons.call_rounded,
           iconColor: _accentPurple,
           onPressed: () {},
@@ -189,6 +196,31 @@ class ChatScreen extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  void _showBackgroundOptions(ChatController model) {
+    Get.bottomSheet(
+      _ChatActionSheet(
+        children: [
+          _ChatActionTile(
+            icon: Icons.photo_library_rounded,
+            label: 'Change background photo',
+            onTap: () {
+              Get.back();
+              model.pickBackgroundPhoto();
+            },
+          ),
+          _ChatActionTile(
+            icon: Icons.restart_alt_rounded,
+            label: 'Reset to original background',
+            onTap: () {
+              Get.back();
+              model.resetBackgroundPhoto();
+            },
+          ),
+        ],
       ),
     );
   }
@@ -251,6 +283,16 @@ class ChatScreen extends StatelessWidget {
   }) {
     final type = message.type;
     final mediaUrl = message.mediaUrl;
+    if (message.isDeleted) {
+      return const Text(
+        'Message deleted',
+        style: TextStyle(
+          color: Colors.white54,
+          fontSize: 15,
+          fontStyle: FontStyle.italic,
+        ),
+      );
+    }
     if (type == "image" && mediaUrl.trim().isNotEmpty) {
       return ChatImageBubble(
         imageUrl: mediaUrl,
@@ -286,13 +328,81 @@ class ChatScreen extends StatelessWidget {
       );
     }
 
-    return Text(
-      message.message,
-      style: TextStyle(
-        color: Colors.white,
-        fontSize: 16,
-        height: 1.28,
-        fontWeight: FontWeight.w500,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          message.message,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            height: 1.28,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        if (message.isEdited)
+          const Padding(
+            padding: EdgeInsets.only(top: 3),
+            child: Text(
+              'Edited',
+              style: TextStyle(color: Colors.white54, fontSize: 11),
+            ),
+          ),
+      ],
+    );
+  }
+
+  void _showMessageActions(ChatController model, Chat message) {
+    if (!model.canModifyMessage(message)) {
+      return;
+    }
+    Get.bottomSheet(
+      _ChatActionSheet(
+        children: [
+          if (message.type == 'text' && !message.isDeleted)
+            _ChatActionTile(
+              icon: Icons.edit_rounded,
+              label: 'Edit message',
+              onTap: () {
+                Get.back();
+                _showEditMessageDialog(model, message);
+              },
+            ),
+          _ChatActionTile(
+            icon: Icons.delete_outline_rounded,
+            label: 'Delete message',
+            isDestructive: true,
+            onTap: () {
+              Get.back();
+              model.deleteMessage(message);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditMessageDialog(ChatController model, Chat message) {
+    final controller = TextEditingController(text: message.message);
+    Get.dialog(
+      AlertDialog(
+        title: const Text('Edit message'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLines: null,
+        ),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () {
+              final text = controller.text.trim();
+              Get.back();
+              model.editMessage(message, text);
+            },
+            child: const Text('Save'),
+          ),
+        ],
       ),
     );
   }
@@ -333,10 +443,13 @@ class ChatScreen extends StatelessWidget {
                 const SizedBox(width: 6),
               ],
               Flexible(
-                child: _buildMessageBubble(
-                  context: context,
-                  message: message,
-                  isIncoming: isIncoming,
+                child: GestureDetector(
+                  onLongPress: () => _showMessageActions(model, message),
+                  child: _buildMessageBubble(
+                    context: context,
+                    message: message,
+                    isIncoming: isIncoming,
+                  ),
                 ),
               ),
               if (isIncoming) const SizedBox(width: 34),
@@ -357,25 +470,15 @@ class ChatScreen extends StatelessWidget {
       body: Column(
         children: [
           Expanded(
-            child: DecoratedBox(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Color(0xff06142f),
-                    Color(0xff071b3b),
-                    Color(0xff051026),
-                  ],
-                ),
-              ),
-              child: Obx(
-                () => ListView.builder(
-                  controller: model.scrollController,
-                  padding: const EdgeInsets.only(top: 10, bottom: 12),
-                  itemCount: model.chatList.length,
-                  itemBuilder: (context, index) =>
-                      _buildMessageRow(context, model, index),
+            child: Obx(
+              () => DecoratedBox(
+                decoration: _chatBackgroundDecoration(model.backgroundPath.value),
+                child: ListView.builder(
+                    controller: model.scrollController,
+                    padding: const EdgeInsets.only(top: 10, bottom: 12),
+                    itemCount: model.chatList.length,
+                    itemBuilder: (context, index) =>
+                        _buildMessageRow(context, model, index),
                 ),
               ),
             ),
@@ -383,6 +486,76 @@ class ChatScreen extends StatelessWidget {
           ChatComposerWidget(model: model),
         ],
       ),
+    );
+  }
+}
+
+BoxDecoration _chatBackgroundDecoration(String path) {
+  if (path.trim().isNotEmpty && File(path).existsSync()) {
+    return BoxDecoration(
+      image: DecorationImage(
+        image: FileImage(File(path)),
+        fit: BoxFit.cover,
+        colorFilter: const ColorFilter.mode(
+          Color(0xaa06142f),
+          BlendMode.darken,
+        ),
+      ),
+    );
+  }
+  return const BoxDecoration(
+    gradient: LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: [
+        Color(0xff06142f),
+        Color(0xff071b3b),
+        Color(0xff051026),
+      ],
+    ),
+  );
+}
+
+class _ChatActionSheet extends StatelessWidget {
+  final List<Widget> children;
+
+  const _ChatActionSheet({required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Container(
+        decoration: const BoxDecoration(
+          color: Color(0xff0d1f41),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+        ),
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 16),
+        child: Column(mainAxisSize: MainAxisSize.min, children: children),
+      ),
+    );
+  }
+}
+
+class _ChatActionTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool isDestructive;
+
+  const _ChatActionTile({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.isDestructive = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isDestructive ? const Color(0xffff6b6b) : Colors.white;
+    return ListTile(
+      leading: Icon(icon, color: color),
+      title: Text(label, style: TextStyle(color: color)),
+      onTap: onTap,
     );
   }
 }

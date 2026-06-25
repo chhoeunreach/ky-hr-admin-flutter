@@ -11,7 +11,9 @@
     "all": "ទាំងអស់",
     "online": "អនឡាញ",
     "admin": "Admin",
-    "no_chats": "រកមិនឃើញការជជែក"
+    "groups": "ក្រុម",
+    "no_chats": "រកមិនឃើញការជជែក",
+    "no_groups": "មិនទាន់មានក្រុមនៅឡើយទេ"
   },
   "welcome_screen": {
     "verify_button": "ផ្ទៀងផ្ទាត់ក្រុមហ៊ុន",
@@ -103,6 +105,7 @@
     "account": "គណនី",
     "profile": "ប្រវត្តិរូប",
     "team_sheet": "បញ្ជីក្រុម",
+    "groups": "ក្រុម",
     "project_management": "ការគ្រប់គ្រងគម្រោង",
     "change_password": "ផ្លាស់ប្ដូរពាក្យសម្ងាត់",
     "awards": "រង្វាន់",

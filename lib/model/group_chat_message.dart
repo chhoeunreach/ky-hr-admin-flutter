@@ -16,6 +16,10 @@ class GroupChatMessage {
   final double? longitude;
   final String? mapUrl;
   final String? createdAt;
+  final bool isEdited;
+  final bool isDeleted;
+  final String? editedAt;
+  final String? deletedAt;
 
   GroupChatMessage({
     required this.id,
@@ -35,6 +39,10 @@ class GroupChatMessage {
     this.longitude,
     this.mapUrl,
     this.createdAt,
+    this.isEdited = false,
+    this.isDeleted = false,
+    this.editedAt,
+    this.deletedAt,
   });
 
   factory GroupChatMessage.fromJson(Map<String, dynamic> json) {
@@ -56,6 +64,10 @@ class GroupChatMessage {
       longitude: json['longitude'] is double ? json['longitude'] : (json['longitude'] != null ? double.tryParse(json['longitude'].toString()) : null),
       mapUrl: json['map_url'],
       createdAt: json['created_at'],
+      isEdited: json['is_edited'] == true,
+      isDeleted: json['is_deleted'] == true,
+      editedAt: json['edited_at']?.toString(),
+      deletedAt: json['deleted_at']?.toString(),
     );
   }
 

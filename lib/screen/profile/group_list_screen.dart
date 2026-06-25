@@ -5,7 +5,6 @@ import 'package:cnattendance/screen/profile/create_group_screen.dart';
 import 'package:cnattendance/screen/profile/group_info_screen.dart';
 import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
@@ -16,11 +15,19 @@ class GroupListScreen extends StatefulWidget {
 
 class _GroupListScreenState extends State<GroupListScreen> {
   final GroupChatController _controller = Get.put(GroupChatController(), tag: 'group_list');
+  final _searchController = TextEditingController();
+  var _showSearch = false;
 
   @override
   void initState() {
     super.initState();
     _controller.loadGroups();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
@@ -32,34 +39,68 @@ class _GroupListScreenState extends State<GroupListScreen> {
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
-          title: Text('Groups', style: TextStyle(color: Colors.white)),
+          title: _showSearch
+              ? TextField(
+                  controller: _searchController,
+                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                  decoration: const InputDecoration(
+                    hintText: 'Search groups...',
+                    hintStyle: TextStyle(color: Colors.white38),
+                    border: InputBorder.none,
+                  ),
+                  cursorColor: Colors.white,
+                  autofocus: true,
+                  onChanged: (_) => setState(() {}),
+                )
+              : const Text('Chats', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
           actions: [
             IconButton(
-              icon: Icon(Icons.add, color: Colors.white),
+              icon: Icon(_showSearch ? Icons.close : Icons.search, color: Colors.white),
+              onPressed: () {
+                setState(() {
+                  _showSearch = !_showSearch;
+                  if (!_showSearch) _searchController.clear();
+                });
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.add, color: Colors.white),
               onPressed: () => Get.to(() => CreateGroupScreen()),
             ),
           ],
         ),
         body: Obx(() {
           if (_controller.isLoading.value) {
-            return Center(child: CircularProgressIndicator(color: Colors.white));
+            return const Center(child: CircularProgressIndicator(color: Colors.white));
           }
-          if (_controller.groups.isEmpty) {
+
+          final query = _searchController.text.trim().toLowerCase();
+          final groups = query.isEmpty
+              ? _controller.groups
+              : _controller.groups.where((g) =>
+                  g.name.toLowerCase().contains(query) ||
+                  (g.lastMessage?.message?.toLowerCase().contains(query) ?? false)
+                ).toList();
+
+          if (groups.isEmpty) {
             return Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.group, color: Colors.white38, size: 64),
-                  SizedBox(height: 16),
+                  Icon(query.isEmpty ? Icons.chat_bubble_outline : Icons.search_off,
+                      color: Colors.white24, size: 64),
+                  const SizedBox(height: 16),
                   Text(
-                    'No groups yet',
-                    style: TextStyle(color: Colors.white54, fontSize: 16),
+                    query.isEmpty ? 'No conversations yet' : 'No groups found',
+                    style: const TextStyle(color: Colors.white38, fontSize: 16),
                   ),
-                  SizedBox(height: 8),
-                  TextButton(
-                    onPressed: () => Get.to(() => CreateGroupScreen()),
-                    child: Text('Create a group'),
-                  ),
+                  if (query.isEmpty) ...[
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: () => Get.to(() => CreateGroupScreen()),
+                      child: const Text('Start a new group'),
+                    ),
+                  ],
                 ],
               ),
             );
@@ -67,15 +108,16 @@ class _GroupListScreenState extends State<GroupListScreen> {
           return RefreshIndicator(
             color: Colors.white,
             onRefresh: () => _controller.loadGroups(),
-            child: ListView.builder(
-              itemCount: _controller.groups.length,
+            child: ListView.separated(
+              itemCount: groups.length,
+              separatorBuilder: (_, __) => Divider(color: Colors.white.withOpacity(0.05), height: 1),
               itemBuilder: (context, index) {
-                final group = _controller.groups[index];
-                return _GroupTile(group: group, onTap: () {
-                  Get.to(() => GroupChatScreen(groupId: group.id, groupName: group.name));
-                }, onLongPress: () {
-                  _showGroupOptions(group);
-                });
+                final group = groups[index];
+                return _GroupTile(
+                  group: group,
+                  onTap: () => Get.to(() => GroupChatScreen(groupId: group.id, groupName: group.name)),
+                  onLongPress: () => _showGroupOptions(group),
+                );
               },
             ),
           );
@@ -87,38 +129,32 @@ class _GroupListScreenState extends State<GroupListScreen> {
   void _showGroupOptions(GroupChat group) {
     Get.bottomSheet(
       Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           color: Color(0xFF0A1E3D),
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
-        padding: EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 40, height: 4,
-              decoration: BoxDecoration(
-                color: Colors.white24,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            SizedBox(height: 20),
+            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2))),
+            const SizedBox(height: 20),
             ListTile(
-              leading: Icon(Icons.info_outline, color: Colors.white),
-              title: Text('View Info', style: TextStyle(color: Colors.white)),
-              onTap: () {
-                Get.back();
-                Get.to(() => GroupInfoScreen(groupId: group.id));
-              },
+              leading: const Icon(Icons.info_outline, color: Colors.white),
+              title: const Text('View Info', style: TextStyle(color: Colors.white)),
+              onTap: () { Get.back(); Get.to(() => GroupInfoScreen(groupId: group.id)); },
             ),
             if (group.isCreator)
               ListTile(
                 leading: Icon(Icons.delete, color: Colors.red[300]),
                 title: Text('Delete Group', style: TextStyle(color: Colors.red[300])),
-                onTap: () {
-                  Get.back();
-                  _confirmDelete(group.id);
-                },
+                onTap: () { Get.back(); _confirmDelete(group.id); },
+              ),
+            if (!group.isCreator)
+              ListTile(
+                leading: Icon(Icons.exit_to_app, color: Colors.red[300]),
+                title: Text('Leave Group', style: TextStyle(color: Colors.red[300])),
+                onTap: () { Get.back(); _confirmLeave(group.id); },
               ),
           ],
         ),
@@ -129,17 +165,31 @@ class _GroupListScreenState extends State<GroupListScreen> {
   void _confirmDelete(int groupId) {
     Get.dialog(
       AlertDialog(
-        backgroundColor: Color(0xFF0A1E3D),
-        title: Text('Delete Group?', style: TextStyle(color: Colors.white)),
-        content: Text('This action cannot be undone.', style: TextStyle(color: Colors.white70)),
+        backgroundColor: const Color(0xFF0A1E3D),
+        title: const Text('Delete Group?', style: TextStyle(color: Colors.white)),
+        content: const Text('This action cannot be undone.', style: TextStyle(color: Colors.white70)),
         actions: [
-          TextButton(onPressed: () => Get.back(), child: Text('Cancel')),
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
           TextButton(
-            onPressed: () {
-              Get.back();
-              _controller.deleteGroup(groupId);
-            },
-            child: Text('Delete', style: TextStyle(color: Colors.red[300])),
+            onPressed: () { Get.back(); _controller.deleteGroup(groupId); },
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmLeave(int groupId) {
+    Get.dialog(
+      AlertDialog(
+        backgroundColor: const Color(0xFF0A1E3D),
+        title: const Text('Leave Group?', style: TextStyle(color: Colors.white)),
+        content: const Text('You will no longer have access to this group.', style: TextStyle(color: Colors.white70)),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () { Get.back(); _controller.leaveGroup(groupId); },
+            child: const Text('Leave', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -156,41 +206,72 @@ class _GroupTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: Colors.white12,
-        backgroundImage: group.avatar != null ? NetworkImage(group.avatar!) : null,
-        child: group.avatar == null
-            ? Icon(Icons.group, color: Colors.white54)
-            : null,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        onLongPress: onLongPress,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 26,
+                backgroundColor: Colors.white12,
+                backgroundImage: group.avatar != null ? NetworkImage(group.avatar!) : null,
+                child: group.avatar == null
+                    ? const Icon(Icons.group, size: 26, color: Colors.white54)
+                    : null,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            group.name,
+                            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (group.lastMessageAt != null)
+                          Text(
+                            _formatTime(group.lastMessageAt!),
+                            style: const TextStyle(color: Colors.white38, fontSize: 12),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            group.lastMessage != null
+                                ? '${group.lastMessage!.senderName}: ${_previewText(group.lastMessage!)}'
+                                : '${group.memberCount} members',
+                            style: TextStyle(
+                              color: group.lastMessage != null ? Colors.white54 : Colors.white38,
+                              fontSize: 13,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (group.memberAvatars.isNotEmpty && group.lastMessage == null)
+                          const SizedBox(width: 4),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-      title: Text(
-        group.name,
-        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-      ),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (group.lastMessage != null)
-            Text(
-              '${group.lastMessage!.senderName}: ${_previewText(group.lastMessage!)}',
-              style: TextStyle(color: Colors.white54, fontSize: 13),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          if (group.lastMessageAt != null)
-            Text(
-              _formatTime(group.lastMessageAt!),
-              style: TextStyle(color: Colors.white38, fontSize: 11),
-            ),
-        ],
-      ),
-      trailing: Text(
-        '${group.memberCount} members',
-        style: TextStyle(color: Colors.white38, fontSize: 12),
-      ),
-      onTap: onTap,
-      onLongPress: onLongPress,
     );
   }
 

@@ -12,6 +12,9 @@ class Chat {
   final int? durationSeconds;
   final double? latitude;
   final double? longitude;
+  final String documentId;
+  final bool isDeleted;
+  final bool isEdited;
 
   Chat(
     this.id,
@@ -27,12 +30,16 @@ class Chat {
     this.durationSeconds,
     this.latitude,
     this.longitude,
+    this.documentId = "",
+    this.isDeleted = false,
+    this.isEdited = false,
   });
 
   factory Chat.fromFirestore(
     Map<String, dynamic> data, {
     required DateTime dateTime,
     String decodedMessage = "",
+    String documentId = "",
   }) {
     return Chat(
       data["id"]?.toString() ?? "",
@@ -48,6 +55,9 @@ class Chat {
       durationSeconds: _readInt(data["duration_seconds"]),
       latitude: _readDouble(data["latitude"]),
       longitude: _readDouble(data["longitude"]),
+      documentId: documentId,
+      isDeleted: data["deleted"] == true,
+      isEdited: data["edited"] == true,
     );
   }
 

@@ -37,7 +37,8 @@ class GroupChatRepository {
     if (response.statusCode == 200) {
       final responseData = data['data'];
       if (responseData is Map) {
-        return GroupChatDetail.fromJson(Map<String, dynamic>.from(responseData));
+        return GroupChatDetail.fromJson(
+            Map<String, dynamic>.from(responseData));
       }
     }
     throw _errorMessage(data);
@@ -47,6 +48,7 @@ class GroupChatRepository {
     required String name,
     String? description,
     List<int>? memberIds,
+    File? avatarFile,
   }) async {
     final token = await _preferences.getToken();
     final appUrl = await _preferences.getAppUrl();
@@ -55,14 +57,19 @@ class GroupChatRepository {
     final request = http.MultipartRequest('POST', uri);
     request.headers['Accept'] = 'application/json; charset=UTF-8';
     request.headers['Authorization'] = 'Bearer $token';
-    request.fields['name'] = name;
+    if (name.trim().isNotEmpty) {
+      request.fields['name'] = name.trim();
+    }
     if (description != null && description.isNotEmpty) {
       request.fields['description'] = description;
     }
     if (memberIds != null && memberIds.isNotEmpty) {
-      for (var id in memberIds) {
-        request.fields['member_ids[]'] = id.toString();
+      for (var i = 0; i < memberIds.length; i++) {
+        request.fields['member_ids[$i]'] = memberIds[i].toString();
       }
+    }
+    if (avatarFile != null) {
+      request.files.add(await http.MultipartFile.fromPath('avatar', avatarFile.path));
     }
 
     final streamedResponse = await request.send();
@@ -79,7 +86,27 @@ class GroupChatRepository {
     throw _errorMessage(data);
   }
 
-  Future<void> updateGroup(int groupId, {String? name, String? description}) async {
+  Future<void> updateGroupAvatar(int groupId, File avatarFile) async {
+    final token = await _preferences.getToken();
+    final appUrl = await _preferences.getAppUrl();
+    final uri = Uri.parse('$appUrl${Constant.GROUP_CHAT}/$groupId');
+
+    final request = http.MultipartRequest('POST', uri);
+    request.headers['Accept'] = 'application/json; charset=UTF-8';
+    request.headers['Authorization'] = 'Bearer $token';
+    request.files.add(await http.MultipartFile.fromPath('avatar', avatarFile.path));
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+    final data = _decodeBody(response.body);
+
+    if (response.statusCode != 200) {
+      throw _errorMessage(data);
+    }
+  }
+
+  Future<void> updateGroup(int groupId,
+      {String? name, String? description}) async {
     final body = <String, dynamic>{};
     if (name != null) body['name'] = name;
     if (description != null) body['description'] = description;
@@ -93,7 +120,6 @@ class GroupChatRepository {
   }
 
   Future<void> deleteGroup(int groupId) async {
-    final token = await _preferences.getToken();
     final appUrl = await _preferences.getAppUrl();
     final uri = Uri.parse('$appUrl${Constant.GROUP_CHAT}/$groupId');
 
@@ -112,9 +138,9 @@ class GroupChatRepository {
   }
 
   Future<void> removeMember(int groupId, int userId) async {
-    final token = await _preferences.getToken();
     final appUrl = await _preferences.getAppUrl();
-    final uri = Uri.parse('$appUrl${Constant.GROUP_CHAT}/$groupId/members/$userId');
+    final uri =
+        Uri.parse('$appUrl${Constant.GROUP_CHAT}/$groupId/members/$userId');
 
     final client = LoggingMiddleware(http.Client());
     final response = await client.delete(uri, headers: await _headers());
@@ -167,7 +193,28 @@ class GroupChatRepository {
     return _processSingleMessage(response);
   }
 
-  Future<GroupChatMessage> sendMediaMessage(int groupId, {
+  Future<GroupChatMessage> editMessage(
+      int groupId, int messageId, String text) async {
+    final response = await _connect.postResponse(
+      '${Constant.GROUP_CHAT}/$groupId/messages/$messageId',
+      await _headers(),
+      {'message': text},
+    );
+    return _processSingleMessage(response);
+  }
+
+  Future<GroupChatMessage> deleteMessage(int groupId, int messageId) async {
+    final appUrl = await _preferences.getAppUrl();
+    final uri =
+        Uri.parse('$appUrl${Constant.GROUP_CHAT}/$groupId/messages/$messageId');
+
+    final client = LoggingMiddleware(http.Client());
+    final response = await client.delete(uri, headers: await _headers());
+    return _processSingleMessage(response);
+  }
+
+  Future<GroupChatMessage> sendMediaMessage(
+    int groupId, {
     required String type,
     required String mediaUrl,
     String? mediaPath,
@@ -182,7 +229,8 @@ class GroupChatRepository {
     };
     if (mediaPath != null) body['media_path'] = mediaPath;
     if (fileName != null) body['file_name'] = fileName;
-    if (durationSeconds != null) body['duration_seconds'] = durationSeconds.toString();
+    if (durationSeconds != null)
+      body['duration_seconds'] = durationSeconds.toString();
     if (mediaWidth != null) body['media_width'] = mediaWidth.toString();
     if (mediaHeight != null) body['media_height'] = mediaHeight.toString();
 
@@ -194,7 +242,8 @@ class GroupChatRepository {
     return _processSingleMessage(response);
   }
 
-  Future<GroupChatMessage> sendLocation(int groupId, {
+  Future<GroupChatMessage> sendLocation(
+    int groupId, {
     required double latitude,
     required double longitude,
   }) async {

@@ -9,6 +9,7 @@ import 'package:cnattendance/provider/chatbadgecontroller.dart';
 import 'package:cnattendance/services/chat_media_upload_service.dart';
 import 'package:cnattendance/services/voice_recorder_service.dart';
 import 'package:cnattendance/utils/constant.dart';
+import 'package:cnattendance/utils/chat_background_store.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
@@ -40,6 +41,7 @@ class ChatController extends GetxController {
   var isRecording = false.obs;
   var recordingSeconds = 0.obs;
   var hasPendingVoiceRecording = false.obs;
+  var backgroundPath = "".obs;
 
   Preferences pref = Preferences();
 
@@ -53,6 +55,7 @@ class ChatController extends GetxController {
 
     setConversationDetail(hostUsername, currentUsername);
     await ChatBadgeController.ensureRegistered().setActiveConversation(convoId);
+    await loadBackground();
     super.onReady();
   }
 
@@ -93,7 +96,9 @@ class ChatController extends GetxController {
         "type": "text",
         "media_url": "",
         "sender": senderUsername,
-        "reciever": hostUsername
+        "reciever": hostUsername,
+        "edited": false,
+        "deleted": false,
       });
 
       unawaited(_sendPushNotificationSafely(
@@ -409,6 +414,7 @@ class ChatController extends GetxController {
               item.data(),
               dateTime: firebaseTimestamp.toDate(),
               decodedMessage: _decodeMessage(encodedMessage),
+              documentId: item.id,
             ),
           );
         }
@@ -429,6 +435,72 @@ class ChatController extends GetxController {
       },
       onError: (error) => print("Listen failed: $error"),
     );
+  }
+
+  bool canModifyMessage(Chat message) {
+    if (message.sender != currentUsername || message.isDeleted) {
+      return false;
+    }
+    return DateTime.now().difference(message.dateTime).inMinutes < 15;
+  }
+
+  Future<void> editMessage(Chat message, String text) async {
+    if (!canModifyMessage(message) || message.documentId.isEmpty) {
+      showToast('Messages can only be edited within 15 minutes.');
+      return;
+    }
+    final trimmed = text.trim();
+    if (trimmed.isEmpty || message.type != 'text') return;
+
+    await FirebaseFirestore.instance
+        .collection('messages')
+        .doc(message.documentId)
+        .update({
+      'message': base64.encode(utf8.encode(trimmed)),
+      'edited': true,
+      'edited_at': DateTime.now(),
+    });
+  }
+
+  Future<void> deleteMessage(Chat message) async {
+    if (!canModifyMessage(message) || message.documentId.isEmpty) {
+      showToast('Messages can only be deleted within 15 minutes.');
+      return;
+    }
+
+    await FirebaseFirestore.instance
+        .collection('messages')
+        .doc(message.documentId)
+        .update({
+      'message': '',
+      'type': 'text',
+      'media_url': '',
+      'media_path': '',
+      'deleted': true,
+      'deleted_at': DateTime.now(),
+    });
+  }
+
+  Future<void> loadBackground() async {
+    if (convoId.trim().isEmpty) return;
+    backgroundPath.value =
+        await ChatBackgroundStore.getBackground(convoId) ?? "";
+  }
+
+  Future<void> pickBackgroundPhoto() async {
+    final image = await _imagePicker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 88,
+    );
+    if (image == null || convoId.trim().isEmpty) return;
+    await ChatBackgroundStore.setBackground(convoId, image.path);
+    backgroundPath.value = image.path;
+  }
+
+  Future<void> resetBackgroundPhoto() async {
+    if (convoId.trim().isEmpty) return;
+    await ChatBackgroundStore.resetBackground(convoId);
+    backgroundPath.value = "";
   }
 
   Future<void> sendPushNotifiation(String title, String message,

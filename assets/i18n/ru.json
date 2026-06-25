@@ -11,7 +11,9 @@
     "all": "Все",
     "online": "Онлайн",
     "admin": "Admin",
-    "no_chats": "Чаты не найдены"
+    "groups": "Группы",
+    "no_chats": "Чаты не найдены",
+    "no_groups": "Пока нет групп"
   },
   "welcome_screen": {
     "verify_button": "Проверить компанию",
@@ -100,6 +102,7 @@
     "account": "Аккаунт",
     "profile": "Профиль",
     "team_sheet": "Список команды",
+    "groups": "Группы",
     "project_management": "Управление проектами",
     "change_password": "Сменить пароль",
     "awards": "Награды",

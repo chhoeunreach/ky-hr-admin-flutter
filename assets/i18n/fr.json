@@ -11,7 +11,9 @@
     "all": "Tous",
     "online": "En ligne",
     "admin": "Admin",
-    "no_chats": "Aucun chat trouvé"
+    "groups": "Groupes",
+    "no_chats": "Aucun chat trouvé",
+    "no_groups": "Aucun groupe pour le moment"
   },
   "welcome_screen": {
     "verify_button": "Vérifier l'entreprise",
@@ -100,6 +102,7 @@
     "account": "Compte",
     "profile": "Profil",
     "team_sheet": "Feuille d'équipe",
+    "groups": "Groupes",
     "project_management": "Gestion de projet",
     "change_password": "Changer le mot de passe",
     "awards": "Récompenses",

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cnattendance/data/source/datastore/preferences.dart';
 import 'package:cnattendance/provider/chatbadgecontroller.dart';
 import 'package:cnattendance/provider/notificationcontroller.dart';
 import 'package:cnattendance/screen/general/generalscreen.dart';
@@ -14,6 +15,7 @@ import 'package:cnattendance/screen/profile/group_chat_screen.dart';
 import 'package:cnattendance/utils/app_badge_sync.dart';
 import 'package:cnattendance/utils/chat_unread_store.dart';
 import 'package:cnattendance/utils/chat/notification_payload_parser.dart';
+import 'package:cnattendance/utils/fcm_token.dart';
 import 'package:cnattendance/utils/incoming_chat_listener.dart';
 import 'package:cnattendance/utils/navigationservice.dart';
 import 'package:cnattendance/utils/notification_history.dart';
@@ -23,6 +25,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_ringtone_player/flutter_ringtone_player.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:http/http.dart' as http;
 import 'package:in_app_notification/in_app_notification.dart';
 import 'package:overlay_support/overlay_support.dart';
 import '../firebase_options.dart';
@@ -556,6 +559,36 @@ class PushNotificationService {
     print(message.data.toString());
   }
 
+  static Future<void> _syncFcmTokenWithBackend(String? token) async {
+    if (!FcmToken.isValid(token)) {
+      return;
+    }
+
+    final preferences = Preferences();
+    final authToken = await preferences.getToken();
+    if (authToken.trim().isEmpty) {
+      _logPushDiagnostic('token refresh skipped: not logged in');
+      return;
+    }
+
+    try {
+      final uri = Uri.parse(
+          await preferences.getAppUrl() + Constant.UPDATE_FCM_TOKEN_URL);
+      final response = await http.post(uri, headers: {
+        'Accept': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $authToken',
+      }, body: {
+        'fcm_token': token!,
+      });
+      _logPushDiagnostic('token refresh synced', {
+        'status': response.statusCode,
+        'fcm': _maskToken(token),
+      });
+    } catch (e) {
+      debugPrint('Failed to sync refreshed FCM token: $e');
+    }
+  }
+
   static Future<void> _finishStartupSetup() async {
     try {
       final settings = await FirebaseMessaging.instance.requestPermission(
@@ -664,6 +697,11 @@ class PushNotificationService {
       );
       await _showForegroundSystemNotification(event, localKey: localKey);
       _showMessengerAlert(event, localKey: localKey);
+    });
+
+    FirebaseMessaging.instance.onTokenRefresh.listen((token) {
+      _logPushDiagnostic('onTokenRefresh', {'fcm': _maskToken(token)});
+      _syncFcmTokenWithBackend(token);
     });
 
     FirebaseMessaging.onMessageOpenedApp.listen((message) async {
