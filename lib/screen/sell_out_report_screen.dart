@@ -1,14 +1,17 @@
 import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:hexcolor/hexcolor.dart';
+import 'package:http/http.dart' as http;
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:cnattendance/data/source/datastore/preferences.dart';
 import 'package:cnattendance/models/sell_out_report.dart';
 import 'package:cnattendance/models/sell_out_report_line.dart';
-import 'package:cnattendance/screen/invoice_live_text_scanner_screen.dart';
 import 'package:cnattendance/services/ocr_service.dart';
 import 'package:cnattendance/services/sell_out_api_service.dart';
 import 'package:cnattendance/widget/premium_background.dart';
@@ -231,7 +234,8 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
     final query = _searchQuery.trim().toLowerCase();
     return reports.where((report) {
       if (widget.serviceType.isNotEmpty &&
-          report.serviceType != widget.serviceType) {
+          SellOutReport.canonicalServiceType(report.serviceType) !=
+              SellOutReport.canonicalServiceType(widget.serviceType)) {
         return false;
       }
       final created = DateTime.tryParse(report.createdAt);
@@ -664,7 +668,8 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
               ],
               if (report.lines.isNotEmpty) ...[
                 const SizedBox(height: 12),
-                ...report.lines.map(_buildReportLineSummary),
+                ...report.lines.map((line) => _buildReportLineSummary(
+                    line, report.requiresSerialNumberValidation)),
               ],
               const SizedBox(height: 10),
               Wrap(
@@ -675,9 +680,10 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
                       report.customerName.isEmpty ? '-' : report.customerName),
                   if (report.customerPhone.isNotEmpty)
                     _buildChip(Icons.phone, report.customerPhone),
-                  _buildChip(Icons.inventory_2, '${report.itemCount} item(s)'),
-                  _buildChip(Icons.payments_outlined,
-                      'Commission \$${report.commission.toStringAsFixed(2)}'),
+                  _buildChip(Icons.inventory_2, '${report.totalQty} qty'),
+                  if (report.isCommissionable)
+                    _buildChip(Icons.payments_outlined,
+                        'Commission \$${report.commission.toStringAsFixed(2)}'),
                 ],
               ),
               if (report.createdAt.isNotEmpty) ...[
@@ -694,44 +700,62 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
     );
   }
 
-  Widget _buildReportLineSummary(SellOutReportLine line) {
+  Widget _buildReportLineSummary(SellOutReportLine line,
+      [bool showSerialNumber = false]) {
     final productName =
         line.productName.trim().isEmpty ? 'Product pending' : line.productName;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Text(
-              productName,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: _sellOutText,
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  productName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: _sellOutText,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Qty ${line.qty}',
+                style: const TextStyle(
+                  color: _sellOutMuted,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                '\$${line.unitPrice.toStringAsFixed(2)}',
+                style: const TextStyle(
+                  color: _sellOutBlue,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+          if (showSerialNumber && line.serialNumber.trim().isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                'Serial: ${line.serialNumber.trim()}',
+                style: const TextStyle(
+                  color: _sellOutMuted,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            'Qty ${line.qty}',
-            style: const TextStyle(
-              color: _sellOutMuted,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(width: 10),
-          Text(
-            '\$${line.unitPrice.toStringAsFixed(2)}',
-            style: const TextStyle(
-              color: _sellOutBlue,
-              fontSize: 13,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
         ],
       ),
     );
@@ -901,6 +925,38 @@ class _SellOutReportDetailScreenState extends State<SellOutReportDetailScreen> {
                               '\$${line.unitPrice.toStringAsFixed(2)}'),
                           _detailRow('Subtotal',
                               '\$${line.subtotal.toStringAsFixed(2)}'),
+                          if (line.photoUrls.isNotEmpty) ...[
+                            const SizedBox(height: 8),
+                            GridView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 4,
+                                crossAxisSpacing: 6,
+                                mainAxisSpacing: 6,
+                              ),
+                              itemCount: line.photoUrls.length,
+                              itemBuilder: (context, photoIndex) {
+                                return GestureDetector(
+                                  onTap: () => _openPhotoViewer(
+                                      line.photoUrls, photoIndex),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: CachedNetworkImage(
+                                      imageUrl: line.photoUrls[photoIndex],
+                                      fit: BoxFit.cover,
+                                      errorWidget: (_, __, ___) => Container(
+                                        color: Colors.grey.shade200,
+                                        child: const Icon(Icons.broken_image,
+                                            color: Colors.grey),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
                         ],
                       ),
                     );
@@ -908,7 +964,7 @@ class _SellOutReportDetailScreenState extends State<SellOutReportDetailScreen> {
                 ),
                 if (report.photoUrls.isNotEmpty) ...[
                   const SizedBox(height: 12),
-                  _buildPhotoUrlCard(report.photoUrls),
+                  _buildPhotoUrlCard('Photos', report.photoUrls),
                 ],
                 if (report.note.isNotEmpty ||
                     report.extractedText.isNotEmpty) ...[
@@ -1003,9 +1059,9 @@ class _SellOutReportDetailScreenState extends State<SellOutReportDetailScreen> {
     );
   }
 
-  Widget _buildPhotoUrlCard(List<String> photoUrls) {
+  Widget _buildPhotoUrlCard(String title, List<String> photoUrls) {
     return _detailCard(
-      'Photos',
+      title,
       [
         GridView.builder(
           shrinkWrap: true,
@@ -1017,20 +1073,143 @@ class _SellOutReportDetailScreenState extends State<SellOutReportDetailScreen> {
           ),
           itemCount: photoUrls.length,
           itemBuilder: (context, index) {
-            return ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                photoUrls[index],
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
-                  color: Colors.grey.shade200,
-                  child: const Icon(Icons.broken_image, color: Colors.grey),
+            return GestureDetector(
+              onTap: () => _openPhotoViewer(photoUrls, index),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: CachedNetworkImage(
+                  imageUrl: photoUrls[index],
+                  fit: BoxFit.cover,
+                  errorWidget: (_, __, ___) => Container(
+                    color: Colors.grey.shade200,
+                    child: const Icon(Icons.broken_image, color: Colors.grey),
+                  ),
                 ),
               ),
             );
           },
         ),
       ],
+    );
+  }
+
+  void _openPhotoViewer(List<String> photoUrls, int initialIndex) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => _PhotoViewerScreen(
+          photoUrls: photoUrls,
+          initialIndex: initialIndex,
+        ),
+      ),
+    );
+  }
+}
+
+class _PhotoViewerScreen extends StatefulWidget {
+  final List<String> photoUrls;
+  final int initialIndex;
+
+  const _PhotoViewerScreen({
+    required this.photoUrls,
+    required this.initialIndex,
+  });
+
+  @override
+  State<_PhotoViewerScreen> createState() => _PhotoViewerScreenState();
+}
+
+class _PhotoViewerScreenState extends State<_PhotoViewerScreen> {
+  late final PageController _pageController;
+  late int _currentIndex;
+  bool _isDownloading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+    _pageController = PageController(initialPage: widget.initialIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _download() async {
+    if (_isDownloading) return;
+    setState(() => _isDownloading = true);
+    try {
+      final url = widget.photoUrls[_currentIndex];
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode != 200) {
+        throw Exception('Failed to download photo');
+      }
+      final dir = await getTemporaryDirectory();
+      final ext =
+          url.contains('.') ? url.split('.').last.split('?').first : 'jpg';
+      final filePath =
+          '${dir.path}/sell_out_photo_${DateTime.now().millisecondsSinceEpoch}.$ext';
+      final file = File(filePath);
+      await file.writeAsBytes(response.bodyBytes);
+      await Share.shareXFiles([XFile(filePath)]);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Download failed: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _isDownloading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        title: Text('${_currentIndex + 1} / ${widget.photoUrls.length}'),
+        actions: [
+          IconButton(
+            icon: _isDownloading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Icon(Icons.download_outlined),
+            onPressed: _isDownloading ? null : _download,
+          ),
+        ],
+      ),
+      body: PageView.builder(
+        controller: _pageController,
+        itemCount: widget.photoUrls.length,
+        onPageChanged: (index) => setState(() => _currentIndex = index),
+        itemBuilder: (context, index) {
+          return InteractiveViewer(
+            minScale: 0.5,
+            maxScale: 4,
+            child: Center(
+              child: CachedNetworkImage(
+                imageUrl: widget.photoUrls[index],
+                fit: BoxFit.contain,
+                errorWidget: (_, __, ___) => const Icon(
+                  Icons.broken_image_outlined,
+                  color: Colors.white54,
+                  size: 64,
+                ),
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }
@@ -1112,18 +1291,12 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
   final _imagePicker = ImagePicker();
   final _ocrService = OcrService();
   final _apiService = SellOutApiService();
-  final _extractedTextController = TextEditingController();
-  final _iCloudOcrTextController = TextEditingController();
   final List<String> _invoicePhotoPaths = [];
   final List<String> _iCloudPhotoPaths = [];
 
-  bool _isInvoiceOcrLoading = false;
-  bool _isICloudOcrLoading = false;
   bool _isSubmitting = false;
   bool _isInvoiceExpanded = true;
   bool _isICloudExpanded = true;
-  bool _showInvoiceOcrText = false;
-  bool _showICloudOcrText = false;
   bool _showSerialValidationErrors = false;
 
   final _sellerNameCtrl = TextEditingController();
@@ -1159,11 +1332,11 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
         serviceType: existing.serviceType,
         paymentMethod: existing.paymentMethod,
         note: existing.note,
-        extractedText: existing.extractedText,
         serverTotalAmount: existing.serverTotalAmount,
         createdAt: existing.createdAt,
         lines: existing.lines.map((l) => l.copyWith()).toList(),
         photoUrls: List<String>.from(existing.photoUrls),
+        photoIds: List<int?>.from(existing.photoIds),
       );
       _sellerNameCtrl.text = _report.sellerName;
       _branchNameCtrl.text = _report.branchName;
@@ -1171,7 +1344,6 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
       _customerPhoneCtrl.text = _report.customerPhone;
       _paymentMethodCtrl.text = _report.paymentMethod;
       _noteCtrl.text = _report.note;
-      _extractedTextController.text = _report.extractedText;
     } else {
       _report = SellOutReport();
       _report.serviceType = widget.serviceType;
@@ -1211,8 +1383,6 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
   @override
   void dispose() {
     _ocrService.dispose();
-    _extractedTextController.dispose();
-    _iCloudOcrTextController.dispose();
     _sellerNameCtrl.dispose();
     _branchNameCtrl.dispose();
     _customerNameCtrl.dispose();
@@ -1253,8 +1423,8 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
     final serviceType = widget.serviceType.isNotEmpty
         ? widget.serviceType
         : _report.serviceType;
-    return SellOutReport.serialNumberRequiredServiceTypes
-        .contains(serviceType.trim());
+    return SellOutReport.serialNumberRequiredCanonicalTypes
+        .contains(SellOutReport.canonicalServiceType(serviceType));
   }
 
   String? _serialNumberError(_LineControllers ctrls) {
@@ -1276,26 +1446,6 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
     _report.note = [
       if (note.isNotEmpty) note,
       if (info.isNotEmpty) 'iCloud Info\n$info',
-    ].join('\n\n');
-
-    final ocrText = _iCloudOcrTextController.text.trim();
-    final current = _report.extractedText.trim();
-    const header = '--- iCloud Info ---';
-    final block = ocrText.isEmpty ? '' : '$header\n$ocrText';
-    if (block.isEmpty) return;
-
-    final iCloudBlockPattern = RegExp(
-      '${RegExp.escape(header)}\\n[\\s\\S]*?(?=\\n\\n--- Product \\d+ ---|\$)',
-    );
-    if (iCloudBlockPattern.hasMatch(current)) {
-      _report.extractedText =
-          current.replaceFirst(iCloudBlockPattern, block).trim();
-      return;
-    }
-
-    _report.extractedText = [
-      if (current.isNotEmpty) current,
-      block,
     ].join('\n\n');
   }
 
@@ -1359,7 +1509,9 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
     final cropped = await ImageCropper().cropImage(
       sourcePath: photoPath,
       compressFormat: ImageCompressFormat.jpg,
-      compressQuality: 92,
+      compressQuality: 75,
+      maxWidth: 1600,
+      maxHeight: 1600,
       uiSettings: [
         AndroidUiSettings(
           toolbarTitle: 'Crop Photo',
@@ -1390,30 +1542,16 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
   }
 
   Future<void> _takeInvoicePhoto() async {
-    final result = await Navigator.push<InvoiceLiveTextResult>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const InvoiceLiveTextScannerScreen(),
-      ),
-    );
-    if (result == null) return;
+    final XFile? photo =
+        await _imagePicker.pickImage(source: ImageSource.camera);
+    if (photo != null) {
+      final croppedPhotoPath = await _cropPhoto(photo.path);
+      if (!mounted) return;
 
-    final croppedPhotoPath = await _cropPhoto(result.photoPath);
-    if (!mounted) return;
-
-    setState(() {
-      _invoicePhotoPaths.add(croppedPhotoPath);
-      _syncPhotoPaths();
-      _showInvoiceOcrText = true;
-    });
-
-    final scannerText = result.text.trim();
-    if (scannerText.isNotEmpty) {
-      _extractedTextController.text = scannerText;
-      _report.extractedText = scannerText;
-      _autoFillInvoiceFromText(scannerText);
-    } else {
-      await _extractInvoiceText();
+      setState(() {
+        _invoicePhotoPaths.add(croppedPhotoPath);
+        _syncPhotoPaths();
+      });
     }
   }
 
@@ -1427,7 +1565,6 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
         _invoicePhotoPaths.addAll(croppedPhotoPaths);
         _syncPhotoPaths();
       });
-      await _extractInvoiceText();
     }
   }
 
@@ -1486,7 +1623,6 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
         _iCloudPhotoPaths.add(croppedPhotoPath);
         _syncPhotoPaths();
       });
-      await _extractICloudText();
     }
   }
 
@@ -1500,7 +1636,6 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
         _iCloudPhotoPaths.addAll(croppedPhotoPaths);
         _syncPhotoPaths();
       });
-      await _extractICloudText();
     }
   }
 
@@ -1512,152 +1647,21 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
   }
 
   void _syncPhotoPaths() {
-    final allPaths = <String>[];
-    allPaths.addAll(_invoicePhotoPaths);
-    allPaths.addAll(_iCloudPhotoPaths);
-    for (final ctrls in _lineControllers) {
-      allPaths.addAll(ctrls.photoPaths);
-    }
+    final invoicePaths = <String>{};
+    invoicePaths.addAll(_invoicePhotoPaths);
+    invoicePaths.addAll(_iCloudPhotoPaths);
 
     _report.photoPaths
       ..clear()
-      ..addAll(allPaths.toSet());
-  }
+      ..addAll(invoicePaths);
 
-  Future<void> _extractInvoiceText() async {
-    if (_invoicePhotoPaths.isEmpty) {
-      _showError(
-          'No Invoice Photos', 'Please take or select invoice photos first.');
-      return;
+    for (int i = 0;
+        i < _report.lines.length && i < _lineControllers.length;
+        i++) {
+      _report.lines[i].photoPaths
+        ..clear()
+        ..addAll(_lineControllers[i].photoPaths.toSet());
     }
-
-    setState(() {
-      _isInvoiceOcrLoading = true;
-      _showInvoiceOcrText = true;
-      _extractedTextController.clear();
-      _report.extractedText = '';
-    });
-
-    try {
-      final extracted =
-          await _ocrService.extractTextFromMultipleImages(_invoicePhotoPaths);
-      _extractedTextController.text = extracted;
-      _report.extractedText = extracted;
-      _autoFillInvoiceFromText(extracted);
-    } catch (e) {
-      _showError('Invoice Extract Failed', e.toString());
-    } finally {
-      setState(() => _isInvoiceOcrLoading = false);
-    }
-  }
-
-  void _autoFillInvoiceFromText(String rawText) {
-    final text = rawText.trim();
-    if (text.isEmpty) {
-      return;
-    }
-
-    final fields = _ocrService.autoDetectFields(text);
-
-    if (fields['customer_name']?.isNotEmpty == true) {
-      _customerNameCtrl.text = fields['customer_name']!;
-      _report.customerName = fields['customer_name']!;
-    }
-    if (fields['phone_number']?.isNotEmpty == true) {
-      _customerPhoneCtrl.text = fields['phone_number']!;
-      _report.customerPhone = fields['phone_number']!;
-    }
-    if (fields['invoice_no']?.isNotEmpty == true &&
-        !_noteCtrl.text.contains(fields['invoice_no']!)) {
-      _appendNoteLine('Invoice: ${fields['invoice_no']}');
-    }
-  }
-
-  void _autoFillInvoiceFromOcr() {
-    final text = _extractedTextController.text.trim();
-    if (text.isEmpty) {
-      _showError('No Invoice Text', 'Extract invoice text first.');
-      return;
-    }
-
-    _autoFillInvoiceFromText(text);
-    setState(() {});
-  }
-
-  Future<void> _copyInvoiceOcrText() async {
-    final text = _extractedTextController.text.trim();
-    if (text.isEmpty) {
-      _showError('No Invoice Text', 'Extract invoice text first.');
-      return;
-    }
-
-    await Clipboard.setData(ClipboardData(text: text));
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Invoice text copied'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
-  Future<void> _extractICloudText() async {
-    if (_iCloudPhotoPaths.isEmpty) {
-      _showError(
-          'No iCloud Photos', 'Please take or select iCloud photos first.');
-      return;
-    }
-
-    setState(() {
-      _isICloudOcrLoading = true;
-      _showICloudOcrText = true;
-      _iCloudOcrTextController.clear();
-    });
-
-    try {
-      final extracted =
-          await _ocrService.extractTextFromMultipleImages(_iCloudPhotoPaths);
-      _iCloudOcrTextController.text =
-          _ocrService.formatICloudOcrText(extracted);
-      _autoFillICloudFromText(extracted);
-    } catch (e) {
-      _showError('iCloud Extract Failed', e.toString());
-    } finally {
-      setState(() => _isICloudOcrLoading = false);
-    }
-  }
-
-  void _autoFillICloudFromText(String rawText) {
-    final fields = _ocrService.autoDetectICloudFields(rawText);
-    if (fields['account_name']?.isNotEmpty == true) {
-      _iCloudAccountNameCtrl.text = fields['account_name']!;
-    }
-    if (fields['apple_id']?.isNotEmpty == true) {
-      _iCloudAppleIdCtrl.text = fields['apple_id']!;
-    }
-    if (fields['icloud_storage']?.isNotEmpty == true) {
-      _iCloudStorageCtrl.text = fields['icloud_storage']!;
-    }
-    if (fields['trusted_phone']?.isNotEmpty == true) {
-      _iCloudTrustedPhoneCtrl.text = fields['trusted_phone']!;
-      if (_customerPhoneCtrl.text.trim().isEmpty) {
-        _customerPhoneCtrl.text = fields['trusted_phone']!;
-        _report.customerPhone = fields['trusted_phone']!;
-      }
-    }
-    if (fields['devices']?.isNotEmpty == true) {
-      _iCloudDevicesCtrl.text = fields['devices']!;
-    }
-    setState(() {});
-  }
-
-  void _autoFillICloudFromOcr() {
-    final text = _iCloudOcrTextController.text.trim();
-    if (text.isEmpty) {
-      _showError('No iCloud Text', 'Extract iCloud text first.');
-      return;
-    }
-    _autoFillICloudFromText(text);
   }
 
   Future<void> _extractProductText(int index) async {
@@ -1702,9 +1706,6 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
     if (fields['product_name']?.isNotEmpty == true) {
       line.productName = fields['product_name']!;
     }
-    if (fields['model_number']?.isNotEmpty == true) {
-      line.modelNumber = fields['model_number']!;
-    }
     if (fields['imei']?.isNotEmpty == true) {
       line.imei = fields['imei']!;
     }
@@ -1732,16 +1733,6 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
     setState(() {});
   }
 
-  void _autoFillProductFromOcr(int index) {
-    if (index >= _lineControllers.length) return;
-    final text = _lineControllers[index].ocrText.text.trim();
-    if (text.isEmpty) {
-      _showError('No Product Text', 'Extract product text first.');
-      return;
-    }
-    _autoFillProductLineFromText(index, text);
-  }
-
   void _replaceProductExtractedText(int index, String text) {
     final header = '--- Product ${index + 1} ---';
     final block = '$header\n$text'.trim();
@@ -1761,12 +1752,6 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
     }
 
     _report.extractedText = '$current\n\n$block';
-  }
-
-  void _appendNoteLine(String line) {
-    final current = _noteCtrl.text.trim();
-    _noteCtrl.text = current.isEmpty ? line : '$current\n$line';
-    _report.note = _noteCtrl.text.trim();
   }
 
   void _addProductLine() {
@@ -2080,7 +2065,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                     const SizedBox(height: 12),
                     _buildTextField(_noteCtrl, 'Note', Icons.note, maxLines: 3),
                     const SizedBox(height: 16),
-                    _buildInvoiceOcrContent(),
+                    _buildInvoicePhotosSection(),
                   ],
                 ),
               ),
@@ -2140,11 +2125,29 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
     );
   }
 
-  Widget _buildInvoiceOcrContent() {
+  Widget _buildInvoicePhotosSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionTitle('Invoice Photos'),
+        if (_isEditing && _report.photoUrls.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Text(
+            'Already uploaded (${_report.photoUrls.length})',
+            style: const TextStyle(
+              fontSize: 12,
+              color: _sellOutMuted,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          _buildUploadedPhotoGrid(
+            _report.photoUrls,
+            (index) => _removeUploadedPhoto(
+                index, _report.photoUrls, _report.photoIds),
+          ),
+          const SizedBox(height: 12),
+        ],
         Row(
           children: [
             Expanded(
@@ -2170,135 +2173,6 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
             color: _sellOutMuted,
             fontWeight: FontWeight.w500,
           ),
-        ),
-        const SizedBox(height: 12),
-        Align(
-          alignment: Alignment.centerRight,
-          child: TextButton.icon(
-            onPressed: () {
-              setState(() => _showInvoiceOcrText = !_showInvoiceOcrText);
-            },
-            icon: Icon(
-              _showInvoiceOcrText ? Icons.visibility_off : Icons.visibility,
-              size: 18,
-            ),
-            label: Text(_showInvoiceOcrText ? 'Hide Text' : 'Show Text'),
-            style: TextButton.styleFrom(
-              foregroundColor: _sellOutBlue,
-              textStyle: const TextStyle(fontWeight: FontWeight.w700),
-            ),
-          ),
-        ),
-        AnimatedCrossFade(
-          firstChild: const SizedBox(width: double.infinity),
-          secondChild: Column(
-            children: [
-              TextField(
-                controller: _extractedTextController,
-                enableInteractiveSelection: true,
-                maxLines: 5,
-                onChanged: (value) => _report.extractedText = value,
-                decoration: InputDecoration(
-                  labelText: 'Invoice Text',
-                  hintText: 'Invoice text will appear here...',
-                  alignLabelWithHint: true,
-                  filled: true,
-                  fillColor: Colors.white,
-                  labelStyle: const TextStyle(color: _sellOutMuted),
-                  floatingLabelStyle: const TextStyle(
-                    color: _sellOutBlue,
-                    fontWeight: FontWeight.w700,
-                  ),
-                  hintStyle: const TextStyle(color: _sellOutMuted),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: _sellOutBorder),
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide:
-                        const BorderSide(color: _sellOutBlue, width: 1.5),
-                  ),
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                ),
-                style: const TextStyle(color: _sellOutText, fontSize: 13),
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: _isInvoiceOcrLoading ? null : _extractInvoiceText,
-                  icon: _isInvoiceOcrLoading
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Icon(Icons.text_fields),
-                  label: Text(_isInvoiceOcrLoading
-                      ? 'Extracting...'
-                      : 'Extract Invoice Info'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _sellOutBlue,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8)),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    textStyle: const TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: _autoFillInvoiceFromOcr,
-                  icon: const Icon(Icons.auto_fix_high, size: 18),
-                  label: const Text('Auto Fill Invoice Info'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: _sellOutBlue,
-                    backgroundColor: _sellOutBlue.withValues(alpha: 0.06),
-                    side:
-                        BorderSide(color: _sellOutBlue.withValues(alpha: 0.45)),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8)),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    textStyle: const TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: _copyInvoiceOcrText,
-                  icon: const Icon(Icons.copy, size: 18),
-                  label: const Text('Copy Text'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: _sellOutBlue,
-                    backgroundColor: _sellOutBlue.withValues(alpha: 0.06),
-                    side:
-                        BorderSide(color: _sellOutBlue.withValues(alpha: 0.45)),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8)),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    textStyle: const TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          crossFadeState: _showInvoiceOcrText
-              ? CrossFadeState.showSecond
-              : CrossFadeState.showFirst,
-          duration: const Duration(milliseconds: 180),
         ),
       ],
     );
@@ -2366,6 +2240,103 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
         );
       },
     );
+  }
+
+  Widget _buildUploadedPhotoGrid(
+      List<String> photoUrls, void Function(int) onRemove) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+        childAspectRatio: 1,
+      ),
+      itemCount: photoUrls.length,
+      itemBuilder: (context, index) {
+        return Stack(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: CachedNetworkImage(
+                imageUrl: photoUrls[index],
+                fit: BoxFit.cover,
+                width: double.infinity,
+                height: double.infinity,
+                placeholder: (context, url) => const Center(
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+                errorWidget: (context, url, error) => Container(
+                  color: const Color(0xfff7faff),
+                  child: const Icon(Icons.broken_image_outlined,
+                      color: _sellOutMuted),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 4,
+              right: 4,
+              child: GestureDetector(
+                onTap: () => onRemove(index),
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: Colors.black54,
+                    shape: BoxShape.circle,
+                  ),
+                  padding: const EdgeInsets.all(4),
+                  child: const Icon(Icons.close, size: 16, color: Colors.white),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _removeUploadedPhoto(
+    int index,
+    List<String> photoUrls,
+    List<int?> photoIds,
+  ) async {
+    final reportId = _report.id;
+    final photoId = index < photoIds.length ? photoIds[index] : null;
+    if (reportId == null || photoId == null) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Remove Photo'),
+        content: const Text('Remove this uploaded photo from the report?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Remove', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    try {
+      await _apiService.deletePhoto(reportId, photoId);
+      setState(() {
+        photoUrls.removeAt(index);
+        photoIds.removeAt(index);
+      });
+    } catch (e) {
+      if (!mounted) return;
+      _showError('Remove Failed', e.toString());
+    }
   }
 
   Widget _buildICloudInfoSection() {
@@ -2460,128 +2431,6 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                       'Devices',
                       Icons.devices,
                       maxLines: 4,
-                    ),
-                    const SizedBox(height: 8),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton.icon(
-                        onPressed: () {
-                          setState(
-                              () => _showICloudOcrText = !_showICloudOcrText);
-                        },
-                        icon: Icon(
-                          _showICloudOcrText
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                          size: 18,
-                        ),
-                        label: Text(
-                            _showICloudOcrText ? 'Hide Text' : 'Show Text'),
-                        style: TextButton.styleFrom(
-                          foregroundColor: _sellOutBlue,
-                          textStyle:
-                              const TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                      ),
-                    ),
-                    AnimatedCrossFade(
-                      firstChild: const SizedBox(width: double.infinity),
-                      secondChild: Column(
-                        children: [
-                          TextField(
-                            controller: _iCloudOcrTextController,
-                            maxLines: 5,
-                            decoration: InputDecoration(
-                              labelText: 'iCloud Text',
-                              hintText: 'iCloud text will appear here...',
-                              alignLabelWithHint: true,
-                              filled: true,
-                              fillColor: Colors.white,
-                              labelStyle: const TextStyle(color: _sellOutMuted),
-                              floatingLabelStyle: const TextStyle(
-                                color: _sellOutBlue,
-                                fontWeight: FontWeight.w700,
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide:
-                                    const BorderSide(color: _sellOutBorder),
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: const BorderSide(
-                                    color: _sellOutBlue, width: 1.5),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 12),
-                            ),
-                            style: const TextStyle(
-                                color: _sellOutText, fontSize: 13),
-                          ),
-                          const SizedBox(height: 8),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton.icon(
-                              onPressed: _isICloudOcrLoading
-                                  ? null
-                                  : _extractICloudText,
-                              icon: _isICloudOcrLoading
-                                  ? const SizedBox(
-                                      width: 18,
-                                      height: 18,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Colors.white,
-                                      ),
-                                    )
-                                  : const Icon(Icons.text_fields),
-                              label: Text(_isICloudOcrLoading
-                                  ? 'Extracting...'
-                                  : 'Extract iCloud Info'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: _sellOutBlue,
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8)),
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 12),
-                                textStyle: const TextStyle(
-                                    fontWeight: FontWeight.w700),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton.icon(
-                              onPressed: _autoFillICloudFromOcr,
-                              icon: const Icon(Icons.auto_fix_high, size: 18),
-                              label: const Text('Auto Fill iCloud Info'),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: _sellOutBlue,
-                                backgroundColor:
-                                    _sellOutBlue.withValues(alpha: 0.06),
-                                side: BorderSide(
-                                    color:
-                                        _sellOutBlue.withValues(alpha: 0.45)),
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8)),
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 12),
-                                textStyle: const TextStyle(
-                                    fontWeight: FontWeight.w700),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      crossFadeState: _showICloudOcrText
-                          ? CrossFadeState.showSecond
-                          : CrossFadeState.showFirst,
-                      duration: const Duration(milliseconds: 180),
                     ),
                   ],
                 ),
@@ -2737,7 +2586,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                 children: [
                   const Divider(height: 4, color: _sellOutBorder),
                   const SizedBox(height: 8),
-                  _buildProductOcrControls(index, ctrls),
+                  _buildProductPhotosSection(index, ctrls),
                   const SizedBox(height: 12),
                   _buildLineField(ctrls.productName, 'Product Name',
                       (v) => line.productName = v),
@@ -2776,17 +2625,14 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                         child: _buildLineField(
                           ctrls.serialNumber,
                           'Serial Number',
-                          (v) {
-                            line.serialNumber = v;
-                            setState(() {});
-                          },
+                          (v) => line.serialNumber = v,
                           errorText: _serialNumberError(ctrls),
                           keyboardType: TextInputType.visiblePassword,
                           inputFormatters: _requiresSerialNumberValidation
                               ? [
                                   FilteringTextInputFormatter.allow(
                                       RegExp(r'[A-Za-z0-9]')),
-                                  LengthLimitingTextInputFormatter(10),
+                                  LengthLimitingTextInputFormatter(16),
                                 ]
                               : null,
                         ),
@@ -2839,7 +2685,8 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
     );
   }
 
-  Widget _buildProductOcrControls(int index, _LineControllers ctrls) {
+  Widget _buildProductPhotosSection(int index, _LineControllers ctrls) {
+    final line = _report.lines[index];
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -2858,6 +2705,23 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
               fontSize: 13,
             ),
           ),
+          if (_isEditing && line.photoUrls.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Already uploaded (${line.photoUrls.length})',
+              style: const TextStyle(
+                fontSize: 12,
+                color: _sellOutMuted,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            _buildUploadedPhotoGrid(
+              line.photoUrls,
+              (photoIndex) => _removeUploadedPhoto(
+                  photoIndex, line.photoUrls, line.photoIds),
+            ),
+          ],
           const SizedBox(height: 8),
           Row(
             children: [
@@ -2972,25 +2836,6 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () => _autoFillProductFromOcr(index),
-                    icon: const Icon(Icons.auto_fix_high, size: 18),
-                    label: const Text('Auto Fill Product'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: _sellOutBlue,
-                      backgroundColor: Colors.white,
-                      side: BorderSide(
-                          color: _sellOutBlue.withValues(alpha: 0.45)),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      textStyle: const TextStyle(fontWeight: FontWeight.w700),
-                    ),
-                  ),
-                ),
               ],
             ),
             crossFadeState: ctrls.showOcrText
@@ -3010,7 +2855,10 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
       List<TextInputFormatter>? inputFormatters}) {
     return TextField(
       controller: controller,
-      onChanged: onChanged,
+      onChanged: (v) {
+        onChanged(v);
+        setState(() {});
+      },
       keyboardType: keyboardType,
       inputFormatters: inputFormatters,
       decoration: InputDecoration(

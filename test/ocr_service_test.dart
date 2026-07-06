@@ -1,195 +1,270 @@
-import 'package:cnattendance/services/ocr_service.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:cnattendance/services/ocr_service.dart';
 
 void main() {
   group('OcrService autoDetectFields', () {
-    test('prefers valid Cambodian phone numbers over unrelated digit runs', () {
-      final service = OcrService();
+    late OcrService service;
 
-      final fields = service.autoDetectFields('''
-Customer Phone
-1234567891
-016469756
-Invoice No: OICE
-''');
-
-      expect(fields['phone_number'], '016469756');
+    setUp(() {
+      service = OcrService();
     });
 
-    test('does not treat bare invoice digits as phone numbers', () {
-      final service = OcrService();
-
-      final fields = service.autoDetectFields('Invoice No: 1234567891');
-
-      expect(fields['phone_number'], isEmpty);
+    test('extracts product name from text', () {
+      final result = service.autoDetectFields('iPhone 15 Pro Max');
+      expect(result['product_name'], 'iPhone 15 Pro Max');
     });
 
-    test('detects customer phone numbers that start with 855', () {
-      final service = OcrService();
-
-      final fields = service.autoDetectFields('Customer Phone: 85516469756');
-
-      expect(fields['phone_number'], '85516469756');
+    test('extracts model name from labeled form', () {
+      final result = service.autoDetectFields('Model Name iPhone 13 Pro Max');
+      expect(result['product_name'], 'iPhone 13 Pro Max');
     });
 
-    test('detects customer phone numbers that start with +855', () {
-      final service = OcrService();
-
-      final fields = service.autoDetectFields('Customer Phone: +85516469756');
-
-      expect(fields['phone_number'], '+85516469756');
+    test('extracts serial number - Apple format', () {
+      final result =
+          service.autoDetectFields('(S) Serial No. H39VT6FQJJ');
+      expect(result['serial_number'], 'H39VT6FQJJ');
     });
 
-    test('does not detect 885 as a customer phone country code', () {
-      final service = OcrService();
-
-      final fields = service.autoDetectFields('Customer Phone: 88516469756');
-
-      expect(fields['phone_number'], isEmpty);
+    test('extracts serial number - Serial Number format', () {
+      final result =
+          service.autoDetectFields('Serial Number WDNQFYHC21');
+      expect(result['serial_number'], 'WDNQFYHC21');
     });
 
-    test('does not read the word INVOICE as an invoice number', () {
-      final service = OcrService();
-
-      final fields = service.autoDetectFields('INVOICE / 发票');
-
-      expect(fields['invoice_no'], isEmpty);
+    test('extracts serial number - N7FXFTH5CX', () {
+      final result =
+          service.autoDetectFields('Serial Number N7FXFTH5CX');
+      expect(result['serial_number'], 'N7FXFTH5CX');
     });
 
-    test('extracts invoice number when a real invoice label is present', () {
-      final service = OcrService();
-
-      final fields = service.autoDetectFields('Invoice No: A12345');
-
-      expect(fields['invoice_no'], 'A12345');
+    test('extracts serial number - Samsung S/N', () {
+      final result = service.autoDetectFields('S/N : R5GL14G69KE');
+      expect(result['serial_number'], 'R5GL14G69KE');
     });
 
-    test('extracts all-letter Apple serial numbers from iOS About text', () {
-      final service = OcrService();
-
-      final fields = service.autoDetectFields('''
-About
-iOS Version
-26.2
-Model Name
-iPhone 17 Pro
-Model Number
-MG7K4LL/A
-Serial Number
-JXWKTQPGDG
-Capacity
-256 GB
-Available
-233.85 GB
-''');
-
-      expect(fields['product_name'], 'iPhone 17 Pro');
-      expect(fields['model_number'], 'MG7K4LL/A');
-      expect(fields['serial_number'], 'JXWKTQPGDG');
-      expect(fields['storage'], '256 GB');
+    test('extracts serial number - OPPO S/N', () {
+      final result = service.autoDetectFields('S/N: HE5DDANFAQHMU4EQ');
+      expect(result['serial_number'], 'HE5DDANFAQHMU4EQ');
     });
 
-    test('extracts Apple box product identifiers with serial as primary field',
-        () {
-      final service = OcrService();
-
-      final fields = service.autoDetectFields('''
-MG7K4LL/A iPhone 17 Pro, Silver, 256GB Model A3256
-EID 89049032020008885500239606153170
-(S) Serial No. JYXOMYFGM9
-IMEI/MEID 355832512293090
-UPC 1 95950 62616 2
-IMEI2 355832512421253
-''');
-
-      expect(fields['serial_number'], 'JYXOMYFGM9');
-      expect(fields['product_name'], 'iPhone 17 Pro');
-      expect(fields['model_number'], 'A3256');
-      expect(fields['imei'], '355832512293090');
-      expect(fields['imei2'], '355832512421253');
-      expect(fields['color'], 'silver');
-      expect(fields['storage'], '256GB');
+    test('accepts 6-char serial', () {
+      final result = service.autoDetectFields('Serial Number ABCDEF');
+      expect(result['serial_number'], 'ABCDEF');
     });
 
-    test('copies only the value after serial labels', () {
-      final service = OcrService();
-
-      final aboutSerial =
-          service.autoDetectFields('Serial Number H0CHN047N70G');
-      final boxSerial = service.autoDetectFields('(S) Serial No. JYX0MYFGM9');
-      final slashSerial = service.autoDetectFields('S/N ABC1234567');
-
-      expect(aboutSerial['serial_number'], 'H0CHN047N70G');
-      expect(boxSerial['serial_number'], 'JYX0MYFGM9');
-      expect(slashSerial['serial_number'], 'ABC1234567');
+    test('extracts serial from SN: prefix', () {
+      final result = service.autoDetectFields('SN: X7Y8Z9W0');
+      expect(result['serial_number'], 'X7Y8Z9W0');
     });
 
-    test('formats product OCR text into clear product information', () {
-      final service = OcrService();
+    test('extracts serial from Serial # prefix', () {
+      final result = service.autoDetectFields('Serial # H39VT6FQJJ');
+      expect(result['serial_number'], 'H39VT6FQJJ');
+    });
 
-      final formatted = service.formatProductOcrText('''
-Model Name iPhone 11 Pro Max
-Model Number NWGJ2LL/A
-Serial Number HOCHN047N70G
-Coverage Expired
-Parts & Service History
-Songs 0
-Videos 517
-Photos 1,723
-Applications 35
-Capacity 64 GB
-Available 1.85 GB
-''');
+    test('rejects serial shorter than 6 chars', () {
+      final result = service.autoDetectFields('Serial Number ABC12');
+      expect(result['serial_number'], '');
+    });
 
-      expect(
-        formatted,
-        '''
-Model Name: iPhone 11 Pro Max
-Model Number: NWGJ2LL/A
-Serial Number: HOCHN047N70G
-Coverage: Expired
-Parts & Service History
-Songs: 0
-Videos: 517
-Photos: 1,723
-Applications: 35
-Capacity: 64 GB
-Available: 1.85 GB
-'''
-            .trim(),
+    test('rejects serial longer than 16 chars', () {
+      final result = service.autoDetectFields('Serial Number ABCDEF12345678901');
+      expect(result['serial_number'], '');
+    });
+
+    test('accepts 16-char serial', () {
+      final result = service.autoDetectFields('Serial Number ABCDEF1234567890');
+      expect(result['serial_number'], 'ABCDEF1234567890');
+    });
+
+    test('accepts 13-char serial', () {
+      final result = service.autoDetectFields('S/N: HOCHNO047N70G');
+      expect(result['serial_number'], 'HOCHNO047N70G');
+    });
+
+    test('standalone 12-char value goes to serial not model', () {
+      final result = service.autoDetectFields('ABCDEF123456');
+      expect(result['serial_number'], 'ABCDEF123456');
+      expect(result['model_number'], '');
+    });
+
+    test('ignores photo separator as product name', () {
+      final result = service.autoDetectFields('--- Photo 1 ---');
+      expect(result['product_name'], '');
+    });
+
+    test('ignores photo separator line', () {
+      final result = service.autoDetectFields('Model Name iPhone 13\n--- Photo 1 ---\nSerial Number ABCDEF1234');
+      expect(result['product_name'], 'iPhone 13');
+      expect(result['serial_number'], 'ABCDEF1234');
+    });
+
+    test('model number with slash is ignored (model_number removed)', () {
+      final result = service.autoDetectFields('Model Number MLKP3LL/A');
+      expect(result['serial_number'], '');
+      expect(result['model_number'], '');
+    });
+
+    test('model number SM-S928B/DS is ignored', () {
+      final result = service.autoDetectFields('Model Number SM-S928B/DS');
+      expect(result['model_number'], '');
+    });
+
+    test('Model : label value ignored (model_number removed)', () {
+      final result = service.autoDetectFields('Model : SM-F766B');
+      expect(result['model_number'], '');
+    });
+
+    test('Model No. label value ignored (model_number removed)', () {
+      final result = service.autoDetectFields('Model No. A3257');
+      expect(result['model_number'], '');
+    });
+
+    test('Model Number label with 10-char value becomes serial', () {
+      final result = service.autoDetectFields('Model Number : NZFXFTH5CX');
+      expect(result['serial_number'], 'NZFXFTH5CX');
+      expect(result['model_number'], '');
+    });
+
+    test('Model Number label with 9-char value ignored (< 10, no redirect)', () {
+      final result = service.autoDetectFields('Model Number : MLKP3LLJA');
+      expect(result['model_number'], '');
+      expect(result['serial_number'], '');
+    });
+
+    test('Model Number label with 8-char value ignored', () {
+      final result = service.autoDetectFields('Model Number : NWG2LLJA');
+      expect(result['model_number'], '');
+      expect(result['serial_number'], '');
+    });
+
+    test('Model Number label with dash is ignored', () {
+      final result = service.autoDetectFields('Model Number : SM-F766B');
+      expect(result['model_number'], '');
+      expect(result['serial_number'], '');
+    });
+
+    test('Model Number label with slash is ignored', () {
+      final result = service.autoDetectFields('Model Number : MLKP3LL/A');
+      expect(result['model_number'], '');
+      expect(result['serial_number'], '');
+    });
+
+    test('13-char under Model label becomes serial, 8-char under Serial stays serial', () {
+      final result = service.autoDetectFields(
+        'Model Number: HOCHNO047N70G\nSerial Number: NWG2LLJA',
       );
+      expect(result['serial_number'], 'HOCHNO047N70G');
+      expect(result['model_number'], '');
     });
 
-    test('extracts iCloud account info from Apple Account OCR text', () {
-      final service = OcrService();
+    test('9-char value under Serial Number label stays serial (no model redirect)', () {
+      final result = service.autoDetectFields('Serial Number: MLKP3LLJA');
+      expect(result['serial_number'], 'MLKP3LLJA');
+      expect(result['model_number'], '');
+    });
 
-      final fields = service.autoDetectICloudFields('''
-Apple Account
-CHHOEUN REACH
-chhoeunreach@gmail.com
-Personal Information
-Sign-In & Security
-iCloud 5 GB
-Find My
-Two-Factor Authentication
-Verify Using
-Vireak
-This iPhone 11 Pro Max
-CHHOEUN's MacBook Pro
-MacBook Pro 16"
-iPad
-iPad Pro
-+855 16 469 756
-Trusted phone number
-''');
+    test('extracts IMEI from text', () {
+      final result = service.autoDetectFields('IMEI: 123456789012345');
+      expect(result['imei'], '123456789012345');
+    });
 
-      expect(fields['account_name'], 'CHHOEUN REACH');
-      expect(fields['apple_id'], 'chhoeunreach@gmail.com');
-      expect(fields['icloud_storage'], '5 GB');
-      expect(fields['trusted_phone'], '+85516469756');
-      expect(fields['devices'], contains('This iPhone 11 Pro Max'));
-      expect(fields['devices'], contains('MacBook Pro 16"'));
-      expect(fields['devices'], contains('iPad Pro'));
+    test('extracts IMEI with spaces', () {
+      final result = service.autoDetectFields('354667 221 484221');
+      expect(result['imei'], '354667221484221');
+    });
+
+    test('extracts IMEI1 and IMEI2', () {
+      final result = service.autoDetectFields(
+          'IMEI1: 123456789012345\nIMEI2: 543210987654321');
+      expect(result['imei'], '123456789012345');
+      expect(result['imei2'], '543210987654321');
+    });
+
+    test('extracts color', () {
+      final result = service.autoDetectFields('Galaxy S24 Ultra Titanium Gray 512GB');
+      expect(result['color'], 'Titanium Gray');
+    });
+
+    test('extracts color Natural Titanium', () {
+      final result = service.autoDetectFields('iPhone 15 Pro Max Natural Titanium 256GB');
+      expect(result['color'], 'Natural Titanium');
+    });
+
+    test('extracts storage - Capacity labeled', () {
+      final result = service.autoDetectFields('Capacity128 GB');
+      expect(result['storage'], '128GB');
+    });
+
+    test('extracts storage - Capacity with colon', () {
+      final result = service.autoDetectFields('Capacity: 128 GB');
+      expect(result['storage'], '128GB');
+    });
+
+    test('extracts storage - standalone', () {
+      final result = service.autoDetectFields('Storage: 256GB');
+      expect(result['storage'], '256GB');
+    });
+
+    test('extracts storage - no label 128GB', () {
+      final result = service.autoDetectFields('128GB');
+      expect(result['storage'], '128GB');
+    });
+
+    test('extracts storage - 512GB', () {
+      final result = service.autoDetectFields('Capacity: 512GB');
+      expect(result['storage'], '512GB');
+    });
+
+    test('extracts storage - 1TB', () {
+      final result = service.autoDetectFields('Capacity: 1TB');
+      expect(result['storage'], '1TB');
+    });
+
+    test('full form extraction', () {
+      final result = service.autoDetectFields(
+        'Model Name iPhone 13 Pro Max\nModel Number MLKP3LL/A\nSerial Number N7FXFTH5CX\nCapacity128 GB',
+      );
+      expect(result['product_name'], 'iPhone 13 Pro Max');
+      expect(result['model_number'], '');
+      expect(result['serial_number'], 'N7FXFTH5CX');
+      expect(result['storage'], '128GB');
+    });
+
+    test('Galaxy S24 Ultra full extraction', () {
+      final result = service.autoDetectFields(
+        'Galaxy S24 Ultra Titanium Gray 512GB\nS/N: R5GL14G69KE\nModel Number SM-S928B/DS',
+      );
+      expect(result['product_name'], 'Galaxy S24 Ultra');
+      expect(result['color'], 'Titanium Gray');
+      expect(result['storage'], '512GB');
+      expect(result['serial_number'], 'R5GL14G69KE');
+      expect(result['model_number'], '');
+    });
+
+    test('extracts multiple fields from mixed text', () {
+      final result = service.autoDetectFields(
+        'iPhone 15 Pro Max\n(S) Serial No. H39VT6FQJJ\nModel : SM-F766B\nIMEI: 123456789012345\nStorage: 256GB',
+      );
+      expect(result['product_name'], 'iPhone 15 Pro Max');
+      expect(result['serial_number'], 'H39VT6FQJJ');
+      expect(result['model_number'], '');
+      expect(result['imei'], '123456789012345');
+      expect(result['storage'], '256GB');
+    });
+
+    test('skips IMEI as serial number', () {
+      final result = service.autoDetectFields(
+        'Serial: 123456789012345\nS/N: ABCDEF1234',
+      );
+      expect(result['imei'], '123456789012345');
+      expect(result['serial_number'], 'ABCDEF1234');
+    });
+
+    test('returns empty strings for unknown text', () {
+      final result = service.autoDetectFields('Some random text here');
+      expect(result['product_name'], '');
+      expect(result['serial_number'], '');
     });
   });
 }

@@ -5,6 +5,12 @@
       location = "group:Runner.xcodeproj">
    </FileRef>
    <FileRef
+      location = "group:Pods/Pods">
+   </FileRef>
+   <FileRef
       location = "group:Pods/Pods.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:DeviceInfoExtractorPlugin.swift">
    </FileRef>
 </Workspace>

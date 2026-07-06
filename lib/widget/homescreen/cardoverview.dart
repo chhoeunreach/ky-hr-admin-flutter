@@ -4,12 +4,14 @@ import 'package:flutter/material.dart';
 class CardOverView extends StatelessWidget {
   final String type;
   final String value;
+  final String? subtitle;
   final dynamic icon;
   final VoidCallback callback;
 
   CardOverView(
       {required this.type,
       required this.value,
+      this.subtitle,
       required this.icon,
       required this.callback});
 
@@ -109,6 +111,32 @@ class CardOverView extends StatelessWidget {
                           );
                         },
                       ),
+                      if (subtitle != null) ...[
+                        const SizedBox(height: 2),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.payments_outlined,
+                              size: 11,
+                              color: enterprise.text.withValues(alpha: 0.65),
+                            ),
+                            const SizedBox(width: 3),
+                            Flexible(
+                              child: Text(
+                                subtitle!,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color:
+                                      enterprise.text.withValues(alpha: 0.65),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ],
                   ),
                 ),

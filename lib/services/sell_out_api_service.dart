@@ -109,6 +109,25 @@ class SellOutApiService {
     }
   }
 
+  Future<void> deletePhoto(int reportId, int photoId) async {
+    final token = await _preferences.getToken();
+    final baseUrl = await _preferences.getAppUrl();
+
+    try {
+      await _dio.delete(
+        '${baseUrl}${Constant.SELL_OUT_REPORT_URL}/$reportId/photos/$photoId',
+        options: Options(
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+    } on DioException catch (e) {
+      throw _toException(e, 'Failed to remove photo');
+    }
+  }
+
   Future<FormData> _buildFormData(SellOutReport report) async {
     final formData = FormData();
 
@@ -130,6 +149,16 @@ class SellOutApiService {
       final lineMap = line.toMap(i);
       for (final entry in lineMap.entries) {
         formData.fields.add(MapEntry(entry.key, entry.value));
+      }
+
+      for (int p = 0; p < line.photoPaths.length; p++) {
+        final path = line.photoPaths[p];
+        final ext = _getExtension(path);
+        final file = await MultipartFile.fromFile(
+          path,
+          filename: 'line_${i}_photo_$p$ext',
+        );
+        formData.files.add(MapEntry('lines[$i][photos][]', file));
       }
     }
 

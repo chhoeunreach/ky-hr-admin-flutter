@@ -10,6 +10,12 @@ class SellOutReportLine {
   String storage;
   int qty;
   double unitPrice;
+  List<String> photoUrls;
+  List<int?> photoIds;
+
+  /// Local file paths picked on-device, pending upload. Never populated
+  /// from the server.
+  List<String> photoPaths;
 
   SellOutReportLine({
     this.id,
@@ -23,9 +29,25 @@ class SellOutReportLine {
     this.storage = '',
     this.qty = 1,
     this.unitPrice = 0.0,
-  });
+    List<String>? photoUrls,
+    List<int?>? photoIds,
+    List<String>? photoPaths,
+  })  : photoUrls = photoUrls ?? [],
+        photoIds = photoIds ?? [],
+        photoPaths = photoPaths ?? [];
 
   factory SellOutReportLine.fromJson(Map<String, dynamic> json) {
+    final photoEntries = _asList(json['photos'])
+        .whereType<Map>()
+        .map((photo) {
+          final url = _asString(photo['photo_url']).isNotEmpty
+              ? _asString(photo['photo_url'])
+              : _asString(photo['photo_path']);
+          return MapEntry(_asInt(photo['id']), url);
+        })
+        .where((entry) => entry.value.isNotEmpty)
+        .toList();
+
     return SellOutReportLine(
       id: _asInt(json['id']),
       productName: _asString(json['product_name']),
@@ -38,6 +60,8 @@ class SellOutReportLine {
       storage: _asString(json['storage']),
       qty: _asInt(json['qty']) ?? 1,
       unitPrice: _asDouble(json['unit_price']),
+      photoUrls: photoEntries.map((entry) => entry.value).toList(),
+      photoIds: photoEntries.map((entry) => entry.key).toList(),
     );
   }
 
@@ -67,6 +91,9 @@ class SellOutReportLine {
     String? storage,
     int? qty,
     double? unitPrice,
+    List<String>? photoUrls,
+    List<int?>? photoIds,
+    List<String>? photoPaths,
   }) {
     return SellOutReportLine(
       id: id ?? this.id,
@@ -80,6 +107,9 @@ class SellOutReportLine {
       storage: storage ?? this.storage,
       qty: qty ?? this.qty,
       unitPrice: unitPrice ?? this.unitPrice,
+      photoUrls: photoUrls ?? List<String>.from(this.photoUrls),
+      photoIds: photoIds ?? List<int?>.from(this.photoIds),
+      photoPaths: photoPaths ?? List<String>.from(this.photoPaths),
     );
   }
 
@@ -96,6 +126,10 @@ class SellOutReportLine {
       'lines[$index][qty]': qty.toString(),
       'lines[$index][unit_price]': unitPrice.toStringAsFixed(2),
     };
+  }
+
+  static List<dynamic> _asList(dynamic value) {
+    return value is List ? value : const [];
   }
 
   static String _asString(dynamic value) {

@@ -2,21 +2,35 @@ import 'sell_out_report_line.dart';
 
 class SellOutReport {
   static const double commissionPerItem = 0.25;
-  static const Set<String> commissionableServiceTypes = {
-    'លក់',
-    'អ៊ុត',
-    'Sell',
-    'Scots',
+
+  /// Service type labels are stored on the report exactly as the translated
+  /// label shown in the UI at creation time. Since the app's language can
+  /// change after a report is saved (and translations have changed over
+  /// time, e.g. "Iron" was briefly mistranslated as "Scots"), comparisons
+  /// must go through [canonicalServiceType] instead of matching raw strings.
+  static const Map<String, Set<String>> _serviceTypeAliases = {
+    'sell': {'Sell', 'លក់'},
+    'material': {'Material', 'សម្ភារ'},
+    'iron': {'Iron', 'Scots', 'អ៊ុត'},
+    'repair': {'Repair', 'ជួសជុល'},
+    'buy_in': {'Buy In', 'ទិញចូល', 'ទិញ', 'Buy'},
+    'icloud_cus': {'iCloud Cus'},
   };
-  static const Set<String> serialNumberRequiredServiceTypes = {
-    'លក់',
-    'Sell',
-    'ទិញ',
-    'ទិញចូល',
-    'Buy',
-    'Buy In',
+
+  static const Set<String> commissionableCanonicalTypes = {'sell', 'iron'};
+  static const Set<String> serialNumberRequiredCanonicalTypes = {
+    'sell',
+    'buy_in',
   };
   static final RegExp serialNumberPattern = RegExp(r'^[A-Za-z0-9]+$');
+
+  static String canonicalServiceType(String raw) {
+    final trimmed = raw.trim();
+    for (final entry in _serviceTypeAliases.entries) {
+      if (entry.value.contains(trimmed)) return entry.key;
+    }
+    return trimmed;
+  }
 
   int? id;
   String invoiceNo;
@@ -36,6 +50,7 @@ class SellOutReport {
   List<SellOutReportLine> lines;
   List<String> photoPaths;
   List<String> photoUrls;
+  List<int?> photoIds;
 
   SellOutReport({
     this.id,
@@ -56,9 +71,11 @@ class SellOutReport {
     List<SellOutReportLine>? lines,
     List<String>? photoPaths,
     List<String>? photoUrls,
+    List<int?>? photoIds,
   })  : lines = lines ?? [SellOutReportLine()],
         photoPaths = photoPaths ?? [],
-        photoUrls = photoUrls ?? [];
+        photoUrls = photoUrls ?? [],
+        photoIds = photoIds ?? [];
 
   factory SellOutReport.fromJson(Map<String, dynamic> json) {
     final lineItems = _asList(json['lines'])
@@ -66,13 +83,18 @@ class SellOutReport {
         .map((line) =>
             SellOutReportLine.fromJson(Map<String, dynamic>.from(line)))
         .toList();
-    final photoItems = _asList(json['photos'])
+    final photoEntries = _asList(json['photos'])
         .whereType<Map>()
-        .map((photo) => _asString(photo['photo_url']).isNotEmpty
-            ? _asString(photo['photo_url'])
-            : _asString(photo['photo_path']))
-        .where((url) => url.isNotEmpty)
+        .map((photo) {
+          final url = _asString(photo['photo_url']).isNotEmpty
+              ? _asString(photo['photo_url'])
+              : _asString(photo['photo_path']);
+          return MapEntry(_asInt(photo['id']), url);
+        })
+        .where((entry) => entry.value.isNotEmpty)
         .toList();
+    final photoItems = photoEntries.map((entry) => entry.value).toList();
+    final photoIdItems = photoEntries.map((entry) => entry.key).toList();
 
     return SellOutReport(
       id: _asInt(json['id']),
@@ -92,6 +114,7 @@ class SellOutReport {
       photosCount: _asInt(json['photos_count']),
       lines: lineItems.isEmpty ? [SellOutReportLine()] : lineItems,
       photoUrls: photoItems,
+      photoIds: photoIdItems,
     );
   }
 
@@ -111,11 +134,13 @@ class SellOutReport {
   }
 
   bool get isCommissionable {
-    return commissionableServiceTypes.contains(serviceType.trim());
+    return commissionableCanonicalTypes
+        .contains(canonicalServiceType(serviceType));
   }
 
   bool get requiresSerialNumberValidation {
-    return serialNumberRequiredServiceTypes.contains(serviceType.trim());
+    return serialNumberRequiredCanonicalTypes
+        .contains(canonicalServiceType(serviceType));
   }
 
   double get commission {
@@ -128,8 +153,8 @@ class SellOutReport {
     if (serialNumber.isEmpty) {
       return 'Serial Number is required.';
     }
-    if (serialNumber.length != 10) {
-      return 'Serial Number must be exactly 10 characters.';
+    if (serialNumber.length < 6 || serialNumber.length > 16) {
+      return 'Serial Number must be 6-16 characters.';
     }
     if (!serialNumberPattern.hasMatch(serialNumber)) {
       return 'Serial Number must contain only letters and numbers.';
@@ -167,6 +192,7 @@ class SellOutReport {
     lines = [SellOutReportLine()];
     photoPaths = [];
     photoUrls = [];
+    photoIds = [];
   }
 
   static List<dynamic> _asList(dynamic value) {

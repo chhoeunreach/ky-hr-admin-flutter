@@ -1,3 +1,4 @@
+import 'package:cnattendance/models/sell_out_report.dart';
 import 'package:cnattendance/provider/dashboardprovider.dart';
 import 'package:cnattendance/screen/awards/awardsscreen.dart';
 import 'package:cnattendance/screen/dashboard/projectscreen.dart';
@@ -5,6 +6,7 @@ import 'package:cnattendance/screen/eventscreen/eventlistscreen.dart';
 import 'package:cnattendance/screen/profile/holidayscreen.dart';
 import 'package:cnattendance/screen/sell_out_report_screen.dart';
 import 'package:cnattendance/screen/training/trainingscreen.dart';
+import 'package:cnattendance/services/sell_out_api_service.dart';
 import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:cnattendance/widget/homescreen/cardoverview.dart';
@@ -12,10 +14,49 @@ import 'package:flutter_translate/flutter_translate.dart';
 import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
 import 'package:provider/provider.dart';
 
-class OverviewDashboard extends StatelessWidget {
+class _SellOutTypeTotals {
+  final int qty;
+  final double? commission;
+
+  const _SellOutTypeTotals({required this.qty, required this.commission});
+}
+
+class OverviewDashboard extends StatefulWidget {
   final PersistentTabController controller;
 
   OverviewDashboard(this.controller);
+
+  @override
+  State<OverviewDashboard> createState() => _OverviewDashboardState();
+}
+
+class _OverviewDashboardState extends State<OverviewDashboard> {
+  late final Future<List<SellOutReport>> _sellOutReportsFuture =
+      SellOutApiService().fetchReports();
+
+  Map<String, _SellOutTypeTotals> _aggregateByType(
+      List<SellOutReport> reports) {
+    final now = DateTime.now();
+    final currentMonthReports = reports.where((report) {
+      final createdAt = DateTime.tryParse(report.createdAt);
+      return createdAt != null &&
+          createdAt.year == now.year &&
+          createdAt.month == now.month;
+    });
+
+    final totals = <String, _SellOutTypeTotals>{};
+    for (final report in currentMonthReports) {
+      final type = SellOutReport.canonicalServiceType(report.serviceType);
+      if (type.isEmpty) continue;
+      final existing = totals[type];
+      final qty = (existing?.qty ?? 0) + report.totalQty;
+      final commission = report.isCommissionable
+          ? (existing?.commission ?? 0) + report.commission
+          : existing?.commission;
+      totals[type] = _SellOutTypeTotals(qty: qty, commission: commission);
+    }
+    return totals;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,22 +100,28 @@ class OverviewDashboard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
-          GridView(
-            shrinkWrap: true,
-            primary: false,
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: crossAxisCount,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              mainAxisExtent: 96,
-            ),
-            children: [
+          FutureBuilder<List<SellOutReport>>(
+            future: _sellOutReportsFuture,
+            builder: (context, snapshot) {
+              final totals = snapshot.hasData
+                  ? _aggregateByType(snapshot.data!)
+                  : const <String, _SellOutTypeTotals>{};
+              return GridView(
+                shrinkWrap: true,
+                primary: false,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: crossAxisCount,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  mainAxisExtent: 96,
+                ),
+                children: [
               CardOverView(
                 type: translate('home_screen.present'),
                 value: _overview['present']!,
                 icon: "assets/icons/present_icon.png",
                 callback: () {
-                  controller.jumpToTab(3);
+                  widget.controller.jumpToTab(3);
                 },
               ),
               CardOverView(
@@ -93,7 +140,7 @@ class OverviewDashboard extends StatelessWidget {
                 value: _overview['leave']!,
                 icon: Icons.sick,
                 callback: () {
-                  controller.jumpToTab(2);
+                  widget.controller.jumpToTab(2);
                 },
               ),
               if (features["event"] == "1")
@@ -156,29 +203,43 @@ class OverviewDashboard extends StatelessWidget {
                         pageTransitionAnimation: PageTransitionAnimation.fade);
                   },
                 ),
-              _serviceCard(context, translate('home_screen.service_sell'),
-                  Icons.point_of_sale),
-              _serviceCard(context, translate('home_screen.service_material'),
-                  Icons.inventory_2_outlined),
-              _serviceCard(context, translate('home_screen.service_iron'),
-                  Icons.local_laundry_service),
-              _serviceCard(context, translate('home_screen.service_repair'),
-                  Icons.build_circle_outlined),
-              _serviceCard(context, translate('home_screen.service_buy_in'),
-                  Icons.add_shopping_cart),
-              _serviceCard(context, translate('home_screen.service_icloud_cus'),
-                  Icons.cloud_outlined),
-            ],
+                  _serviceCard(context, totals,
+                      translate('home_screen.service_sell'),
+                      Icons.point_of_sale),
+                  _serviceCard(context, totals,
+                      translate('home_screen.service_material'),
+                      Icons.inventory_2_outlined),
+                  _serviceCard(context, totals,
+                      translate('home_screen.service_iron'),
+                      Icons.local_laundry_service),
+                  _serviceCard(context, totals,
+                      translate('home_screen.service_repair'),
+                      Icons.build_circle_outlined),
+                  _serviceCard(context, totals,
+                      translate('home_screen.service_buy_in'),
+                      Icons.add_shopping_cart),
+                  _serviceCard(context, totals,
+                      translate('home_screen.service_icloud_cus'),
+                      Icons.cloud_outlined),
+                ],
+              );
+            },
           ),
         ],
       ),
     );
   }
 
-  Widget _serviceCard(BuildContext context, String serviceType, IconData icon) {
+  Widget _serviceCard(BuildContext context, Map<String, _SellOutTypeTotals> totals,
+      String serviceType, IconData icon) {
+    final typeTotals = totals[SellOutReport.canonicalServiceType(serviceType)];
+    final commission = typeTotals?.commission;
     return CardOverView(
       type: serviceType,
-      value: '0',
+      value: (typeTotals?.qty ?? 0).toString(),
+      subtitle: commission != null
+          ? '\$${commission.toStringAsFixed(2)}'
+          : null,
       icon: icon,
       callback: () {
         pushScreen(

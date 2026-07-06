@@ -115,8 +115,8 @@ class PushNotificationService {
 
   static Future<void> _reportIosPushSetupStatus() async {
     try {
+      final fcmToken = await FcmToken.get();
       final apnsToken = await FirebaseMessaging.instance.getAPNSToken();
-      final fcmToken = await FirebaseMessaging.instance.getToken();
       final settings =
           await FirebaseMessaging.instance.getNotificationSettings();
 
