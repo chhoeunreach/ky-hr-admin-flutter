@@ -43,6 +43,12 @@ class Preferences with ChangeNotifier {
   final String ADMIN_ADVANCE_SALARY = "advance-salary-admin";
   final String SUPPORT = "support";
   final String DARK_MODE = "dark-mode";
+  final String ATTENDANCE = "attendance";
+  final String LEAVE_REQUEST = "leave-request";
+  final String TIME_LEAVE = "time-leave";
+  final String HOLIDAY = "holiday";
+  final String NOTICE = "notice";
+  final String SELL_STAFF_REPORT = "sell-staff-report";
   final String NFC_QR = "nfc-qr";
   final String AWARD = "award";
   final String TRAINING = "training";
@@ -52,6 +58,8 @@ class Preferences with ChangeNotifier {
   final String WARNING = "WARNING";
   final String RESIGNATION = "RESIGNATION";
   final String ASSETS = "ASSETS";
+  final String SOCIAL_REWARDS = "social-rewards";
+  final String SOCIAL_REWARDS_ADMIN = "social-rewards-admin";
 
   Future<bool> saveUser(Login data) async {
     // Obtain shared preferences.
@@ -105,6 +113,13 @@ class Preferences with ChangeNotifier {
         ADMIN_ADVANCE_SALARY, features["advance-salary-admin"] ?? "0");
     await prefs.setString(SUPPORT, features["support"] ?? "0");
     await prefs.setString(DARK_MODE, features["dark-mode"] ?? "0");
+    await prefs.setString(ATTENDANCE, features["attendance"] ?? "1");
+    await prefs.setString(LEAVE_REQUEST, features["leave-request"] ?? "1");
+    await prefs.setString(TIME_LEAVE, features["time-leave"] ?? "1");
+    await prefs.setString(HOLIDAY, features["holiday"] ?? "1");
+    await prefs.setString(NOTICE, features["notice"] ?? "1");
+    await prefs.setString(
+        SELL_STAFF_REPORT, features["sell-staff-report"] ?? "1");
     await prefs.setString(NFC_QR, features["nfc-qr"] ?? "0");
     await prefs.setString(AWARD, features["award"] ?? "0");
     await prefs.setString(TRAINING, features["training"] ?? "0");
@@ -114,6 +129,14 @@ class Preferences with ChangeNotifier {
     await prefs.setString(WARNING, features["warning"] ?? "0");
     await prefs.setString(RESIGNATION, features["resignation"] ?? "0");
     await prefs.setString(ASSETS, features["assets"] ?? "0");
+    await prefs.setString(
+        SOCIAL_REWARDS,
+        features["social-rewards"] ??
+            features["social-media-marketing"] ??
+            features["social"] ??
+            "0");
+    await prefs.setString(
+        SOCIAL_REWARDS_ADMIN, features["social-rewards-admin"] ?? "0");
 
     notifyListeners();
   }
@@ -135,6 +158,13 @@ class Preferences with ChangeNotifier {
         await prefs.getString(ADMIN_ADVANCE_SALARY) ?? "0";
     features["support"] = await prefs.getString(SUPPORT) ?? "1";
     features["dark-mode"] = await prefs.getString(DARK_MODE) ?? "1";
+    features["attendance"] = await prefs.getString(ATTENDANCE) ?? "1";
+    features["leave-request"] = await prefs.getString(LEAVE_REQUEST) ?? "1";
+    features["time-leave"] = await prefs.getString(TIME_LEAVE) ?? "1";
+    features["holiday"] = await prefs.getString(HOLIDAY) ?? "1";
+    features["notice"] = await prefs.getString(NOTICE) ?? "1";
+    features["sell-staff-report"] =
+        await prefs.getString(SELL_STAFF_REPORT) ?? "1";
     features["nfc-qr"] = await prefs.getString(NFC_QR) ?? "1";
     features["award"] = await prefs.getString(AWARD) ?? "1";
     features["training"] = await prefs.getString(TRAINING) ?? "1";
@@ -144,6 +174,9 @@ class Preferences with ChangeNotifier {
     features["warning"] = await prefs.getString(WARNING) ?? "1";
     features["resignation"] = await prefs.getString(RESIGNATION) ?? "1";
     features["assets"] = await prefs.getString(ASSETS) ?? "1";
+    features["social-rewards"] = await prefs.getString(SOCIAL_REWARDS) ?? "0";
+    features["social-rewards-admin"] =
+        await prefs.getString(SOCIAL_REWARDS_ADMIN) ?? "0";
 
     return features;
   }

@@ -21,6 +21,8 @@ import 'package:cnattendance/screen/profile/ssfhistoryscreen.dart';
 import 'package:cnattendance/screen/profile/supportscreen.dart';
 import 'package:cnattendance/screen/profile/group_list_screen.dart';
 import 'package:cnattendance/screen/profile/teamsheetscreen.dart';
+import 'package:cnattendance/screen/social_rewards/admin_social_rewards_screen.dart';
+import 'package:cnattendance/screen/social_rewards/social_submission_screen.dart';
 import 'package:cnattendance/screen/tadascreen/TadaScreen.dart';
 import 'package:cnattendance/theme/app_theme_mode.dart';
 import 'package:cnattendance/theme/enterprise_theme.dart';
@@ -52,6 +54,8 @@ class MoreScreenState extends State<MoreScreen> {
     final attendanceMethod =
         context.watch<DashboardProvider>().attendanceMethods;
     final selectedThemeMode = context.watch<ThemeProvider>().mode;
+    final employeeId =
+        int.tryParse(context.watch<PrefProvider>().userId.trim()) ?? 0;
     final enterprise = EnterpriseTheme.of(context);
 
     void changeAttendanceType(String type) {
@@ -92,7 +96,8 @@ class MoreScreenState extends State<MoreScreen> {
           isSelected || enterprise.isDark ? Colors.white : enterprise.text;
       final borderColor = isSelected
           ? Colors.white.withValues(alpha: 0.58)
-          : enterprise.accent.withValues(alpha: enterprise.isDark ? 0.46 : 0.68);
+          : enterprise.accent
+              .withValues(alpha: enterprise.isDark ? 0.46 : 0.68);
       final fillColor = enterprise.surface.withValues(
         alpha: enterprise.isDark ? 0.70 : 0.88,
       );
@@ -315,12 +320,24 @@ class MoreScreenState extends State<MoreScreen> {
                                     translate('more_screen.advance_salary'),
                                     Icons.monetization_on,
                                     AdvanceSalaryScreen()),
+                            features["social-rewards"] != "1"
+                                ? SizedBox.shrink()
+                                : Services(
+                                    "Social Rewards",
+                                    Icons.campaign,
+                                    SocialSubmissionScreen(
+                                      employeeId: employeeId,
+                                    )),
                             features["advance-salary-admin"] != "1"
                                 ? SizedBox.shrink()
                                 : Services(
                                     "Admin Advance Salary",
                                     Icons.admin_panel_settings,
                                     AdminAdvanceSalaryScreen()),
+                            features["social-rewards-admin"] != "1"
+                                ? SizedBox.shrink()
+                                : Services("Social Rewards", Icons.verified,
+                                    const AdminSocialRewardsScreen()),
                             /*features["loan"] != "1"
                                 ? SizedBox.shrink()
                                 : Services(translate('more_screen.loans'),

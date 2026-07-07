@@ -104,6 +104,19 @@ class Constant {
   static const ADMIN_ADVANCE_SALARY_CREATE_URL =
       "$API_URL/admin/advance-salaries/store";
 
+  static const HR_KY_ADMIN_SOCIAL_REWARDS_URL =
+      "$API_URL/hr-ky-admin/social-rewards";
+  static const HR_KY_ADMIN_SOCIAL_REWARDS_OVERRIDE_URL =
+      "$API_URL/hr-ky-admin/social-rewards/override";
+  static const HR_KY_ADMIN_SOCIAL_REWARDS_TODAY_URL =
+      "$API_URL/v1/hr-ky-admin/social-rewards/today";
+  static const HR_KY_ADMIN_SOCIAL_REWARDS_SUBMIT_URL =
+      "$API_URL/v1/hr-ky-admin/social-rewards/submit";
+  static const HR_KY_ADMIN_SOCIAL_REWARDS_LIST_URL =
+      "$API_URL/v1/hr-ky-admin/social-rewards";
+  static const HR_KY_ADMIN_SOCIAL_REWARDS_UPDATE_URL =
+      "$API_URL/v1/hr-ky-admin/social-rewards/update";
+
   static const SUPPORT_URL = "$API_URL/support/query-store";
   static const DEPARTMENT_LIST_URL = "$API_URL/support/department-lists";
   static const SUPPORT_LIST_URL = "$API_URL/support/get-user-query-lists";
@@ -136,7 +149,8 @@ class Constant {
   static const SELL_OUT_REPORT_URL = "$API_URL/sell-out-reports";
 
   static const GROUP_CHAT = "$API_URL/chat/groups";
-  static const GROUP_CHAT_MESSAGES = "$API_URL/chat/groups"; // append /{id}/messages
+  static const GROUP_CHAT_MESSAGES =
+      "$API_URL/chat/groups"; // append /{id}/messages
   static const GROUP_CHAT_MEDIA_UPLOAD = "$API_URL/chat/groups/media-upload";
 
   static const TOTAL_WORKING_HOUR = 8;
