@@ -15,7 +15,7 @@ class OcrService {
   }
 
   Future<String> extractTextFromMultipleImages(List<String> imagePaths) async {
-    StringBuffer combined = StringBuffer();
+    final combined = StringBuffer();
     for (int i = 0; i < imagePaths.length; i++) {
       final text = await extractTextFromImage(imagePaths[i]);
       if (text.isNotEmpty && !text.startsWith('OCR failed')) {
@@ -152,7 +152,9 @@ class OcrService {
       }
 
       // Labeled serial match: always fill serial_number
-      if (serial != null && isLabeledMatch && fields['serial_number']!.isEmpty) {
+      if (serial != null &&
+          isLabeledMatch &&
+          fields['serial_number']!.isEmpty) {
         fields['serial_number'] = serial;
       }
 
@@ -160,7 +162,8 @@ class OcrService {
       // Only run if serial_number is still empty.
       if (fields['serial_number']!.isEmpty) {
         // First try on lines that have any serial-like keyword (broader match)
-        if (RegExp(r'\bSN\b|serial|S/N', caseSensitive: false).hasMatch(trimmed)) {
+        if (RegExp(r'\bSN\b|serial|S/N', caseSensitive: false)
+            .hasMatch(trimmed)) {
           final loose = RegExp(
             r'(?<![A-Z0-9])([A-Z0-9]{6,16})(?![A-Z0-9])',
           ).firstMatch(trimmed);
@@ -206,7 +209,8 @@ class OcrService {
           caseSensitive: false,
         ).firstMatch(trimmed);
         if (labeledCap != null) {
-          fields['storage'] = '${labeledCap.group(1)}${labeledCap.group(2)!.toUpperCase()}';
+          fields['storage'] =
+              '${labeledCap.group(1)}${labeledCap.group(2)!.toUpperCase()}';
         } else {
           // Standalone: "128GB", "128 GB"
           final storageMatch = RegExp(
@@ -214,14 +218,18 @@ class OcrService {
             caseSensitive: false,
           ).firstMatch(trimmed);
           if (storageMatch != null) {
-            fields['storage'] = '${storageMatch.group(1)}${storageMatch.group(2)!.toUpperCase()}';
+            fields['storage'] =
+                '${storageMatch.group(1)}${storageMatch.group(2)!.toUpperCase()}';
           }
         }
       }
 
       // Color: extract from product lines like "Galaxy S24 Ultra Titanium Gray 512GB"
       if (fields['color']!.isEmpty) {
-        final colorWords = _colorPattern.allMatches(trimmed).map((m) => m.group(0)!.trim()).toList();
+        final colorWords = _colorPattern
+            .allMatches(trimmed)
+            .map((m) => m.group(0)!.trim())
+            .toList();
         if (colorWords.isNotEmpty) {
           fields['color'] = colorWords.join(' ');
         }
@@ -232,7 +240,7 @@ class OcrService {
           fields['storage']!.isNotEmpty &&
           fields['product_name']!.contains(fields['storage']!)) {
         final name = fields['product_name']!;
-        int trimIdx = name.indexOf(fields['storage']!);
+        final trimIdx = name.indexOf(fields['storage']!);
         if (trimIdx > 0) {
           fields['product_name'] = name.substring(0, trimIdx).trim();
         }
@@ -286,11 +294,34 @@ class OcrService {
   }
 
   static const _colorWords = [
-    'Titanium', 'Gray', 'Black', 'White', 'Silver', 'Gold',
-    'Purple', 'Blue', 'Green', 'Red', 'Pink', 'Natural',
-    'Space', 'Deep', 'Midnight', 'Starlight', 'Graphite',
-    'Rose', 'Alpine', 'Arctic', 'Cream', 'Violet', 'Navy',
-    'Mint', 'Coral', 'Yellow', 'Orange', 'Sierra',
+    'Titanium',
+    'Gray',
+    'Black',
+    'White',
+    'Silver',
+    'Gold',
+    'Purple',
+    'Blue',
+    'Green',
+    'Red',
+    'Pink',
+    'Natural',
+    'Space',
+    'Deep',
+    'Midnight',
+    'Starlight',
+    'Graphite',
+    'Rose',
+    'Alpine',
+    'Arctic',
+    'Cream',
+    'Violet',
+    'Navy',
+    'Mint',
+    'Coral',
+    'Yellow',
+    'Orange',
+    'Sierra',
   ];
 
   static final _colorPattern = RegExp(
@@ -301,10 +332,12 @@ class OcrService {
   bool _isProductName(String text) {
     if (text.length < 4) return false;
     if (RegExp(r'^\d+$').hasMatch(text)) return false;
-    if (text.contains(RegExp(r'price|\$|imei|serial|model|color|storage|S\s*/\s*N|\bSN\b',
+    if (text.contains(RegExp(
+        r'price|\$|imei|serial|model|color|storage|S\s*/\s*N|\bSN\b',
         caseSensitive: false))) return false;
     if (text.startsWith('---')) return false;
-    if (RegExp(r'Photo\s+\d', caseSensitive: false).hasMatch(text)) return false;
+    if (RegExp(r'Photo\s+\d', caseSensitive: false).hasMatch(text))
+      return false;
     if (text.length > 50) return false;
     final hasBrand = RegExp(
       r'iPhone|iPad|Galaxy|OPPO|Realme|Xiaomi|Redmi|Huawei|Nokia|Google|Pixel',
@@ -348,29 +381,124 @@ class OcrService {
     };
 
     final lines = text.split('\n');
-    for (final line in lines) {
+    final devices = <String>{};
+    for (int i = 0; i < lines.length; i++) {
+      final line = lines[i];
       final trimmed = line.trim();
       if (trimmed.isEmpty) continue;
+      final lower = trimmed.toLowerCase();
+
+      if (fields['account_name']!.isEmpty &&
+          RegExp(r'\b(account\s*name|full\s*name|customer\s*name|name)\b')
+              .hasMatch(lower)) {
+        fields['account_name'] =
+            _labelValue(trimmed) ?? _nextTextLine(lines, i);
+      }
+
+      if (fields['apple_id']!.isEmpty &&
+          RegExp(r'\b(apple\s*id|icloud|email|e-mail)\b').hasMatch(lower)) {
+        final emailMatch =
+            RegExp(r'[\w.+-]+@[\w-]+\.[\w.-]+').firstMatch(trimmed);
+        fields['apple_id'] = emailMatch?.group(0) ??
+            _labelValue(trimmed) ??
+            _nextTextLine(lines, i);
+      }
 
       if (trimmed.contains('@') && fields['apple_id']!.isEmpty) {
-        final emailMatch = RegExp(r'[\w.+-]+@[\w-]+\.[\w.-]+').firstMatch(trimmed);
+        final emailMatch =
+            RegExp(r'[\w.+-]+@[\w-]+\.[\w.-]+').firstMatch(trimmed);
         if (emailMatch != null) {
           fields['apple_id'] = emailMatch.group(0)!;
         }
       }
 
-      if (RegExp(r'\b\d{10}\b').hasMatch(trimmed) &&
-          fields['trusted_phone']!.isEmpty) {
-        fields['trusted_phone'] = trimmed;
+      if (fields['trusted_phone']!.isEmpty &&
+          RegExp(r'\b(trusted|phone|mobile|tel)\b').hasMatch(lower)) {
+        final phoneMatch = RegExp(r'(\+?\d[\d\s-]{7,}\d)').firstMatch(trimmed);
+        fields['trusted_phone'] = phoneMatch?.group(0)?.trim() ??
+            _labelValue(trimmed) ??
+            _nextTextLine(lines, i);
       }
 
-      if (trimmed.contains(RegExp(r'\d+\s*GB|\d+\s*TB', caseSensitive: false)) &&
+      if (RegExp(r'\b\d{8,12}\b').hasMatch(trimmed) &&
+          fields['trusted_phone']!.isEmpty) {
+        fields['trusted_phone'] =
+            RegExp(r'\b\d{8,12}\b').firstMatch(trimmed)!.group(0)!;
+      }
+
+      if (trimmed
+              .contains(RegExp(r'\d+\s*GB|\d+\s*TB', caseSensitive: false)) &&
           fields['icloud_storage']!.isEmpty) {
         fields['icloud_storage'] = trimmed;
       }
+
+      if (fields['icloud_storage']!.isEmpty &&
+          RegExp(r'\b(storage|plan)\b').hasMatch(lower)) {
+        fields['icloud_storage'] =
+            _labelValue(trimmed) ?? _nextTextLine(lines, i);
+      }
+
+      if (RegExp(r'\b(device|devices|model)\b').hasMatch(lower)) {
+        final value = _labelValue(trimmed);
+        if (value != null && value.isNotEmpty) devices.add(value);
+        final nextValue = _nextTextLine(lines, i);
+        if (nextValue.isNotEmpty && !_looksLikeICloudLabel(nextValue)) {
+          devices.add(nextValue);
+        }
+      } else if (_looksLikeAppleDevice(trimmed)) {
+        devices.add(trimmed);
+      }
+
+      if (fields['account_name']!.isEmpty &&
+          _looksLikeICloudAccountName(trimmed)) {
+        fields['account_name'] = trimmed;
+      }
     }
 
+    fields['devices'] = devices.join('\n');
     return fields;
+  }
+
+  String? _labelValue(String text) {
+    final separator = RegExp(r'[:：-]').firstMatch(text);
+    if (separator == null) return null;
+    final value = text.substring(separator.end).trim();
+    return value.isEmpty ? null : value;
+  }
+
+  String _nextTextLine(List<String> lines, int index) {
+    for (int i = index + 1; i < lines.length; i++) {
+      final trimmed = lines[i].trim();
+      if (trimmed.isEmpty || trimmed.startsWith('---')) continue;
+      return trimmed;
+    }
+    return '';
+  }
+
+  bool _looksLikeAppleDevice(String text) {
+    return RegExp(
+      r'\b(iPhone|iPad|MacBook|Mac|Apple Watch|AirPods|iPod)\b',
+      caseSensitive: false,
+    ).hasMatch(text);
+  }
+
+  bool _looksLikeICloudLabel(String text) {
+    return RegExp(
+      r'\b(account\s*name|full\s*name|customer\s*name|apple\s*id|icloud|email|storage|plan|trusted|phone|mobile|tel|device|devices|model)\b',
+      caseSensitive: false,
+    ).hasMatch(text);
+  }
+
+  bool _looksLikeICloudAccountName(String text) {
+    if (text.length < 3 || text.length > 60) return false;
+    if (text.contains('@') || text.startsWith('---')) return false;
+    if (RegExp(r'\d+\s*(GB|TB)|\+?\d[\d\s-]{7,}\d', caseSensitive: false)
+        .hasMatch(text)) {
+      return false;
+    }
+    if (_looksLikeICloudLabel(text) || _looksLikeAppleDevice(text))
+      return false;
+    return RegExp(r"^[A-Za-z][A-Za-z\s.'-]+$").hasMatch(text);
   }
 
   void dispose() {

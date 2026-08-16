@@ -265,22 +265,28 @@ String _toastBody(String message) {
 }
 
 String unknownError(e) {
-  try {
-    if (e is String) {
-      throw e.toString();
-    } else {
-      var errorMessage = e['message'];
-      throw errorMessage;
-    }
-  } catch (e) {
-    throw e.toString();
+  if (e == null) {
+    return 'Something went wrong';
   }
+  if (e is String) {
+    return e;
+  }
+  if (e is FormatException) {
+    return e.message.isEmpty ? 'Invalid server response' : e.message;
+  }
+  if (e is Map) {
+    final message = e['message'] ?? e['error'];
+    if (message != null && message.toString().trim().isNotEmpty) {
+      return message.toString();
+    }
+  }
+  return e.toString();
 }
 
 String findKey(Map<String, dynamic> map) {
   for (var entry in map.entries) {
     if (entry.value is Map && entry.value['identifier'] != null) {
-      List<int> identifierValue = List<int>.from(entry.value['identifier']);
+      final identifierValue = List<int>.from(entry.value['identifier']);
       if (identifierValue.toString() != "[]") {
         debugPrint(identifierValue.toString());
         return identifierValue.toString();

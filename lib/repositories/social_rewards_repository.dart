@@ -18,7 +18,7 @@ class SocialRewardsRepository {
           .getResponse(Constant.HR_KY_ADMIN_SOCIAL_REWARDS_URL, headers);
       debugPrint(response.body.toString());
 
-      final responseData = json.decode(response.body);
+      final responseData = _decodeResponseBody(response.body);
 
       if (response.statusCode == 200) {
         return SocialRewardListResponse.fromJson(responseData);
@@ -43,7 +43,7 @@ class SocialRewardsRepository {
       );
       debugPrint(response.body.toString());
 
-      final responseData = json.decode(response.body);
+      final responseData = _decodeResponseBody(response.body);
 
       if (response.statusCode == 200) {
         return SocialRewardListResponse.fromJson(responseData);
@@ -79,7 +79,7 @@ class SocialRewardsRepository {
       );
 
       debugPrint(response.body.toString());
-      final responseData = json.decode(response.body);
+      final responseData = _decodeResponseBody(response.body);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         return GeneralResponse.fromJson(responseData);
@@ -102,7 +102,7 @@ class SocialRewardsRepository {
       );
 
       debugPrint(response.body.toString());
-      final responseData = json.decode(response.body);
+      final responseData = _decodeResponseBody(response.body);
 
       if (response.statusCode == 200) {
         final data = responseData['data'];
@@ -214,7 +214,7 @@ class SocialRewardsRepository {
       );
 
       debugPrint(response.body.toString());
-      final responseData = json.decode(response.body);
+      final responseData = _decodeResponseBody(response.body);
 
       if (response.statusCode == 200) {
         return GeneralResponse.fromJson(responseData);
@@ -234,6 +234,24 @@ class SocialRewardsRepository {
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token',
     };
+  }
+
+  Map<String, dynamic> _decodeResponseBody(String body) {
+    try {
+      final decoded = json.decode(body);
+      if (decoded is Map<String, dynamic>) {
+        return decoded;
+      }
+      return {
+        'message': decoded?.toString() ?? 'Invalid server response',
+      };
+    } on FormatException {
+      return {
+        'message': body.trim().isEmpty
+            ? 'Empty server response'
+            : 'Invalid server response. Please check the API endpoint.',
+      };
+    }
   }
 
   Future<GeneralResponse> _sendDayLogMultipart({
@@ -266,7 +284,7 @@ class SocialRewardsRepository {
       final response = await http.Response.fromStream(streamedResponse);
       debugPrint(response.body.toString());
 
-      final responseData = json.decode(response.body);
+      final responseData = _decodeResponseBody(response.body);
       if (response.statusCode == 200 || response.statusCode == 201) {
         return GeneralResponse.fromJson(responseData);
       }

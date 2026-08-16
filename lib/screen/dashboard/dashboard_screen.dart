@@ -6,10 +6,12 @@ import 'package:cnattendance/screen/dashboard/homescreen.dart';
 import 'package:cnattendance/screen/dashboard/leavescreen.dart';
 import 'package:cnattendance/screen/dashboard/attendancescreen.dart';
 import 'package:cnattendance/screen/dashboard/morescreen.dart';
+import 'package:cnattendance/screen/loanmanagement/loancalculatescreen.dart';
 import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
+import 'package:get/get.dart';
 import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
 import 'package:provider/provider.dart';
 
@@ -23,6 +25,8 @@ class DashboardScreen extends StatefulWidget {
 class DashboardScreenState extends State<DashboardScreen> {
   final PersistentTabController _controller =
       PersistentTabController(initialIndex: 0);
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  int _selectedRailIndex = 0;
 
   bool _loadedUser = false;
 
@@ -51,53 +55,210 @@ class DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final enterprise = EnterpriseTheme.of(context);
     return Scaffold(
-      body: PersistentTabView(
-        controller: _controller,
-        backgroundColor: themedChromeColor(),
-        handleAndroidBackButtonPress: true,
-        // Default is true.
-        resizeToAvoidBottomInset: true,
-        // This needs to be true if you want to move up the screen when keyboard appears. Default is true.
-        stateManagement: true,
-        popAllScreensOnTapOfSelectedTab: true,
-        popActionScreens: PopActionScreensType.all,
-        tabs: [
-          PersistentTabConfig(
-              screen: HomeScreen(_controller),
-              item: getItemConfig(
-                Icon(Icons.home_filled),
-                translate('dashboard_screen.home'),
-              )),
-          PersistentTabConfig(
-              screen: ChatListScreen(),
-              item: getItemConfig(
-                Icon(Icons.chat_bubble),
-                translate('dashboard_screen.chat'),
-              )),
-          PersistentTabConfig(
-              screen: LeaveScreen(),
-              item: getItemConfig(
-                Icon(Icons.sick),
-                translate('dashboard_screen.leave'),
-              )),
-          PersistentTabConfig(
-              screen: AttendanceScreen(),
-              item: getItemConfig(
-                Icon(Icons.co_present_outlined),
-                translate('dashboard_screen.attendance'),
-              )),
-          PersistentTabConfig(
-              screen: MoreScreen(),
-              item: getItemConfig(
-                Icon(Icons.more),
-                translate('dashboard_screen.more'),
-              )),
-        ],
-        navBarBuilder: (navBarConfig) {
-          return _EnterpriseFloatingNavBar(navBarConfig: navBarConfig);
+      key: _scaffoldKey,
+      drawer: Drawer(
+        backgroundColor: enterprise.surface,
+        child: SafeArea(
+          child: Column(
+            children: [
+              DrawerHeader(
+                margin: EdgeInsets.zero,
+                child: Align(
+                  alignment: Alignment.bottomLeft,
+                  child: Text(
+                    'HRKY',
+                    style: TextStyle(
+                      color: enterprise.text,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ),
+              ListTile(
+                leading: Icon(
+                  Icons.calculate_outlined,
+                  color: enterprise.primary,
+                ),
+                title: Text(
+                  'Loan Calculate',
+                  style: TextStyle(
+                    color: enterprise.text,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  Get.to(() => LoanCalculateScreen());
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.maxWidth >= 720) {
+            return _buildRailLayout(context, constraints.maxWidth);
+          }
+          return _buildMobileTabs(context);
         },
       ),
+    );
+  }
+
+  Widget _buildRailLayout(BuildContext context, double width) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final extended = width >= 1100;
+    final destinations = <NavigationRailDestination>[
+      const NavigationRailDestination(
+        icon: Icon(Icons.dashboard_outlined),
+        selectedIcon: Icon(Icons.dashboard),
+        label: Text('Dashboard'),
+      ),
+      const NavigationRailDestination(
+        icon: Icon(Icons.analytics_outlined),
+        selectedIcon: Icon(Icons.analytics),
+        label: Text('Analytics'),
+      ),
+      const NavigationRailDestination(
+        icon: Icon(Icons.settings_outlined),
+        selectedIcon: Icon(Icons.settings),
+        label: Text('Settings'),
+      ),
+    ];
+    final pages = <Widget>[
+      HomeScreen(_controller),
+      AttendanceScreen(),
+      MoreScreen(),
+    ];
+
+    return Row(
+      children: [
+        NavigationRail(
+          selectedIndex: _selectedRailIndex,
+          extended: extended,
+          minWidth: 76,
+          minExtendedWidth: 192,
+          groupAlignment: -0.86,
+          labelType: extended
+              ? NavigationRailLabelType.none
+              : NavigationRailLabelType.selected,
+          backgroundColor: colorScheme.surface,
+          indicatorColor: colorScheme.primaryContainer,
+          selectedIconTheme:
+              IconThemeData(color: colorScheme.onPrimaryContainer),
+          selectedLabelTextStyle: TextStyle(
+            color: colorScheme.onSurface,
+            fontWeight: FontWeight.w800,
+          ),
+          unselectedIconTheme: IconThemeData(
+            color: colorScheme.onSurface.withValues(alpha: 0.64),
+          ),
+          unselectedLabelTextStyle: TextStyle(
+            color: colorScheme.onSurface.withValues(alpha: 0.64),
+            fontWeight: FontWeight.w600,
+          ),
+          leading: Padding(
+            padding: const EdgeInsets.only(bottom: 24),
+            child: IconButton(
+              tooltip: 'Menu',
+              icon: const Icon(Icons.menu),
+              onPressed: () {
+                _scaffoldKey.currentState?.openDrawer();
+              },
+            ),
+          ),
+          destinations: destinations,
+          onDestinationSelected: (index) {
+            setState(() {
+              _selectedRailIndex = index;
+            });
+          },
+        ),
+        VerticalDivider(
+          width: 1,
+          thickness: 1,
+          color: colorScheme.outlineVariant.withValues(alpha: 0.72),
+        ),
+        Expanded(
+          child: IndexedStack(
+            index: _selectedRailIndex,
+            children: pages,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMobileTabs(BuildContext context) {
+    final enterprise = EnterpriseTheme.of(context);
+    return Stack(
+      children: [
+        PersistentTabView(
+          controller: _controller,
+          backgroundColor: themedChromeColor(),
+          handleAndroidBackButtonPress: true,
+          resizeToAvoidBottomInset: true,
+          stateManagement: true,
+          popAllScreensOnTapOfSelectedTab: true,
+          popActionScreens: PopActionScreensType.all,
+          tabs: [
+            PersistentTabConfig(
+                screen: HomeScreen(_controller),
+                item: getItemConfig(
+                  Icon(Icons.home_filled),
+                  translate('dashboard_screen.home'),
+                )),
+            PersistentTabConfig(
+                screen: ChatListScreen(),
+                item: getItemConfig(
+                  Icon(Icons.chat_bubble),
+                  translate('dashboard_screen.chat'),
+                )),
+            PersistentTabConfig(
+                screen: LeaveScreen(),
+                item: getItemConfig(
+                  Icon(Icons.sick),
+                  translate('dashboard_screen.leave'),
+                )),
+            PersistentTabConfig(
+                screen: AttendanceScreen(),
+                item: getItemConfig(
+                  Icon(Icons.co_present_outlined),
+                  translate('dashboard_screen.attendance'),
+                )),
+            PersistentTabConfig(
+                screen: MoreScreen(),
+                item: getItemConfig(
+                  Icon(Icons.more),
+                  translate('dashboard_screen.more'),
+                )),
+          ],
+          navBarBuilder: (navBarConfig) {
+            return _EnterpriseFloatingNavBar(navBarConfig: navBarConfig);
+          },
+        ),
+        SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.only(left: 12, top: 6),
+            child: Material(
+              color: enterprise.surface.withValues(alpha: 0.68),
+              shape: const CircleBorder(),
+              clipBehavior: Clip.antiAlias,
+              child: IconButton(
+                tooltip: 'Menu',
+                icon: Icon(Icons.menu, color: enterprise.text),
+                onPressed: () {
+                  _scaffoldKey.currentState?.openDrawer();
+                },
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

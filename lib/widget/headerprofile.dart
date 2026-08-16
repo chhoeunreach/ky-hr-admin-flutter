@@ -74,7 +74,7 @@ class HeaderState extends State<HeaderProfile> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 18),
       child: EnterpriseGlass(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        padding: const EdgeInsets.fromLTRB(54, 12, 14, 12),
         radius: 26,
         child: Row(
           children: [
@@ -109,14 +109,14 @@ class HeaderState extends State<HeaderProfile> {
                 child: ClipOval(
                   child: CachedNetworkImage(
                     imageUrl: provider.avatar,
-                    width: 50,
-                    height: 50,
+                    width: 46,
+                    height: 46,
                     fit: BoxFit.cover,
                     placeholder: (context, url) {
                       return Image.asset(
                         'assets/images/dummy_avatar.png',
-                        width: 50,
-                        height: 50,
+                        width: 46,
+                        height: 46,
                         fit: BoxFit.cover,
                       );
                     },

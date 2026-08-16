@@ -40,6 +40,20 @@ class TeamSheetProvider with ChangeNotifier {
     _department.addAll(department);
   }
 
+  Branch? get selectedBranchItem {
+    return _firstWhereOrNull(
+      _branches,
+      (element) => element.id == selectedBranch,
+    );
+  }
+
+  Department? get selectedDepartmentItem {
+    return _firstWhereOrNull(
+      _department,
+      (element) => element.id == selectedDepartment,
+    );
+  }
+
   void createTeam(List<Employee> employees) {
     for (var employee in employees) {
       FirebaseFirestore.instance
@@ -81,25 +95,29 @@ class TeamSheetProvider with ChangeNotifier {
       }
 
       if (_branches.isEmpty) {
-        selectedDepartment = _department.first.id;
+        selectedDepartment = _department.isNotEmpty ? _department.first.id : 0;
         selectedBranch = 0;
         makeTeamList();
         notifyListeners();
         return;
       }
 
-      if (Get.arguments != null) {
-        if (_branches.isNotEmpty &&
-            Get.arguments["department"] != "" &&
-            Get.arguments["branch"] != "") {
-          selectedDepartment = _department
-              .where((element) => element.name == Get.arguments["department"])
-              .first
-              .id;
-          selectedBranch = _branches
-              .where((element) => element.name == Get.arguments["branch"])
-              .first
-              .id;
+      final arguments = Get.arguments;
+      if (arguments is Map) {
+        final argumentBranch = (arguments["branch"] ?? '').toString();
+        final argumentDepartment = (arguments["department"] ?? '').toString();
+        final branch = _firstWhereOrNull(
+          _branches,
+          (element) => element.name == argumentBranch,
+        );
+        if (branch != null && argumentDepartment.isNotEmpty) {
+          selectedBranch = branch.id;
+          setDepartment(branch.department);
+          final department = _firstWhereOrNull(
+            _department,
+            (element) => element.name == argumentDepartment,
+          );
+          selectedDepartment = department?.id ?? _department.first.id;
         } else {
           selectedDepartment = _department.first.id;
           selectedBranch = _branches.first.id;
@@ -127,26 +145,25 @@ class TeamSheetProvider with ChangeNotifier {
 
   void makeTeamList() {
     _teamList.clear();
-    if (_branches.isEmpty || _department.isEmpty) {
+    if (mainTeamList.isEmpty) {
       notifyListeners();
       return;
     }
+    if (_branches.isEmpty || _department.isEmpty) {
+      _teamList.addAll(mainTeamList);
+      notifyListeners();
+      return;
+    }
+    final branch = selectedBranchItem ?? _branches.first;
+    final department = selectedDepartmentItem ?? _department.first;
+    selectedBranch = branch.id;
+    selectedDepartment = department.id;
     if (selectedDepartment == 0) {
       _teamList.addAll(mainTeamList.where((element) =>
-          element.branch.toLowerCase() ==
-          _branches
-              .where((element) => element.id == selectedBranch)
-              .first
-              .name
-              .toLowerCase()));
+          element.branch.toLowerCase() == branch.name.toLowerCase()));
     } else {
       _teamList.addAll(mainTeamList.where((element) =>
-          element.department.toLowerCase() ==
-          _department
-              .where((element) => element.id == selectedDepartment)
-              .first
-              .name
-              .toLowerCase()));
+          element.department.toLowerCase() == department.name.toLowerCase()));
     }
     notifyListeners();
   }
@@ -184,5 +201,14 @@ class TeamSheetProvider with ChangeNotifier {
       ..clear()
       ..addAll(contacts);
     notifyListeners();
+  }
+
+  T? _firstWhereOrNull<T>(Iterable<T> values, bool Function(T) test) {
+    for (final value in values) {
+      if (test(value)) {
+        return value;
+      }
+    }
+    return null;
   }
 }

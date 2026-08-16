@@ -5,8 +5,10 @@ import 'package:cnattendance/repositories/social_rewards_repository.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 
 class SocialSubmissionScreen extends StatefulWidget {
   final int employeeId;
@@ -126,21 +128,45 @@ class _SocialSubmissionScreenState extends State<SocialSubmissionScreen> {
       return;
     }
 
+    final compressedFile = await _compressPickedPhoto(File(picked.path));
+
     setState(() {
-      final file = File(picked.path);
       switch (field) {
         case _SocialPhotoField.facebookPost:
-          _fbPostPhoto = file;
+          _fbPostPhoto = compressedFile;
           break;
         case _SocialPhotoField.facebookStory:
-          _fbStoryPhoto = file;
+          _fbStoryPhoto = compressedFile;
           break;
         case _SocialPhotoField.tiktok:
-          _tiktokPhoto = file;
+          _tiktokPhoto = compressedFile;
           break;
       }
     });
     _validateInputs();
+  }
+
+  Future<File> _compressPickedPhoto(File originalFile) async {
+    final tempDir = await getTemporaryDirectory();
+    final targetPath =
+        '${tempDir.path}/social_${DateTime.now().millisecondsSinceEpoch}.jpg';
+
+    try {
+      final compressed = await FlutterImageCompress.compressAndGetFile(
+        originalFile.absolute.path,
+        targetPath,
+        quality: 72,
+        minWidth: 1280,
+        minHeight: 1280,
+        format: CompressFormat.jpeg,
+      );
+      if (compressed == null) {
+        return originalFile;
+      }
+      return File(compressed.path);
+    } catch (_) {
+      return originalFile;
+    }
   }
 
   Future<void> _executeSubmitAction() async {
@@ -231,14 +257,21 @@ class _SocialSubmissionScreenState extends State<SocialSubmissionScreen> {
     return Scaffold(
       backgroundColor: const Color(0xff050615),
       appBar: AppBar(
-        title: const Text('Daily Social Media Marketing Logs'),
+        elevation: 0,
+        centerTitle: true,
+        backgroundColor: const Color(0xff367cf6),
+        title: const Text(
+          'Daily Social Media Marketing Logs',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+        ),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: _loadTracker,
               child: ListView(
-                padding: const EdgeInsets.all(16),
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(16, 18, 16, 28),
                 children: [
                   _SocialPointsDashboard(
                     totalPoints: _totalPoints,
@@ -263,10 +296,12 @@ class _SocialSubmissionScreenState extends State<SocialSubmissionScreen> {
 
   Widget _buildEntryForm() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _SocialPostInput(
           controller: _fbPostController,
           label: 'Facebook Post Link',
+          icon: Icons.facebook,
           selectedPhoto: _fbPostPhoto,
           existingPhotoUrl:
               _isEditingToday ? _todayReward?.fbPostPhotoUrl : null,
@@ -277,6 +312,7 @@ class _SocialSubmissionScreenState extends State<SocialSubmissionScreen> {
         _SocialPostInput(
           controller: _fbStoryController,
           label: 'Facebook Story Link',
+          icon: Icons.auto_stories_outlined,
           selectedPhoto: _fbStoryPhoto,
           existingPhotoUrl:
               _isEditingToday ? _todayReward?.fbStoryPhotoUrl : null,
@@ -287,6 +323,7 @@ class _SocialSubmissionScreenState extends State<SocialSubmissionScreen> {
         _SocialPostInput(
           controller: _tiktokController,
           label: 'TikTok Link',
+          icon: Icons.music_note,
           selectedPhoto: _tiktokPhoto,
           existingPhotoUrl:
               _isEditingToday ? _todayReward?.tiktokPhotoUrl : null,
@@ -298,6 +335,12 @@ class _SocialSubmissionScreenState extends State<SocialSubmissionScreen> {
           onPressed: _isValidForm ? _executeSubmitAction : null,
           style: ElevatedButton.styleFrom(
             minimumSize: const Size.fromHeight(50),
+            backgroundColor: const Color(0xff367cf6),
+            disabledBackgroundColor: const Color(0xff262839),
+            disabledForegroundColor: Colors.white38,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
           ),
           child: Text(_isEditingToday ? 'UPDATE DAY LOG' : 'SUBMIT DAY LOG'),
         ),
@@ -429,29 +472,92 @@ class _SocialPointsDashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: const Color(0xff171827),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(22),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xff246bfe),
+            Color(0xff111936),
+          ],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xff246bfe).withValues(alpha: 0.22),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: _DashboardMetric(
-              label: 'Total Points',
-              value: totalPoints.toString(),
-            ),
+          Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.16),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(Icons.campaign, color: Colors.white),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Social Reward Tracker',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ],
           ),
-          Expanded(
-            child: _DashboardMetric(
-              label: 'Post Days',
-              value: totalPosts.toString(),
-            ),
+          const SizedBox(height: 18),
+          Row(
+            children: [
+              Expanded(
+                child: _DashboardMetric(
+                  label: 'Total Points',
+                  value: totalPoints.toString(),
+                ),
+              ),
+              Expanded(
+                child: _DashboardMetric(
+                  label: 'Post Days',
+                  value: totalPosts.toString(),
+                ),
+              ),
+              Expanded(
+                child: _DashboardMetric(
+                  label: 'Today',
+                  value: hasSubmittedToday ? 'Done' : 'Open',
+                ),
+              ),
+            ],
           ),
-          Expanded(
-            child: _DashboardMetric(
-              label: 'Today',
-              value: hasSubmittedToday ? 'Done' : 'Open',
+          const SizedBox(height: 12),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              hasSubmittedToday
+                  ? 'Today is locked. You can edit today only.'
+                  : 'Submit one daily bundle with all three links and photos.',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ],
@@ -498,6 +604,7 @@ class _SocialPostInput extends StatelessWidget {
   const _SocialPostInput({
     required this.controller,
     required this.label,
+    required this.icon,
     required this.selectedPhoto,
     required this.existingPhotoUrl,
     required this.onChanged,
@@ -506,6 +613,7 @@ class _SocialPostInput extends StatelessWidget {
 
   final TextEditingController controller;
   final String label;
+  final IconData icon;
   final File? selectedPhoto;
   final String? existingPhotoUrl;
   final ValueChanged<String> onChanged;
@@ -515,58 +623,106 @@ class _SocialPostInput extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasPhoto =
         selectedPhoto != null || (existingPhotoUrl?.trim().isNotEmpty ?? false);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        TextField(
-          controller: controller,
-          onChanged: onChanged,
-          keyboardType: TextInputType.url,
-          style: const TextStyle(color: Colors.white),
-          decoration: InputDecoration(
-            labelText: label,
-            hintText: 'https://...',
-            labelStyle: const TextStyle(color: Colors.white70),
-            hintStyle: const TextStyle(color: Colors.white38),
-            enabledBorder: const UnderlineInputBorder(
-              borderSide: BorderSide(color: Colors.white38),
-            ),
-            focusedBorder: const UnderlineInputBorder(
-              borderSide: BorderSide(color: Colors.blueAccent),
-            ),
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xff121423),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: const Color(0xff367cf6).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(11),
+                ),
+                child: Icon(icon, color: const Color(0xff73a3ff), size: 19),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              Icon(
+                hasPhoto ? Icons.verified_rounded : Icons.image_outlined,
+                color: hasPhoto ? Colors.greenAccent : Colors.white38,
+                size: 20,
+              ),
+            ],
           ),
-        ),
-        const SizedBox(height: 8),
-        OutlinedButton.icon(
-          onPressed: onPickPhoto,
-          icon: Icon(hasPhoto ? Icons.check_circle : Icons.upload_file),
-          label: Text(hasPhoto ? 'Photo selected' : 'Upload photo'),
-        ),
-        if (selectedPhoto != null) ...[
           const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: Image.file(
-              selectedPhoto!,
-              height: 92,
-              width: double.infinity,
-              fit: BoxFit.cover,
+          TextField(
+            controller: controller,
+            onChanged: onChanged,
+            keyboardType: TextInputType.url,
+            style: const TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              hintText: 'https://...',
+              hintStyle: const TextStyle(color: Colors.white38),
+              enabledBorder: const UnderlineInputBorder(
+                borderSide: BorderSide(color: Colors.white24),
+              ),
+              focusedBorder: const UnderlineInputBorder(
+                borderSide: BorderSide(color: Colors.blueAccent),
+              ),
             ),
           ),
-        ] else if (existingPhotoUrl?.trim().isNotEmpty ?? false) ...[
-          const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: Image.network(
-              existingPhotoUrl!,
-              height: 92,
-              width: double.infinity,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 42,
+            child: OutlinedButton.icon(
+              onPressed: onPickPhoto,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xff73a3ff),
+                side: BorderSide(
+                  color: const Color(0xff367cf6).withValues(alpha: 0.65),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              icon: Icon(hasPhoto ? Icons.check_circle : Icons.upload_file),
+              label: Text(hasPhoto ? 'Photo ready' : 'Upload photo'),
             ),
           ),
+          if (selectedPhoto != null) ...[
+            const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: Image.file(
+                selectedPhoto!,
+                height: 92,
+                width: double.infinity,
+                fit: BoxFit.cover,
+              ),
+            ),
+          ] else if (existingPhotoUrl?.trim().isNotEmpty ?? false) ...[
+            const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: Image.network(
+                existingPhotoUrl!,
+                height: 92,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              ),
+            ),
+          ],
         ],
-      ],
+      ),
     );
   }
 }
@@ -586,10 +742,21 @@ class _TodayCompleteCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xff102416),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.greenAccent.withValues(alpha: 0.20)),
       ),
       child: Row(
         children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: Colors.greenAccent.withValues(alpha: 0.16),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(Icons.check_circle, color: Colors.greenAccent),
+          ),
+          const SizedBox(width: 12),
           const Expanded(
             child: Text(
               "Today's tasks completed! Earned 1 Point (\$1)",
@@ -602,7 +769,10 @@ class _TodayCompleteCard extends StatelessWidget {
           ),
           IconButton(
             onPressed: onEdit,
-            icon: const Icon(Icons.edit, color: Colors.white),
+            style: IconButton.styleFrom(
+              backgroundColor: Colors.white.withValues(alpha: 0.10),
+            ),
+            icon: const Icon(Icons.edit, color: Colors.white, size: 20),
           ),
         ],
       ),
@@ -623,20 +793,40 @@ class _SocialRewardListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: const Color(0xff171827),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xff121423),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
       child: ListTile(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         onTap: onTap,
-        leading: CircleAvatar(
-          backgroundColor: isToday ? Colors.green : Colors.blue,
-          child: Text(
-            reward.rewardPoints.toString(),
-            style: const TextStyle(color: Colors.white),
+        leading: Container(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            color: (isToday ? Colors.green : const Color(0xff367cf6))
+                .withValues(alpha: 0.18),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Center(
+            child: Text(
+              '+${reward.rewardPoints}',
+              style: TextStyle(
+                color: isToday ? Colors.greenAccent : const Color(0xff73a3ff),
+                fontWeight: FontWeight.w900,
+              ),
+            ),
           ),
         ),
         title: Text(
           reward.logDate,
-          style: const TextStyle(color: Colors.white),
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w800,
+          ),
         ),
         subtitle: Text(
           isToday ? 'Today - tap to view or edit' : 'Tap to view detail',
@@ -658,8 +848,10 @@ class _DetailHeader extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xff171827),
-        borderRadius: BorderRadius.circular(16),
+        gradient: const LinearGradient(
+          colors: [Color(0xff1b2446), Color(0xff121423)],
+        ),
+        borderRadius: BorderRadius.circular(18),
       ),
       child: Row(
         children: [
@@ -694,8 +886,13 @@ class _DetailSocialRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: const Color(0xff171827),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xff121423),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(
@@ -716,7 +913,7 @@ class _DetailSocialRow extends StatelessWidget {
             if (photoUrl.trim().isNotEmpty) ...[
               const SizedBox(height: 10),
               ClipRRect(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(14),
                 child: Image.network(
                   photoUrl,
                   height: 150,

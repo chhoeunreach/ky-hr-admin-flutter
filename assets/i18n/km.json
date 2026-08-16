@@ -206,6 +206,30 @@
   "loan_list_screen": {
     "loan": "ប្រាក់កម្ចី"
   },
+  "loan_calculate_screen": {
+    "loan_calculator": "គណនាប្រាក់កម្ចី",
+    "schedule_preview": "មើលកាលវិភាគជាមុន",
+    "loan_amount": "ចំនួនប្រាក់កម្ចី",
+    "monthly_payment": "ការបង់ប្រចាំខែ",
+    "total_payment": "ការបង់សរុប",
+    "price": "តម្លៃ",
+    "down": "ប្រាក់កក់",
+    "product_price": "តម្លៃផលិតផល",
+    "down_payment": "ប្រាក់កក់",
+    "interest_percent": "ការប្រាក់ %",
+    "duration": "រយៈពេល",
+    "frequency": "ភាពញឹកញាប់",
+    "monthly": "ប្រចាំខែ",
+    "weekly": "ប្រចាំសប្ដាហ៍",
+    "interest_type": "ប្រភេទការប្រាក់",
+    "flat": "ថេរ",
+    "declining": "ថយចុះ",
+    "loan_date": "ថ្ងៃកម្ចី",
+    "first_due": "ថ្ងៃបង់ដំបូង",
+    "total": "សរុប",
+    "preview_schedule": "មើលកាលវិភាគជាមុន",
+    "months": "ខែ"
+  },
   "change_password_screen": {
     "change_password": "ផ្លាស់ប្ដូរពាក្យសម្ងាត់",
     "old_password": "ពាក្យសម្ងាត់ចាស់",
@@ -343,7 +367,8 @@
     "submit": "ដាក់ស្នើ"
   },
   "team_sheet_screen": {
-    "team_sheet": "បញ្ជីក្រុម"
+    "team_sheet": "បញ្ជីក្រុម",
+    "no_team_found": "រកមិនឃើញសមាជិកក្រុម"
   },
   "create_tada_screen": {
     "create_tada": "បង្កើត TADA",

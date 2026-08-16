@@ -1297,6 +1297,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
   bool _isSubmitting = false;
   bool _isInvoiceExpanded = true;
   bool _isICloudExpanded = true;
+  bool _isICloudOcrLoading = false;
   bool _showSerialValidationErrors = false;
 
   final _sellerNameCtrl = TextEditingController();
@@ -1623,6 +1624,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
         _iCloudPhotoPaths.add(croppedPhotoPath);
         _syncPhotoPaths();
       });
+      await _extractICloudText();
     }
   }
 
@@ -1636,6 +1638,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
         _iCloudPhotoPaths.addAll(croppedPhotoPaths);
         _syncPhotoPaths();
       });
+      await _extractICloudText();
     }
   }
 
@@ -1690,6 +1693,71 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
     } finally {
       setState(() => ctrls.isOcrLoading = false);
     }
+  }
+
+  Future<void> _extractICloudText() async {
+    if (_iCloudPhotoPaths.isEmpty) {
+      _showError(
+          'No iCloud Photos', 'Please take or select iCloud photos first.');
+      return;
+    }
+
+    setState(() => _isICloudOcrLoading = true);
+
+    try {
+      final extracted =
+          await _ocrService.extractTextFromMultipleImages(_iCloudPhotoPaths);
+      _replaceICloudExtractedText(extracted);
+      _autoFillICloudInfoFromText(extracted);
+    } catch (e) {
+      _showError('iCloud Extract Failed', e.toString());
+    } finally {
+      if (mounted) {
+        setState(() => _isICloudOcrLoading = false);
+      }
+    }
+  }
+
+  void _autoFillICloudInfoFromText(String rawText) {
+    final text = rawText.trim();
+    if (text.isEmpty) return;
+
+    final fields = _ocrService.autoDetectICloudFields(text);
+
+    void apply(TextEditingController controller, String key) {
+      final value = fields[key]?.trim() ?? '';
+      if (value.isEmpty) return;
+      controller.text = value;
+    }
+
+    apply(_iCloudAccountNameCtrl, 'account_name');
+    apply(_iCloudAppleIdCtrl, 'apple_id');
+    apply(_iCloudStorageCtrl, 'icloud_storage');
+    apply(_iCloudTrustedPhoneCtrl, 'trusted_phone');
+    apply(_iCloudDevicesCtrl, 'devices');
+    _syncICloudInfoToReport();
+
+    setState(() {});
+  }
+
+  void _replaceICloudExtractedText(String text) {
+    final block = '--- iCloud Information ---\n$text'.trim();
+    final current = _report.extractedText.trim();
+    if (current.isEmpty) {
+      _report.extractedText = block;
+      return;
+    }
+
+    final iCloudBlockPattern = RegExp(
+      '${RegExp.escape('--- iCloud Information ---')}\\n[\\s\\S]*?(?=\\n\\n--- Product \\d+ ---|\$)',
+    );
+    if (iCloudBlockPattern.hasMatch(current)) {
+      _report.extractedText =
+          current.replaceFirst(iCloudBlockPattern, block).trim();
+      return;
+    }
+
+    _report.extractedText = '$current\n\n$block';
   }
 
   void _autoFillProductLineFromText(int index, String rawText) {
@@ -2390,6 +2458,37 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                     if (_iCloudPhotoPaths.isNotEmpty) ...[
                       const SizedBox(height: 12),
                       _buildPhotoGrid(_iCloudPhotoPaths, _removeICloudPhoto),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed:
+                              _isICloudOcrLoading ? null : _extractICloudText,
+                          icon: _isICloudOcrLoading
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Icon(Icons.text_fields),
+                          label: Text(
+                            _isICloudOcrLoading
+                                ? 'Extracting...'
+                                : 'Extract & Auto Fill iCloud',
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _sellOutBlue,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                        ),
+                      ),
                     ],
                     const SizedBox(height: 12),
                     _buildTextField(

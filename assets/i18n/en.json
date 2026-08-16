@@ -206,6 +206,30 @@
   "loan_list_screen": {
     "loan": "Loan"
   },
+  "loan_calculate_screen": {
+    "loan_calculator": "Loan Calculator",
+    "schedule_preview": "Schedule Preview",
+    "loan_amount": "Loan amount",
+    "monthly_payment": "Monthly payment",
+    "total_payment": "Total payment",
+    "price": "Price",
+    "down": "Down",
+    "product_price": "Product price",
+    "down_payment": "Down payment",
+    "interest_percent": "Interest %",
+    "duration": "Duration",
+    "frequency": "Frequency",
+    "monthly": "Monthly",
+    "weekly": "Weekly",
+    "interest_type": "Interest type",
+    "flat": "Flat",
+    "declining": "Declining",
+    "loan_date": "Loan date",
+    "first_due": "First due",
+    "total": "Total",
+    "preview_schedule": "Preview Schedule",
+    "months": "months"
+  },
   "change_password_screen": {
     "change_password": "Change Password",
     "old_password": "Old Password",
@@ -343,7 +367,8 @@
     "submit": "Submit"
   },
   "team_sheet_screen": {
-    "team_sheet": "Team Sheet"
+    "team_sheet": "Team Sheet",
+    "no_team_found": "No team members found"
   },
   "create_tada_screen": {
     "create_tada": "Create TADA",

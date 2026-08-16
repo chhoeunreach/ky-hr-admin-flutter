@@ -55,6 +55,7 @@ post_install do |installer|
   installer.pods_project.targets.each do |target|
     target.build_configurations.each do |config|
       config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'i386'
+      config.build_settings['DEBUG_INFORMATION_FORMAT'] = 'dwarf-with-dsym' if ['Release', 'Profile'].include?(config.name)
 
       # Xcode 26 can incorrectly propagate the app bundle id into embedded pod
       # frameworks, which then breaks device installation with DuplicateIdentifier.

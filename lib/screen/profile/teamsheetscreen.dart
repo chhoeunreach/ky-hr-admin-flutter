@@ -55,7 +55,7 @@ class TeamSheetState extends State<TeamSheet> {
     });
     try {
       await Provider.of<TeamSheetProvider>(context, listen: false).getTeam();
-      setState(() async {
+      setState(() {
         isLoading = false;
         EasyLoading.dismiss(animation: true);
       });
@@ -74,10 +74,14 @@ class TeamSheetState extends State<TeamSheet> {
     final provider = Provider.of<TeamSheetProvider>(context);
     final teamList =
         Provider.of<TeamSheetProvider>(context, listen: true).mainTeamList;
-    return WillPopScope(
-      onWillPop: () async {
-        return !isLoading;
-      },
+    final selectedBranch = provider.selectedBranchItem;
+    final selectedDepartment = provider.selectedDepartmentItem;
+    final canShowFilters = provider.branches.isNotEmpty &&
+        provider.department.isNotEmpty &&
+        selectedBranch != null &&
+        selectedDepartment != null;
+    return PopScope(
+      canPop: !isLoading,
       child: Container(
         decoration: RadialDecoration(),
         child: Scaffold(
@@ -95,7 +99,7 @@ class TeamSheetState extends State<TeamSheet> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  teamList.isEmpty
+                  teamList.isEmpty || !canShowFilters
                       ? SizedBox.shrink()
                       : Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -117,19 +121,18 @@ class TeamSheetState extends State<TeamSheet> {
                                         ),
                                       ))
                                   .toList(),
-                              value: provider.branches
-                                  .where((element) =>
-                                      element.id == provider.selectedBranch)
-                                  .first,
+                              value: selectedBranch,
                               onChanged: (value) {
-                                setState(() {
-                                  provider.selectedBranch =
-                                      (value as Branch).id;
-                                  provider.setDepartment((value).department);
-                                  provider.selectedDepartment =
-                                      (value).department.first.id;
-                                  provider.makeTeamList();
-                                });
+                                if (value == null) {
+                                  return;
+                                }
+                                provider.selectedBranch = value.id;
+                                provider.setDepartment(value.department);
+                                provider.selectedDepartment =
+                                    provider.department.isNotEmpty
+                                        ? provider.department.first.id
+                                        : 0;
+                                provider.makeTeamList();
                               },
                               iconStyleData: IconStyleData(
                                 icon: const Icon(
@@ -193,16 +196,13 @@ class TeamSheetState extends State<TeamSheet> {
                                         ),
                                       ))
                                   .toList(),
-                              value: provider.department
-                                  .where((element) =>
-                                      element.id == provider.selectedDepartment)
-                                  .first,
+                              value: selectedDepartment,
                               onChanged: (value) {
-                                setState(() {
-                                  provider.selectedDepartment =
-                                      (value as Department).id;
-                                  provider.makeTeamList();
-                                });
+                                if (value == null) {
+                                  return;
+                                }
+                                provider.selectedDepartment = value.id;
+                                provider.makeTeamList();
                               },
                               iconStyleData: IconStyleData(
                                 icon: const Icon(
@@ -252,13 +252,32 @@ class TeamSheetState extends State<TeamSheet> {
                     height: 15,
                   ),
                   Expanded(
-                    child: ListView.builder(
-                        padding:
-                            EdgeInsets.symmetric(vertical: 5, horizontal: 15),
-                        itemCount: provider.teamList.length,
-                        itemBuilder: (ctx, i) => Padding(
-                            padding: EdgeInsets.all(5),
-                            child: teamCard(provider.teamList[i]))),
+                    child: provider.teamList.isEmpty
+                        ? ListView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 32, horizontal: 24),
+                            children: [
+                              Center(
+                                child: Text(
+                                  translate('team_sheet_screen.no_team_found'),
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          )
+                        : ListView.builder(
+                            padding: EdgeInsets.symmetric(
+                                vertical: 5, horizontal: 15),
+                            itemCount: provider.teamList.length,
+                            itemBuilder: (ctx, i) => Padding(
+                                padding: EdgeInsets.all(5),
+                                child: teamCard(provider.teamList[i]))),
                   ),
                 ],
               ),
