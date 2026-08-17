@@ -63,6 +63,10 @@ class Constant {
   static const NOTIFICATION_URL = "$API_URL/notifications";
   static const NOTICE_URL = "$API_URL/notices";
   static const MEETING_URL = "$API_URL/team-meetings";
+  static const MEETING_ATTENDANCE_STATUS_URL =
+      "$API_URL/team-meetings/attendance/status";
+  static const MEETING_ATTENDANCE_SCAN_URL =
+      "$API_URL/team-meetings/attendance/scan";
 
   static const PROJECT_DASHBOARD_URL = "$API_URL/project-management-dashboard";
   static const PROJECT_LIST_URL = "$API_URL/assigned-projects-list";

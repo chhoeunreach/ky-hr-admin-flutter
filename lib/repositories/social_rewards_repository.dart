@@ -138,20 +138,42 @@ class SocialRewardsRepository {
     required File fbStoryPhoto,
     required File tiktokPhoto,
   }) async {
-    return _sendDayLogMultipart(
+    final fields = {
+      'employee_id': employeeId.toString(),
+      'existing_employee_id': employeeId.toString(),
+      'fb_post_url': fbPostUrl,
+      'fb_story_url': fbStoryUrl,
+      'tiktok_url': tiktokUrl,
+    };
+    final files = {
+      'fb_post_photo': fbPostPhoto,
+      'fb_story_photo': fbStoryPhoto,
+      'tiktok_photo': tiktokPhoto,
+    };
+
+    final response = await _sendMultipartResponse(
       url: Constant.HR_KY_ADMIN_SOCIAL_REWARDS_SUBMIT_URL,
-      fields: {
-        'employee_id': employeeId.toString(),
-        'existing_employee_id': employeeId.toString(),
-        'fb_post_url': fbPostUrl,
-        'fb_story_url': fbStoryUrl,
-        'tiktok_url': tiktokUrl,
-      },
-      files: {
-        'fb_post_photo': fbPostPhoto,
-        'fb_story_photo': fbStoryPhoto,
-        'tiktok_photo': tiktokPhoto,
-      },
+      fields: fields,
+      files: files,
+    );
+
+    if (_isMethodUnsupported(response)) {
+      final fallbackResponse = await _sendMultipartResponse(
+        url: Constant.HR_KY_ADMIN_SOCIAL_REWARDS_URL,
+        fields: {
+          ...fields,
+          'log_date': DateTime.now().toIso8601String().split('T').first,
+        },
+        files: files,
+      );
+      return _parseMultipartResponse(
+        fallbackResponse,
+        fallbackError: 'Unable to submit social reward',
+      );
+    }
+
+    return _parseMultipartResponse(
+      response,
       fallbackError: 'Unable to submit social reward',
     );
   }
@@ -260,6 +282,20 @@ class SocialRewardsRepository {
     required Map<String, File> files,
     required String fallbackError,
   }) async {
+    final response = await _sendMultipartResponse(
+      url: url,
+      fields: fields,
+      files: files,
+    );
+
+    return _parseMultipartResponse(response, fallbackError: fallbackError);
+  }
+
+  Future<http.Response> _sendMultipartResponse({
+    required String url,
+    required Map<String, String> fields,
+    required Map<String, File> files,
+  }) async {
     final preferences = Preferences();
     final appUrl = await preferences.getAppUrl();
     final token = await preferences.getToken();
@@ -283,14 +319,30 @@ class SocialRewardsRepository {
           await request.send().timeout(const Duration(seconds: 60));
       final response = await http.Response.fromStream(streamedResponse);
       debugPrint(response.body.toString());
-
-      final responseData = _decodeResponseBody(response.body);
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return GeneralResponse.fromJson(responseData);
-      }
-      throw responseData['message'] ?? fallbackError;
+      return response;
     } catch (e) {
       throw unknownError(e);
     }
+  }
+
+  GeneralResponse _parseMultipartResponse(
+    http.Response response, {
+    required String fallbackError,
+  }) {
+    final responseData = _decodeResponseBody(response.body);
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return GeneralResponse.fromJson(responseData);
+    }
+    throw responseData['message'] ?? fallbackError;
+  }
+
+  bool _isMethodUnsupported(http.Response response) {
+    if (response.statusCode != 405) {
+      return false;
+    }
+    final responseData = _decodeResponseBody(response.body);
+    final message = responseData['message']?.toString().toLowerCase() ?? '';
+    return message.contains('post method is not supported') ||
+        message.contains('method is not supported');
   }
 }

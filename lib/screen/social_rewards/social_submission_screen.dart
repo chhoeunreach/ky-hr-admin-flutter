@@ -663,39 +663,57 @@ class _SocialPostInput extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          TextField(
-            controller: controller,
-            onChanged: onChanged,
-            keyboardType: TextInputType.url,
-            style: const TextStyle(color: Colors.white),
-            decoration: InputDecoration(
-              hintText: 'https://...',
-              hintStyle: const TextStyle(color: Colors.white38),
-              enabledBorder: const UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.white24),
-              ),
-              focusedBorder: const UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.blueAccent),
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            height: 42,
-            child: OutlinedButton.icon(
-              onPressed: onPickPhoto,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xff73a3ff),
-                side: BorderSide(
-                  color: const Color(0xff367cf6).withValues(alpha: 0.65),
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: controller,
+                  onChanged: onChanged,
+                  keyboardType: TextInputType.url,
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  decoration: const InputDecoration(
+                    isDense: true,
+                    hintText: 'https://...',
+                    hintStyle: TextStyle(color: Colors.white38),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white24),
+                    ),
+                    focusedBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.blueAccent),
+                    ),
+                    contentPadding: EdgeInsets.symmetric(vertical: 11),
+                  ),
                 ),
               ),
-              icon: Icon(hasPhoto ? Icons.check_circle : Icons.upload_file),
-              label: Text(hasPhoto ? 'Photo ready' : 'Upload photo'),
-            ),
+              const SizedBox(width: 10),
+              SizedBox(
+                width: 132,
+                height: 40,
+                child: OutlinedButton.icon(
+                  onPressed: onPickPhoto,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xff73a3ff),
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    side: BorderSide(
+                      color: const Color(0xff367cf6).withValues(alpha: 0.65),
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  icon: Icon(
+                    hasPhoto ? Icons.check_circle : Icons.upload_file,
+                    size: 18,
+                  ),
+                  label: Text(
+                    hasPhoto ? 'Ready' : 'Upload',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+            ],
           ),
           if (selectedPhoto != null) ...[
             const SizedBox(height: 12),

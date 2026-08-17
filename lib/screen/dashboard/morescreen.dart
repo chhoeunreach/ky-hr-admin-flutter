@@ -8,6 +8,7 @@ import 'package:cnattendance/screen/awards/awardsscreen.dart';
 import 'package:cnattendance/screen/complainscreen/complainscreen.dart';
 import 'package:cnattendance/screen/dashboard/projectscreen.dart';
 import 'package:cnattendance/screen/eventscreen/eventlistscreen.dart';
+import 'package:cnattendance/screen/meeting_attendance/meeting_attendance_screen.dart';
 import 'package:cnattendance/screen/profile/aboutscreen.dart';
 import 'package:cnattendance/screen/profile/changepasswordscreen.dart';
 import 'package:cnattendance/screen/profile/companyrulesscreen.dart';
@@ -328,6 +329,11 @@ class MoreScreenState extends State<MoreScreen> {
                                     SocialSubmissionScreen(
                                       employeeId: employeeId,
                                     )),
+                            Services(
+                              "Meeting Attendance",
+                              Icons.qr_code_scanner,
+                              const MeetingAttendanceScreen(),
+                            ),
                             features["advance-salary-admin"] != "1"
                                 ? SizedBox.shrink()
                                 : Services(

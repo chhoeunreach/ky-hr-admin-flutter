@@ -7,6 +7,7 @@ import 'package:cnattendance/screen/dashboard/leavescreen.dart';
 import 'package:cnattendance/screen/dashboard/attendancescreen.dart';
 import 'package:cnattendance/screen/dashboard/morescreen.dart';
 import 'package:cnattendance/screen/loanmanagement/loancalculatescreen.dart';
+import 'package:cnattendance/screen/social_rewards/social_submission_screen.dart';
 import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
@@ -56,6 +57,8 @@ class DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final enterprise = EnterpriseTheme.of(context);
+    final employeeId =
+        int.tryParse(context.watch<PrefProvider>().userId.trim()) ?? 0;
     return Scaffold(
       key: _scaffoldKey,
       drawer: Drawer(
@@ -94,6 +97,25 @@ class DashboardScreenState extends State<DashboardScreen> {
                   Get.to(() => LoanCalculateScreen());
                 },
               ),
+              ListTile(
+                leading: Icon(
+                  Icons.campaign_outlined,
+                  color: enterprise.primary,
+                ),
+                title: Text(
+                  translate('dashboard_screen.social_rewards'),
+                  style: TextStyle(
+                    color: enterprise.text,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  Get.to(
+                    () => SocialSubmissionScreen(employeeId: employeeId),
+                  );
+                },
+              ),
             ],
           ),
         ),
@@ -113,20 +135,20 @@ class DashboardScreenState extends State<DashboardScreen> {
     final colorScheme = Theme.of(context).colorScheme;
     final extended = width >= 1100;
     final destinations = <NavigationRailDestination>[
-      const NavigationRailDestination(
-        icon: Icon(Icons.dashboard_outlined),
-        selectedIcon: Icon(Icons.dashboard),
-        label: Text('Dashboard'),
+      NavigationRailDestination(
+        icon: const Icon(Icons.dashboard_outlined),
+        selectedIcon: const Icon(Icons.dashboard),
+        label: Text(translate('dashboard_screen.home')),
       ),
-      const NavigationRailDestination(
-        icon: Icon(Icons.analytics_outlined),
-        selectedIcon: Icon(Icons.analytics),
-        label: Text('Analytics'),
+      NavigationRailDestination(
+        icon: const Icon(Icons.analytics_outlined),
+        selectedIcon: const Icon(Icons.analytics),
+        label: Text(translate('dashboard_screen.attendance')),
       ),
-      const NavigationRailDestination(
-        icon: Icon(Icons.settings_outlined),
-        selectedIcon: Icon(Icons.settings),
-        label: Text('Settings'),
+      NavigationRailDestination(
+        icon: const Icon(Icons.settings_outlined),
+        selectedIcon: const Icon(Icons.settings),
+        label: Text(translate('dashboard_screen.more')),
       ),
     ];
     final pages = <Widget>[
