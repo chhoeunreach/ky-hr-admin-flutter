@@ -27,25 +27,25 @@ class Holidaycard extends StatelessWidget {
       elevation: 0,
       color: Colors.white12,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 5),
+        padding: const EdgeInsets.symmetric(vertical: 3),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.all(5),
+              padding: const EdgeInsets.all(4),
               child: Card(
                 shape: ButtonBorder(),
                 elevation: 0,
                 color: isPublicHoliday ? Colors.red : Colors.blueAccent,
                 child: Container(
-                  width: 60,
-                  height: 60,
+                  width: 48,
+                  height: 48,
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
                         day,
-                        style: TextStyle(color: Colors.white, fontSize: 20),
+                        style: TextStyle(color: Colors.white, fontSize: 16),
                       ),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 5),
@@ -59,7 +59,7 @@ class Holidaycard extends StatelessWidget {
             ),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(8.0),
+                padding: const EdgeInsets.all(6.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -67,16 +67,16 @@ class Holidaycard extends StatelessWidget {
                     Text(
                       softWrap: true,
                       name,
-                      style: TextStyle(color: Colors.white, fontSize: 18),
+                      style: TextStyle(color: Colors.white, fontSize: 14),
                     ),
                     SizedBox(
-                      height: 5,
+                      height: 3,
                     ),
                     Text(
                       overflow: TextOverflow.fade,
                       softWrap: true,
                       parse(desc).body!.text,
-                      style: TextStyle(color: Colors.white, fontSize: 12),
+                      style: TextStyle(color: Colors.white, fontSize: 11),
                     ),
                   ],
                 ),

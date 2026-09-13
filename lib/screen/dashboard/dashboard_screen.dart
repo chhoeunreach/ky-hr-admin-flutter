@@ -1,5 +1,8 @@
+import 'dart:io';
 import 'dart:ui';
 
+import 'package:cnattendance/data/source/network/model/dashboard/User.dart';
+import 'package:cnattendance/provider/dashboardprovider.dart';
 import 'package:cnattendance/provider/prefprovider.dart';
 import 'package:cnattendance/screen/dashboard/chatlistscreen.dart';
 import 'package:cnattendance/screen/dashboard/homescreen.dart';
@@ -7,14 +10,19 @@ import 'package:cnattendance/screen/dashboard/leavescreen.dart';
 import 'package:cnattendance/screen/dashboard/attendancescreen.dart';
 import 'package:cnattendance/screen/dashboard/morescreen.dart';
 import 'package:cnattendance/screen/loanmanagement/loancalculatescreen.dart';
+import 'package:cnattendance/screen/profile/front_side_preview_page.dart';
+import 'package:cnattendance/screen/sell_out_report_screen.dart';
 import 'package:cnattendance/screen/social_rewards/social_submission_screen.dart';
 import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
 import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 class DashboardScreen extends StatefulWidget {
   static const String routeName = '/dashboard';
@@ -59,61 +67,94 @@ class DashboardScreenState extends State<DashboardScreen> {
     final enterprise = EnterpriseTheme.of(context);
     final employeeId =
         int.tryParse(context.watch<PrefProvider>().userId.trim()) ?? 0;
+    final dashboardProvider = context.watch<DashboardProvider>();
+    final branchName = dashboardProvider.branch.trim();
+    final paymentQrCodes = dashboardProvider.paymentQrCodes;
+    final drawerWidth = (MediaQuery.sizeOf(context).width * 0.76).clamp(
+      236.0,
+      280.0,
+    );
     return Scaffold(
       key: _scaffoldKey,
       drawer: Drawer(
+        width: drawerWidth,
         backgroundColor: enterprise.surface,
         child: SafeArea(
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              DrawerHeader(
-                margin: EdgeInsets.zero,
-                child: Align(
-                  alignment: Alignment.bottomLeft,
-                  child: Text(
-                    'HRKY',
-                    style: TextStyle(
-                      color: enterprise.text,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
+              _paymentQrHeader(
+                context,
+                enterprise,
+                branchName.isEmpty ? 'Branch' : branchName,
+                paymentQrCodes,
               ),
-              ListTile(
-                leading: Icon(
-                  Icons.calculate_outlined,
-                  color: enterprise.primary,
-                ),
-                title: Text(
-                  'Loan Calculate',
-                  style: TextStyle(
-                    color: enterprise.text,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
+              _drawerSectionLabel(enterprise, 'Services'),
+              _sellOutDrawerItem(
+                context,
+                enterprise,
+                translate('home_screen.service_sell'),
+                Icons.point_of_sale,
+              ),
+              _sellOutDrawerItem(
+                context,
+                enterprise,
+                translate('home_screen.service_material'),
+                Icons.inventory_2_outlined,
+              ),
+              _sellOutDrawerItem(
+                context,
+                enterprise,
+                translate('home_screen.service_iron'),
+                Icons.local_laundry_service,
+              ),
+              _sellOutDrawerItem(
+                context,
+                enterprise,
+                translate('home_screen.service_repair'),
+                Icons.build_circle_outlined,
+              ),
+              _sellOutDrawerItem(
+                context,
+                enterprise,
+                translate('home_screen.service_buy_in'),
+                Icons.add_shopping_cart,
+              ),
+              _sellOutDrawerItem(
+                context,
+                enterprise,
+                translate('home_screen.service_icloud_cus'),
+                Icons.cloud_outlined,
+              ),
+              _drawerDivider(enterprise),
+              _drawerSectionLabel(enterprise, 'Tools'),
+              _drawerMenuItem(
+                enterprise,
+                icon: Icons.calculate_outlined,
+                label: 'Loan Calculate',
                 onTap: () {
                   Navigator.of(context).pop();
                   Get.to(() => LoanCalculateScreen());
                 },
               ),
-              ListTile(
-                leading: Icon(
-                  Icons.campaign_outlined,
-                  color: enterprise.primary,
-                ),
-                title: Text(
-                  translate('dashboard_screen.social_rewards'),
-                  style: TextStyle(
-                    color: enterprise.text,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
+              _drawerMenuItem(
+                enterprise,
+                icon: Icons.campaign_outlined,
+                label: translate('dashboard_screen.social_rewards'),
                 onTap: () {
                   Navigator.of(context).pop();
                   Get.to(
                     () => SocialSubmissionScreen(employeeId: employeeId),
                   );
+                },
+              ),
+              _drawerMenuItem(
+                enterprise,
+                icon: Icons.badge_rounded,
+                label: 'View My Card',
+                onTap: () {
+                  Navigator.of(context).pop();
+                  Get.to(() => const FrontSidePreviewPage());
                 },
               ),
             ],
@@ -159,51 +200,94 @@ class DashboardScreenState extends State<DashboardScreen> {
 
     return Row(
       children: [
-        NavigationRail(
-          selectedIndex: _selectedRailIndex,
-          extended: extended,
-          minWidth: 76,
-          minExtendedWidth: 192,
-          groupAlignment: -0.86,
-          labelType: extended
-              ? NavigationRailLabelType.none
-              : NavigationRailLabelType.selected,
-          backgroundColor: colorScheme.surface,
-          indicatorColor: colorScheme.primaryContainer,
-          selectedIconTheme:
-              IconThemeData(color: colorScheme.onPrimaryContainer),
-          selectedLabelTextStyle: TextStyle(
-            color: colorScheme.onSurface,
-            fontWeight: FontWeight.w800,
-          ),
-          unselectedIconTheme: IconThemeData(
-            color: colorScheme.onSurface.withValues(alpha: 0.64),
-          ),
-          unselectedLabelTextStyle: TextStyle(
-            color: colorScheme.onSurface.withValues(alpha: 0.64),
-            fontWeight: FontWeight.w600,
-          ),
-          leading: Padding(
-            padding: const EdgeInsets.only(bottom: 24),
-            child: IconButton(
-              tooltip: 'Menu',
-              icon: const Icon(Icons.menu),
-              onPressed: () {
-                _scaffoldKey.currentState?.openDrawer();
-              },
+        Container(
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            border: Border(
+              right: BorderSide(
+                color: colorScheme.outlineVariant.withValues(alpha: 0.72),
+              ),
             ),
+            boxShadow: [
+              BoxShadow(
+                color: colorScheme.shadow.withValues(alpha: 0.08),
+                blurRadius: 18,
+                offset: const Offset(8, 0),
+              ),
+            ],
           ),
-          destinations: destinations,
-          onDestinationSelected: (index) {
-            setState(() {
-              _selectedRailIndex = index;
-            });
-          },
-        ),
-        VerticalDivider(
-          width: 1,
-          thickness: 1,
-          color: colorScheme.outlineVariant.withValues(alpha: 0.72),
+          child: NavigationRail(
+            selectedIndex: _selectedRailIndex,
+            extended: extended,
+            minWidth: 76,
+            minExtendedWidth: 204,
+            groupAlignment: -0.78,
+            labelType: extended
+                ? NavigationRailLabelType.none
+                : NavigationRailLabelType.selected,
+            backgroundColor: Colors.transparent,
+            indicatorColor: colorScheme.primaryContainer,
+            indicatorShape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            selectedIconTheme:
+                IconThemeData(color: colorScheme.onPrimaryContainer, size: 22),
+            selectedLabelTextStyle: TextStyle(
+              color: colorScheme.onSurface,
+              fontSize: 12,
+              fontWeight: FontWeight.w900,
+            ),
+            unselectedIconTheme: IconThemeData(
+              color: colorScheme.onSurface.withValues(alpha: 0.62),
+              size: 21,
+            ),
+            unselectedLabelTextStyle: TextStyle(
+              color: colorScheme.onSurface.withValues(alpha: 0.62),
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+            ),
+            leading: Padding(
+              padding: const EdgeInsets.fromLTRB(10, 10, 10, 22),
+              child: extended
+                  ? Row(
+                      children: [
+                        IconButton.filledTonal(
+                          tooltip: 'Menu',
+                          icon: const Icon(Icons.menu),
+                          onPressed: () {
+                            _scaffoldKey.currentState?.openDrawer();
+                          },
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'HRKY',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: colorScheme.onSurface,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : IconButton.filledTonal(
+                      tooltip: 'Menu',
+                      icon: const Icon(Icons.menu),
+                      onPressed: () {
+                        _scaffoldKey.currentState?.openDrawer();
+                      },
+                    ),
+            ),
+            destinations: destinations,
+            onDestinationSelected: (index) {
+              setState(() {
+                _selectedRailIndex = index;
+              });
+            },
+          ),
         ),
         Expanded(
           child: IndexedStack(
@@ -282,6 +366,527 @@ class DashboardScreenState extends State<DashboardScreen> {
         ),
       ],
     );
+  }
+
+  Widget _sellOutDrawerItem(
+    BuildContext context,
+    EnterpriseTheme enterprise,
+    String serviceType,
+    IconData icon,
+  ) {
+    return _drawerMenuItem(
+      enterprise,
+      icon: icon,
+      label: serviceType,
+      onTap: () {
+        Navigator.of(context).pop();
+        Get.to(() => SellOutReportScreen(serviceType: serviceType));
+      },
+    );
+  }
+
+  Widget _drawerMenuItem(
+    EnterpriseTheme enterprise, {
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: onTap,
+          child: Container(
+            height: 42,
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Row(
+              children: [
+                Container(
+                  width: 30,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: enterprise.primary.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: enterprise.primary.withValues(alpha: 0.92),
+                    size: 17,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: enterprise.text,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: enterprise.mutedText.withValues(alpha: 0.62),
+                  size: 18,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _drawerSectionLabel(EnterpriseTheme enterprise, String label) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(18, 6, 18, 5),
+      child: Text(
+        label.toUpperCase(),
+        style: TextStyle(
+          color: enterprise.mutedText.withValues(alpha: 0.72),
+          fontSize: 10,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 0,
+        ),
+      ),
+    );
+  }
+
+  Widget _drawerDivider(EnterpriseTheme enterprise) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      child: Divider(
+        height: 1,
+        color: enterprise.glassStroke,
+      ),
+    );
+  }
+
+  Widget _paymentQrHeader(
+    BuildContext context,
+    EnterpriseTheme enterprise,
+    String branchName,
+    List<PaymentQrCode> paymentQrCodes,
+  ) {
+    final firstQr =
+        paymentQrCodes.isNotEmpty ? paymentQrCodes.first.qrCodeUrl : '';
+    return InkWell(
+      onTap: () => _showPaymentQr(
+        context,
+        enterprise,
+        branchName,
+        paymentQrCodes,
+      ),
+      child: Container(
+        width: double.infinity,
+        margin: const EdgeInsets.fromLTRB(10, 10, 10, 8),
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              enterprise.primary.withValues(alpha: 0.95),
+              enterprise.accent.withValues(alpha: 0.86),
+            ],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: enterprise.accent.withValues(alpha: 0.24),
+              blurRadius: 18,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            if (firstQr.isNotEmpty)
+              Container(
+                width: 48,
+                height: 48,
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(11),
+                  child: Image.network(
+                    firstQr,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => const Icon(
+                      Icons.qr_code_2_rounded,
+                      color: Colors.black87,
+                      size: 34,
+                    ),
+                  ),
+                ),
+              )
+            else
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.qr_code_2_rounded,
+                  color: Colors.black87,
+                  size: 38,
+                ),
+              ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Payment QR',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    branchName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.82),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    paymentQrCodes.isEmpty
+                        ? 'No QR uploaded'
+                        : '${paymentQrCodes.length} code(s) View',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.92),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showPaymentQr(
+    BuildContext context,
+    EnterpriseTheme enterprise,
+    String branchName,
+    List<PaymentQrCode> paymentQrCodes,
+  ) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(22),
+          ),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 360, maxHeight: 560),
+            child: Padding(
+              padding: const EdgeInsets.all(18),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Payment QR',
+                    style: TextStyle(
+                      color: enterprise.text,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    branchName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: enterprise.mutedText,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Flexible(
+                    child: paymentQrCodes.isEmpty
+                        ? _emptyPaymentQrState(enterprise)
+                        : ListView.separated(
+                            shrinkWrap: true,
+                            itemCount: paymentQrCodes.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: 12),
+                            itemBuilder: (context, index) {
+                              return _paymentQrCard(
+                                context,
+                                enterprise,
+                                paymentQrCodes[index],
+                              );
+                            },
+                          ),
+                  ),
+                  const SizedBox(height: 14),
+                  SizedBox(
+                    width: double.infinity,
+                    child: TextButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(),
+                      child: const Text('Close'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _emptyPaymentQrState(EnterpriseTheme enterprise) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 22),
+      decoration: BoxDecoration(
+        color: enterprise.glassFill,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: enterprise.glassStroke),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            Icons.qr_code_2_rounded,
+            color: enterprise.mutedText,
+            size: 72,
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'No payment QR uploaded',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: enterprise.text,
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _paymentQrCard(
+    BuildContext context,
+    EnterpriseTheme enterprise,
+    PaymentQrCode paymentQrCode,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: enterprise.glassFill,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: enterprise.glassStroke),
+      ),
+      child: Column(
+        children: [
+          Text(
+            paymentQrCode.paymentName,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: enterprise.text,
+              fontSize: 14,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: Container(
+              width: 230,
+              height: 230,
+              color: Colors.white,
+              padding: const EdgeInsets.all(8),
+              child: Image.network(
+                paymentQrCode.qrCodeUrl,
+                fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) => const Icon(
+                  Icons.broken_image_outlined,
+                  color: Colors.black54,
+                  size: 72,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.open_in_full_rounded, size: 18),
+                  label: const Text('View full'),
+                  onPressed: () {
+                    _showFullPaymentQr(context, enterprise, paymentQrCode);
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: FilledButton.icon(
+                  icon: const Icon(Icons.download_rounded, size: 18),
+                  label: const Text('Download'),
+                  onPressed: () {
+                    _downloadPaymentQr(context, paymentQrCode);
+                  },
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showFullPaymentQr(
+    BuildContext context,
+    EnterpriseTheme enterprise,
+    PaymentQrCode paymentQrCode,
+  ) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return Dialog.fullscreen(
+          backgroundColor: Colors.black,
+          child: SafeArea(
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        tooltip: 'Close',
+                        icon: const Icon(Icons.close, color: Colors.white),
+                        onPressed: () => Navigator.of(dialogContext).pop(),
+                      ),
+                      Expanded(
+                        child: Text(
+                          paymentQrCode.paymentName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Download',
+                        icon: const Icon(
+                          Icons.download_rounded,
+                          color: Colors.white,
+                        ),
+                        onPressed: () {
+                          _downloadPaymentQr(context, paymentQrCode);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Center(
+                    child: InteractiveViewer(
+                      minScale: 0.8,
+                      maxScale: 5,
+                      child: Container(
+                        color: Colors.white,
+                        padding: const EdgeInsets.all(14),
+                        child: Image.network(
+                          paymentQrCode.qrCodeUrl,
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, __, ___) => const Icon(
+                            Icons.broken_image_outlined,
+                            color: Colors.black54,
+                            size: 92,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _downloadPaymentQr(
+    BuildContext context,
+    PaymentQrCode paymentQrCode,
+  ) async {
+    try {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Preparing QR download...')),
+      );
+      final response = await http.get(Uri.parse(paymentQrCode.qrCodeUrl));
+      if (response.statusCode != 200) {
+        throw Exception('Failed to download QR image');
+      }
+      final dir = await getTemporaryDirectory();
+      final ext = _imageExtension(paymentQrCode.qrCodeUrl);
+      final name = _safeFileName(paymentQrCode.paymentName);
+      final filePath =
+          '${dir.path}/payment_qr_${name}_${DateTime.now().millisecondsSinceEpoch}.$ext';
+      final file = File(filePath);
+      await file.writeAsBytes(response.bodyBytes);
+      await Share.shareXFiles(
+        [XFile(filePath)],
+        text: paymentQrCode.paymentName,
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Download failed: $error')),
+      );
+    }
+  }
+
+  String _imageExtension(String url) {
+    final cleanUrl = url.split('?').first.toLowerCase();
+    final ext = cleanUrl.contains('.') ? cleanUrl.split('.').last : 'png';
+    return ['jpg', 'jpeg', 'png', 'webp'].contains(ext) ? ext : 'png';
+  }
+
+  String _safeFileName(String value) {
+    final cleaned = value
+        .trim()
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
+        .replaceAll(RegExp(r'_+'), '_')
+        .replaceAll(RegExp(r'^_|_$'), '');
+    return cleaned.isEmpty ? 'branch' : cleaned;
   }
 }
 

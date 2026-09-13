@@ -1,4 +1,5 @@
 import 'package:cnattendance/provider/profileprovider.dart';
+import 'package:cnattendance/screen/profile/front_side_preview_page.dart';
 import 'package:cnattendance/widget/profile/basicdetail.dart';
 import 'package:cnattendance/widget/profile/bankdetail.dart';
 import 'package:cnattendance/widget/profile/companydetail.dart';
@@ -56,6 +57,15 @@ class ProfileScreenState extends State<ProfileScreen> {
           backgroundColor: Colors.transparent,
           elevation: 0,
           title: Text(translate('profile_screen.profile')),
+          actions: [
+            IconButton(
+              tooltip: 'My Card',
+              onPressed: () {
+                Navigator.of(context).pushNamed(FrontSidePreviewPage.routeName);
+              },
+              icon: const Icon(Icons.badge_rounded),
+            ),
+          ],
         ),
         resizeToAvoidBottomInset: true,
         body: RefreshIndicator(
@@ -67,6 +77,7 @@ class ProfileScreenState extends State<ProfileScreen> {
             child: Column(
               children: [
                 Heading(),
+                _buildMyCardButton(context),
                 userProfile.post != ''
                     ? Container(
                         padding: const EdgeInsets.only(
@@ -104,6 +115,34 @@ class ProfileScreenState extends State<ProfileScreen> {
                     : SizedBox(),
                 userProfile.bankName != '' ? BankDetail() : SizedBox(),
               ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMyCardButton(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 8),
+      child: SizedBox(
+        width: double.infinity,
+        child: OutlinedButton.icon(
+          onPressed: () {
+            Navigator.of(context).pushNamed(FrontSidePreviewPage.routeName);
+          },
+          icon: const Icon(Icons.badge_rounded),
+          label: const Text('View My Card'),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: Colors.white,
+            side: const BorderSide(color: Colors.white54),
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            textStyle: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
             ),
           ),
         ),

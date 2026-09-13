@@ -379,14 +379,13 @@ class HomeScreenState extends State<HomeScreen> {
                           children: [
                             if (features["award"] == "1") RecentAward(),
                             if (features["event"] == "1") RecentEvent(),
-                            if (features["training"] == "1")
-                              RecentTraining(),
+                            if (features["training"] == "1") RecentTraining(),
                           ],
                         ),
                       ),
                       WeeklyReportChart(),
                       MyTeam(),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 12),
                     ],
                   ),
                 ),

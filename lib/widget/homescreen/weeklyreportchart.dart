@@ -29,15 +29,15 @@ class WeeklyReportChartState extends State<WeeklyReportChart> {
     final provider = Provider.of<DashboardProvider>(context);
     final hasWeeklyData = provider.weeklyReport.any((value) => value > 0);
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: AspectRatio(
-        aspectRatio: 1,
+        aspectRatio: 1.18,
         child: Card(
           elevation: 0,
           shape: ButtonBorder(),
           color: Colors.white12,
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(10),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               mainAxisAlignment: MainAxisAlignment.start,
@@ -50,23 +50,23 @@ class WeeklyReportChartState extends State<WeeklyReportChart> {
                   children: <Widget>[
                     makeTransactionsIcon(),
                     const SizedBox(
-                      width: 38,
+                      width: 24,
                     ),
                     Text(
                       translate('home_screen.weekly'),
-                      style: TextStyle(color: Colors.white, fontSize: 22),
+                      style: TextStyle(color: Colors.white, fontSize: 16),
                     ),
                     const SizedBox(
                       width: 4,
                     ),
                     Text(
                       translate('home_screen.reports'),
-                      style: TextStyle(color: Color(0xff77839a), fontSize: 16),
+                      style: TextStyle(color: Color(0xff77839a), fontSize: 12),
                     ),
                   ],
                 ),
                 const SizedBox(
-                  height: 25,
+                  height: 14,
                 ),
                 Expanded(
                   child: hasWeeklyData
@@ -75,65 +75,62 @@ class WeeklyReportChartState extends State<WeeklyReportChart> {
                             maxY: 16,
                             barTouchData: BarTouchData(
                                 touchTooltipData: BarTouchTooltipData(
-                                  getTooltipItem:
-                                      (group, groupIndex, rod, rodIndex) {
-                                    return BarTooltipItem(
-                                      'Worked: ${rod.toY.toStringAsFixed(2)} Hr',
-                                      TextStyle(color: Colors.white),
-                                    );
-                                  },
-                                ),
-                                touchCallback: (FlTouchEvent event, response) {
-                                  if (response == null || response.spot == null) {
-                                    setState(() {
-                                      touchedGroupIndex = -1;
-                                      provider.showingBarGroups =
-                                          List.of(provider.rawBarGroups);
-                                    });
-                                    return;
+                              getTooltipItem:
+                                  (group, groupIndex, rod, rodIndex) {
+                                return BarTooltipItem(
+                                  'Worked: ${rod.toY.toStringAsFixed(2)} Hr',
+                                  TextStyle(color: Colors.white),
+                                );
+                              },
+                            ), touchCallback: (FlTouchEvent event, response) {
+                              if (response == null || response.spot == null) {
+                                setState(() {
+                                  touchedGroupIndex = -1;
+                                  provider.showingBarGroups =
+                                      List.of(provider.rawBarGroups);
+                                });
+                                return;
+                              }
+
+                              touchedGroupIndex =
+                                  response.spot!.touchedBarGroupIndex;
+
+                              setState(() {
+                                if (!event.isInterestedForInteractions) {
+                                  touchedGroupIndex = -1;
+                                  provider.showingBarGroups =
+                                      List.of(provider.rawBarGroups);
+                                  return;
+                                }
+                                provider.showingBarGroups =
+                                    List.of(provider.rawBarGroups);
+                                if (touchedGroupIndex != -1) {
+                                  var sum = 0.0;
+                                  for (var rod in provider
+                                      .showingBarGroups[touchedGroupIndex]
+                                      .barRods) {
+                                    sum += rod.toY;
                                   }
-
-                                  touchedGroupIndex =
-                                      response.spot!.touchedBarGroupIndex;
-
-                                  setState(() {
-                                    if (!event.isInterestedForInteractions) {
-                                      touchedGroupIndex = -1;
-                                      provider.showingBarGroups =
-                                          List.of(provider.rawBarGroups);
-                                      return;
-                                    }
-                                    provider.showingBarGroups =
-                                        List.of(provider.rawBarGroups);
-                                    if (touchedGroupIndex != -1) {
-                                      var sum = 0.0;
-                                      for (var rod in provider
+                                  final avg = sum /
+                                      provider
                                           .showingBarGroups[touchedGroupIndex]
-                                          .barRods) {
-                                        sum += rod.toY;
-                                      }
-                                      final avg = sum /
-                                          provider.showingBarGroups[
-                                                  touchedGroupIndex]
-                                              .barRods
-                                              .length;
+                                          .barRods
+                                          .length;
 
-                                      provider.showingBarGroups[
-                                              touchedGroupIndex] =
-                                          provider.showingBarGroups[
-                                                  touchedGroupIndex]
-                                              .copyWith(
-                                        barRods: provider
-                                            .showingBarGroups[
-                                                touchedGroupIndex]
-                                            .barRods
-                                            .map((rod) {
-                                          return rod.copyWith(toY: avg);
-                                        }).toList(),
-                                      );
-                                    }
-                                  });
-                                }),
+                                  provider.showingBarGroups[touchedGroupIndex] =
+                                      provider
+                                          .showingBarGroups[touchedGroupIndex]
+                                          .copyWith(
+                                    barRods: provider
+                                        .showingBarGroups[touchedGroupIndex]
+                                        .barRods
+                                        .map((rod) {
+                                      return rod.copyWith(toY: avg);
+                                    }).toList(),
+                                  );
+                                }
+                              });
+                            }),
                             titlesData: FlTitlesData(
                               show: true,
                               rightTitles: AxisTitles(
@@ -214,7 +211,7 @@ class WeeklyReportChartState extends State<WeeklyReportChart> {
       text = '14Hr';
     } else if (value == 16) {
       text = '16Hr';
-    }else {
+    } else {
       return Container();
     }
     return SideTitleWidget(
@@ -225,7 +222,7 @@ class WeeklyReportChartState extends State<WeeklyReportChart> {
   }
 
   Widget bottomTitles(double value, TitleMeta meta) {
-    List<String> titles = [
+    final titles = [
       translate('home_screen.sun'),
       translate('home_screen.mon'),
       translate('home_screen.tue'),
@@ -235,18 +232,18 @@ class WeeklyReportChartState extends State<WeeklyReportChart> {
       translate('home_screen.sat')
     ];
 
-    Widget text = Text(
+    final text = Text(
       titles[value.toInt()],
       style: const TextStyle(
         color: Color(0xff7589a2),
         fontWeight: FontWeight.bold,
-        fontSize: 14,
+        fontSize: 11,
       ),
     );
 
     return SideTitleWidget(
       axisSide: meta.axisSide,
-      space: 16, //margin top
+      space: 8, //margin top
       child: text,
     );
   }
@@ -261,7 +258,7 @@ class WeeklyReportChartState extends State<WeeklyReportChart> {
         Container(
           width: width,
           height: 10,
-          color: Colors.white.withOpacity(0.4),
+          color: Colors.white.withValues(alpha: 0.4),
         ),
         const SizedBox(
           width: space,
@@ -269,7 +266,7 @@ class WeeklyReportChartState extends State<WeeklyReportChart> {
         Container(
           width: width,
           height: 15,
-          color: Colors.white.withOpacity(0.8),
+          color: Colors.white.withValues(alpha: 0.8),
         ),
         const SizedBox(
           width: space,
@@ -277,7 +274,7 @@ class WeeklyReportChartState extends State<WeeklyReportChart> {
         Container(
           width: width,
           height: 25,
-          color: Colors.white.withOpacity(1),
+          color: Colors.white.withValues(alpha: 1),
         ),
         const SizedBox(
           width: space,
@@ -285,7 +282,7 @@ class WeeklyReportChartState extends State<WeeklyReportChart> {
         Container(
           width: width,
           height: 15,
-          color: Colors.white.withOpacity(0.8),
+          color: Colors.white.withValues(alpha: 0.8),
         ),
         const SizedBox(
           width: space,
@@ -293,7 +290,7 @@ class WeeklyReportChartState extends State<WeeklyReportChart> {
         Container(
           width: width,
           height: 10,
-          color: Colors.white.withOpacity(0.4),
+          color: Colors.white.withValues(alpha: 0.4),
         ),
       ],
     );

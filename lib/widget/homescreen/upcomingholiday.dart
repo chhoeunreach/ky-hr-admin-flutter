@@ -13,7 +13,7 @@ class UpcomingHoliday extends StatelessWidget {
     return Visibility(
       visible: holiday != null ? true : false,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -21,7 +21,7 @@ class UpcomingHoliday extends StatelessWidget {
               children: [
                 Text(
                   translate('home_screen.upcoming_holiday'),
-                  style: TextStyle(color: Colors.white, fontSize: 20),
+                  style: TextStyle(color: Colors.white, fontSize: 16),
                 ),
                 Spacer(),
                 GestureDetector(
@@ -30,13 +30,13 @@ class UpcomingHoliday extends StatelessWidget {
                   },
                   child: Text(
                     translate('home_screen.view_all'),
-                    style: TextStyle(color: Colors.white, fontSize: 15),
+                    style: TextStyle(color: Colors.white, fontSize: 12),
                   ),
                 ),
               ],
             ),
             const SizedBox(
-              height: 10,
+              height: 6,
             ),
             holiday != null
                 ? Holidaycard(

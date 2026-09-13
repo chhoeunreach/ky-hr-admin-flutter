@@ -12,6 +12,7 @@ import 'package:cnattendance/screen/meeting_attendance/meeting_attendance_screen
 import 'package:cnattendance/screen/profile/aboutscreen.dart';
 import 'package:cnattendance/screen/profile/changepasswordscreen.dart';
 import 'package:cnattendance/screen/profile/companyrulesscreen.dart';
+import 'package:cnattendance/screen/profile/front_side_preview_page.dart';
 import 'package:cnattendance/screen/profile/holidayscreen.dart';
 import 'package:cnattendance/screen/profile/leavecalendarscreen.dart';
 import 'package:cnattendance/screen/profile/meetingscreen.dart';
@@ -329,6 +330,8 @@ class MoreScreenState extends State<MoreScreen> {
                                     SocialSubmissionScreen(
                                       employeeId: employeeId,
                                     )),
+                            Services("My ID Card", Icons.badge_rounded,
+                                const FrontSidePreviewPage()),
                             Services(
                               "Meeting Attendance",
                               Icons.qr_code_scanner,

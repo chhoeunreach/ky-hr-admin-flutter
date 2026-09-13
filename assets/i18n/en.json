@@ -229,7 +229,15 @@
     "first_due": "First due",
     "total": "Total",
     "preview_schedule": "Preview Schedule",
-    "months": "months"
+    "months": "months",
+    "payment": "Payment",
+    "installment": "Installment",
+    "installments": "installments",
+    "due_date": "Due date",
+    "principal": "Principal",
+    "interest": "Interest",
+    "balance": "Balance",
+    "no_schedule": "Enter product price and duration to preview the payment schedule."
   },
   "change_password_screen": {
     "change_password": "Change Password",

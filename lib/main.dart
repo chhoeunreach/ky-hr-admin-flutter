@@ -19,6 +19,8 @@ import 'package:cnattendance/services/push_notification_service.dart';
 import 'package:cnattendance/screen/auth/login_screen.dart';
 import 'package:cnattendance/screen/dashboard/dashboard_screen.dart';
 import 'package:cnattendance/screen/profile/editprofilescreen.dart';
+import 'package:cnattendance/screen/profile/front_side_preview_page.dart';
+import 'package:cnattendance/screen/profile/id_card_screen.dart';
 import 'package:cnattendance/screen/profile/payslipdetailscreen.dart';
 import 'package:cnattendance/screen/profile/profilescreen.dart';
 import 'package:cnattendance/screen/profile/meetingdetailscreen.dart';
@@ -29,13 +31,11 @@ import 'package:cnattendance/theme/app_theme_mode.dart';
 import 'package:cnattendance/theme/theme_provider.dart';
 import 'package:cnattendance/provider/notificationcontroller.dart';
 import 'package:cnattendance/utils/app_badge_sync.dart';
-import 'package:cnattendance/utils/constant.dart';
 import 'package:cnattendance/utils/incoming_chat_listener.dart';
 import 'package:cnattendance/utils/navigationservice.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -56,7 +56,7 @@ Future<void> _messageHandler(RemoteMessage message) async {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
-    var delegate = await LocalizationDelegate.create(
+    final delegate = await LocalizationDelegate.create(
         fallbackLocale: 'en_US',
         supportedLocales: [
           'en_US',
@@ -153,7 +153,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    var localizationDelegate = LocalizedApp.of(context).delegate;
+    final localizationDelegate = LocalizedApp.of(context).delegate;
     final storage = GetStorage();
 
     return OverlaySupport.global(
@@ -233,6 +233,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                           LoginScreen.routeName: (_) => LoginScreen(),
                           DashboardScreen.routeName: (_) => DashboardScreen(),
                           ProfileScreen.routeName: (_) => ProfileScreen(),
+                          IdCardScreen.routeName: (_) => const IdCardScreen(),
+                          FrontSidePreviewPage.routeName: (_) =>
+                              const FrontSidePreviewPage(),
                           EditProfileScreen.routeName: (_) =>
                               EditProfileScreen(),
                           MeetingDetailScreen.routeName: (_) =>

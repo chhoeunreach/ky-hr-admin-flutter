@@ -67,6 +67,55 @@ class _LoanCalculateScreenState extends State<LoanCalculateScreen> {
 
   double get _totalPayment => _monthlyPayment * _amountMonth;
 
+  List<_PaymentScheduleItem> get _paymentSchedule {
+    if (_loanAmount <= 0 || _amountMonth <= 0) {
+      return const [];
+    }
+
+    final schedule = <_PaymentScheduleItem>[];
+    final periodRate = _interestRate / 100;
+    var balance = _loanAmount;
+
+    for (var index = 1; index <= _amountMonth; index++) {
+      final dueDate = _frequency == 'weekly'
+          ? _firstDueDate.add(Duration(days: 7 * (index - 1)))
+          : DateTime(_firstDueDate.year, _firstDueDate.month + index - 1,
+              _firstDueDate.day);
+      double principal;
+      double interest;
+      double payment;
+
+      if (_interestType == InterestType.fixed) {
+        principal = _loanAmount / _amountMonth;
+        interest = _loanAmount * periodRate;
+        payment = principal + interest;
+      } else {
+        interest = balance * periodRate;
+        payment = _monthlyPayment;
+        principal = payment - interest;
+
+        if (index == _amountMonth) {
+          principal = balance;
+          payment = principal + interest;
+        }
+      }
+
+      balance = max(balance - principal, 0);
+      schedule.add(
+        _PaymentScheduleItem(
+          number: index,
+          dueDate: dueDate,
+          principal: principal,
+          interest: interest,
+          payment: payment,
+          balance: balance,
+        ),
+      );
+    }
+
+    return schedule;
+  }
+
   double _parseNumber(String value) {
     return double.tryParse(value.replaceAll(',', '').trim()) ?? 0;
   }
@@ -112,41 +161,56 @@ class _LoanCalculateScreenState extends State<LoanCalculateScreen> {
 
   void _previewSchedule() {
     final enterprise = EnterpriseTheme.of(context);
+    final schedule = _paymentSchedule;
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       showDragHandle: true,
       backgroundColor: enterprise.surface,
       builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                translate('loan_calculate_screen.schedule_preview'),
-                style:
-                    const TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
-              ),
-              const SizedBox(height: 16),
-              _PreviewRow(
-                  label: translate('loan_calculate_screen.loan_amount'),
-                  value: '\$ ${_formatMoney(_loanAmount)}'),
-              _PreviewRow(
-                label: translate('loan_calculate_screen.monthly_payment'),
-                value: '\$ ${_formatMoney(_monthlyPayment)}',
-              ),
-              _PreviewRow(
-                label: translate('loan_calculate_screen.duration'),
-                value:
-                    '$_amountMonth ${translate('loan_calculate_screen.months')}',
-              ),
-              _PreviewRow(
-                label: translate('loan_calculate_screen.total_payment'),
-                value: '\$ ${_formatMoney(_totalPayment)}',
-              ),
-            ],
-          ),
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.82,
+          minChildSize: 0.45,
+          maxChildSize: 0.94,
+          builder: (context, scrollController) {
+            return ListView(
+              controller: scrollController,
+              padding: const EdgeInsets.fromLTRB(20, 6, 20, 28),
+              children: [
+                Text(
+                  translate('loan_calculate_screen.schedule_preview'),
+                  style: TextStyle(
+                    color: enterprise.text,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                _ScheduleSummary(
+                  loanAmount: _loanAmount,
+                  payment: _monthlyPayment,
+                  totalPayment: _totalPayment,
+                  duration: _amountMonth,
+                  frequency: _frequency,
+                  formatter: _formatMoney,
+                ),
+                const SizedBox(height: 14),
+                if (schedule.isEmpty)
+                  _EmptyScheduleMessage()
+                else
+                  ...schedule.map(
+                    (item) => Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: _SchedulePaymentTile(
+                        item: item,
+                        formatter: _formatMoney,
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
         );
       },
     );
@@ -244,6 +308,24 @@ class _LoanCalculateScreenState extends State<LoanCalculateScreen> {
       ),
     );
   }
+}
+
+class _PaymentScheduleItem {
+  final int number;
+  final DateTime dueDate;
+  final double principal;
+  final double interest;
+  final double payment;
+  final double balance;
+
+  const _PaymentScheduleItem({
+    required this.number,
+    required this.dueDate,
+    required this.principal,
+    required this.interest,
+    required this.payment,
+    required this.balance,
+  });
 }
 
 class _SummaryCard extends StatelessWidget {
@@ -735,6 +817,239 @@ class _PreviewRow extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ScheduleSummary extends StatelessWidget {
+  final double loanAmount;
+  final double payment;
+  final double totalPayment;
+  final int duration;
+  final String frequency;
+  final String Function(double) formatter;
+
+  const _ScheduleSummary({
+    required this.loanAmount,
+    required this.payment,
+    required this.totalPayment,
+    required this.duration,
+    required this.frequency,
+    required this.formatter,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final enterprise = EnterpriseTheme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: enterprise.primary
+            .withValues(alpha: enterprise.isDark ? 0.14 : 0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: enterprise.primary.withValues(alpha: 0.14),
+        ),
+      ),
+      child: Column(
+        children: [
+          _PreviewRow(
+            label: translate('loan_calculate_screen.loan_amount'),
+            value: '\$ ${formatter(loanAmount)}',
+          ),
+          _PreviewRow(
+            label: translate('loan_calculate_screen.payment'),
+            value: '\$ ${formatter(payment)}',
+          ),
+          _PreviewRow(
+            label: translate('loan_calculate_screen.duration'),
+            value:
+                '$duration ${translate('loan_calculate_screen.installments')}',
+          ),
+          _PreviewRow(
+            label: translate('loan_calculate_screen.frequency'),
+            value: translate('loan_calculate_screen.$frequency'),
+          ),
+          _PreviewRow(
+            label: translate('loan_calculate_screen.total_payment'),
+            value: '\$ ${formatter(totalPayment)}',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyScheduleMessage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final enterprise = EnterpriseTheme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 22),
+      decoration: BoxDecoration(
+        color: enterprise.text.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: enterprise.text.withValues(alpha: 0.08)),
+      ),
+      child: Text(
+        translate('loan_calculate_screen.no_schedule'),
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: enterprise.mutedText,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
+  }
+}
+
+class _SchedulePaymentTile extends StatelessWidget {
+  final _PaymentScheduleItem item;
+  final String Function(double) formatter;
+
+  const _SchedulePaymentTile({
+    required this.item,
+    required this.formatter,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final enterprise = EnterpriseTheme.of(context);
+    final date = DateFormat('yyyy-MM-dd').format(item.dueDate);
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: enterprise.isDark
+            ? Colors.white.withValues(alpha: 0.06)
+            : Colors.white.withValues(alpha: 0.82),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: enterprise.text.withValues(alpha: 0.08)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: enterprise.primary.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Text(
+                  item.number.toString(),
+                  style: TextStyle(
+                    color: enterprise.primary,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      translate('loan_calculate_screen.installment'),
+                      style: TextStyle(
+                        color: enterprise.text,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${translate('loan_calculate_screen.due_date')}: $date',
+                      style: TextStyle(
+                        color: enterprise.mutedText,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                '\$ ${formatter(item.payment)}',
+                style: TextStyle(
+                  color: enterprise.text,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _ScheduleAmount(
+                  label: translate('loan_calculate_screen.principal'),
+                  value: '\$ ${formatter(item.principal)}',
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _ScheduleAmount(
+                  label: translate('loan_calculate_screen.interest'),
+                  value: '\$ ${formatter(item.interest)}',
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _ScheduleAmount(
+                  label: translate('loan_calculate_screen.balance'),
+                  value: '\$ ${formatter(item.balance)}',
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ScheduleAmount extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _ScheduleAmount({
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final enterprise = EnterpriseTheme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: enterprise.mutedText,
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 3),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            value,
+            style: TextStyle(
+              color: enterprise.text,
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

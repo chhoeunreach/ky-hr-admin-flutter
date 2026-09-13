@@ -21,18 +21,18 @@ class CardOverView extends StatelessWidget {
     final parsedValue = int.tryParse(value);
     return RepaintBoundary(
       child: InkWell(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         onTap: callback,
         child: EnterpriseGlass(
-          radius: 20,
+          radius: 16,
           padding: EdgeInsets.zero,
           glowColor: enterprise.accent,
           glowOpacity: 0.10,
           child: Container(
-            constraints: const BoxConstraints(minHeight: 92),
-            padding: const EdgeInsets.all(14),
+            constraints: const BoxConstraints(minHeight: 76),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(16),
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
@@ -46,10 +46,10 @@ class CardOverView extends StatelessWidget {
             child: Row(
               children: [
                 Container(
-                  width: 44,
-                  height: 44,
+                  width: 36,
+                  height: 36,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(15),
+                    borderRadius: BorderRadius.circular(12),
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
@@ -69,11 +69,11 @@ class CardOverView extends StatelessWidget {
                   child: Center(
                     child: icon is String
                         ? Image.asset(icon,
-                            width: 22, height: 22, color: Colors.white)
-                        : Icon(icon, size: 22, color: Colors.white),
+                            width: 18, height: 18, color: Colors.white)
+                        : Icon(icon, size: 18, color: Colors.white),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -85,11 +85,11 @@ class CardOverView extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: enterprise.text,
-                          fontSize: 13,
+                          fontSize: 11,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 3),
                       TweenAnimationBuilder<double>(
                         tween: Tween<double>(
                           begin: 0,
@@ -104,7 +104,7 @@ class CardOverView extends StatelessWidget {
                                 : animatedValue.round().toString(),
                             style: TextStyle(
                               color: enterprise.accent,
-                              fontSize: 23,
+                              fontSize: 18,
                               fontWeight: FontWeight.w900,
                               height: 1,
                             ),
@@ -117,7 +117,7 @@ class CardOverView extends StatelessWidget {
                           children: [
                             Icon(
                               Icons.payments_outlined,
-                              size: 11,
+                              size: 10,
                               color: enterprise.text.withValues(alpha: 0.65),
                             ),
                             const SizedBox(width: 3),
@@ -129,7 +129,7 @@ class CardOverView extends StatelessWidget {
                                 style: TextStyle(
                                   color:
                                       enterprise.text.withValues(alpha: 0.65),
-                                  fontSize: 11,
+                                  fontSize: 10,
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
@@ -141,8 +141,8 @@ class CardOverView extends StatelessWidget {
                   ),
                 ),
                 Container(
-                  width: 30,
-                  height: 30,
+                  width: 24,
+                  height: 24,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: Colors.white
@@ -151,7 +151,7 @@ class CardOverView extends StatelessWidget {
                   ),
                   child: Icon(
                     Icons.arrow_forward_ios_rounded,
-                    size: 13,
+                    size: 11,
                     color: enterprise.text.withValues(alpha: 0.70),
                   ),
                 ),

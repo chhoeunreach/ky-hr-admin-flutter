@@ -1,7 +1,8 @@
 import 'sell_out_report_line.dart';
 
 class SellOutReport {
-  static const double commissionPerItem = 0.25;
+  static const double sellCommissionPerItem = 0.25;
+  static const double ironCommissionPerItem = 0.20;
 
   /// Service type labels are stored on the report exactly as the translated
   /// label shown in the UI at creation time. Since the app's language can
@@ -17,7 +18,11 @@ class SellOutReport {
     'icloud_cus': {'iCloud Cus'},
   };
 
-  static const Set<String> commissionableCanonicalTypes = {'sell', 'iron'};
+  static const Set<String> commissionableCanonicalTypes = {
+    'sell',
+    'material',
+    'iron',
+  };
   static const Set<String> serialNumberRequiredCanonicalTypes = {
     'sell',
     'buy_in',
@@ -133,9 +138,20 @@ class SellOutReport {
     return lines.fold<int>(0, (sum, line) => sum + line.qty);
   }
 
+  bool get hasValidCustomerPhone => customerPhone.trim().length > 6;
+
+  bool get hasValidSellUnitPrice {
+    if (canonicalServiceType(serviceType) != 'sell') return true;
+    return lines.every((line) => line.unitPrice > 50);
+  }
+
   bool get isCommissionable {
     return commissionableCanonicalTypes
         .contains(canonicalServiceType(serviceType));
+  }
+
+  bool get isCommissionEligible {
+    return isCommissionable && hasValidCustomerPhone && hasValidSellUnitPrice;
   }
 
   bool get requiresSerialNumberValidation {
@@ -144,8 +160,14 @@ class SellOutReport {
   }
 
   double get commission {
-    if (!isCommissionable) return 0;
-    return totalQty * commissionPerItem;
+    if (!isCommissionEligible) return 0;
+    return totalQty * commissionRate;
+  }
+
+  double get commissionRate {
+    return canonicalServiceType(serviceType) == 'iron'
+        ? ironCommissionPerItem
+        : sellCommissionPerItem;
   }
 
   static String? validateSerialNumber(String value) {

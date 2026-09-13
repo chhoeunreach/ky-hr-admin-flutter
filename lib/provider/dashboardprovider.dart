@@ -10,6 +10,7 @@ import 'package:cnattendance/data/source/network/model/dashboard/Dashboardrespon
 import 'package:cnattendance/data/source/network/model/dashboard/EmployeeTodayAttendance.dart';
 import 'package:cnattendance/data/source/network/model/dashboard/Feature.dart';
 import 'package:cnattendance/data/source/network/model/dashboard/Overview.dart';
+import 'package:cnattendance/data/source/network/model/dashboard/User.dart';
 import 'package:cnattendance/data/source/network/model/eventlistresponse/eventdetailresponse.dart';
 import 'package:cnattendance/data/source/network/model/teamsheet/Employee.dart'
     as employees;
@@ -60,6 +61,7 @@ class DashboardProvider with ChangeNotifier {
 
   var department = "";
   var branch = "";
+  List<PaymentQrCode> paymentQrCodes = [];
 
   Map<String, String> get overviewList {
     return _overviewList;
@@ -163,6 +165,7 @@ class DashboardProvider with ChangeNotifier {
 
       department = dashboardResponse.data.user.department;
       branch = dashboardResponse.data.user.branch;
+      paymentQrCodes = dashboardResponse.data.user.paymentQrCodes;
 
       if (dashboardResponse.data.user.dob != "") {
         final dob =
@@ -335,7 +338,8 @@ class DashboardProvider with ChangeNotifier {
     }
   }
 
-  Future<String?> buildWorkspaceDistanceInfoIfNeeded(String errorMessage) async {
+  Future<String?> buildWorkspaceDistanceInfoIfNeeded(
+      String errorMessage) async {
     final details = await getAttendanceLocationDetailsIfNeeded(errorMessage);
     if (details == null) {
       return null;
@@ -507,10 +511,8 @@ class DashboardProvider with ChangeNotifier {
 
     if (looksLikeLocation) {
       lat ??= _tryParseDouble(map['latitude'] ?? map['lat']);
-      lon ??= _tryParseDouble(map['longitude'] ??
-          map['lon'] ??
-          map['lng'] ??
-          map['long']);
+      lon ??= _tryParseDouble(
+          map['longitude'] ?? map['lon'] ?? map['lng'] ?? map['long']);
     }
 
     if (lat == null || lon == null) {

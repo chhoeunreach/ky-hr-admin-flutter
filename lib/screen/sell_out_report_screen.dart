@@ -1299,6 +1299,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
   bool _isICloudExpanded = true;
   bool _isICloudOcrLoading = false;
   bool _showSerialValidationErrors = false;
+  bool _showCustomerPhoneError = false;
 
   final _sellerNameCtrl = TextEditingController();
   final _branchNameCtrl = TextEditingController();
@@ -1439,6 +1440,23 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
           : null;
     }
     return SellOutReport.validateSerialNumber(text);
+  }
+
+  String? get _customerPhoneError {
+    if (!_showCustomerPhoneError) return null;
+    final phone = _customerPhoneCtrl.text.trim();
+    if (phone.isNotEmpty && phone.length <= 6) return 'More than 6 chars';
+    return null;
+  }
+
+  void _onCustomerPhoneChanged(String value) {
+    _refreshCommissionSummary();
+  }
+
+  void _refreshCommissionSummary() {
+    _report.customerPhone = _customerPhoneCtrl.text.trim();
+    _syncAllLines();
+    setState(() {});
   }
 
   void _syncICloudInfoToReport() {
@@ -1798,7 +1816,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
 
     _lineControllers[index].syncFromLine(line);
 
-    setState(() {});
+    _refreshCommissionSummary();
   }
 
   void _replaceProductExtractedText(int index, String text) {
@@ -1854,6 +1872,14 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
 
     if (_report.sellerName.isEmpty) {
       _showError('Validation Error', 'Seller name is required.');
+      return;
+    }
+    if (_report.customerPhone.isNotEmpty && _report.customerPhone.length <= 6) {
+      setState(() => _showCustomerPhoneError = true);
+      _showError(
+        'Validation Error',
+        'Customer phone must be more than 6 characters, or leave it empty for no commission.',
+      );
       return;
     }
     final serialError = _report.validateSerialNumbers();
@@ -1992,23 +2018,23 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
           elevation: 0,
         ),
         body: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 18, 16, 32),
+          padding: const EdgeInsets.fromLTRB(8, 8, 8, 18),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _buildHeaderForm(),
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
               if (_isICloudCustomer) ...[
                 _buildICloudInfoSection(),
-                const SizedBox(height: 24),
+                const SizedBox(height: 12),
               ] else ...[
                 _buildProductLinesSection(),
-                const SizedBox(height: 16),
+                const SizedBox(height: 8),
                 _buildTotalSection(),
-                const SizedBox(height: 24),
+                const SizedBox(height: 12),
               ],
               _buildSubmitButton(),
-              const SizedBox(height: 32),
+              const SizedBox(height: 12),
             ],
           ),
         ),
@@ -2018,11 +2044,11 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
 
   Widget _buildSectionTitle(String title) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 8),
       child: Text(
         title,
         style: TextStyle(
-          fontSize: 16,
+          fontSize: 13,
           fontWeight: FontWeight.w800,
           color: _sellOutText,
         ),
@@ -2040,7 +2066,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
       borderRadius: BorderRadius.circular(8),
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 2),
+        padding: const EdgeInsets.symmetric(vertical: 1),
         child: Row(
           children: [
             Icon(
@@ -2052,7 +2078,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
               child: Text(
                 title,
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 13,
                   fontWeight: FontWeight.w800,
                   color: _sellOutText,
                 ),
@@ -2062,7 +2088,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
               Text(
                 trailingText,
                 style: const TextStyle(
-                  fontSize: 13,
+                  fontSize: 11,
                   color: _sellOutMuted,
                   fontWeight: FontWeight.w600,
                 ),
@@ -2083,7 +2109,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
       ),
       elevation: 0,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -2098,41 +2124,83 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
             AnimatedCrossFade(
               firstChild: const SizedBox(width: double.infinity),
               secondChild: Padding(
-                padding: const EdgeInsets.only(top: 12),
+                padding: const EdgeInsets.only(top: 6),
                 child: Column(
                   children: [
                     if (widget.serviceType.isNotEmpty) ...[
-                      _buildTextField(
-                        _serviceTypeCtrl,
-                        'Service Type',
-                        Icons.category,
-                        readOnly: true,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildCompactInfoField(
+                              'Service Type',
+                              _serviceTypeCtrl.text,
+                              Icons.category,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: _buildCompactInfoField(
+                              'Seller Name',
+                              _sellerNameCtrl.text,
+                              Icons.person,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: _buildCompactInfoField(
+                              'Branch Name',
+                              _branchNameCtrl.text,
+                              Icons.business,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 6),
+                    ] else ...[
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildCompactInfoField(
+                              'Seller Name',
+                              _sellerNameCtrl.text,
+                              Icons.person,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: _buildCompactInfoField(
+                              'Branch Name',
+                              _branchNameCtrl.text,
+                              Icons.business,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
                     ],
-                    _buildTextField(
-                      _sellerNameCtrl,
-                      'Seller Name',
-                      Icons.person,
-                      readOnly: true,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildTextField(
+                            _customerPhoneCtrl,
+                            'Customer Phone',
+                            Icons.phone,
+                            keyboardType: TextInputType.phone,
+                            errorText: _customerPhoneError,
+                            onChanged: _onCustomerPhoneChanged,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: _buildTextField(
+                            _noteCtrl,
+                            'Note',
+                            Icons.note,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 12),
-                    _buildTextField(
-                      _branchNameCtrl,
-                      'Branch Name',
-                      Icons.business,
-                      readOnly: true,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildTextField(
-                      _customerPhoneCtrl,
-                      'Customer Phone',
-                      Icons.phone,
-                      keyboardType: TextInputType.phone,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildTextField(_noteCtrl, 'Note', Icons.note, maxLines: 3),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 8),
                     _buildInvoicePhotosSection(),
                   ],
                 ),
@@ -2148,31 +2216,89 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
     );
   }
 
+  Widget _buildCompactInfoField(String label, String value, IconData icon) {
+    return Container(
+      height: 46,
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+      decoration: BoxDecoration(
+        color: const Color(0xfff7faff),
+        border: Border.all(color: _sellOutBorder),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: _sellOutBlue, size: 16),
+          const SizedBox(width: 5),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: _sellOutBlue,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: _sellOutText,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildTextField(
       TextEditingController controller, String label, IconData icon,
-      {int maxLines = 1, bool readOnly = false, TextInputType? keyboardType}) {
+      {int maxLines = 1,
+      bool readOnly = false,
+      TextInputType? keyboardType,
+      String? errorText,
+      ValueChanged<String>? onChanged}) {
     return TextField(
       controller: controller,
       maxLines: maxLines,
       readOnly: readOnly,
       keyboardType: keyboardType,
+      onChanged: onChanged,
       style: const TextStyle(
         color: _sellOutText,
-        fontSize: 15,
+        fontSize: 12,
         fontWeight: FontWeight.w600,
       ),
       cursorColor: _sellOutBlue,
       decoration: InputDecoration(
         labelText: label,
+        errorText: errorText,
         labelStyle: const TextStyle(
           color: _sellOutMuted,
+          fontSize: 12,
           fontWeight: FontWeight.w500,
         ),
         floatingLabelStyle: const TextStyle(
           color: _sellOutBlue,
+          fontSize: 12,
           fontWeight: FontWeight.w700,
         ),
-        prefixIcon: Icon(icon, color: _sellOutBlue),
+        isDense: true,
+        prefixIcon: Icon(icon, color: _sellOutBlue, size: 20),
+        prefixIconConstraints:
+            const BoxConstraints(minWidth: 38, minHeight: 38),
         filled: true,
         fillColor: readOnly ? const Color(0xfff7faff) : Colors.white,
         enabledBorder: OutlineInputBorder(
@@ -2187,8 +2313,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
           borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: _sellOutBlue, width: 1.5),
         ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       ),
     );
   }
@@ -2199,22 +2324,22 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
       children: [
         _buildSectionTitle('Invoice Photos'),
         if (_isEditing && _report.photoUrls.isNotEmpty) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Text(
             'Already uploaded (${_report.photoUrls.length})',
             style: const TextStyle(
-              fontSize: 12,
+              fontSize: 11,
               color: _sellOutMuted,
               fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           _buildUploadedPhotoGrid(
             _report.photoUrls,
             (index) => _removeUploadedPhoto(
                 index, _report.photoUrls, _report.photoIds),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 6),
         ],
         Row(
           children: [
@@ -2222,7 +2347,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
               child: _buildPhotoButton(
                   'Take Invoice', Icons.camera_alt, _takeInvoicePhoto),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 8),
             Expanded(
               child: _buildPhotoButton(
                   'From Gallery', Icons.photo_library, _pickInvoiceFromGallery),
@@ -2230,14 +2355,14 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
           ],
         ),
         if (_invoicePhotoPaths.isNotEmpty) ...[
-          const SizedBox(height: 12),
+          const SizedBox(height: 6),
           _buildPhotoGrid(_invoicePhotoPaths, _removeInvoicePhoto),
         ],
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         Text(
           '${_invoicePhotoPaths.length} invoice photo(s) selected',
           style: const TextStyle(
-            fontSize: 12,
+            fontSize: 11,
             color: _sellOutMuted,
             fontWeight: FontWeight.w500,
           ),
@@ -2254,14 +2379,16 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
         label,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
       ),
       style: OutlinedButton.styleFrom(
         foregroundColor: _sellOutBlue,
         backgroundColor: _sellOutBlue.withValues(alpha: 0.06),
         side: BorderSide(color: _sellOutBlue.withValues(alpha: 0.45)),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 8),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+        minimumSize: const Size(0, 36),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
     );
   }
@@ -2417,7 +2544,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
       ),
       elevation: 0,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -2432,7 +2559,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
             AnimatedCrossFade(
               firstChild: const SizedBox(width: double.infinity),
               secondChild: Padding(
-                padding: const EdgeInsets.only(top: 12),
+                padding: const EdgeInsets.only(top: 6),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -2445,7 +2572,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                             _takeICloudPhoto,
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 8),
                         Expanded(
                           child: _buildPhotoButton(
                             'From Gallery',
@@ -2456,7 +2583,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                       ],
                     ),
                     if (_iCloudPhotoPaths.isNotEmpty) ...[
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 8),
                       _buildPhotoGrid(_iCloudPhotoPaths, _removeICloudPhoto),
                       const SizedBox(height: 8),
                       SizedBox(
@@ -2485,25 +2612,25 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            padding: const EdgeInsets.symmetric(vertical: 10),
                           ),
                         ),
                       ),
                     ],
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 6),
                     _buildTextField(
                       _iCloudAccountNameCtrl,
                       'Account Name',
                       Icons.account_circle,
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 6),
                     _buildTextField(
                       _iCloudAppleIdCtrl,
                       'Apple ID / Email',
                       Icons.alternate_email,
                       keyboardType: TextInputType.emailAddress,
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 6),
                     Row(
                       children: [
                         Expanded(
@@ -2513,7 +2640,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                             Icons.cloud_outlined,
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 6),
                         Expanded(
                           child: _buildTextField(
                             _iCloudTrustedPhoneCtrl,
@@ -2524,12 +2651,12 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 6),
                     _buildTextField(
                       _iCloudDevicesCtrl,
                       'Devices',
                       Icons.devices,
-                      maxLines: 4,
+                      maxLines: 3,
                     ),
                   ],
                 ),
@@ -2555,7 +2682,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
       ),
       elevation: 0,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -2566,7 +2693,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                 Text(
                   '${_report.lines.length} line(s)',
                   style: const TextStyle(
-                    fontSize: 13,
+                    fontSize: 11,
                     color: _sellOutMuted,
                     fontWeight: FontWeight.w600,
                   ),
@@ -2582,7 +2709,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                     index, _report.lines[index], _lineControllers[index]);
               },
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
@@ -2595,8 +2722,9 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                   side: BorderSide(color: _sellOutBlue.withValues(alpha: 0.45)),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8)),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  textStyle: const TextStyle(fontWeight: FontWeight.w700),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  textStyle: const TextStyle(
+                      fontSize: 12, fontWeight: FontWeight.w700),
                 ),
               ),
             ),
@@ -2609,7 +2737,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
   Widget _buildProductLineCard(
       int index, SellOutReportLine line, _LineControllers ctrls) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 8),
       color: Colors.white,
       surfaceTintColor: Colors.transparent,
       shape: RoundedRectangleBorder(
@@ -2618,7 +2746,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
       ),
       elevation: 0,
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -2632,7 +2760,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                       setState(() => ctrls.isExpanded = !ctrls.isExpanded);
                     },
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      padding: const EdgeInsets.symmetric(vertical: 2),
                       child: Row(
                         children: [
                           Icon(
@@ -2648,6 +2776,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                                   ? 'Product #${index + 1}'
                                   : line.productName.trim(),
                               style: TextStyle(
+                                fontSize: 13,
                                 fontWeight: FontWeight.w800,
                                 color: _sellOutText,
                               ),
@@ -2658,7 +2787,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                             style: TextStyle(
                               color: _sellOutBlue,
                               fontWeight: FontWeight.w800,
-                              fontSize: 13,
+                              fontSize: 11,
                             ),
                           ),
                         ],
@@ -2672,8 +2801,12 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                   label: const Text('Remove'),
                   style: TextButton.styleFrom(
                     foregroundColor: Colors.red,
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    textStyle: const TextStyle(fontWeight: FontWeight.w700),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
+                    minimumSize: const Size(0, 34),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    textStyle: const TextStyle(
+                        fontSize: 12, fontWeight: FontWeight.w700),
                   ),
                 ),
               ],
@@ -2683,41 +2816,24 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
               secondChild: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Divider(height: 4, color: _sellOutBorder),
-                  const SizedBox(height: 8),
+                  const Divider(height: 6, color: _sellOutBorder),
+                  const SizedBox(height: 4),
                   _buildProductPhotosSection(index, ctrls),
-                  const SizedBox(height: 12),
-                  _buildLineField(ctrls.productName, 'Product Name',
-                      (v) => line.productName = v),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   Row(
                     children: [
                       Expanded(
-                        child: _buildLineField(
-                            ctrls.sku, 'SKU', (v) => line.sku = v),
+                        child: _buildLineField(ctrls.productName,
+                            'Product Name', (v) => line.productName = v),
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _buildLineField(ctrls.modelNumber,
-                            'Model Number', (v) => line.modelNumber = v),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
+                      const SizedBox(width: 6),
                       Expanded(
                         child: _buildLineField(
                             ctrls.imei, 'IMEI', (v) => line.imei = v),
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _buildLineField(
-                            ctrls.imei2, 'IMEI2', (v) => line.imei2 = v),
-                      ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   Row(
                     children: [
                       Expanded(
@@ -2736,39 +2852,39 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                               : null,
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 6),
                       Expanded(
                         child: _buildLineField(
                             ctrls.color, 'Color', (v) => line.color = v),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   Row(
                     children: [
                       Expanded(
                         child: _buildLineField(
                             ctrls.storage, 'Storage', (v) => line.storage = v),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 6),
                       Expanded(
                         child: _buildLineField(ctrls.qty, 'Qty',
                             (v) => line.qty = int.tryParse(v) ?? 0),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 6),
                       Expanded(
                         child: _buildLineField(ctrls.unitPrice, 'Unit Price',
                             (v) => line.unitPrice = double.tryParse(v) ?? 0.0),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   Text(
                     'Subtotal: \$${line.subtotal.toStringAsFixed(2)}',
                     style: TextStyle(
                       fontWeight: FontWeight.w800,
                       color: _sellOutBlue,
-                      fontSize: 14,
+                      fontSize: 12,
                     ),
                   ),
                 ],
@@ -2787,7 +2903,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
   Widget _buildProductPhotosSection(int index, _LineControllers ctrls) {
     final line = _report.lines[index];
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: const Color(0xfff7faff),
         border: Border.all(color: const Color(0xffe5edf8)),
@@ -2801,27 +2917,27 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
             style: const TextStyle(
               color: _sellOutText,
               fontWeight: FontWeight.w800,
-              fontSize: 13,
+              fontSize: 12,
             ),
           ),
           if (_isEditing && line.photoUrls.isNotEmpty) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(
               'Already uploaded (${line.photoUrls.length})',
               style: const TextStyle(
-                fontSize: 12,
+                fontSize: 11,
                 color: _sellOutMuted,
                 fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             _buildUploadedPhotoGrid(
               line.photoUrls,
               (photoIndex) => _removeUploadedPhoto(
                   photoIndex, line.photoUrls, line.photoIds),
             ),
           ],
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Row(
             children: [
               Expanded(
@@ -2831,7 +2947,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                   () => _takeProductPhoto(index),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               Expanded(
                 child: _buildPhotoButton(
                   'From Gallery',
@@ -2839,33 +2955,37 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                   () => _pickProductFromGallery(index),
                 ),
               ),
+              const SizedBox(width: 6),
+              TextButton.icon(
+                onPressed: () {
+                  setState(() => ctrls.showOcrText = !ctrls.showOcrText);
+                },
+                icon: Icon(
+                  ctrls.showOcrText ? Icons.visibility_off : Icons.visibility,
+                  size: 16,
+                ),
+                label: Text(ctrls.showOcrText ? 'Hide' : 'Text'),
+                style: TextButton.styleFrom(
+                  foregroundColor: _sellOutBlue,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
+                  minimumSize: const Size(0, 36),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  textStyle: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
             ],
           ),
           if (ctrls.photoPaths.isNotEmpty) ...[
-            const SizedBox(height: 10),
+            const SizedBox(height: 6),
             _buildPhotoGrid(
               ctrls.photoPaths,
               (photoIndex) => _removeProductPhoto(index, photoIndex),
             ),
           ],
-          const SizedBox(height: 8),
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton.icon(
-              onPressed: () {
-                setState(() => ctrls.showOcrText = !ctrls.showOcrText);
-              },
-              icon: Icon(
-                ctrls.showOcrText ? Icons.visibility_off : Icons.visibility,
-                size: 18,
-              ),
-              label: Text(ctrls.showOcrText ? 'Hide Text' : 'Show Text'),
-              style: TextButton.styleFrom(
-                foregroundColor: _sellOutBlue,
-                textStyle: const TextStyle(fontWeight: FontWeight.w700),
-              ),
-            ),
-          ),
           AnimatedCrossFade(
             firstChild: const SizedBox(width: double.infinity),
             secondChild: Column(
@@ -2879,12 +2999,15 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                     alignLabelWithHint: true,
                     filled: true,
                     fillColor: Colors.white,
-                    labelStyle: const TextStyle(color: _sellOutMuted),
+                    labelStyle:
+                        const TextStyle(color: _sellOutMuted, fontSize: 12),
                     floatingLabelStyle: const TextStyle(
                       color: _sellOutBlue,
+                      fontSize: 12,
                       fontWeight: FontWeight.w700,
                     ),
-                    hintStyle: const TextStyle(color: _sellOutMuted),
+                    hintStyle:
+                        const TextStyle(color: _sellOutMuted, fontSize: 12),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: const BorderSide(color: _sellOutBorder),
@@ -2897,12 +3020,13 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                       borderSide:
                           const BorderSide(color: _sellOutBlue, width: 1.5),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 10),
+                    isDense: true,
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
                   ),
-                  style: const TextStyle(color: _sellOutText, fontSize: 13),
+                  style: const TextStyle(color: _sellOutText, fontSize: 12),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
@@ -2930,11 +3054,15 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      textStyle: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
               ],
             ),
             crossFadeState: ctrls.showOcrText
@@ -2956,7 +3084,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
       controller: controller,
       onChanged: (v) {
         onChanged(v);
-        setState(() {});
+        _refreshCommissionSummary();
       },
       keyboardType: keyboardType,
       inputFormatters: inputFormatters,
@@ -2966,9 +3094,10 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
         isDense: true,
         filled: true,
         fillColor: Colors.white,
-        labelStyle: const TextStyle(color: _sellOutMuted),
+        labelStyle: const TextStyle(color: _sellOutMuted, fontSize: 12),
         floatingLabelStyle: const TextStyle(
           color: _sellOutBlue,
+          fontSize: 12,
           fontWeight: FontWeight.w700,
         ),
         enabledBorder: OutlineInputBorder(
@@ -2983,16 +3112,29 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
           borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: _sellOutBlue, width: 1.5),
         ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
       ),
       cursorColor: _sellOutBlue,
       style: const TextStyle(
         color: _sellOutText,
-        fontSize: 13,
+        fontSize: 12,
         fontWeight: FontWeight.w600,
       ),
     );
+  }
+
+  String _commissionStatusText() {
+    if (_report.isCommissionEligible) return 'Earned';
+    if (!_report.isCommissionable)
+      return 'Not earned: no commission for this service.';
+
+    final incompletePoints = <String>[
+      if (!_report.hasValidCustomerPhone) 'Customer phone',
+      if (!_report.hasValidSellUnitPrice) 'Unit price more than \$50',
+    ];
+
+    if (incompletePoints.isEmpty) return 'Not earned yet.';
+    return 'Not earned yet. Not complete: ${incompletePoints.join(', ')}.';
   }
 
   Widget _buildTotalSection() {
@@ -3002,71 +3144,81 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
       color: _sellOutNavy,
       surfaceTintColor: Colors.transparent,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
               'Summary',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 14,
                 fontWeight: FontWeight.w700,
                 color: Colors.white,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
                   'Total Qty',
-                  style: TextStyle(fontSize: 15, color: Colors.white70),
+                  style: TextStyle(fontSize: 12, color: Colors.white70),
                 ),
                 Text(
                   _report.totalQty.toString(),
                   style: const TextStyle(
-                    fontSize: 18,
+                    fontSize: 14,
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
                   'Total Amount',
-                  style: TextStyle(fontSize: 15, color: Colors.white70),
+                  style: TextStyle(fontSize: 12, color: Colors.white70),
                 ),
                 Text(
                   '\$${_report.totalAmount.toStringAsFixed(2)}',
                   style: const TextStyle(
-                    fontSize: 22,
+                    fontSize: 15,
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
                   'Commission',
-                  style: TextStyle(fontSize: 15, color: Colors.white70),
+                  style: TextStyle(fontSize: 12, color: Colors.white70),
                 ),
                 Text(
                   '\$${_report.commission.toStringAsFixed(2)}',
                   style: const TextStyle(
-                    fontSize: 22,
+                    fontSize: 15,
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              _commissionStatusText(),
+              style: TextStyle(
+                fontSize: 11,
+                color: _report.isCommissionEligible
+                    ? const Color(0xffb8f5d0)
+                    : Colors.white70,
+              ),
             ),
           ],
         ),
@@ -3096,9 +3248,9 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
           backgroundColor: _sellOutBlue,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          padding: const EdgeInsets.symmetric(vertical: 16),
+          padding: const EdgeInsets.symmetric(vertical: 12),
           textStyle: const TextStyle(
-            fontSize: 16,
+            fontSize: 13,
             fontWeight: FontWeight.w700,
           ),
         ),

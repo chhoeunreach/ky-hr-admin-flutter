@@ -1,7 +1,5 @@
 import 'package:cnattendance/model/event.dart';
 import 'package:cnattendance/provider/dashboardprovider.dart';
-import 'package:cnattendance/screen/awards/awarddetailsscreen.dart';
-import 'package:cnattendance/screen/awards/awardsscreen.dart';
 import 'package:cnattendance/screen/eventscreen/eventdetailscreen.dart';
 import 'package:cnattendance/screen/eventscreen/eventlistscreen.dart';
 import 'package:cnattendance/widget/buttonborder.dart';
@@ -17,7 +15,7 @@ class RecentEvent extends StatelessWidget {
     return Visibility(
       visible: event != null ? true : false,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -25,7 +23,7 @@ class RecentEvent extends StatelessWidget {
               children: [
                 Text(
                   translate('common.office_events'),
-                  style: TextStyle(color: Colors.white, fontSize: 20),
+                  style: TextStyle(color: Colors.white, fontSize: 16),
                 ),
                 Spacer(),
                 GestureDetector(
@@ -34,7 +32,7 @@ class RecentEvent extends StatelessWidget {
                   },
                   child: Text(
                     translate('home_screen.show_all'),
-                    style: TextStyle(color: Colors.white, fontSize: 15),
+                    style: TextStyle(color: Colors.white, fontSize: 12),
                   ),
                 ),
               ],
@@ -45,7 +43,7 @@ class RecentEvent extends StatelessWidget {
             event != null
                 ? Card(
                     elevation: 0,
-                    margin: EdgeInsets.symmetric(vertical: 5),
+                    margin: EdgeInsets.symmetric(vertical: 3),
                     color: Colors.white12,
                     shape: ButtonBorder(),
                     child: InkWell(
@@ -69,7 +67,7 @@ class RecentEvent extends StatelessWidget {
                             event.eventDepartments)));
                       },
                       child: Padding(
-                        padding: const EdgeInsets.all(10.0),
+                        padding: const EdgeInsets.all(8.0),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -77,19 +75,19 @@ class RecentEvent extends StatelessWidget {
                               event.location,
                               style: TextStyle(
                                   color: Colors.white54,
-                                  fontSize: 13,
+                                  fontSize: 11,
                                   fontWeight: FontWeight.normal),
                             ),
                             Text(
                               event.title,
                               style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: 18,
+                                  fontSize: 14,
                                   fontWeight: FontWeight.bold),
                             ),
                             Divider(
                               color: Colors.white30,
-                              height: 10,
+                              height: 8,
                             ),
                             Row(
                               children: [
@@ -101,7 +99,7 @@ class RecentEvent extends StatelessWidget {
                                           : event.endDate),
                                   style: TextStyle(
                                       color: Colors.white,
-                                      fontSize: 12,
+                                      fontSize: 11,
                                       fontWeight: FontWeight.normal),
                                 ),
                                 Spacer(),
@@ -113,7 +111,7 @@ class RecentEvent extends StatelessWidget {
                                           : event.endTime),
                                   style: TextStyle(
                                       color: Colors.white,
-                                      fontSize: 12,
+                                      fontSize: 11,
                                       fontWeight: FontWeight.normal),
                                 ),
                               ],

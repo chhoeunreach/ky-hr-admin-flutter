@@ -16,7 +16,7 @@ class MyTeam extends StatelessWidget {
     return Visibility(
       visible: employee.isNotEmpty,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -24,7 +24,7 @@ class MyTeam extends StatelessWidget {
               children: [
                 Text(
                   translate('home_screen.my_team'),
-                  style: TextStyle(color: Colors.white, fontSize: 20),
+                  style: TextStyle(color: Colors.white, fontSize: 16),
                 ),
                 Spacer(),
                 GestureDetector(
@@ -37,16 +37,16 @@ class MyTeam extends StatelessWidget {
                   },
                   child: Text(
                     translate('home_screen.view_all'),
-                    style: TextStyle(color: Colors.white, fontSize: 15),
+                    style: TextStyle(color: Colors.white, fontSize: 12),
                   ),
                 ),
               ],
             ),
             const SizedBox(
-              height: 10,
+              height: 6,
             ),
             Container(
-              height: 100,
+              height: 78,
               child: ListView.builder(
                 physics: PageScrollPhysics(),
                 primary: false,
@@ -72,9 +72,9 @@ Widget teamCard(Employee teamList) {
           arguments: {"employeeId": teamList.id.toString()});
     },
     child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 6),
       child: SizedBox(
-        width: 80,
+        width: 66,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -86,15 +86,15 @@ Widget teamCard(Employee teamList) {
                   ? Colors.green
                   : Colors.transparent,
               child: Container(
-                margin: const EdgeInsets.all(3.0),
+                margin: const EdgeInsets.all(2.0),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(30),
+                  borderRadius: BorderRadius.circular(24),
                   child: Container(
                     color: Colors.white,
                     child: CachedNetworkImage(
                       imageUrl: teamList.avatar,
-                      width: 60,
-                      height: 60,
+                      width: 48,
+                      height: 48,
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -102,13 +102,13 @@ Widget teamCard(Employee teamList) {
               ),
             ),
             SizedBox(
-              height: 8,
+              height: 5,
             ),
             Text(
               teamList.name,
               maxLines: 1,
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white),
+              style: TextStyle(color: Colors.white, fontSize: 11),
             )
           ],
         ),

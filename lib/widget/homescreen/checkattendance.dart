@@ -254,12 +254,12 @@ class CheckAttendanceState extends State<CheckAttendance>
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Padding(
-                padding: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.only(bottom: 7),
                 child: Text(
                   period,
                   style: TextStyle(
                     color: enterprise.mutedText,
-                    fontSize: 13,
+                    fontSize: 11,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -269,7 +269,7 @@ class CheckAttendanceState extends State<CheckAttendance>
                 hourMinute,
                 style: TextStyle(
                   color: enterprise.text,
-                  fontSize: 44,
+                  fontSize: 34,
                   fontWeight: FontWeight.w900,
                   height: 1,
                   letterSpacing: 0,
@@ -277,25 +277,25 @@ class CheckAttendanceState extends State<CheckAttendance>
               ),
               const SizedBox(width: 4),
               Padding(
-                padding: const EdgeInsets.only(bottom: 9),
+                padding: const EdgeInsets.only(bottom: 6),
                 child: Text(
                   seconds,
                   style: TextStyle(
                     color: enterprise.text.withValues(alpha: 0.84),
-                    fontSize: 17,
+                    fontSize: 13,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           Text(
             isAD ? formattedDate : nepaliFormattedDate,
             textAlign: TextAlign.center,
             style: TextStyle(
               color: enterprise.mutedText,
-              fontSize: 13,
+              fontSize: 11,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -311,7 +311,7 @@ class CheckAttendanceState extends State<CheckAttendance>
     required bool isCheckedIn,
   }) {
     final diameter =
-        MediaQuery.sizeOf(context).shortestSide >= 600 ? 220.0 : 198.0;
+        MediaQuery.sizeOf(context).shortestSide >= 600 ? 190.0 : 168.0;
     final qrCircleColor = isCheckedIn ? enterprise.accent : enterprise.primary;
     final qrIconColor =
         _readableColor(qrCircleColor, Colors.white, Colors.black);
@@ -474,13 +474,13 @@ class CheckAttendanceState extends State<CheckAttendance>
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           _buildClock(enterprise, isAD),
-          const SizedBox(height: 26),
+          const SizedBox(height: 16),
           if (attendanceMethod.isNotEmpty)
             _buildAttendanceControl(
               enterprise: enterprise,
@@ -490,35 +490,35 @@ class CheckAttendanceState extends State<CheckAttendance>
             ),
           if (attendanceMethod.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.only(top: 14),
+              padding: const EdgeInsets.only(top: 8),
               child: Text(
                 "${translate('home_screen.check_in')} | ${translate('home_screen.check_out')}",
                 style: TextStyle(
                   color: panelTextColor,
-                  fontSize: 14,
+                  fontSize: 12,
                   fontWeight: FontWeight.w800,
                 ),
               ),
             ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 10),
           EnterpriseGlass(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            radius: 24,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            radius: 18,
             glowColor: productionProgressColor,
             child: Column(
               children: [
                 Row(
                   children: [
                     Icon(Icons.schedule_rounded,
-                        color: productionProgressColor, size: 18),
-                    const SizedBox(width: 8),
+                        color: productionProgressColor, size: 16),
+                    const SizedBox(width: 6),
                     Expanded(
                       child: Text(
                         'Working Time',
                         style: TextStyle(
                           color: panelTextColor,
                           fontWeight: FontWeight.w800,
-                          fontSize: 14,
+                          fontSize: 12,
                         ),
                       ),
                     ),
@@ -527,16 +527,16 @@ class CheckAttendanceState extends State<CheckAttendance>
                       style: TextStyle(
                         color: panelTextColor,
                         fontWeight: FontWeight.w900,
-                        fontSize: 13,
+                        fontSize: 11,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 LinearPercentIndicator(
                   animation: true,
                   animationDuration: 1000,
-                  lineHeight: 16.0,
+                  lineHeight: 12.0,
                   padding: EdgeInsets.zero,
                   percent: attendanceList['production-time']!,
                   barRadius: const Radius.circular(20),
@@ -545,7 +545,7 @@ class CheckAttendanceState extends State<CheckAttendance>
                     colors: [productionProgressColor, enterprise.accent],
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 6),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [

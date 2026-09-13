@@ -120,6 +120,7 @@ class Constant {
       "$API_URL/v1/hr-ky-admin/social-rewards";
   static const HR_KY_ADMIN_SOCIAL_REWARDS_UPDATE_URL =
       "$API_URL/v1/hr-ky-admin/social-rewards/update";
+  static const HR_KY_ADMIN_D_CARD_ME_URL = "$API_URL/hr-ky-admin/d-card/me";
 
   static const SUPPORT_URL = "$API_URL/support/query-store";
   static const DEPARTMENT_LIST_URL = "$API_URL/support/department-lists";

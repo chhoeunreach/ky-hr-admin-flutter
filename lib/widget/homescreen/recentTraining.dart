@@ -15,7 +15,7 @@ class RecentTraining extends StatelessWidget {
     return Visibility(
       visible: training != null ? true : false,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -23,7 +23,7 @@ class RecentTraining extends StatelessWidget {
               children: [
                 Text(
                   translate('home_screen.training'),
-                  style: TextStyle(color: Colors.white, fontSize: 20),
+                  style: TextStyle(color: Colors.white, fontSize: 16),
                 ),
                 Spacer(),
                 GestureDetector(
@@ -32,7 +32,7 @@ class RecentTraining extends StatelessWidget {
                   },
                   child: Text(
                     translate('home_screen.show_all'),
-                    style: TextStyle(color: Colors.white, fontSize: 15),
+                    style: TextStyle(color: Colors.white, fontSize: 12),
                   ),
                 ),
               ],
@@ -47,7 +47,7 @@ class RecentTraining extends StatelessWidget {
                           arguments: {"training": training});
                     },
                     child: Card(
-                      margin: EdgeInsets.symmetric(horizontal: 0, vertical: 5),
+                      margin: EdgeInsets.symmetric(horizontal: 0, vertical: 3),
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.only(
@@ -56,7 +56,7 @@ class RecentTraining extends StatelessWidget {
                       color: Colors.white12,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 15, vertical: 15),
+                            horizontal: 10, vertical: 10),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -68,7 +68,8 @@ class RecentTraining extends StatelessWidget {
                                   children: [
                                     Expanded(
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Text(training.trainingType,
                                               maxLines: 2,
@@ -77,18 +78,18 @@ class RecentTraining extends StatelessWidget {
                                                   height: 1.0,
                                                   color: Colors.white,
                                                   fontWeight: FontWeight.bold,
-                                                  fontSize: 18)),
+                                                  fontSize: 14)),
                                           Text(
-                                            (training.trainer
-                                                .where(
-                                                  (element) =>
-                                              element.user_id.toString() ==
+                                            (training.trainer.where(
+                                              (element) =>
+                                                  element.user_id.toString() ==
                                                   userId,
-                                            )
-                                            ).isEmpty
+                                            )).isEmpty
                                                 ? "Participant"
                                                 : "Trainer",
-                                            style: TextStyle(color: Colors.white,fontSize: 12),
+                                            style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 11),
                                           ),
                                         ],
                                       ),
@@ -96,75 +97,87 @@ class RecentTraining extends StatelessWidget {
                                   ],
                                 ),
                                 SizedBox(
-                                  height: 8,
+                                  height: 5,
                                 ),
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           "Start-End Date",
-                                          style: TextStyle(color: Colors.white70),
+                                          style: TextStyle(
+                                              color: Colors.white70,
+                                              fontSize: 11),
                                         ),
                                         Row(
                                           children: [
                                             Text(training.startDate,
                                                 style: TextStyle(
                                                     color: Colors.white,
-                                                    fontWeight: FontWeight.normal,
-                                                    fontSize: 12)),
+                                                    fontWeight:
+                                                        FontWeight.normal,
+                                                    fontSize: 11)),
                                             SizedBox(
                                               width: 5,
                                             ),
-                                            if(training.endDate.isNotEmpty)
-                                            Text(" - ",
-                                                style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontWeight: FontWeight.normal,
-                                                    fontSize: 12)),
-                                            if(training.endDate.isNotEmpty)
-                                            SizedBox(
-                                              width: 5,
-                                            ),
-                                            if(training.endDate.isNotEmpty)
-                                            Text(training.endDate,
-                                                style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontWeight: FontWeight.normal,
-                                                    fontSize: 12)),
+                                            if (training.endDate.isNotEmpty)
+                                              Text(" - ",
+                                                  style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontWeight:
+                                                          FontWeight.normal,
+                                                      fontSize: 11)),
+                                            if (training.endDate.isNotEmpty)
+                                              SizedBox(
+                                                width: 5,
+                                              ),
+                                            if (training.endDate.isNotEmpty)
+                                              Text(training.endDate,
+                                                  style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontWeight:
+                                                          FontWeight.normal,
+                                                      fontSize: 11)),
                                           ],
                                         ),
                                       ],
                                     ),
                                     Container(
-                                      height: 30,
+                                      height: 24,
                                       child: VerticalDivider(
                                         width: 1,
                                         color: Colors.white54,
                                       ),
                                     ),
                                     Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           "Start-End Time",
-                                          style: TextStyle(color: Colors.white70),
+                                          style: TextStyle(
+                                              color: Colors.white70,
+                                              fontSize: 11),
                                         ),
                                         Row(
                                           children: [
                                             Text(training.startTime,
                                                 style: TextStyle(
                                                     color: Colors.white,
-                                                    fontWeight: FontWeight.normal,
-                                                    fontSize: 12)),
+                                                    fontWeight:
+                                                        FontWeight.normal,
+                                                    fontSize: 11)),
                                             if (training.endTime.isNotEmpty)
                                               Text(" - ",
                                                   style: TextStyle(
                                                       color: Colors.white,
-                                                      fontWeight: FontWeight.normal,
-                                                      fontSize: 12)),
+                                                      fontWeight:
+                                                          FontWeight.normal,
+                                                      fontSize: 11)),
                                             if (training.endTime.isNotEmpty)
                                               SizedBox(
                                                 width: 5,
@@ -173,15 +186,15 @@ class RecentTraining extends StatelessWidget {
                                               Text(training.endTime,
                                                   style: TextStyle(
                                                       color: Colors.white,
-                                                      fontWeight: FontWeight.normal,
-                                                      fontSize: 12)),
+                                                      fontWeight:
+                                                          FontWeight.normal,
+                                                      fontSize: 11)),
                                           ],
                                         ),
                                       ],
                                     ),
                                   ],
                                 )
-
                               ],
                             ),
                           ],

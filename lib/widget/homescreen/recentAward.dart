@@ -14,7 +14,7 @@ class RecentAward extends StatelessWidget {
     return Visibility(
       visible: award != null ? true : false,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -22,7 +22,7 @@ class RecentAward extends StatelessWidget {
               children: [
                 Text(
                   translate('home_screen.recent_award'),
-                  style: TextStyle(color: Colors.white, fontSize: 20),
+                  style: TextStyle(color: Colors.white, fontSize: 16),
                 ),
                 Spacer(),
                 GestureDetector(
@@ -31,13 +31,13 @@ class RecentAward extends StatelessWidget {
                   },
                   child: Text(
                     translate('home_screen.show_all'),
-                    style: TextStyle(color: Colors.white, fontSize: 15),
+                    style: TextStyle(color: Colors.white, fontSize: 12),
                   ),
                 ),
               ],
             ),
             const SizedBox(
-              height: 10,
+              height: 6,
             ),
             award != null
                 ? GestureDetector(
@@ -53,7 +53,7 @@ class RecentAward extends StatelessWidget {
                         width: MediaQuery.of(context).size.width - 30,
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
-                              vertical: 10.0, horizontal: 10),
+                              vertical: 8.0, horizontal: 8),
                           child: Row(
                             children: [
                               Column(
@@ -66,14 +66,14 @@ class RecentAward extends StatelessWidget {
                                     maxLines: 2,
                                     style: TextStyle(
                                         color: Colors.white,
-                                        fontSize: 18,
+                                        fontSize: 14,
                                         fontWeight: FontWeight.bold),
                                   ),
                                   Text(
                                     award.employee_name,
                                     style: TextStyle(
                                         color: Colors.white,
-                                        fontSize: 15,
+                                        fontSize: 12,
                                         fontWeight: FontWeight.normal),
                                   ),
                                 ],
@@ -82,14 +82,18 @@ class RecentAward extends StatelessWidget {
                               Container(
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.white, width: 2), // Change color and width as needed
+                                  border: Border.all(
+                                      color: Colors.white,
+                                      width:
+                                          1.5), // Change color and width as needed
                                 ),
-                                padding: EdgeInsets.all(3), // Adjust padding if needed
+                                padding: EdgeInsets.all(
+                                    3), // Adjust padding if needed
                                 child: ClipOval(
                                   child: Image.network(
                                     award.image,
-                                    width: 40,
-                                    height: 40,
+                                    width: 34,
+                                    height: 34,
                                     fit: BoxFit.cover,
                                   ),
                                 ),

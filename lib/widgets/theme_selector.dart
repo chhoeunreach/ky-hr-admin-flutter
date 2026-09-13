@@ -10,59 +10,79 @@ class ThemeSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<ThemeProvider>();
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final cardWidth = (constraints.maxWidth * 0.44).clamp(118.0, 150.0);
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.palette_outlined, color: Colors.white, size: 20),
-              const SizedBox(width: 8),
-              const Expanded(
-                child: Text(
-                  'Theme Mode',
-                  style: TextStyle(
+              Row(
+                children: [
+                  const Icon(
+                    Icons.palette_outlined,
                     color: Colors.white,
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
+                    size: 18,
                   ),
-                ),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const ThemeSelectorPage(),
+                  const SizedBox(width: 6),
+                  const Expanded(
+                    child: Text(
+                      'Theme Mode',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  );
-                },
-                child: const Text('View all'),
+                  ),
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      minimumSize: const Size(0, 32),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      textStyle: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const ThemeSelectorPage(),
+                        ),
+                      );
+                    },
+                    child: const Text('View all'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              SizedBox(
+                height: 118,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: AppThemeMode.values.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 8),
+                  itemBuilder: (context, index) {
+                    final mode = AppThemeMode.values[index];
+                    return SizedBox(
+                      width: cardWidth,
+                      child: _ThemePreviewCard(
+                        mode: mode,
+                        selected: provider.mode == mode,
+                        compact: true,
+                      ),
+                    );
+                  },
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          SizedBox(
-            height: 126,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: AppThemeMode.values.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 10),
-              itemBuilder: (context, index) {
-                final mode = AppThemeMode.values[index];
-                return SizedBox(
-                  width: 150,
-                  child: _ThemePreviewCard(
-                    mode: mode,
-                    selected: provider.mode == mode,
-                    compact: true,
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -139,7 +159,7 @@ class _ThemePreviewCard extends StatelessWidget {
       },
       child: AnimatedContainer(
         duration: AppThemeData.animationDuration,
-        padding: EdgeInsets.all(compact ? 12 : 14),
+        padding: EdgeInsets.all(compact ? 9 : 14),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
@@ -165,7 +185,7 @@ class _ThemePreviewCard extends StatelessWidget {
             Row(
               children: [
                 Icon(info.icon,
-                    color: colors.textColor, size: compact ? 20 : 24),
+                    color: colors.textColor, size: compact ? 18 : 24),
                 const Spacer(),
                 AnimatedOpacity(
                   duration: AppThemeData.animationDuration,
@@ -173,12 +193,12 @@ class _ThemePreviewCard extends StatelessWidget {
                   child: Icon(
                     Icons.check_circle,
                     color: colors.accentColor,
-                    size: compact ? 20 : 24,
+                    size: compact ? 18 : 24,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: compact ? 7 : 10),
             Text(
               info.name,
               maxLines: 1,
@@ -186,7 +206,7 @@ class _ThemePreviewCard extends StatelessWidget {
               style: TextStyle(
                 color: colors.textColor,
                 fontWeight: FontWeight.w800,
-                fontSize: compact ? 13 : 15,
+                fontSize: compact ? 11 : 15,
               ),
             ),
             if (!compact) ...[
@@ -204,7 +224,7 @@ class _ThemePreviewCard extends StatelessWidget {
             ],
             const Spacer(),
             _MiniDashboardPreview(colors: colors, compact: compact),
-            const SizedBox(height: 8),
+            SizedBox(height: compact ? 4 : 8),
             Row(
               children: [
                 _ColorDot(color: colors.primaryColor),
@@ -229,8 +249,8 @@ class _MiniDashboardPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: compact ? 38 : 70,
-      padding: const EdgeInsets.all(6),
+      height: compact ? 32 : 70,
+      padding: EdgeInsets.all(compact ? 5 : 6),
       decoration: BoxDecoration(
         color: colors.cardColor.withValues(alpha: colors.isDark ? 0.76 : 0.9),
         borderRadius: BorderRadius.circular(14),
@@ -257,11 +277,17 @@ class _MiniDashboardPreview extends StatelessWidget {
           const Spacer(),
           Row(
             children: [
-              Expanded(child: _PreviewTile(color: colors.primaryColor)),
-              const SizedBox(width: 4),
-              Expanded(child: _PreviewTile(color: colors.secondaryColor)),
-              const SizedBox(width: 4),
-              Expanded(child: _PreviewTile(color: colors.accentColor)),
+              Expanded(
+                  child: _PreviewTile(
+                      color: colors.primaryColor, compact: compact)),
+              SizedBox(width: compact ? 3 : 4),
+              Expanded(
+                  child: _PreviewTile(
+                      color: colors.secondaryColor, compact: compact)),
+              SizedBox(width: compact ? 3 : 4),
+              Expanded(
+                  child: _PreviewTile(
+                      color: colors.accentColor, compact: compact)),
             ],
           ),
         ],
@@ -272,13 +298,14 @@ class _MiniDashboardPreview extends StatelessWidget {
 
 class _PreviewTile extends StatelessWidget {
   final Color color;
+  final bool compact;
 
-  const _PreviewTile({required this.color});
+  const _PreviewTile({required this.color, required this.compact});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 14,
+      height: compact ? 10 : 14,
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.82),
         borderRadius: BorderRadius.circular(6),
@@ -295,9 +322,9 @@ class _ColorDot extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 14,
-      height: 14,
-      margin: const EdgeInsets.only(right: 5),
+      width: 11,
+      height: 11,
+      margin: const EdgeInsets.only(right: 4),
       decoration: BoxDecoration(
         color: color,
         shape: BoxShape.circle,

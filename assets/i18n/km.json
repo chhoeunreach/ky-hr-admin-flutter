@@ -229,7 +229,15 @@
     "first_due": "ថ្ងៃបង់ដំបូង",
     "total": "សរុប",
     "preview_schedule": "មើលកាលវិភាគជាមុន",
-    "months": "ខែ"
+    "months": "ខែ",
+    "payment": "ការបង់ប្រាក់",
+    "installment": "ការបង់រំលស់",
+    "installments": "ដង",
+    "due_date": "ថ្ងៃត្រូវបង់",
+    "principal": "ប្រាក់ដើម",
+    "interest": "ការប្រាក់",
+    "balance": "សមតុល្យ",
+    "no_schedule": "បញ្ចូលតម្លៃផលិតផល និងរយៈពេល ដើម្បីមើលកាលវិភាគបង់ប្រាក់។"
   },
   "change_password_screen": {
     "change_password": "ផ្លាស់ប្ដូរពាក្យសម្ងាត់",

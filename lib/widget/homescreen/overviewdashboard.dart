@@ -1,27 +1,17 @@
-import 'package:cnattendance/models/sell_out_report.dart';
 import 'package:cnattendance/provider/dashboardprovider.dart';
 import 'package:cnattendance/provider/prefprovider.dart';
 import 'package:cnattendance/screen/awards/awardsscreen.dart';
 import 'package:cnattendance/screen/dashboard/projectscreen.dart';
 import 'package:cnattendance/screen/eventscreen/eventlistscreen.dart';
 import 'package:cnattendance/screen/profile/holidayscreen.dart';
-import 'package:cnattendance/screen/sell_out_report_screen.dart';
 import 'package:cnattendance/screen/social_rewards/social_submission_screen.dart';
 import 'package:cnattendance/screen/training/trainingscreen.dart';
-import 'package:cnattendance/services/sell_out_api_service.dart';
 import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:cnattendance/widget/homescreen/cardoverview.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
 import 'package:provider/provider.dart';
-
-class _SellOutTypeTotals {
-  final int qty;
-  final double? commission;
-
-  const _SellOutTypeTotals({required this.qty, required this.commission});
-}
 
 class OverviewDashboard extends StatefulWidget {
   final PersistentTabController controller;
@@ -33,33 +23,6 @@ class OverviewDashboard extends StatefulWidget {
 }
 
 class _OverviewDashboardState extends State<OverviewDashboard> {
-  late final Future<List<SellOutReport>> _sellOutReportsFuture =
-      SellOutApiService().fetchReports();
-
-  Map<String, _SellOutTypeTotals> _aggregateByType(
-      List<SellOutReport> reports) {
-    final now = DateTime.now();
-    final currentMonthReports = reports.where((report) {
-      final createdAt = DateTime.tryParse(report.createdAt);
-      return createdAt != null &&
-          createdAt.year == now.year &&
-          createdAt.month == now.month;
-    });
-
-    final totals = <String, _SellOutTypeTotals>{};
-    for (final report in currentMonthReports) {
-      final type = SellOutReport.canonicalServiceType(report.serviceType);
-      if (type.isEmpty) continue;
-      final existing = totals[type];
-      final qty = (existing?.qty ?? 0) + report.totalQty;
-      final commission = report.isCommissionable
-          ? (existing?.commission ?? 0) + report.commission
-          : existing?.commission;
-      totals[type] = _SellOutTypeTotals(qty: qty, commission: commission);
-    }
-    return totals;
-  }
-
   @override
   Widget build(BuildContext context) {
     final _overview = Provider.of<DashboardProvider>(context).overviewList;
@@ -75,7 +38,7 @@ class _OverviewDashboardState extends State<OverviewDashboard> {
             : 1;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -86,7 +49,7 @@ class _OverviewDashboardState extends State<OverviewDashboard> {
                   translate('home_screen.overview'),
                   style: TextStyle(
                     color: enterprise.text,
-                    fontSize: 20,
+                    fontSize: 16,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
@@ -103,198 +66,128 @@ class _OverviewDashboardState extends State<OverviewDashboard> {
               ),
             ],
           ),
-          const SizedBox(height: 14),
-          FutureBuilder<List<SellOutReport>>(
-            future: _sellOutReportsFuture,
-            builder: (context, snapshot) {
-              final totals = snapshot.hasData
-                  ? _aggregateByType(snapshot.data!)
-                  : const <String, _SellOutTypeTotals>{};
-              return GridView(
-                shrinkWrap: true,
-                primary: false,
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: crossAxisCount,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  mainAxisExtent: 96,
+          const SizedBox(height: 8),
+          GridView(
+            shrinkWrap: true,
+            primary: false,
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: crossAxisCount,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
+              mainAxisExtent: 78,
+            ),
+            children: [
+              if (features["attendance"] == "1")
+                CardOverView(
+                  type: translate('home_screen.present'),
+                  value: _overview['present']!,
+                  icon: "assets/icons/present_icon.png",
+                  callback: () {
+                    widget.controller.jumpToTab(3);
+                  },
                 ),
-                children: [
-                  if (features["attendance"] == "1")
-                    CardOverView(
-                      type: translate('home_screen.present'),
-                      value: _overview['present']!,
-                      icon: "assets/icons/present_icon.png",
-                      callback: () {
-                        widget.controller.jumpToTab(3);
-                      },
-                    ),
-                  if (features["holiday"] == "1")
-                    CardOverView(
-                      type: translate('home_screen.holidays'),
-                      value: _overview['holiday']!,
-                      icon: Icons.celebration,
-                      callback: () {
-                        pushScreen(context,
-                            screen: HolidayScreen(),
-                            withNavBar: false,
-                            pageTransitionAnimation:
-                                PageTransitionAnimation.fade);
-                      },
-                    ),
-                  if (features["leave-request"] == "1")
-                    CardOverView(
-                      type: translate('home_screen.leave'),
-                      value: _overview['leave']!,
-                      icon: Icons.sick,
-                      callback: () {
-                        widget.controller.jumpToTab(2);
-                      },
-                    ),
-                  if (features["event"] == "1")
-                    CardOverView(
-                      type: translate('home_screen.event'),
-                      value: _overview['active_event']!,
-                      icon: Icons.calendar_month,
-                      callback: () {
-                        pushScreen(context,
-                            screen: EventListScreen(),
-                            withNavBar: false,
-                            pageTransitionAnimation:
-                                PageTransitionAnimation.fade);
-                      },
-                    ),
-                  if (features["project-management"] == "1")
-                    CardOverView(
-                      type: translate('home_screen.projects'),
-                      value: _overview['total_project']!,
-                      icon: Icons.work_history_outlined,
-                      callback: () {
-                        pushScreen(context,
-                            screen: ProjectScreen(),
-                            withNavBar: false,
-                            pageTransitionAnimation:
-                                PageTransitionAnimation.fade);
-                      },
-                    ),
-                  if (features["project-management"] == "1")
-                    CardOverView(
-                      type: translate('home_screen.task'),
-                      value: _overview['total_task']!,
-                      icon: Icons.outlined_flag_sharp,
-                      callback: () {
-                        pushScreen(context,
-                            screen: ProjectScreen(),
-                            withNavBar: false,
-                            pageTransitionAnimation:
-                                PageTransitionAnimation.fade);
-                      },
-                    ),
-                  if (features["award"] == "1")
-                    CardOverView(
-                      type: translate('home_screen.awards'),
-                      value: _overview['total_awards']!,
-                      icon: Icons.workspace_premium_outlined,
-                      callback: () {
-                        pushScreen(context,
-                            screen: AwardsScreen(),
-                            withNavBar: false,
-                            pageTransitionAnimation:
-                                PageTransitionAnimation.fade);
-                      },
-                    ),
-                  if (features["training"] == "1")
-                    CardOverView(
-                      type: translate('home_screen.training'),
-                      value: _overview['active_training']!,
-                      icon: Icons.model_training_rounded,
-                      callback: () {
-                        pushScreen(context,
-                            screen: TrainingScreen(),
-                            withNavBar: true,
-                            pageTransitionAnimation:
-                                PageTransitionAnimation.fade);
-                      },
-                    ),
-                  if (features["sell-staff-report"] == "1") ...[
-                    _serviceCard(
-                        context,
-                        totals,
-                        translate('home_screen.service_sell'),
-                        Icons.point_of_sale),
-                    _serviceCard(
-                        context,
-                        totals,
-                        translate('home_screen.service_material'),
-                        Icons.inventory_2_outlined),
-                    _serviceCard(
-                        context,
-                        totals,
-                        translate('home_screen.service_iron'),
-                        Icons.local_laundry_service),
-                    _serviceCard(
-                        context,
-                        totals,
-                        translate('home_screen.service_repair'),
-                        Icons.build_circle_outlined),
-                    _serviceCard(
-                        context,
-                        totals,
-                        translate('home_screen.service_buy_in'),
-                        Icons.add_shopping_cart),
-                    _serviceCard(
-                        context,
-                        totals,
-                        translate('home_screen.service_icloud_cus'),
-                        Icons.cloud_outlined),
-                  ],
-                  if (features["social-rewards"] == "1")
-                    CardOverView(
-                      type: 'Social Post',
-                      value: '1',
-                      subtitle: 'Daily log',
-                      icon: Icons.campaign_outlined,
-                      callback: () {
-                        pushScreen(
-                          context,
-                          screen: SocialSubmissionScreen(
-                            employeeId: employeeId,
-                          ),
-                          withNavBar: false,
-                          pageTransitionAnimation: PageTransitionAnimation.fade,
-                        );
-                      },
-                    ),
-                ],
-              );
-            },
+              if (features["holiday"] == "1")
+                CardOverView(
+                  type: translate('home_screen.holidays'),
+                  value: _overview['holiday']!,
+                  icon: Icons.celebration,
+                  callback: () {
+                    pushScreen(context,
+                        screen: HolidayScreen(),
+                        withNavBar: false,
+                        pageTransitionAnimation: PageTransitionAnimation.fade);
+                  },
+                ),
+              if (features["leave-request"] == "1")
+                CardOverView(
+                  type: translate('home_screen.leave'),
+                  value: _overview['leave']!,
+                  icon: Icons.sick,
+                  callback: () {
+                    widget.controller.jumpToTab(2);
+                  },
+                ),
+              if (features["event"] == "1")
+                CardOverView(
+                  type: translate('home_screen.event'),
+                  value: _overview['active_event']!,
+                  icon: Icons.calendar_month,
+                  callback: () {
+                    pushScreen(context,
+                        screen: EventListScreen(),
+                        withNavBar: false,
+                        pageTransitionAnimation: PageTransitionAnimation.fade);
+                  },
+                ),
+              if (features["project-management"] == "1")
+                CardOverView(
+                  type: translate('home_screen.projects'),
+                  value: _overview['total_project']!,
+                  icon: Icons.work_history_outlined,
+                  callback: () {
+                    pushScreen(context,
+                        screen: ProjectScreen(),
+                        withNavBar: false,
+                        pageTransitionAnimation: PageTransitionAnimation.fade);
+                  },
+                ),
+              if (features["project-management"] == "1")
+                CardOverView(
+                  type: translate('home_screen.task'),
+                  value: _overview['total_task']!,
+                  icon: Icons.outlined_flag_sharp,
+                  callback: () {
+                    pushScreen(context,
+                        screen: ProjectScreen(),
+                        withNavBar: false,
+                        pageTransitionAnimation: PageTransitionAnimation.fade);
+                  },
+                ),
+              if (features["award"] == "1")
+                CardOverView(
+                  type: translate('home_screen.awards'),
+                  value: _overview['total_awards']!,
+                  icon: Icons.workspace_premium_outlined,
+                  callback: () {
+                    pushScreen(context,
+                        screen: AwardsScreen(),
+                        withNavBar: false,
+                        pageTransitionAnimation: PageTransitionAnimation.fade);
+                  },
+                ),
+              if (features["training"] == "1")
+                CardOverView(
+                  type: translate('home_screen.training'),
+                  value: _overview['active_training']!,
+                  icon: Icons.model_training_rounded,
+                  callback: () {
+                    pushScreen(context,
+                        screen: TrainingScreen(),
+                        withNavBar: true,
+                        pageTransitionAnimation: PageTransitionAnimation.fade);
+                  },
+                ),
+              if (features["social-rewards"] == "1")
+                CardOverView(
+                  type: 'Social Post',
+                  value: '1',
+                  subtitle: 'Daily log',
+                  icon: Icons.campaign_outlined,
+                  callback: () {
+                    pushScreen(
+                      context,
+                      screen: SocialSubmissionScreen(
+                        employeeId: employeeId,
+                      ),
+                      withNavBar: false,
+                      pageTransitionAnimation: PageTransitionAnimation.fade,
+                    );
+                  },
+                ),
+            ],
           ),
         ],
       ),
-    );
-  }
-
-  Widget _serviceCard(
-      BuildContext context,
-      Map<String, _SellOutTypeTotals> totals,
-      String serviceType,
-      IconData icon) {
-    final typeTotals = totals[SellOutReport.canonicalServiceType(serviceType)];
-    final commission = typeTotals?.commission;
-    return CardOverView(
-      type: serviceType,
-      value: (typeTotals?.qty ?? 0).toString(),
-      subtitle:
-          commission != null ? '\$${commission.toStringAsFixed(2)}' : null,
-      icon: icon,
-      callback: () {
-        pushScreen(
-          context,
-          screen: SellOutReportScreen(serviceType: serviceType),
-          withNavBar: false,
-          pageTransitionAnimation: PageTransitionAnimation.fade,
-        );
-      },
     );
   }
 }
