@@ -4,6 +4,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:workmanager/workmanager.dart';
 
+import 'attendance_sync_service.dart';
 import 'image_service.dart';
 
 const String kUploadTaskName = 'offline_image_upload_task';
@@ -23,6 +24,7 @@ void backgroundSyncCallbackDispatcher() {
             name: 'BackgroundSync');
         return true; // not a failure — just nothing to do right now
       }
+      await AttendanceSyncService().processPendingAttendance();
       await ImageService().processPendingUploads();
       return true;
     } catch (e, st) {

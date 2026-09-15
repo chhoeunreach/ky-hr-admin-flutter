@@ -57,7 +57,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
     final delegate = await LocalizationDelegate.create(
-        fallbackLocale: 'en_US',
+        fallbackLocale: 'km',
         supportedLocales: [
           'en_US',
           'ar',
@@ -88,6 +88,7 @@ Future<void> main() async {
     // `uploading` from a previous process kill, then start the background
     // sync worker so queued images keep retrying even if the app is closed.
     await DatabaseHelper.instance.resetStuckUploadingToPending();
+    await DatabaseHelper.instance.resetStuckAttendanceUploadingToPending();
     await BackgroundSyncManager.instance.initialize();
     unawaited(BackgroundSyncManager.instance.schedulePeriodicUpload());
 
@@ -221,7 +222,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                           localizationDelegate
                         ],
                         supportedLocales: localizationDelegate.supportedLocales,
-                        locale: Locale(storage.read("language") ?? "en"),
+                        locale: Locale(storage.read("language") ?? "km"),
                         theme: themeProvider.themeData,
                         darkTheme: themeProvider.darkTheme,
                         themeMode: themeProvider.mode == AppThemeMode.dark

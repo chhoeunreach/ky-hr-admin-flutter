@@ -5,7 +5,6 @@ import 'package:cnattendance/data/source/network/model/hollidays/Holidays.dart';
 import 'package:cnattendance/data/source/network/model/teamsheet/Employee.dart'
     as employees;
 import 'package:cnattendance/data/source/network/model/trainingresponse/trainingresponse.dart';
-import 'package:cnattendance/model/award.dart';
 
 import 'User.dart';
 import 'EmployeeTodayAttendance.dart';
@@ -26,6 +25,7 @@ class Dashboard {
     required this.dateInAd,
     required this.addNfc,
     required this.attendance_note,
+    required this.attendance_selfie,
     required this.employee_location,
     required this.employee,
     required this.features,
@@ -49,6 +49,7 @@ class Dashboard {
       dateInAd: json['date_in_ad'],
       addNfc: json['add_nfc'] ?? true,
       attendance_note: json['attendance_note'] ?? false,
+      attendance_selfie: json['attendance_selfie'] ?? false,
       employee: json["teamMembers"] != null
           ? List<employees.Employee>.from(
               json['teamMembers'].map((x) => employees.Employee.fromJson(x)))
@@ -58,9 +59,8 @@ class Dashboard {
       holiday: json["recent_holiday"] != null
           ? Holidays.fromJson(json["recent_holiday"])
           : null,
-      employee_location: json["employee_location"] != null
-          ? json["employee_location"]
-          : false,
+      employee_location:
+          json["employee_location"] != null ? json["employee_location"] : false,
       recentAward: json["recent_award"] != null
           ? RecentAward.fromJson(json['recent_award'])
           : null,
@@ -85,6 +85,7 @@ class Dashboard {
   bool dateInAd;
   bool addNfc;
   bool attendance_note;
+  bool attendance_selfie;
   bool employee_location;
   List<employees.Employee> employee;
   Holidays? holiday;

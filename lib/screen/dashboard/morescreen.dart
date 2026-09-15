@@ -59,10 +59,20 @@ class MoreScreenState extends State<MoreScreen> {
     final employeeId =
         int.tryParse(context.watch<PrefProvider>().userId.trim()) ?? 0;
     final enterprise = EnterpriseTheme.of(context);
+    final availableAttendanceMethods =
+        attendanceMethod.map((method) => method.toLowerCase()).toList();
 
     void changeAttendanceType(String type) {
       context.read<PrefProvider>().saveAttendanceType(type);
       showToast("Attendance method set to $type");
+    }
+
+    String disabledAttendanceMessage(String label) {
+      if (attendanceMethod.isEmpty) {
+        return translate('attendance_messages.no_attendance_method');
+      }
+
+      return "$label ${translate('attendance_messages.method_disabled_suffix')}";
     }
 
     void showFeatureDebug() {
@@ -92,28 +102,36 @@ class MoreScreenState extends State<MoreScreen> {
       required String type,
       required IconData icon,
       required String label,
+      required bool enabled,
     }) {
       final isSelected = attendanceType == type;
-      final foregroundColor =
-          isSelected || enterprise.isDark ? Colors.white : enterprise.text;
-      final borderColor = isSelected
+      final effectiveSelected = enabled && isSelected;
+      final foregroundColor = effectiveSelected || enterprise.isDark
+          ? Colors.white
+          : enterprise.text;
+      final disabledColor = Colors.white.withValues(alpha: 0.45);
+      final borderColor = effectiveSelected
           ? Colors.white.withValues(alpha: 0.58)
-          : enterprise.accent
-              .withValues(alpha: enterprise.isDark ? 0.46 : 0.68);
+          : enterprise.accent.withValues(
+              alpha: enabled ? (enterprise.isDark ? 0.46 : 0.68) : 0.24);
       final fillColor = enterprise.surface.withValues(
-        alpha: enterprise.isDark ? 0.70 : 0.88,
+        alpha: enabled
+            ? (enterprise.isDark ? 0.70 : 0.88)
+            : (enterprise.isDark ? 0.38 : 0.56),
       );
 
       return InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () => changeAttendanceType(type),
+        onTap: enabled
+            ? () => changeAttendanceType(type)
+            : () => showToast(disabledAttendanceMessage(label)),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 220),
           curve: Curves.easeOut,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
           decoration: BoxDecoration(
-            color: isSelected ? null : fillColor,
-            gradient: isSelected
+            color: effectiveSelected ? null : fillColor,
+            gradient: effectiveSelected
                 ? LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -124,9 +142,9 @@ class MoreScreenState extends State<MoreScreen> {
             border: Border.all(color: borderColor, width: 1.2),
             boxShadow: [
               BoxShadow(
-                color: (isSelected ? enterprise.accent : Colors.black)
-                    .withValues(alpha: isSelected ? 0.28 : 0.12),
-                blurRadius: isSelected ? 18 : 10,
+                color: (effectiveSelected ? enterprise.accent : Colors.black)
+                    .withValues(alpha: effectiveSelected ? 0.28 : 0.12),
+                blurRadius: effectiveSelected ? 18 : 10,
                 offset: const Offset(0, 8),
               ),
             ],
@@ -134,12 +152,13 @@ class MoreScreenState extends State<MoreScreen> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, color: foregroundColor, size: 18),
+              Icon(icon,
+                  color: enabled ? foregroundColor : disabledColor, size: 18),
               const SizedBox(width: 7),
               Text(
                 label,
                 style: TextStyle(
-                  color: foregroundColor,
+                  color: enabled ? foregroundColor : disabledColor,
                   fontSize: 13,
                   fontWeight: FontWeight.w800,
                 ),
@@ -173,43 +192,45 @@ class MoreScreenState extends State<MoreScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             HeaderProfile(),
-                            if (attendanceMethod.isNotEmpty)
-                              Padding(
-                                  padding: EdgeInsets.symmetric(
-                                      horizontal: 20, vertical: 10),
-                                  child: Text(
-                                    translate(
-                                        'more_screen.attendance_default_method'),
-                                    style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.bold),
-                                  )),
+                            Padding(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 20, vertical: 10),
+                                child: Text(
+                                  translate(
+                                      'more_screen.attendance_default_method'),
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold),
+                                )),
                             Padding(
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 20),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.start,
+                              child: Wrap(
                                 spacing: 10,
+                                runSpacing: 10,
                                 children: [
-                                  if (attendanceMethod.contains("default"))
-                                    attendanceMethodChip(
-                                      type: "Default",
-                                      icon: Icons.fingerprint,
-                                      label: translate('more_screen.default'),
-                                    ),
-                                  if (attendanceMethod.contains("nfc"))
-                                    attendanceMethodChip(
-                                      type: "NFC",
-                                      icon: Icons.nfc,
-                                      label: translate('more_screen.nfc'),
-                                    ),
-                                  if (attendanceMethod.contains("qr"))
-                                    attendanceMethodChip(
-                                      type: "QR",
-                                      icon: Icons.qr_code,
-                                      label: translate('more_screen.qr_code'),
-                                    ),
+                                  attendanceMethodChip(
+                                    type: "Default",
+                                    icon: Icons.fingerprint,
+                                    label: translate('more_screen.default'),
+                                    enabled: availableAttendanceMethods
+                                        .contains("default"),
+                                  ),
+                                  attendanceMethodChip(
+                                    type: "NFC",
+                                    icon: Icons.nfc,
+                                    label: translate('more_screen.nfc'),
+                                    enabled: availableAttendanceMethods
+                                        .contains("nfc"),
+                                  ),
+                                  attendanceMethodChip(
+                                    type: "QR",
+                                    icon: Icons.qr_code,
+                                    label: translate('more_screen.qr_code'),
+                                    enabled: availableAttendanceMethods
+                                        .contains("qr"),
+                                  ),
                                 ],
                               ),
                             ),

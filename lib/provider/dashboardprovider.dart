@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:core';
 import 'dart:developer';
+import 'dart:io';
 import 'dart:math' as Random;
 
 import 'package:awesome_notifications/awesome_notifications.dart';
@@ -55,7 +56,7 @@ class DashboardProvider with ChangeNotifier {
 
   static const Duration _locationCacheTtl = Duration(seconds: 10);
   static const double _defaultWorkspaceRadiusMeters = 100;
-  static const double scanAttendanceMaxDistanceMeters = 100;
+  static const double scanAttendanceMaxAccuracyMeters = 100;
   DateTime? _lastLocationRefreshAt;
   final Map<String, String> _addressCache = {};
 
@@ -78,6 +79,7 @@ class DashboardProvider with ChangeNotifier {
 
   bool isAD = true;
   bool isNoteEnabled = false;
+  bool isAttendanceSelfieEnabled = false;
   bool isLocationEnabled = false;
   bool animated = true;
   bool isBirthdayWished = false;
@@ -200,6 +202,7 @@ class DashboardProvider with ChangeNotifier {
       preferences
           .saveEmployeeLocation(dashboardResponse.data.employee_location);
       isNoteEnabled = await preferences.getNote();
+      isAttendanceSelfieEnabled = dashboardResponse.data.attendance_selfie;
       isLocationEnabled = await preferences.getEnableLocation();
 
       final holidayResponse = dashboardResponse.data.holiday;
@@ -331,7 +334,7 @@ class DashboardProvider with ChangeNotifier {
         branchLongitude: workspaceLongitude,
         branchAddress: branchAddress,
         distanceMeters: distanceMeters,
-        allowedDistanceMeters: _getEffectiveWorkspaceRadiusMeters(),
+        allowedDistanceMeters: effectiveWorkspaceRadiusMeters,
       );
     } catch (_) {
       return null;
@@ -701,7 +704,7 @@ class DashboardProvider with ChangeNotifier {
       return;
     }
 
-    final allowedRadius = _getEffectiveWorkspaceRadiusMeters();
+    final allowedRadius = effectiveWorkspaceRadiusMeters;
     if (allowedRadius == null) {
       lastWorkspaceDistanceMeters = null;
       return;
@@ -762,7 +765,7 @@ class DashboardProvider with ChangeNotifier {
     return distanceMeters;
   }
 
-  double? _getEffectiveWorkspaceRadiusMeters() {
+  double? get effectiveWorkspaceRadiusMeters {
     if (workspaceLatitude == null || workspaceLongitude == null) {
       return null;
     }
@@ -950,7 +953,11 @@ class DashboardProvider with ChangeNotifier {
   }
 
   Future<AttendanceStatusResponse> verifyAttendanceApi(String type, String note,
-      {String attendanceStatus = "", String identifier = ""}) async {
+      {String attendanceStatus = "",
+      String identifier = "",
+      File? attendanceSelfie,
+      String offlineRequestId = "",
+      DateTime? recordedAt}) async {
     Preferences preferences = Preferences();
     var uri =
         Uri.parse(await preferences.getAppUrl() + Constant.ATTENDANCE_URL);
@@ -974,9 +981,7 @@ class DashboardProvider with ChangeNotifier {
     final longitude =
         shouldSendCoordinates ? locationStatus['longitude'].toString() : "";
 
-    final http.Client client = LoggingMiddleware(http.Client());
-
-    final response = await client.post(uri, headers: headers, body: {
+    final body = {
       'attendance_type': type,
       'latitude': latitude,
       'longitude': longitude,
@@ -984,7 +989,26 @@ class DashboardProvider with ChangeNotifier {
       'identifier': type != "wifi" ? identifier : "",
       'attendance_status_type': type == "wifi" ? attendanceStatus : "",
       'note': note,
-    });
+      'offline_request_id': offlineRequestId,
+      'recorded_at': (recordedAt ?? DateTime.now()).toIso8601String(),
+    };
+
+    http.Response response;
+    if (attendanceSelfie != null) {
+      final request = http.MultipartRequest('POST', uri)
+        ..headers.addAll(headers)
+        ..fields.addAll(body)
+        ..files.add(await http.MultipartFile.fromPath(
+          'selfie',
+          attendanceSelfie.path,
+        ));
+
+      final streamedResponse = await request.send();
+      response = await http.Response.fromStream(streamedResponse);
+    } else {
+      final http.Client client = LoggingMiddleware(http.Client());
+      response = await client.post(uri, headers: headers, body: body);
+    }
 
     log(response.body.toString());
 

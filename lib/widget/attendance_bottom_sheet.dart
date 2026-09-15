@@ -1,4 +1,9 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:cnattendance/provider/dashboardprovider.dart';
+import 'package:cnattendance/services/attendance_sync_service.dart';
+import 'package:cnattendance/utils/wifiinfo.dart';
 import 'package:cnattendance/widget/customalertdialog.dart';
 import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
@@ -19,6 +24,9 @@ class AttendanceBottomSheetState extends State<AttedanceBottomSheet> {
 
   void onCheckOut(String note) async {
     final provider = Provider.of<DashboardProvider>(context, listen: false);
+    final syncService = AttendanceSyncService();
+    final offlineRequestId = syncService.createOfflineRequestId();
+    final recordedAt = DateTime.now();
     final rootContext = Navigator.of(context, rootNavigator: true).context;
     try {
       setState(() {
@@ -30,7 +38,9 @@ class AttendanceBottomSheetState extends State<AttedanceBottomSheet> {
       var status = await provider.getCheckInStatus();
       if (status) {
         final response = await provider.verifyAttendanceApi("wifi", note,
-            attendanceStatus: "checkOut");
+            attendanceStatus: "checkOut",
+            offlineRequestId: offlineRequestId,
+            recordedAt: recordedAt);
         isEnabled = true;
         if (!mounted) {
           return;
@@ -55,6 +65,32 @@ class AttendanceBottomSheetState extends State<AttedanceBottomSheet> {
       if (message == "Unauthenticated") {
         return;
       }
+      if (_isOfflineQueueableError(e)) {
+        await _queueOfflineWifiAttendance(
+          syncService: syncService,
+          provider: provider,
+          attendanceStatusType: "checkOut",
+          note: note,
+          offlineRequestId: offlineRequestId,
+          recordedAt: recordedAt,
+        );
+        if (!mounted) return;
+        setState(() {
+          isLoading = false;
+        });
+        Navigator.pop(context);
+        showDialog(
+          context: rootContext,
+          builder: (context) {
+            return Dialog(
+              child: CustomAlertDialog(
+                translate('attendance_messages.saved_offline'),
+              ),
+            );
+          },
+        );
+        return;
+      }
       final extra = await provider.buildWorkspaceDistanceInfoIfNeeded(message);
       if (!mounted) return;
       setState(() {
@@ -65,8 +101,8 @@ class AttendanceBottomSheetState extends State<AttedanceBottomSheet> {
         context: rootContext,
         builder: (context) {
           return Dialog(
-            child:
-                CustomAlertDialog(extra == null ? message : '$message\n\n$extra'),
+            child: CustomAlertDialog(
+                extra == null ? message : '$message\n\n$extra'),
           );
         },
       );
@@ -75,6 +111,9 @@ class AttendanceBottomSheetState extends State<AttedanceBottomSheet> {
 
   void onCheckIn(String note) async {
     final provider = Provider.of<DashboardProvider>(context, listen: false);
+    final syncService = AttendanceSyncService();
+    final offlineRequestId = syncService.createOfflineRequestId();
+    final recordedAt = DateTime.now();
     final rootContext = Navigator.of(context, rootNavigator: true).context;
     try {
       isLoading = true;
@@ -86,7 +125,9 @@ class AttendanceBottomSheetState extends State<AttedanceBottomSheet> {
       var status = await provider.getCheckInStatus();
       if (status) {
         final response = await provider.verifyAttendanceApi("wifi", note,
-            attendanceStatus: "checkIn");
+            attendanceStatus: "checkIn",
+            offlineRequestId: offlineRequestId,
+            recordedAt: recordedAt);
         isEnabled = true;
         if (!mounted) {
           return;
@@ -111,6 +152,32 @@ class AttendanceBottomSheetState extends State<AttedanceBottomSheet> {
       if (message == "Unauthenticated") {
         return;
       }
+      if (_isOfflineQueueableError(e)) {
+        await _queueOfflineWifiAttendance(
+          syncService: syncService,
+          provider: provider,
+          attendanceStatusType: "checkIn",
+          note: note,
+          offlineRequestId: offlineRequestId,
+          recordedAt: recordedAt,
+        );
+        if (!mounted) return;
+        Navigator.pop(context);
+        setState(() {
+          isLoading = false;
+        });
+        showDialog(
+          context: rootContext,
+          builder: (context) {
+            return Dialog(
+              child: CustomAlertDialog(
+                translate('attendance_messages.saved_offline'),
+              ),
+            );
+          },
+        );
+        return;
+      }
       final extra = await provider.buildWorkspaceDistanceInfoIfNeeded(message);
       if (!mounted) return;
       Navigator.pop(context);
@@ -121,12 +188,48 @@ class AttendanceBottomSheetState extends State<AttedanceBottomSheet> {
         context: rootContext,
         builder: (context) {
           return Dialog(
-            child:
-                CustomAlertDialog(extra == null ? message : '$message\n\n$extra'),
+            child: CustomAlertDialog(
+                extra == null ? message : '$message\n\n$extra'),
           );
         },
       );
     }
+  }
+
+  bool _isOfflineQueueableError(Object error) {
+    if (error is SocketException || error is TimeoutException) {
+      return true;
+    }
+
+    final message = error.toString().toLowerCase();
+    return message.contains("failed host lookup") ||
+        message.contains("connection refused") ||
+        message.contains("connection timed out") ||
+        message.contains("network is unreachable") ||
+        message.contains("software caused connection abort") ||
+        message.contains("connection reset");
+  }
+
+  Future<void> _queueOfflineWifiAttendance({
+    required AttendanceSyncService syncService,
+    required DashboardProvider provider,
+    required String attendanceStatusType,
+    required String note,
+    required String offlineRequestId,
+    required DateTime recordedAt,
+  }) async {
+    await syncService.queueAttendance(
+      attendanceType: "wifi",
+      identifier: "",
+      attendanceStatusType: attendanceStatusType,
+      note: note,
+      latitude: provider.locationStatus['latitude'].toString(),
+      longitude: provider.locationStatus['longitude'].toString(),
+      routerBssid: await WifiInfo().wifiBSSID() ?? "",
+      selfie: null,
+      offlineRequestId: offlineRequestId,
+      recordedAt: recordedAt,
+    );
   }
 
   @override
