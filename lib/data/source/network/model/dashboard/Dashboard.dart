@@ -26,13 +26,17 @@ class Dashboard {
     required this.addNfc,
     required this.attendance_note,
     required this.attendance_selfie,
+    required this.attendance_map,
+    required this.attendance_map_url,
+    required this.attendance_location_radius_enabled,
     required this.employee_location,
     required this.employee,
     required this.features,
     required this.holiday,
     required this.recentAward,
-    required this.recentTraining,
-    required this.recentEvent,
+    this.recentTraining,
+    this.recentEvent,
+    this.appVersionInfo,
   });
 
   factory Dashboard.fromJson(dynamic json) {
@@ -50,6 +54,13 @@ class Dashboard {
       addNfc: json['add_nfc'] ?? true,
       attendance_note: json['attendance_note'] ?? false,
       attendance_selfie: json['attendance_selfie'] ?? false,
+      attendance_map: json['attendance_map'] ?? true,
+      attendance_map_url: (json['attendance_map_url'] ?? '').toString(),
+      attendance_location_radius_enabled: _readRadiusEnabled(
+          json['attendance_location_radius_enabled'] ??
+              json['workspace_location']?['radius_enabled'] ??
+              json['workspace_location']
+                  ?['attendance_location_radius_enabled']),
       employee: json["teamMembers"] != null
           ? List<employees.Employee>.from(
               json['teamMembers'].map((x) => employees.Employee.fromJson(x)))
@@ -70,6 +81,9 @@ class Dashboard {
       recentEvent: json["recent_event"] != null
           ? EventApi.fromMap(json['recent_event'])
           : null,
+      appVersionInfo: json['app_version'] != null
+          ? AppVersionInfo.fromJson(json['app_version'])
+          : null,
     );
   }
 
@@ -86,12 +100,16 @@ class Dashboard {
   bool addNfc;
   bool attendance_note;
   bool attendance_selfie;
+  bool attendance_map;
+  String attendance_map_url;
+  bool attendance_location_radius_enabled;
   bool employee_location;
   List<employees.Employee> employee;
   Holidays? holiday;
   RecentAward? recentAward;
   Training? recentTraining;
   EventApi? recentEvent;
+  AppVersionInfo? appVersionInfo;
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{};
@@ -104,4 +122,50 @@ class Dashboard {
         employeeWeeklyReport.map((v) => v.toJson()).toList();
     return map;
   }
+}
+
+class AppVersionInfo {
+  final String latestVersion;
+  final String minVersion;
+  final String downloadUrl;
+  final String releaseNotes;
+  final bool isForceUpdate;
+
+  AppVersionInfo({
+    required this.latestVersion,
+    required this.minVersion,
+    required this.downloadUrl,
+    required this.releaseNotes,
+    required this.isForceUpdate,
+  });
+
+  factory AppVersionInfo.fromJson(dynamic json) {
+    if (json == null || json is! Map) {
+      return AppVersionInfo(
+        latestVersion: '',
+        minVersion: '',
+        downloadUrl: 'https://hr.kneayerng.com',
+        releaseNotes: '',
+        isForceUpdate: false,
+      );
+    }
+    return AppVersionInfo(
+      latestVersion: (json['latest_version'] ?? json['version'] ?? '').toString(),
+      minVersion: (json['min_version'] ?? '').toString(),
+      downloadUrl: (json['download_url'] ?? json['url'] ?? 'https://hr.kneayerng.com').toString(),
+      releaseNotes: (json['release_notes'] ?? '').toString(),
+      isForceUpdate: json['is_force_update'] == true ||
+          json['force_update'] == true ||
+          json['is_force_update'] == 1 ||
+          json['is_force_update'] == '1',
+    );
+  }
+}
+
+bool _readRadiusEnabled(dynamic value) {
+  if (value == null) return true;
+  if (value is bool) return value;
+  if (value is num) return value != 0;
+  final normalized = value.toString().toLowerCase().trim();
+  return normalized == '1' || normalized == 'true' || normalized == 'yes';
 }

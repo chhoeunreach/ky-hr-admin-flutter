@@ -1,14 +1,12 @@
-import 'package:cnattendance/provider/attendancereportprovider.dart';
 import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
-import 'package:provider/provider.dart';
 
 import '../../model/employeeattendancereport.dart';
 
 class AttendanceDetailBottomSheet extends StatefulWidget {
   final String date;
-  List<EmployeeAttendanceReport> attendances;
+  final List<EmployeeAttendanceReport> attendances;
 
   AttendanceDetailBottomSheet(this.date, this.attendances);
 
@@ -22,6 +20,8 @@ class AttendanceDetailBottomSheetState
   Widget build(BuildContext context) {
     double workedHr = 0;
     double workingHr = widget.attendances.first.working_hours_min;
+    final statusLabel = widget.attendances.first.statusLabel;
+    final dayStatus = widget.attendances.first.dayStatus;
 
     for(var att in widget.attendances){
       workedHr = workedHr + att.worked_hours_min;
@@ -82,6 +82,24 @@ class AttendanceDetailBottomSheetState
               ),
             ],
           ),
+          if (dayStatus != 'present')
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.only(top: 8, bottom: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                statusLabel,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold),
+              ),
+            ),
           ListView.builder(
             itemCount: widget.attendances.length,
             shrinkWrap: true,

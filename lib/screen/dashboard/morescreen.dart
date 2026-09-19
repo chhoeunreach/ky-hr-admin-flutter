@@ -121,14 +121,14 @@ class MoreScreenState extends State<MoreScreen> {
       );
 
       return InkWell(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(13),
         onTap: enabled
             ? () => changeAttendanceType(type)
             : () => showToast(disabledAttendanceMessage(label)),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 220),
           curve: Curves.easeOut,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
           decoration: BoxDecoration(
             color: effectiveSelected ? null : fillColor,
             gradient: effectiveSelected
@@ -138,7 +138,7 @@ class MoreScreenState extends State<MoreScreen> {
                     colors: [enterprise.primary, enterprise.accent],
                   )
                 : null,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(13),
             border: Border.all(color: borderColor, width: 1.2),
             boxShadow: [
               BoxShadow(
@@ -153,8 +153,8 @@ class MoreScreenState extends State<MoreScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(icon,
-                  color: enabled ? foregroundColor : disabledColor, size: 18),
-              const SizedBox(width: 7),
+                  color: enabled ? foregroundColor : disabledColor, size: 16),
+              const SizedBox(width: 5),
               Text(
                 label,
                 style: TextStyle(
@@ -182,7 +182,7 @@ class MoreScreenState extends State<MoreScreen> {
                   ? Center(
                       child: Text(
                         "Loading",
-                        style: TextStyle(color: Colors.white, fontSize: 15),
+                        style: TextStyle(color: Colors.white, fontSize: 13),
                       ),
                     )
                   : SingleChildScrollView(
@@ -194,21 +194,21 @@ class MoreScreenState extends State<MoreScreen> {
                             HeaderProfile(),
                             Padding(
                                 padding: EdgeInsets.symmetric(
-                                    horizontal: 20, vertical: 10),
+                                    horizontal: 14, vertical: 6),
                                 child: Text(
                                   translate(
                                       'more_screen.attendance_default_method'),
                                   style: TextStyle(
                                       color: Colors.white,
-                                      fontSize: 15,
+                                      fontSize: 13,
                                       fontWeight: FontWeight.bold),
                                 )),
                             Padding(
                               padding:
-                                  const EdgeInsets.symmetric(horizontal: 20),
+                                  const EdgeInsets.symmetric(horizontal: 14),
                               child: Wrap(
-                                spacing: 10,
-                                runSpacing: 10,
+                                spacing: 8,
+                                runSpacing: 7,
                                 children: [
                                   attendanceMethodChip(
                                     type: "Default",
@@ -236,12 +236,12 @@ class MoreScreenState extends State<MoreScreen> {
                             ),
                             Padding(
                                 padding: EdgeInsets.symmetric(
-                                    horizontal: 20, vertical: 10),
+                                    horizontal: 14, vertical: 6),
                                 child: Text(
                                   translate('more_screen.account'),
                                   style: TextStyle(
                                       color: Colors.white,
-                                      fontSize: 15,
+                                      fontSize: 13,
                                       fontWeight: FontWeight.bold),
                                 )),
                             Services(translate('more_screen.profile'),
@@ -250,12 +250,12 @@ class MoreScreenState extends State<MoreScreen> {
                                 Icons.password, ChangePasswordScreen()),
                             Padding(
                                 padding: EdgeInsets.only(
-                                    left: 20, right: 20, top: 20, bottom: 10),
+                                    left: 14, right: 14, top: 12, bottom: 6),
                                 child: Text(
                                   translate('more_screen.office_desk'),
                                   style: TextStyle(
                                       color: Colors.white,
-                                      fontSize: 15,
+                                      fontSize: 13,
                                       fontWeight: FontWeight.bold),
                                 )),
                             Services(translate('more_screen.team_sheet'),
@@ -314,14 +314,14 @@ class MoreScreenState extends State<MoreScreen> {
                                     ComplainScreen()),
                             Padding(
                                 padding: EdgeInsets.only(
-                                    left: 20, right: 20, top: 20, bottom: 10),
+                                    left: 14, right: 14, top: 12, bottom: 6),
                                 child: GestureDetector(
                                   onLongPress: showFeatureDebug,
                                   child: Text(
                                     translate('more_screen.finance'),
                                     style: TextStyle(
                                         color: Colors.white,
-                                        fontSize: 15,
+                                        fontSize: 13,
                                         fontWeight: FontWeight.bold),
                                   ),
                                 )),
@@ -374,12 +374,12 @@ class MoreScreenState extends State<MoreScreen> {
                                     Icons.handshake_outlined, LoanListScreen()),*/
                             Padding(
                                 padding: EdgeInsets.only(
-                                    left: 20, right: 20, top: 20, bottom: 10),
+                                    left: 14, right: 14, top: 12, bottom: 6),
                                 child: Text(
                                   translate('more_screen.additional'),
                                   style: TextStyle(
                                       color: Colors.white,
-                                      fontSize: 15,
+                                      fontSize: 13,
                                       fontWeight: FontWeight.bold),
                                 )),
                             //Services('Issue Ticket', Icons.note, ProfileScreen()),
@@ -403,12 +403,12 @@ class MoreScreenState extends State<MoreScreen> {
                             ),
                             Padding(
                                 padding: EdgeInsets.only(
-                                    left: 20, right: 20, top: 20, bottom: 10),
+                                    left: 14, right: 14, top: 12, bottom: 6),
                                 child: Text(
                                   translate('more_screen.others'),
                                   style: TextStyle(
                                       color: Colors.white,
-                                      fontSize: 15,
+                                      fontSize: 13,
                                       fontWeight: FontWeight.bold),
                                 )),
                             features["dark-mode"] != "1"
@@ -441,7 +441,7 @@ class MoreScreenState extends State<MoreScreen> {
                                             translate('more_screen.dark_mode'),
                                             style: TextStyle(
                                                 color: Colors.white,
-                                                fontSize: 15),
+                                                fontSize: 13),
                                           ),
                                           onTap: () {
                                             context
@@ -487,7 +487,7 @@ class MoreScreenState extends State<MoreScreen> {
                                     title: Text(
                                       translate('more_screen.animation'),
                                       style: TextStyle(
-                                          color: Colors.white, fontSize: 15),
+                                          color: Colors.white, fontSize: 13),
                                     ),
                                     onTap: () {
                                       final box = GetStorage();

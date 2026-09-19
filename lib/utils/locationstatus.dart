@@ -50,18 +50,25 @@ class LocationStatus {
             headingAccuracy: 0);
       }*/
 
-      // When we reach here, permissions are granted and we can
-      // continue accessing the position of the device.
+      if (!forceHighAccuracy) {
+        final lastKnown = await Geolocator.getLastKnownPosition();
+        if (lastKnown != null &&
+            DateTime.now().difference(lastKnown.timestamp).inMinutes < 5) {
+          return lastKnown;
+        }
+      }
+
       final LocationSettings locationSettings;
       if (forceHighAccuracy || workspace != "1") {
         locationSettings = const LocationSettings(
           accuracy: LocationAccuracy.high,
-          timeLimit: Duration(seconds: 10),
+          timeLimit: Duration(seconds: 5),
           distanceFilter: 0,
         );
       } else {
         locationSettings = const LocationSettings(
           accuracy: LocationAccuracy.medium,
+          timeLimit: Duration(seconds: 5),
           distanceFilter: 100,
         );
       }

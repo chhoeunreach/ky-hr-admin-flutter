@@ -372,7 +372,7 @@ class _ChatListState extends State<ChatList> {
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
                 SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                  padding: const EdgeInsets.fromLTRB(14, 8, 14, 0),
                   sliver: SliverToBoxAdapter(
                     child: Column(
                       children: [
@@ -382,7 +382,7 @@ class _ChatListState extends State<ChatList> {
                             _loadTeam();
                           });
                         }),
-                        const SizedBox(height: 14),
+                        const SizedBox(height: 8),
                         _SearchField(
                           controller: _searchController,
                           onChanged: (value) {
@@ -391,13 +391,13 @@ class _ChatListState extends State<ChatList> {
                             });
                           },
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 10),
                         if (_selectedFilter != _ChatFilter.groups &&
                             onlineContactList.isNotEmpty)
                           _ActiveStories(onlineContactList, _openChat),
                         if (_selectedFilter != _ChatFilter.groups &&
                             onlineContactList.isNotEmpty)
-                          const SizedBox(height: 18),
+                          const SizedBox(height: 10),
                         _Filters(
                           selectedFilter: _selectedFilter,
                           onAllTap: () {
@@ -421,7 +421,7 @@ class _ChatListState extends State<ChatList> {
                             });
                           },
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 7),
                         if (_selectedFilter != _ChatFilter.groups &&
                             filteredGroups.isNotEmpty &&
                             _selectedFilter == _ChatFilter.all) ...[
@@ -430,10 +430,9 @@ class _ChatListState extends State<ChatList> {
                           ...filteredGroups.map((group) => _GroupChatTile(
                                 group: group,
                                 onTap: () => Get.to(() => GroupChatScreen(
-                                    groupId: group.id,
-                                    groupName: group.name)),
+                                    groupId: group.id, groupName: group.name)),
                               )),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 5),
                         ],
                       ],
                     ),
@@ -443,7 +442,7 @@ class _ChatListState extends State<ChatList> {
                   ..._groupsSlivers(filteredGroups)
                 else
                   ..._contactsSlivers(contactList, provider, filteredGroups),
-                const SliverPadding(padding: EdgeInsets.only(bottom: 20)),
+                const SliverPadding(padding: EdgeInsets.only(bottom: 12)),
               ],
             ),
           ),
@@ -482,7 +481,7 @@ class _ChatListState extends State<ChatList> {
     }
     return [
       SliverPadding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+        padding: const EdgeInsets.symmetric(horizontal: 14),
         sliver: SliverList.builder(
           itemCount: groups.length,
           itemBuilder: (context, index) {
@@ -531,7 +530,7 @@ class _ChatListState extends State<ChatList> {
     }
     return [
       SliverPadding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+        padding: const EdgeInsets.symmetric(horizontal: 14),
         sliver: SliverList.builder(
           itemCount: contactList.length,
           itemBuilder: (context, index) {
@@ -563,7 +562,7 @@ class _Header extends StatelessWidget {
             translate('dashboard_screen.chat'),
             style: TextStyle(
               color: enterprise.text,
-              fontSize: 30,
+              fontSize: 24,
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -590,7 +589,7 @@ class _SearchField extends StatelessWidget {
   Widget build(BuildContext context) {
     final enterprise = EnterpriseTheme.of(context);
     return EnterpriseGlass(
-      radius: 24,
+      radius: 16,
       padding: EdgeInsets.zero,
       glowOpacity: 0.08,
       child: TextField(
@@ -605,10 +604,11 @@ class _SearchField extends StatelessWidget {
           filled: true,
           fillColor: Colors.transparent,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide.none,
           ),
-          contentPadding: const EdgeInsets.symmetric(vertical: 0),
+          isDense: true,
+          contentPadding: const EdgeInsets.symmetric(vertical: 9),
         ),
       ),
     );
@@ -624,26 +624,26 @@ class _ActiveStories extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 92,
+      height: 74,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: contactList.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 16),
+        separatorBuilder: (_, __) => const SizedBox(width: 10),
         itemBuilder: (context, index) {
           final contact = contactList[index];
           return GestureDetector(
             onTap: () => onTap(contact),
             child: SizedBox(
-              width: 68,
+              width: 56,
               child: Column(
                 children: [
-                  _Avatar(contact: contact, size: 62, showActive: true),
-                  const SizedBox(height: 6),
+                  _Avatar(contact: contact, size: 50, showActive: true),
+                  const SizedBox(height: 4),
                   Text(
                     contact.name.split(' ').first,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                    style: const TextStyle(color: Colors.white, fontSize: 11),
                   ),
                 ],
               ),
@@ -679,19 +679,19 @@ class _Filters extends StatelessWidget {
           selected: selectedFilter == _ChatFilter.all,
           onTap: onAllTap,
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 6),
         _FilterChip(
           label: translate('chat_list_screen.online'),
           selected: selectedFilter == _ChatFilter.online,
           onTap: onOnlineTap,
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 6),
         _FilterChip(
           label: translate('chat_list_screen.admin'),
           selected: selectedFilter == _ChatFilter.admin,
           onTap: onAdminTap,
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 6),
         _FilterChip(
           label: translate('chat_list_screen.groups'),
           selected: selectedFilter == _ChatFilter.groups,
@@ -717,22 +717,23 @@ class _FilterChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final enterprise = EnterpriseTheme.of(context);
     return InkWell(
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(14),
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
         decoration: BoxDecoration(
           gradient: selected
               ? LinearGradient(colors: [enterprise.primary, enterprise.accent])
               : null,
           color: selected ? null : enterprise.glassFill,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(color: enterprise.glassStroke),
         ),
         child: Text(
           label,
           style: TextStyle(
             color: selected ? Colors.white : enterprise.text,
+            fontSize: 12,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -755,18 +756,18 @@ class _ChatListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final enterprise = EnterpriseTheme.of(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: InkWell(
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(16),
         onTap: onTap,
         child: EnterpriseGlass(
-          radius: 22,
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          radius: 16,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           glowOpacity: 0.06,
           child: Row(
             children: [
-              _Avatar(contact: contact, size: 58, showActive: true),
-              const SizedBox(width: 14),
+              _Avatar(contact: contact, size: 46, showActive: true),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -777,17 +778,17 @@ class _ChatListTile extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: enterprise.text,
-                        fontSize: 17,
+                        fontSize: 14.5,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    const SizedBox(height: 3),
+                    const SizedBox(height: 2),
                     Text(
                       contact.post.isEmpty ? contact.department : contact.post,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style:
-                          TextStyle(color: enterprise.mutedText, fontSize: 14),
+                          TextStyle(color: enterprise.mutedText, fontSize: 12),
                     ),
                   ],
                 ),
@@ -857,12 +858,12 @@ class _Avatar extends StatelessWidget {
             right: 0,
             bottom: 2,
             child: Container(
-              width: 14,
-              height: 14,
+              width: 11,
+              height: 11,
               decoration: BoxDecoration(
                 color: contact.isOnline ? Colors.green : Colors.grey,
                 shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 2),
+                border: Border.all(color: Colors.white, width: 1.6),
               ),
             ),
           ),
@@ -879,12 +880,12 @@ class _SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 8, bottom: 4, left: 8),
+      padding: const EdgeInsets.only(top: 5, bottom: 3, left: 4),
       child: Text(
         label,
         style: const TextStyle(
           color: Colors.white54,
-          fontSize: 13,
+          fontSize: 11,
           fontWeight: FontWeight.w700,
           letterSpacing: 0.8,
         ),
@@ -907,13 +908,13 @@ class _GroupChatTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final enterprise = EnterpriseTheme.of(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: InkWell(
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(16),
         onTap: onTap,
         child: EnterpriseGlass(
-          radius: 22,
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          radius: 16,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           glowOpacity: 0.06,
           child: Row(
             children: [
@@ -921,14 +922,14 @@ class _GroupChatTile extends StatelessWidget {
                 child: group.avatar != null && group.avatar!.isNotEmpty
                     ? CachedNetworkImage(
                         imageUrl: group.avatar!,
-                        width: 58,
-                        height: 58,
+                        width: 46,
+                        height: 46,
                         fit: BoxFit.cover,
                         errorWidget: (_, __, ___) => _GroupAvatarPlaceholder(),
                       )
                     : _GroupAvatarPlaceholder(),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -939,11 +940,11 @@ class _GroupChatTile extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: enterprise.text,
-                        fontSize: 17,
+                        fontSize: 14.5,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    const SizedBox(height: 3),
+                    const SizedBox(height: 2),
                     Text(
                       group.lastMessage != null
                           ? '${group.lastMessage!.senderName}: ${_lastMessagePreview(group.lastMessage!)}'
@@ -951,7 +952,7 @@ class _GroupChatTile extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style:
-                          TextStyle(color: enterprise.mutedText, fontSize: 14),
+                          TextStyle(color: enterprise.mutedText, fontSize: 12),
                     ),
                   ],
                 ),
@@ -998,13 +999,13 @@ class _GroupAvatarPlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 58,
-      height: 58,
+      width: 46,
+      height: 46,
       decoration: const BoxDecoration(
         color: Colors.white12,
         shape: BoxShape.circle,
       ),
-      child: const Icon(Icons.group, color: Colors.white54, size: 30),
+      child: const Icon(Icons.group, color: Colors.white54, size: 24),
     );
   }
 }

@@ -90,7 +90,7 @@ Future<void> main() async {
     await DatabaseHelper.instance.resetStuckUploadingToPending();
     await DatabaseHelper.instance.resetStuckAttendanceUploadingToPending();
     await BackgroundSyncManager.instance.initialize();
-    unawaited(BackgroundSyncManager.instance.schedulePeriodicUpload());
+    await BackgroundSyncManager.instance.cancelAll();
 
     runApp(LocalizedApp(delegate, MyApp()));
     Future.microtask(() => IncomingChatListener.instance.start());

@@ -34,27 +34,66 @@ target 'Runner' do
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
 end
 
+pre_install do |_installer|
+  grpc_core_include = File.expand_path('Pods/gRPC-Core/include', __dir__)
+  next if File.exist?(File.join(grpc_core_include, 'grpc', 'module.modulemap'))
+
+  cached_include = Dir[
+    File.expand_path('~/Library/Caches/CocoaPods/Pods/Release/gRPC-Core/*/include')
+  ].find { |path| File.exist?(File.join(path, 'grpc', 'module.modulemap')) }
+
+  if cached_include
+    require 'fileutils'
+    FileUtils.mkdir_p(File.dirname(grpc_core_include))
+    FileUtils.rm_rf(grpc_core_include)
+    FileUtils.cp_r(cached_include, grpc_core_include)
+  end
+end
+
 post_install do |installer|
+  simulator_arch = `uname -m`.strip == 'x86_64' ? 'x86_64' : 'arm64'
+  simulator_excluded_archs = simulator_arch == 'x86_64' ? 'arm64' : 'i386'
+
   installer.generated_projects.each do |project|
     project.targets.each do |target|
       target.build_configurations.each do |config|
-        
-        xcconfig_path = config.base_configuration_reference.real_path
-        xcconfig = File.read(xcconfig_path)
-        xcconfig_mod = xcconfig
-          .gsub(/DT_TOOLCHAIN_DIR/, "TOOLCHAIN_DIR")
-          .gsub(/EXCLUDED_ARCHS\[sdk=iphonesimulator\*\]\s*=\s*arm64/, "EXCLUDED_ARCHS[sdk=iphonesimulator*] = i386")
-        File.open(xcconfig_path, "w") { |file| file << xcconfig_mod }
+        if config.base_configuration_reference
+          xcconfig_path = config.base_configuration_reference.real_path
+          if File.exist?(xcconfig_path)
+            xcconfig = File.read(xcconfig_path)
+            xcconfig_mod = xcconfig
+              .gsub(/DT_TOOLCHAIN_DIR/, "TOOLCHAIN_DIR")
+              .gsub(/EXCLUDED_ARCHS\[sdk=iphonesimulator\*\]\s*=\s*.*/, "EXCLUDED_ARCHS[sdk=iphonesimulator*] = #{simulator_excluded_archs}")
+              .gsub(/ARCHS\[sdk=iphonesimulator\*\]\s*=\s*.*/, "ARCHS[sdk=iphonesimulator*] = #{simulator_arch}")
+            File.open(xcconfig_path, "w") { |file| file << xcconfig_mod }
+          end
+        end
 
         config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.5'
-        config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'i386'
+        config.build_settings['ARCHS[sdk=iphonesimulator*]'] = simulator_arch
+        config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = simulator_excluded_archs
       end
     end
   end
 
   installer.pods_project.targets.each do |target|
+    flutter_additional_ios_build_settings(target)
+
     target.build_configurations.each do |config|
-      config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'i386'
+      if config.base_configuration_reference
+        xcconfig_path = config.base_configuration_reference.real_path
+        if File.exist?(xcconfig_path)
+          xcconfig = File.read(xcconfig_path)
+          xcconfig_mod = xcconfig
+            .gsub(/DT_TOOLCHAIN_DIR/, "TOOLCHAIN_DIR")
+            .gsub(/EXCLUDED_ARCHS\[sdk=iphonesimulator\*\]\s*=\s*.*/, "EXCLUDED_ARCHS[sdk=iphonesimulator*] = #{simulator_excluded_archs}")
+            .gsub(/ARCHS\[sdk=iphonesimulator\*\]\s*=\s*.*/, "ARCHS[sdk=iphonesimulator*] = #{simulator_arch}")
+          File.open(xcconfig_path, "w") { |file| file << xcconfig_mod }
+        end
+      end
+
+      config.build_settings['ARCHS[sdk=iphonesimulator*]'] = simulator_arch
+      config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = simulator_excluded_archs
       config.build_settings['DEBUG_INFORMATION_FORMAT'] = 'dwarf-with-dsym' if ['Release', 'Profile'].include?(config.name)
 
       # Xcode 26 can incorrectly propagate the app bundle id into embedded pod
@@ -65,7 +104,5 @@ post_install do |installer|
         config.build_settings['PRODUCT_BUNDLE_IDENTIFIER'] = "org.cocoapods.#{safe_name}"
       end
     end
-
-    flutter_additional_ios_build_settings(target)
   end
 end

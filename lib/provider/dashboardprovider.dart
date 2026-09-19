@@ -19,6 +19,7 @@ import 'package:cnattendance/data/source/network/model/trainingresponse/training
 import 'package:cnattendance/model/award.dart';
 import 'package:cnattendance/model/holiday.dart';
 import 'package:cnattendance/screen/auth/login_screen.dart';
+import 'package:cnattendance/utils/app_device_info.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:cnattendance/utils/fcm_token.dart';
 import 'package:cnattendance/utils/locationstatus.dart';
@@ -80,6 +81,9 @@ class DashboardProvider with ChangeNotifier {
   bool isAD = true;
   bool isNoteEnabled = false;
   bool isAttendanceSelfieEnabled = false;
+  bool isAttendanceMapEnabled = true;
+  bool isWorkspaceRadiusEnabled = true;
+  String attendanceMapUrl = '';
   bool isLocationEnabled = false;
   bool animated = true;
   bool isBirthdayWished = false;
@@ -203,6 +207,10 @@ class DashboardProvider with ChangeNotifier {
           .saveEmployeeLocation(dashboardResponse.data.employee_location);
       isNoteEnabled = await preferences.getNote();
       isAttendanceSelfieEnabled = dashboardResponse.data.attendance_selfie;
+      isAttendanceMapEnabled = dashboardResponse.data.attendance_map;
+      isWorkspaceRadiusEnabled =
+          dashboardResponse.data.attendance_location_radius_enabled;
+      attendanceMapUrl = dashboardResponse.data.attendance_map_url;
       isLocationEnabled = await preferences.getEnableLocation();
 
       final holidayResponse = dashboardResponse.data.holiday;
@@ -256,16 +264,30 @@ class DashboardProvider with ChangeNotifier {
       DateTime endTime = DateFormat("hh:mm a")
           .parse(dashboardResponse.data.officeTime.endTime);
 
-      AwesomeNotifications().cancelAllSchedules();
-      for (var shift in dashboardResponse.data.shift_dates) {
-        scheduleNewNotification(
-            shift,
-            "Please check in on time ⏱️⌛️",
-            startTime.hour,
-            startTime.minute,
-            "Almost done with your shift 😄⌛️ Remember to checkout ⏱️",
-            endTime.hour,
-            endTime.minute);
+      final now = DateTime.now();
+      final todayStart = DateTime(now.year, now.month, now.day);
+      final upcomingShifts = dashboardResponse.data.shift_dates.where((shift) {
+        try {
+          final shiftDate = DateFormat('yyyy-MM-dd').parse(shift);
+          final diffDays = shiftDate.difference(todayStart).inDays;
+          return diffDays >= 0 && diffDays <= 2;
+        } catch (_) {
+          return false;
+        }
+      }).toList();
+
+      if (upcomingShifts.isNotEmpty) {
+        AwesomeNotifications().cancelAllSchedules();
+        for (var shift in upcomingShifts) {
+          scheduleNewNotification(
+              shift,
+              "Please check in on time ⏱️⌛️",
+              startTime.hour,
+              startTime.minute,
+              "Almost done with your shift 😄⌛️ Remember to checkout ⏱️",
+              endTime.hour,
+              endTime.minute);
+        }
       }
 
       checkAD();
@@ -430,6 +452,7 @@ class DashboardProvider with ChangeNotifier {
     workspaceLatitude = workspace.lat;
     workspaceLongitude = workspace.lon;
     workspaceRadiusMeters = workspace.radiusMeters;
+    isWorkspaceRadiusEnabled = workspace.radiusEnabled;
   }
 
   _WorkspaceLocation? _extractWorkspaceLocation(dynamic node) {
@@ -504,13 +527,20 @@ class DashboardProvider with ChangeNotifier {
 
     // Try common latitude/longitude keys only if the map looks like a location object.
     final keys = map.keys.map((e) => e.toString().toLowerCase()).toList();
-    final looksLikeLocation = keys.any((k) =>
-        k.contains('office') ||
-        k.contains('branch') ||
-        k.contains('workspace') ||
-        k.contains('geofence') ||
-        k == 'location' ||
-        k.endsWith('_location'));
+    final hasCoordinatePair =
+        (map.containsKey('latitude') || map.containsKey('lat')) &&
+            (map.containsKey('longitude') ||
+                map.containsKey('lon') ||
+                map.containsKey('lng') ||
+                map.containsKey('long'));
+    final looksLikeLocation = hasCoordinatePair ||
+        keys.any((k) =>
+            k.contains('office') ||
+            k.contains('branch') ||
+            k.contains('workspace') ||
+            k.contains('geofence') ||
+            k == 'location' ||
+            k.endsWith('_location'));
 
     if (looksLikeLocation) {
       lat ??= _tryParseDouble(map['latitude'] ?? map['lat']);
@@ -532,13 +562,38 @@ class DashboardProvider with ChangeNotifier {
         map['max_distance_in_meters'] ??
         map['workspace_area']);
 
-    return _WorkspaceLocation(lat: lat, lon: lon, radiusMeters: radius);
+    final radiusEnabled = _tryParseBool(map['radius_enabled'] ??
+        map['attendance_location_radius_enabled'] ??
+        map['location_radius_enabled'] ??
+        map['is_radius_enabled'] ??
+        map['geofence_enabled']);
+
+    return _WorkspaceLocation(
+      lat: lat,
+      lon: lon,
+      radiusMeters: radius,
+      radiusEnabled: radiusEnabled ?? true,
+    );
   }
 
   double? _tryParseDouble(dynamic value) {
     if (value == null) return null;
     if (value is num) return value.toDouble();
     return double.tryParse(value.toString());
+  }
+
+  bool? _tryParseBool(dynamic value) {
+    if (value == null) return null;
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+    final normalized = value.toString().toLowerCase().trim();
+    if (['1', 'true', 'yes', 'enabled', 'on'].contains(normalized)) {
+      return true;
+    }
+    if (['0', 'false', 'no', 'disabled', 'off'].contains(normalized)) {
+      return false;
+    }
+    return null;
   }
 
   void makeWeeklyReport(List<dynamic> employeeWeeklyReport) {
@@ -694,7 +749,7 @@ class DashboardProvider with ChangeNotifier {
     required double longitude,
   }) async {
     final shouldEnforce = await _shouldEnforceWorkspaceLocation();
-    if (!shouldEnforce) {
+    if (!shouldEnforce || !isWorkspaceRadiusEnabled) {
       lastWorkspaceDistanceMeters = null;
       return;
     }
@@ -766,6 +821,9 @@ class DashboardProvider with ChangeNotifier {
   }
 
   double? get effectiveWorkspaceRadiusMeters {
+    if (!isWorkspaceRadiusEnabled) {
+      return null;
+    }
     if (workspaceLatitude == null || workspaceLongitude == null) {
       return null;
     }
@@ -777,8 +835,18 @@ class DashboardProvider with ChangeNotifier {
 
   Future<String> onSendLocation() async {
     try {
-      await getCheckInStatus();
       Preferences preferences = Preferences();
+      final position = await LocationStatus().determinePosition(
+        await preferences.getWorkSpace(),
+        forceHighAccuracy: true,
+      );
+
+      locationStatus.update('latitude', (value) => position.latitude);
+      locationStatus.update('longitude', (value) => position.longitude);
+      currentLocationAccuracyMeters = position.accuracy;
+      _lastLocationRefreshAt = DateTime.now();
+
+      final deviceDetails = await AppDeviceInfo.getDetails();
       var uri =
           Uri.parse(await preferences.getAppUrl() + Constant.SEND_LOCATION);
 
@@ -790,14 +858,21 @@ class DashboardProvider with ChangeNotifier {
       };
 
       final response = await http.post(uri, headers: headers, body: {
-        'latitude': locationStatus['latitude'].toString(),
-        'longitude': locationStatus['longitude'].toString(),
+        'latitude': position.latitude.toString(),
+        'longitude': position.longitude.toString(),
+        'accuracy': position.accuracy.toString(),
+        'device_name': deviceDetails.deviceName,
+        'device_model': deviceDetails.deviceModel,
+        'os_version': deviceDetails.osVersion,
+        'app_name': deviceDetails.appName,
+        'app_version': deviceDetails.appVersion,
+        'app_build': deviceDetails.appBuild,
       });
 
       final responseData = json.decode(response.body);
 
       if (response.statusCode == 200) {
-        return responseData["message"];
+        return responseData["message"] ?? "Location updated successfully.";
       } else {
         if (response.statusCode == 401) {
           preferences.clearPrefs();
@@ -822,12 +897,17 @@ class DashboardProvider with ChangeNotifier {
       'Authorization': 'Bearer $token'
     };
 
-    await getCheckInStatus();
-
+    final deviceDetails = await AppDeviceInfo.getDetails();
     final response = await http.post(uri, headers: headers, body: {
       'router_bssid': await WifiInfo().info.getWifiBSSID() ?? "",
       'check_in_latitude': locationStatus['latitude'].toString(),
       'check_in_longitude': locationStatus['longitude'].toString(),
+      'device_name': deviceDetails.deviceName,
+      'device_model': deviceDetails.deviceModel,
+      'os_version': deviceDetails.osVersion,
+      'app_name': deviceDetails.appName,
+      'app_version': deviceDetails.appVersion,
+      'app_build': deviceDetails.appBuild,
     });
 
     final responseData = json.decode(response.body);
@@ -861,53 +941,55 @@ class DashboardProvider with ChangeNotifier {
       String endMessage,
       int endHr,
       int endMin) async {
-    final convertedDate = new DateFormat('yyyy-MM-dd').parse(date);
+    final convertedDate = DateFormat('yyyy-MM-dd').parse(date);
+    final now = DateTime.now();
 
-    await AwesomeNotifications().createNotification(
-        content: NotificationContent(
-            id: Random.Random().nextInt(1000000),
-            // -1 is replaced by a random number
-            channelKey: 'digital_hr_channel',
-            title: "Hello There",
-            body: startMessage,
-            //'asset://assets/images/balloons-in-sky.jpg',
-            notificationLayout: NotificationLayout.Default,
-            payload: {'notificationId': '1234567890'}),
-        actionButtons: [
-          NotificationActionButton(
-              key: 'REDIRECT', label: 'Open', actionType: ActionType.Default),
-          NotificationActionButton(
-              key: 'DISMISS',
-              label: 'Dismiss',
-              actionType: ActionType.DismissAction,
-              isDangerousOption: true)
-        ],
-        schedule: NotificationCalendar.fromDate(
-            date: DateTime(convertedDate.year, convertedDate.month,
-                convertedDate.day, startHr, startMin - 15)));
+    final checkInTime = DateTime(convertedDate.year, convertedDate.month,
+        convertedDate.day, startHr, startMin - 15);
+    final checkOutTime = DateTime(convertedDate.year, convertedDate.month,
+        convertedDate.day, endHr, endMin - 15);
 
-    await AwesomeNotifications().createNotification(
-        content: NotificationContent(
-            id: Random.Random().nextInt(1000000),
-            // -1 is replaced by a random number
-            channelKey: 'digital_hr_channel',
-            title: "Hello There",
-            body: endMessage,
-            //'asset://assets/images/balloons-in-sky.jpg',
-            notificationLayout: NotificationLayout.Default,
-            payload: {'notificationId': '1234567890'}),
-        actionButtons: [
-          NotificationActionButton(
-              key: 'REDIRECT', label: 'Open', actionType: ActionType.Default),
-          NotificationActionButton(
-              key: 'DISMISS',
-              label: 'Dismiss',
-              actionType: ActionType.DismissAction,
-              isDangerousOption: true)
-        ],
-        schedule: NotificationCalendar.fromDate(
-            date: DateTime(convertedDate.year, convertedDate.month,
-                convertedDate.day, endHr, endMin - 15)));
+    if (checkInTime.isAfter(now)) {
+      await AwesomeNotifications().createNotification(
+          content: NotificationContent(
+              id: Random.Random().nextInt(1000000),
+              channelKey: 'digital_hr_channel',
+              title: "Hello There",
+              body: startMessage,
+              notificationLayout: NotificationLayout.Default,
+              payload: {'notificationId': '1234567890'}),
+          actionButtons: [
+            NotificationActionButton(
+                key: 'REDIRECT', label: 'Open', actionType: ActionType.Default),
+            NotificationActionButton(
+                key: 'DISMISS',
+                label: 'Dismiss',
+                actionType: ActionType.DismissAction,
+                isDangerousOption: true)
+          ],
+          schedule: NotificationCalendar.fromDate(date: checkInTime));
+    }
+
+    if (checkOutTime.isAfter(now)) {
+      await AwesomeNotifications().createNotification(
+          content: NotificationContent(
+              id: Random.Random().nextInt(1000000),
+              channelKey: 'digital_hr_channel',
+              title: "Hello There",
+              body: endMessage,
+              notificationLayout: NotificationLayout.Default,
+              payload: {'notificationId': '1234567890'}),
+          actionButtons: [
+            NotificationActionButton(
+                key: 'REDIRECT', label: 'Open', actionType: ActionType.Default),
+            NotificationActionButton(
+                key: 'DISMISS',
+                label: 'Dismiss',
+                actionType: ActionType.DismissAction,
+                isDangerousOption: true)
+          ],
+          schedule: NotificationCalendar.fromDate(date: checkOutTime));
+    }
   }
 
   Future<AttendanceStatusResponse> checkOutAttendance() async {
@@ -981,6 +1063,7 @@ class DashboardProvider with ChangeNotifier {
     final longitude =
         shouldSendCoordinates ? locationStatus['longitude'].toString() : "";
 
+    final deviceDetails = await AppDeviceInfo.getDetails();
     final body = {
       'attendance_type': type,
       'latitude': latitude,
@@ -991,6 +1074,13 @@ class DashboardProvider with ChangeNotifier {
       'note': note,
       'offline_request_id': offlineRequestId,
       'recorded_at': (recordedAt ?? DateTime.now()).toIso8601String(),
+      'accuracy': currentLocationAccuracyMeters?.toString() ?? "0",
+      'device_name': deviceDetails.deviceName,
+      'device_model': deviceDetails.deviceModel,
+      'os_version': deviceDetails.osVersion,
+      'app_name': deviceDetails.appName,
+      'app_version': deviceDetails.appVersion,
+      'app_build': deviceDetails.appBuild,
     };
 
     http.Response response;
@@ -1054,11 +1144,13 @@ class _WorkspaceLocation {
   final double lat;
   final double lon;
   final double? radiusMeters;
+  final bool radiusEnabled;
 
   const _WorkspaceLocation({
     required this.lat,
     required this.lon,
     this.radiusMeters,
+    this.radiusEnabled = true,
   });
 }
 

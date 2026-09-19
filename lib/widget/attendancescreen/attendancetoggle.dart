@@ -20,7 +20,7 @@ class AttendanceToggleState extends State<AttendanceToggle> {
         Provider.of<AttendanceReportProvider>(context, listen: true);
     final enterprise = EnterpriseTheme.of(context);
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 25),
+      padding: EdgeInsets.symmetric(horizontal: 14),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -28,7 +28,7 @@ class AttendanceToggleState extends State<AttendanceToggle> {
             translate('attendance_screen.attendance_history'),
             style: TextStyle(
               color: enterprise.text,
-              fontSize: 18,
+              fontSize: 15,
               fontWeight: FontWeight.w900,
             ),
           ),
@@ -70,11 +70,11 @@ class AttendanceToggleState extends State<AttendanceToggle> {
                           iconDisabledColor: Colors.grey,
                         ),
                         buttonStyleData: ButtonStyleData(
-                          height: 50,
-                          width: 160,
-                          padding: const EdgeInsets.only(left: 14, right: 14),
+                          height: 40,
+                          width: 138,
+                          padding: const EdgeInsets.only(left: 10, right: 10),
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(18),
+                            borderRadius: BorderRadius.circular(13),
                             color: enterprise.surface.withValues(
                               alpha: enterprise.isDark ? 0.78 : 0.94,
                             ),
@@ -86,8 +86,8 @@ class AttendanceToggleState extends State<AttendanceToggle> {
                                 color: enterprise.primary.withValues(
                                   alpha: enterprise.isDark ? 0.08 : 0.12,
                                 ),
-                                blurRadius: 18,
-                                offset: const Offset(0, 8),
+                                blurRadius: 10,
+                                offset: const Offset(0, 5),
                               ),
                             ],
                           ),
@@ -97,14 +97,14 @@ class AttendanceToggleState extends State<AttendanceToggle> {
                           maxHeight: 200,
                           padding: null,
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(12),
                             color: enterprise.surface,
                           ),
                           elevation: 8,
                         ),
                         menuItemStyleData: MenuItemStyleData(
-                          height: 40,
-                          padding: const EdgeInsets.only(left: 14, right: 14),
+                          height: 34,
+                          padding: const EdgeInsets.only(left: 10, right: 10),
                         ),
                       ),
                     );

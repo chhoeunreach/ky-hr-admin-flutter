@@ -1,5 +1,4 @@
 import 'package:cnattendance/provider/dashboardprovider.dart';
-import 'package:cnattendance/utils/navigationservice.dart';
 import 'package:cnattendance/widget/buttonborder.dart';
 import 'package:cnattendance/widget/leavescreen/earlyleavesheet.dart';
 import 'package:cnattendance/widget/leavescreen/issueleavesheet.dart';
@@ -16,10 +15,14 @@ class LeaveButton extends StatelessWidget {
       children: [
         Expanded(
             child: Padding(
-          padding: EdgeInsets.only(right: 5),
+          padding: EdgeInsets.only(right: 4),
           child: TextButton(
-              style:
-              TextButton.styleFrom(backgroundColor: HexColor("#036eb7"),shape: ButtonBorder()),
+              style: TextButton.styleFrom(
+                  backgroundColor: HexColor("#036eb7"),
+                  shape: ButtonBorder(),
+                  minimumSize: const Size(0, 38),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 7)),
               onPressed: () {
                 showModalBottomSheet(
                     elevation: 0,
@@ -38,7 +41,7 @@ class LeaveButton extends StatelessWidget {
                     });
               },
               child: Padding(
-                padding: EdgeInsets.all(8.0),
+                padding: EdgeInsets.zero,
                 child: Text(
                   translate('leave_screen.issue_leave'),
                   style: TextStyle(color: Colors.white),
@@ -47,10 +50,14 @@ class LeaveButton extends StatelessWidget {
         )),
         Expanded(
             child: Padding(
-          padding: EdgeInsets.only(left: 5),
+          padding: EdgeInsets.only(left: 4),
           child: TextButton(
-              style:
-              TextButton.styleFrom(backgroundColor: HexColor("#036eb7"),shape: ButtonBorder()),
+              style: TextButton.styleFrom(
+                  backgroundColor: HexColor("#036eb7"),
+                  shape: ButtonBorder(),
+                  minimumSize: const Size(0, 38),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 7)),
               onPressed: () {
                 if (provider.attendanceList['check-in'] != '-' &&
                     provider.attendanceList['check-out'] == '-') {
@@ -88,7 +95,7 @@ class LeaveButton extends StatelessWidget {
                 }
               },
               child: Padding(
-                padding: const EdgeInsets.all(8.0),
+                padding: EdgeInsets.zero,
                 child: Text(
                   translate('leave_screen.time_leave'),
                   style: TextStyle(color: Colors.white),

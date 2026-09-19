@@ -105,9 +105,9 @@ class ServicesState extends State<Services> {
 
     final enterprise = EnterpriseTheme.of(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
       child: InkWell(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(14),
         onTap: () async {
           if (widget.control == 1) {
             final pref = Preferences();
@@ -158,16 +158,16 @@ class ServicesState extends State<Services> {
           }
         },
         child: EnterpriseGlass(
-          radius: 20,
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          glowOpacity: 0.11,
+          radius: 14,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          glowOpacity: 0.07,
           child: Row(
             children: [
               Container(
-                width: 42,
-                height: 42,
+                width: 34,
+                height: 34,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(15),
+                  borderRadius: BorderRadius.circular(11),
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -179,26 +179,26 @@ class ServicesState extends State<Services> {
                   boxShadow: [
                     BoxShadow(
                       color: enterprise.accent.withValues(alpha: 0.30),
-                      blurRadius: 18,
-                      offset: const Offset(0, 8),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
                     ),
                   ],
                 ),
-                child: Icon(widget.icon, color: Colors.white, size: 21),
+                child: Icon(widget.icon, color: Colors.white, size: 18),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 9),
               Expanded(
                 child: Text(
                   widget.name,
                   style: TextStyle(
                     color: enterprise.text,
-                    fontSize: 15.5,
+                    fontSize: 13.5,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
               ),
               Icon(Icons.chevron_right_rounded,
-                  color: enterprise.mutedText, size: 22),
+                  color: enterprise.mutedText, size: 19),
             ],
           ),
         ),

@@ -24,6 +24,7 @@ import 'package:nepali_date_picker/nepali_date_picker.dart';
 import 'package:nfc_manager/nfc_manager.dart';
 import 'package:percent_indicator/linear_percent_indicator.dart';
 import 'package:provider/provider.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 // import 'package:qr_bar_code_scanner_dialog/qr_bar_code_scanner_dialog.dart';
 
@@ -40,7 +41,8 @@ class CheckAttendanceState extends State<CheckAttendance>
 
   late final AnimationController _pulseController;
   late final Timer _clockTimer;
-  Timer? _zoneTimer;
+  final TransformationController _mapTransformationController =
+      TransformationController();
   DateTime _now = DateTime.now();
   bool _isRefreshingZone = false;
   double? _zoneDistanceMeters;
@@ -63,19 +65,13 @@ class CheckAttendanceState extends State<CheckAttendance>
         setState(() => _now = DateTime.now());
       }
     });
-    _zoneTimer = Timer.periodic(_zoneRefreshInterval, (_) {
-      _refreshZoneStatus();
-    });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _refreshZoneStatus();
-    });
   }
 
   @override
   void dispose() {
     _pulseController.dispose();
+    _mapTransformationController.dispose();
     _clockTimer.cancel();
-    _zoneTimer?.cancel();
     super.dispose();
   }
 
@@ -171,6 +167,9 @@ class CheckAttendanceState extends State<CheckAttendance>
 
   Future<bool> _ensureWithinScanDistanceIfPossible() async {
     final provider = context.read<DashboardProvider>();
+    if (!provider.isWorkspaceRadiusEnabled) {
+      return true;
+    }
     try {
       final distance = await provider.getWorkspaceDistanceMeters(
         forceHighAccuracy: true,
@@ -246,10 +245,22 @@ class CheckAttendanceState extends State<CheckAttendance>
         .replaceAll('{allowed}', _formatMeters(allowedDistance));
   }
 
+  void _zoomAttendanceMap(double factor) {
+    final currentScale = _mapTransformationController.value.getMaxScaleOnAxis();
+    final nextScale = (currentScale * factor).clamp(1.0, 3.0).toDouble();
+    _mapTransformationController.value = Matrix4.identity()
+      ..scaleByDouble(nextScale, nextScale, 1, 1);
+  }
+
   Widget? _buildZoneStatusCard({
     required DashboardProvider provider,
     required EnterpriseTheme enterprise,
   }) {
+    if (!provider.isAttendanceMapEnabled ||
+        !provider.isWorkspaceRadiusEnabled) {
+      return null;
+    }
+
     final allowedDistance = provider.effectiveWorkspaceRadiusMeters ??
         provider.workspaceRadiusMeters ??
         100;
@@ -295,10 +306,10 @@ class CheckAttendanceState extends State<CheckAttendance>
             : translate('attendance_messages.zone_unavailable_detail');
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 8),
       child: EnterpriseGlass(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        radius: 14,
+        padding: const EdgeInsets.fromLTRB(10, 8, 10, 9),
+        radius: 12,
         glowColor: statusColor,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -310,9 +321,9 @@ class CheckAttendanceState extends State<CheckAttendance>
                       ? Icons.location_on_rounded
                       : Icons.location_off_rounded,
                   color: statusColor,
-                  size: 20,
+                  size: 18,
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 7),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -321,137 +332,153 @@ class CheckAttendanceState extends State<CheckAttendance>
                         title,
                         style: TextStyle(
                           color: enterprise.text,
-                          fontSize: 12,
+                          fontSize: 11.5,
                           fontWeight: FontWeight.w900,
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 1),
                       Text(
                         detail,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: enterprise.mutedText,
-                          fontSize: 11,
+                          fontSize: 10.5,
                           fontWeight: FontWeight.w700,
-                          height: 1.25,
+                          height: 1.18,
                         ),
                       ),
                     ],
                   ),
                 ),
-                IconButton(
-                  tooltip: translate('attendance_messages.refresh_zone'),
-                  onPressed: _isRefreshingZone
-                      ? null
-                      : () => _refreshZoneStatus(force: true),
-                  icon: _isRefreshingZone
-                      ? SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: statusColor,
-                          ),
-                        )
-                      : Icon(Icons.refresh_rounded,
-                          color: statusColor, size: 20),
+                SizedBox(
+                  width: 34,
+                  height: 34,
+                  child: IconButton(
+                    padding: EdgeInsets.zero,
+                    tooltip: translate('attendance_messages.refresh_zone'),
+                    onPressed: _isRefreshingZone
+                        ? null
+                        : () => _refreshZoneStatus(force: true),
+                    icon: _isRefreshingZone
+                        ? SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: statusColor,
+                            ),
+                          )
+                        : Icon(Icons.refresh_rounded,
+                            color: statusColor, size: 18),
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 7),
             SizedBox(
-              height: 128,
+              height: 126,
               width: double.infinity,
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: CustomPaint(
-                  painter: _AttendanceZoneMapPainter(
-                    branchLatitude: provider.workspaceLatitude,
-                    branchLongitude: provider.workspaceLongitude,
-                    currentLatitude:
-                        hasCurrentLocation ? currentLatitude : null,
-                    currentLongitude:
-                        hasCurrentLocation ? currentLongitude : null,
-                    allowedDistanceMeters: allowedDistance,
-                    distanceMeters: distance,
-                    inZone: isInZone,
-                    mapBackground: enterprise.isDark
-                        ? const Color(0xFF142233)
-                        : const Color(0xFFEAF3F6),
-                    gridColor: enterprise.text.withValues(alpha: 0.08),
-                    branchColor: enterprise.primary,
-                    currentColor: statusColor,
-                    radiusColor: statusColor.withValues(alpha: 0.28),
-                    textColor: enterprise.text,
-                    mutedTextColor: enterprise.mutedText,
-                  ),
-                ),
+                borderRadius: BorderRadius.circular(9),
+                child: hasBranchLocation
+                    ? _AttendanceGoogleMapFrame(
+                        branchLatitude: provider.workspaceLatitude!,
+                        branchLongitude: provider.workspaceLongitude!,
+                        currentLatitude:
+                            hasCurrentLocation ? currentLatitude : null,
+                        currentLongitude:
+                            hasCurrentLocation ? currentLongitude : null,
+                        configuredMapUrl: provider.attendanceMapUrl,
+                        enterprise: enterprise,
+                      )
+                    : Stack(
+                        children: [
+                          InteractiveViewer(
+                            transformationController:
+                                _mapTransformationController,
+                            minScale: 1,
+                            maxScale: 3,
+                            boundaryMargin: const EdgeInsets.all(80),
+                            child: CustomPaint(
+                              painter: _AttendanceZoneMapPainter(
+                                branchLatitude: provider.workspaceLatitude,
+                                branchLongitude: provider.workspaceLongitude,
+                                currentLatitude:
+                                    hasCurrentLocation ? currentLatitude : null,
+                                currentLongitude: hasCurrentLocation
+                                    ? currentLongitude
+                                    : null,
+                                allowedDistanceMeters: allowedDistance,
+                                distanceMeters: distance,
+                                inZone: isInZone,
+                                mapBackground: enterprise.isDark
+                                    ? const Color(0xFF142233)
+                                    : const Color(0xFFEAF3F6),
+                                branchColor: enterprise.primary,
+                                currentColor: statusColor,
+                                radiusColor:
+                                    statusColor.withValues(alpha: 0.28),
+                                textColor: enterprise.text,
+                                mutedTextColor: enterprise.mutedText,
+                              ),
+                              child: const SizedBox.expand(),
+                            ),
+                          ),
+                          Positioned(
+                            right: 6,
+                            top: 6,
+                            child: _MapZoomControls(
+                              enterprise: enterprise,
+                              onZoomIn: () => _zoomAttendanceMap(1.25),
+                              onZoomOut: () => _zoomAttendanceMap(0.8),
+                            ),
+                          ),
+                        ],
+                      ),
               ),
             ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
+            const SizedBox(height: 6),
+            _ZoneParameterGrid(
               children: [
-                _ZoneParameterChip(
-                  icon: Icons.business_rounded,
-                  label: translate('attendance_messages.branch_gps'),
-                  value:
-                      '${_formatCoordinate(provider.workspaceLatitude)}, ${_formatCoordinate(provider.workspaceLongitude)}',
-                  color: enterprise.primary,
-                  enterprise: enterprise,
-                ),
-                _ZoneParameterChip(
-                  icon: Icons.my_location_rounded,
-                  label: translate('attendance_messages.device_gps'),
-                  value:
-                      '${_formatCoordinate(currentLatitude)}, ${_formatCoordinate(currentLongitude)}',
-                  color: statusColor,
-                  enterprise: enterprise,
-                ),
-                _ZoneParameterChip(
+                _ZoneParameterItem(
                   icon: Icons.social_distance_rounded,
                   label: translate('attendance_messages.distance_from_branch'),
                   value: hasDistance
                       ? '${_formatMeters(distance)} m'
                       : translate('attendance_messages.zone_checking'),
                   color: statusColor,
-                  enterprise: enterprise,
                 ),
-                _ZoneParameterChip(
+                _ZoneParameterItem(
                   icon: Icons.radio_button_checked_rounded,
                   label: translate('attendance_messages.allowed_radius'),
                   value: '${_formatMeters(allowedDistance)} m',
                   color: enterprise.secondary,
-                  enterprise: enterprise,
+                ),
+                _ZoneParameterItem(
+                  icon: Icons.business_rounded,
+                  label: translate('attendance_messages.branch_gps'),
+                  value:
+                      '${_formatCoordinate(provider.workspaceLatitude)}, ${_formatCoordinate(provider.workspaceLongitude)}',
+                  color: enterprise.primary,
+                ),
+                _ZoneParameterItem(
+                  icon: Icons.my_location_rounded,
+                  label: translate('attendance_messages.device_gps'),
+                  value:
+                      '${_formatCoordinate(currentLatitude)}, ${_formatCoordinate(currentLongitude)}',
+                  color: statusColor,
                 ),
                 if (provider.currentLocationAccuracyMeters != null)
-                  _ZoneParameterChip(
+                  _ZoneParameterItem(
                     icon: Icons.gps_fixed_rounded,
                     label: translate('attendance_messages.gps_accuracy'),
                     value:
                         '${_formatMeters(provider.currentLocationAccuracyMeters!)} m',
                     color: enterprise.accent,
-                    enterprise: enterprise,
                   ),
               ],
-            ),
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Row(
-                children: [
-                  _ZoneLegendDot(
-                    color: enterprise.primary,
-                    label: translate('attendance_messages.branch_location'),
-                    enterprise: enterprise,
-                  ),
-                  const SizedBox(width: 12),
-                  _ZoneLegendDot(
-                    color: statusColor,
-                    label: translate('attendance_messages.current_location'),
-                    enterprise: enterprise,
-                  ),
-                ],
-              ),
+              enterprise: enterprise,
             ),
           ],
         ),
@@ -922,6 +949,7 @@ class CheckAttendanceState extends State<CheckAttendance>
       enterprise: enterprise,
     );
     if (zoneStatusCard != null &&
+        dashboardProvider.effectiveWorkspaceRadiusMeters != null &&
         !_isRefreshingZone &&
         _lastZoneRefreshAt == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -932,20 +960,20 @@ class CheckAttendanceState extends State<CheckAttendance>
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 10),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           _buildClock(enterprise, isAD),
-          const SizedBox(height: 16),
+          const SizedBox(height: 10),
           if (attendanceMessage != null)
             Padding(
-              padding: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.only(bottom: 8),
               child: EnterpriseGlass(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                radius: 14,
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                radius: 12,
                 glowColor: enterprise.secondary,
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -971,7 +999,6 @@ class CheckAttendanceState extends State<CheckAttendance>
                 ),
               ),
             ),
-          if (zoneStatusCard != null) zoneStatusCard,
           if (attendanceMethod.isNotEmpty)
             _buildAttendanceControl(
               enterprise: enterprise,
@@ -981,7 +1008,7 @@ class CheckAttendanceState extends State<CheckAttendance>
             ),
           if (attendanceMethod.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.only(top: 8),
+              padding: const EdgeInsets.only(top: 6),
               child: Text(
                 "${translate('home_screen.check_in')} | ${translate('home_screen.check_out')}",
                 style: TextStyle(
@@ -991,10 +1018,15 @@ class CheckAttendanceState extends State<CheckAttendance>
                 ),
               ),
             ),
-          const SizedBox(height: 10),
+          if (zoneStatusCard != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: zoneStatusCard,
+            ),
+          const SizedBox(height: 8),
           EnterpriseGlass(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            radius: 18,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            radius: 14,
             glowColor: productionProgressColor,
             child: Column(
               children: [
@@ -1023,11 +1055,11 @@ class CheckAttendanceState extends State<CheckAttendance>
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 LinearPercentIndicator(
                   animation: true,
                   animationDuration: 1000,
-                  lineHeight: 12.0,
+                  lineHeight: 9.0,
                   padding: EdgeInsets.zero,
                   percent: attendanceList['production-time']!,
                   barRadius: const Radius.circular(20),
@@ -1036,7 +1068,7 @@ class CheckAttendanceState extends State<CheckAttendance>
                     colors: [productionProgressColor, enterprise.accent],
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 5),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -1082,64 +1114,125 @@ class CheckAttendanceState extends State<CheckAttendance>
   }
 }
 
-class _ZoneParameterChip extends StatelessWidget {
-  const _ZoneParameterChip({
+class _ZoneParameterItem {
+  const _ZoneParameterItem({
     required this.icon,
     required this.label,
     required this.value,
     required this.color,
-    required this.enterprise,
   });
 
   final IconData icon;
   final String label;
   final String value;
   final Color color;
+}
+
+class _ZoneParameterGrid extends StatelessWidget {
+  const _ZoneParameterGrid({
+    required this.children,
+    required this.enterprise,
+  });
+
+  final List<_ZoneParameterItem> children;
   final EnterpriseTheme enterprise;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      constraints: const BoxConstraints(minHeight: 34, maxWidth: 210),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final itemWidth = constraints.maxWidth >= 360
+            ? (constraints.maxWidth - 6) / 2
+            : constraints.maxWidth;
+        return Wrap(
+          spacing: 6,
+          runSpacing: 5,
+          children: children.map((item) {
+            return SizedBox(
+              width: itemWidth,
+              child: Row(
+                children: [
+                  Icon(item.icon, color: item.color, size: 13),
+                  const SizedBox(width: 5),
+                  Expanded(
+                    child: RichText(
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      text: TextSpan(
+                        style: TextStyle(
+                          color: enterprise.mutedText,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          height: 1.1,
+                        ),
+                        children: [
+                          TextSpan(text: '${item.label}: '),
+                          TextSpan(
+                            text: item.value,
+                            style: TextStyle(
+                              color: enterprise.text,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        );
+      },
+    );
+  }
+}
+
+class _MapZoomControls extends StatelessWidget {
+  const _MapZoomControls({
+    required this.enterprise,
+    required this.onZoomIn,
+    required this.onZoomOut,
+  });
+
+  final EnterpriseTheme enterprise;
+  final VoidCallback onZoomIn;
+  final VoidCallback onZoomOut;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
       decoration: BoxDecoration(
-        color: enterprise.surface.withValues(alpha: 0.72),
+        color: enterprise.surface.withValues(alpha: 0.88),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.18)),
+        border: Border.all(color: enterprise.glassStroke),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
-      child: Row(
+      child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: color, size: 14),
-          const SizedBox(width: 5),
-          Flexible(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: enterprise.mutedText,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w700,
-                    height: 1,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: enterprise.text,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w900,
-                    height: 1,
-                  ),
-                ),
-              ],
-            ),
+          _MapZoomButton(
+            icon: Icons.add_rounded,
+            tooltip: translate('attendance_messages.zoom_in'),
+            onTap: onZoomIn,
+            enterprise: enterprise,
+          ),
+          Container(
+            width: 22,
+            height: 1,
+            color: enterprise.glassStroke,
+          ),
+          _MapZoomButton(
+            icon: Icons.remove_rounded,
+            tooltip: translate('attendance_messages.zoom_out'),
+            onTap: onZoomOut,
+            enterprise: enterprise,
           ),
         ],
       ),
@@ -1147,42 +1240,259 @@ class _ZoneParameterChip extends StatelessWidget {
   }
 }
 
-class _ZoneLegendDot extends StatelessWidget {
-  const _ZoneLegendDot({
-    required this.color,
-    required this.label,
+class _MapZoomButton extends StatelessWidget {
+  const _MapZoomButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
     required this.enterprise,
   });
 
-  final Color color;
-  final String label;
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
   final EnterpriseTheme enterprise;
 
   @override
   Widget build(BuildContext context) {
-    return Flexible(
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-          ),
-          const SizedBox(width: 5),
-          Flexible(
-            child: Text(
-              label,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: enterprise.mutedText,
-                fontSize: 10,
-                fontWeight: FontWeight.w800,
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onTap,
+        child: SizedBox(
+          width: 28,
+          height: 24,
+          child: Icon(icon, color: enterprise.text, size: 17),
+        ),
+      ),
+    );
+  }
+}
+
+class _AttendanceGoogleMapFrame extends StatefulWidget {
+  const _AttendanceGoogleMapFrame({
+    required this.branchLatitude,
+    required this.branchLongitude,
+    required this.currentLatitude,
+    required this.currentLongitude,
+    required this.configuredMapUrl,
+    required this.enterprise,
+  });
+
+  final double branchLatitude;
+  final double branchLongitude;
+  final double? currentLatitude;
+  final double? currentLongitude;
+  final String configuredMapUrl;
+  final EnterpriseTheme enterprise;
+
+  @override
+  State<_AttendanceGoogleMapFrame> createState() =>
+      _AttendanceGoogleMapFrameState();
+}
+
+class _AttendanceGoogleMapFrameState extends State<_AttendanceGoogleMapFrame>
+    with AutomaticKeepAliveClientMixin {
+  late final WebViewController _controller;
+  String? _lastMapUrl;
+  bool _isLoading = true;
+
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setBackgroundColor(Colors.transparent)
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onPageFinished: (_) {
+            if (mounted) {
+              setState(() => _isLoading = false);
+            }
+          },
+        ),
+      );
+    _loadMap();
+  }
+
+  @override
+  void didUpdateWidget(covariant _AttendanceGoogleMapFrame oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final url = _mapUrl();
+    if (url != _lastMapUrl) {
+      _loadMap(url);
+    }
+  }
+
+  String _mapUrl() {
+    final configuredUrl = _normalizeConfiguredMapUrl(widget.configuredMapUrl);
+    if (configuredUrl != null) {
+      return configuredUrl;
+    }
+
+    final branchLatitude = _formatMapCoordinate(widget.branchLatitude);
+    final branchLongitude = _formatMapCoordinate(widget.branchLongitude);
+    final hasCurrentLocation =
+        widget.currentLatitude != null && widget.currentLongitude != null;
+    if (hasCurrentLocation) {
+      final currentLatitude = _formatMapCoordinate(widget.currentLatitude!);
+      final currentLongitude = _formatMapCoordinate(widget.currentLongitude!);
+      return 'https://maps.google.com/maps'
+          '?f=d'
+          '&saddr=$currentLatitude,$currentLongitude'
+          '&daddr=$branchLatitude,$branchLongitude'
+          '&hl=en'
+          '&z=16'
+          '&output=embed';
+    }
+    return 'https://maps.google.com/maps'
+        '?q=$branchLatitude,$branchLongitude'
+        '&hl=en'
+        '&z=16'
+        '&output=embed';
+  }
+
+  String _formatMapCoordinate(double value) => value.toStringAsFixed(5);
+
+  String? _normalizeConfiguredMapUrl(String url) {
+    final trimmed = url.trim();
+    if (trimmed.isEmpty) {
+      return null;
+    }
+
+    final uri = Uri.tryParse(trimmed);
+    if (uri == null || !uri.hasScheme || uri.host.isEmpty) {
+      return null;
+    }
+
+    final isGoogleMapHost = uri.host.contains('google.') ||
+        uri.host.contains('goo.gl') ||
+        uri.host.contains('maps.app.goo.gl');
+    if (!isGoogleMapHost) {
+      return trimmed;
+    }
+
+    final hasEmbedOutput = uri.queryParameters['output'] == 'embed' ||
+        uri.path.toLowerCase().contains('/embed');
+    if (hasEmbedOutput) {
+      return trimmed;
+    }
+
+    final query = uri.queryParameters['q'];
+    if (query != null && query.trim().isNotEmpty) {
+      return Uri.https('maps.google.com', '/maps', {
+        'q': query,
+        'hl': uri.queryParameters['hl'] ?? 'en',
+        'z': uri.queryParameters['z'] ?? '16',
+        'output': 'embed',
+      }).toString();
+    }
+
+    return trimmed;
+  }
+
+  Future<void> _loadMap([String? nextMapUrl]) async {
+    final mapUrl = nextMapUrl ?? _mapUrl();
+    if (mapUrl == _lastMapUrl && !_isLoading) {
+      return;
+    }
+    _lastMapUrl = mapUrl;
+    if (mounted) {
+      setState(() => _isLoading = true);
+    }
+    final escapedMapUrl = const HtmlEscape().convert(mapUrl);
+    await _controller.loadHtmlString('''
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      background: #eef3f6;
+    }
+    iframe {
+      border: 0;
+      height: 100%;
+      width: 100%;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <iframe
+    src="$escapedMapUrl"
+    loading="lazy"
+    referrerpolicy="no-referrer-when-downgrade"
+    allowfullscreen>
+  </iframe>
+</body>
+</html>
+''');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        WebViewWidget(controller: _controller),
+        Positioned(
+          left: 7,
+          top: 7,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: widget.enterprise.surface.withValues(alpha: 0.86),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: widget.enterprise.glassStroke),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.map_rounded,
+                    color: widget.enterprise.primary,
+                    size: 13,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Google Map',
+                    style: TextStyle(
+                      color: widget.enterprise.text,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-        ],
-      ),
+        ),
+        if (_isLoading)
+          ColoredBox(
+            color: widget.enterprise.surface.withValues(alpha: 0.20),
+            child: Center(
+              child: SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: widget.enterprise.primary,
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
@@ -1197,7 +1507,6 @@ class _AttendanceZoneMapPainter extends CustomPainter {
     required this.distanceMeters,
     required this.inZone,
     required this.mapBackground,
-    required this.gridColor,
     required this.branchColor,
     required this.currentColor,
     required this.radiusColor,
@@ -1213,7 +1522,6 @@ class _AttendanceZoneMapPainter extends CustomPainter {
   final double? distanceMeters;
   final bool inZone;
   final Color mapBackground;
-  final Color gridColor;
   final Color branchColor;
   final Color currentColor;
   final Color radiusColor;
@@ -1222,9 +1530,7 @@ class _AttendanceZoneMapPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final backgroundPaint = Paint()..color = mapBackground;
-    canvas.drawRect(Offset.zero & size, backgroundPaint);
-    _drawGrid(canvas, size);
+    _drawMapBase(canvas, size);
 
     final branch = Offset(size.width * 0.5, size.height * 0.52);
     final current = _currentPoint(size, branch);
@@ -1241,10 +1547,17 @@ class _AttendanceZoneMapPainter extends CustomPainter {
     canvas.drawCircle(branch, radiusPixels, radiusBorderPaint);
 
     if (current != null) {
+      final routeShadowPaint = Paint()
+        ..color = Colors.white.withValues(alpha: 0.90)
+        ..strokeWidth = 5
+        ..strokeCap = StrokeCap.round
+        ..style = PaintingStyle.stroke;
       final linePaint = Paint()
         ..color = currentColor.withValues(alpha: 0.82)
-        ..strokeWidth = 2
+        ..strokeWidth = 2.6
+        ..strokeCap = StrokeCap.round
         ..style = PaintingStyle.stroke;
+      canvas.drawLine(branch, current, routeShadowPaint);
       canvas.drawLine(branch, current, linePaint);
       _drawMarker(canvas, current, currentColor, Icons.my_location_rounded);
     }
@@ -1279,16 +1592,108 @@ class _AttendanceZoneMapPainter extends CustomPainter {
     }
   }
 
-  void _drawGrid(Canvas canvas, Size size) {
-    final gridPaint = Paint()
-      ..color = gridColor
-      ..strokeWidth = 1;
-    const step = 24.0;
-    for (double x = 0; x <= size.width; x += step) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
+  void _drawMapBase(Canvas canvas, Size size) {
+    canvas.drawRect(Offset.zero & size, Paint()..color = mapBackground);
+
+    final waterPaint = Paint()..color = const Color(0xFFBFDDF0);
+    final parkPaint = Paint()..color = const Color(0xFFCFE8CC);
+    final blockPaint = Paint()..color = Colors.white.withValues(alpha: 0.54);
+    final minorRoadPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.92)
+      ..strokeWidth = 2.2
+      ..strokeCap = StrokeCap.round;
+    final majorRoadPaint = Paint()
+      ..color = const Color(0xFFFFF1B8)
+      ..strokeWidth = 4.2
+      ..strokeCap = StrokeCap.round;
+    final majorRoadEdgePaint = Paint()
+      ..color = const Color(0xFFE4D59C)
+      ..strokeWidth = 5.8
+      ..strokeCap = StrokeCap.round;
+
+    final water = Path()
+      ..moveTo(size.width * 0.74, 0)
+      ..cubicTo(size.width * 0.92, size.height * 0.18, size.width * 0.78,
+          size.height * 0.54, size.width, size.height * 0.72)
+      ..lineTo(size.width, 0)
+      ..close();
+    canvas.drawPath(water, waterPaint);
+
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(
+          size.width * 0.04,
+          size.height * 0.08,
+          size.width * 0.24,
+          size.height * 0.28,
+        ),
+        const Radius.circular(12),
+      ),
+      parkPaint,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(
+          size.width * 0.58,
+          size.height * 0.58,
+          size.width * 0.20,
+          size.height * 0.24,
+        ),
+        const Radius.circular(10),
+      ),
+      Paint()..color = const Color(0xFFCFE8CC).withValues(alpha: 0.78),
+    );
+
+    for (var i = 0; i < 4; i++) {
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(
+            size.width * (0.10 + i * 0.19),
+            size.height * 0.48,
+            size.width * 0.10,
+            size.height * 0.12,
+          ),
+          const Radius.circular(5),
+        ),
+        blockPaint,
+      );
     }
-    for (double y = 0; y <= size.height; y += step) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
+
+    canvas.drawLine(
+      Offset(size.width * 0.02, size.height * 0.73),
+      Offset(size.width * 0.98, size.height * 0.20),
+      majorRoadEdgePaint,
+    );
+    canvas.drawLine(
+      Offset(size.width * 0.02, size.height * 0.73),
+      Offset(size.width * 0.98, size.height * 0.20),
+      majorRoadPaint,
+    );
+
+    final roads = <List<Offset>>[
+      [
+        Offset(size.width * 0.10, size.height * 0.22),
+        Offset(size.width * 0.90, size.height * 0.22),
+      ],
+      [
+        Offset(size.width * 0.16, size.height * 0.92),
+        Offset(size.width * 0.40, size.height * 0.10),
+      ],
+      [
+        Offset(size.width * 0.52, size.height * 0.95),
+        Offset(size.width * 0.50, size.height * 0.04),
+      ],
+      [
+        Offset(size.width * 0.05, size.height * 0.55),
+        Offset(size.width * 0.68, size.height * 0.42),
+      ],
+      [
+        Offset(size.width * 0.64, size.height * 0.06),
+        Offset(size.width * 0.92, size.height * 0.88),
+      ],
+    ];
+    for (final road in roads) {
+      canvas.drawLine(road.first, road.last, minorRoadPaint);
     }
   }
 
@@ -1333,13 +1738,19 @@ class _AttendanceZoneMapPainter extends CustomPainter {
 
   void _drawMarker(Canvas canvas, Offset point, Color color, IconData icon) {
     final shadowPaint = Paint()
-      ..color = color.withValues(alpha: 0.20)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
-    canvas.drawCircle(point, 13, shadowPaint);
+      ..color = Colors.black.withValues(alpha: 0.16)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+    canvas.drawCircle(point + const Offset(0, 2), 12, shadowPaint);
 
-    final markerPaint = Paint()..color = color;
-    canvas.drawCircle(point, 9, markerPaint);
-    canvas.drawCircle(point, 4, Paint()..color = Colors.white);
+    canvas.drawCircle(
+      point,
+      10,
+      Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.fill,
+    );
+    canvas.drawCircle(point, 7.5, Paint()..color = color);
+    canvas.drawCircle(point, 3.2, Paint()..color = Colors.white);
   }
 
   void _drawPillText(

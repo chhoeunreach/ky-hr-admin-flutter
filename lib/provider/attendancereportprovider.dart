@@ -18,6 +18,8 @@ class AttendanceReportProvider with ChangeNotifier {
     'check_out_at': '-',
     'production_hour': '0 hr 0 min',
     'production_percent': 0.0,
+    'day_status': 'present',
+    'status_label': '',
   };
 
   final Map<String, dynamic> _currentMonthReport = {
@@ -76,6 +78,7 @@ class AttendanceReportProvider with ChangeNotifier {
       _attendanceReport.add(EmployeeAttendanceReport(
         id: item.id,
         attendance_date: item.attendanceDate,
+        attendance_date_ad: item.attendanceDateAd,
         week_day: item.weekDay,
         worked_hours: item.workedhrs ?? "-",
         working_hours: item.workingHour ?? "-",
@@ -87,7 +90,29 @@ class AttendanceReportProvider with ChangeNotifier {
         isUnderTime: item.isUnderTime,
         worked_hours_min: item.workedhrsMin,
         working_hours_min: item.workingHourMin,
+        dayStatus: item.dayStatus,
+        rawStatusLabel: item.statusLabel,
+        leaveStatus: item.leaveStatus,
+        leaveType: item.leaveType,
+        timeLeaveStatus: item.timeLeaveStatus,
+        timeLeaveFrom: item.timeLeaveFrom,
+        timeLeaveTo: item.timeLeaveTo,
       ));
+    }
+
+    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    final todayRows =
+        _attendanceReport.where((item) => item.attendance_date_ad == today);
+    if (todayRows.isNotEmpty) {
+      final todayReport = todayRows.first;
+      _todayReport['day_status'] = todayReport.dayStatus;
+      _todayReport['status_label'] = todayReport.statusLabel;
+      if (!todayReport.hasAttendance) {
+        _todayReport['check_in_at'] = '-';
+        _todayReport['check_out_at'] = '-';
+        _todayReport['production_hour'] = '0 hr 0 min';
+        _todayReport['production_percent'] = 0.0;
+      }
     }
 
     notifyListeners();
@@ -96,6 +121,8 @@ class AttendanceReportProvider with ChangeNotifier {
   void makeTodayReport(EmployeeTodayAttendance employeeTodayAttendance) {
     _todayReport['check_in_at'] = employeeTodayAttendance.checkInAt;
     _todayReport['check_out_at'] = employeeTodayAttendance.checkOutAt;
+    _todayReport['day_status'] = 'present';
+    _todayReport['status_label'] = '';
 
     print(_todayReport['check_in_at']);
     print(_todayReport['check_out_at']);

@@ -10,35 +10,41 @@ class AttendanceStatus extends StatelessWidget {
   Widget build(BuildContext context) {
     final status = Provider.of<AttendanceReportProvider>(context).todayReport;
     final enterprise = EnterpriseTheme.of(context);
+    final dayStatus = status['day_status']?.toString() ?? 'present';
+    final statusLabel = status['status_label']?.toString() ?? '';
     final active =
         status['check_in_at'] != "-" && status['check_out_at'] == "-";
-    final progressColor = active ? enterprise.accent : enterprise.secondary;
+    final progressColor = _statusColor(dayStatus, active, enterprise);
+    final title = statusLabel.isNotEmpty
+        ? statusLabel
+        : '${translate('attendance_screen.check_in')} | ${translate('attendance_screen.check_out')}';
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       child: EnterpriseGlass(
-        radius: 24,
-        padding: const EdgeInsets.all(18),
+        radius: 16,
+        padding: const EdgeInsets.all(12),
         glowColor: progressColor,
         glowOpacity: 0.10,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Text(
-              '${translate('attendance_screen.check_in')} | ${translate('attendance_screen.check_out')}',
+              title,
+              textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 15,
-                color: enterprise.text,
+                fontSize: 13,
+                color: progressColor,
                 fontWeight: FontWeight.w800,
               ),
             ),
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.only(top: 20.0),
+              padding: const EdgeInsets.only(top: 10.0),
               child: LinearPercentIndicator(
                 animation: true,
                 animationDuration: 1000,
-                lineHeight: 30.0,
+                lineHeight: 18.0,
                 padding: EdgeInsets.all(0),
                 percent: status['production_percent']!,
                 center: Text(
@@ -56,7 +62,7 @@ class AttendanceStatus extends StatelessWidget {
               ),
             ),
             Container(
-              padding: EdgeInsets.only(left: 10, right: 10, top: 10),
+              padding: EdgeInsets.only(left: 6, right: 6, top: 7),
               child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -80,5 +86,20 @@ class AttendanceStatus extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+Color _statusColor(String status, bool active, EnterpriseTheme enterprise) {
+  switch (status) {
+    case 'absent':
+      return const Color(0xffdc2626);
+    case 'leave':
+    case 'time_leave':
+      return const Color(0xff2563eb);
+    case 'leave_request':
+    case 'time_leave_request':
+      return const Color(0xfff59e0b);
+    default:
+      return active ? enterprise.accent : enterprise.secondary;
   }
 }

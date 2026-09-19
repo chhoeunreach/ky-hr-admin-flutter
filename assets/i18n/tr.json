@@ -121,6 +121,8 @@
     "gps_accuracy": "GPS accuracy",
     "branch_location": "Branch location",
     "current_location": "Current location",
+    "zoom_in": "Zoom in",
+    "zoom_out": "Zoom out",
   "selfie_required": "Selfie is required to complete attendance.",
   "attendance_not_available": "Attendance is not available because no attendance method is enabled for your account. Please contact your admin.",
   "qr_scan_disabled": "QR scan is disabled by your company attendance settings. Please use the available attendance method.",

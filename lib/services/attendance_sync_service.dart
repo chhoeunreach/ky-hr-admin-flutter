@@ -6,6 +6,7 @@ import 'dart:io';
 import 'package:cnattendance/data/source/datastore/preferences.dart';
 import 'package:cnattendance/services/background_sync_manager.dart';
 import 'package:cnattendance/services/database_helper.dart';
+import 'package:cnattendance/utils/app_device_info.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
@@ -110,6 +111,7 @@ class AttendanceSyncService {
       }
 
       final uri = Uri.parse(appUrl + Constant.ATTENDANCE_URL);
+      final deviceDetails = await AppDeviceInfo.getDetails();
       final request = http.MultipartRequest('POST', uri)
         ..headers.addAll({
           'Accept': 'application/json; charset=UTF-8',
@@ -125,6 +127,12 @@ class AttendanceSyncService {
           'note': record.note,
           'offline_request_id': record.offlineRequestId,
           'recorded_at': record.recordedAt,
+          'device_name': deviceDetails.deviceName,
+          'device_model': deviceDetails.deviceModel,
+          'os_version': deviceDetails.osVersion,
+          'app_name': deviceDetails.appName,
+          'app_version': deviceDetails.appVersion,
+          'app_build': deviceDetails.appBuild,
         });
 
       final selfie = File(record.selfiePath);

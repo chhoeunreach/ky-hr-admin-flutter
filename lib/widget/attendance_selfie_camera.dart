@@ -3,8 +3,10 @@ import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:image/image.dart' as img;
+import 'package:path/path.dart' as p;
 
 class AttendanceSelfieCamera extends StatefulWidget {
   const AttendanceSelfieCamera({super.key});
@@ -56,7 +58,7 @@ class _AttendanceSelfieCameraState extends State<AttendanceSelfieCamera> {
       final previousController = _controller;
       _controller = CameraController(
         selectedCamera,
-        ResolutionPreset.medium,
+        ResolutionPreset.low,
         enableAudio: false,
         imageFormatGroup: ImageFormatGroup.jpeg,
       );
@@ -109,7 +111,7 @@ class _AttendanceSelfieCameraState extends State<AttendanceSelfieCamera> {
     setState(() => _isTakingPicture = true);
     try {
       final image = await controller.takePicture();
-      final normalizedSelfie = await _normalizePortraitSelfie(File(image.path));
+      final normalizedSelfie = await _compressPortraitSelfie(File(image.path));
       if (!mounted) return;
       Navigator.pop(context, normalizedSelfie);
     } catch (e) {
@@ -121,18 +123,51 @@ class _AttendanceSelfieCameraState extends State<AttendanceSelfieCamera> {
     }
   }
 
-  Future<File> _normalizePortraitSelfie(File file) async {
+  Future<File> _compressPortraitSelfie(File file) async {
+    final targetPath = p.join(
+      p.dirname(file.path),
+      'attendance_selfie_${DateTime.now().millisecondsSinceEpoch}.jpg',
+    );
+
+    final compressed = await FlutterImageCompress.compressAndGetFile(
+      file.path,
+      targetPath,
+      minWidth: 720,
+      minHeight: 960,
+      quality: 68,
+      format: CompressFormat.jpeg,
+      autoCorrectionAngle: true,
+      keepExif: false,
+    );
+
+    final compressedFile = compressed == null ? file : File(compressed.path);
+    if (compressed != null && file.path != compressed.path) {
+      try {
+        await file.delete();
+      } catch (_) {}
+    }
+
+    return _ensurePortraitIfNeeded(compressedFile);
+  }
+
+  Future<File> _ensurePortraitIfNeeded(File file) async {
     final decodedImage = img.decodeImage(await file.readAsBytes());
     if (decodedImage == null) {
       return file;
     }
 
     var portraitImage = img.bakeOrientation(decodedImage);
+    var shouldRewrite = false;
     if (portraitImage.width > portraitImage.height) {
       portraitImage = img.copyRotate(portraitImage, angle: 90);
+      shouldRewrite = true;
     }
 
-    return file.writeAsBytes(img.encodeJpg(portraitImage, quality: 88));
+    if (!shouldRewrite) {
+      return file;
+    }
+
+    return file.writeAsBytes(img.encodeJpg(portraitImage, quality: 68));
   }
 
   @override

@@ -1,13 +1,13 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:cnattendance/data/source/datastore/preferences.dart';
 import 'package:cnattendance/data/source/network/model/login/Loginresponse.dart';
-import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:cnattendance/utils/deviceuuid.dart';
+import 'package:cnattendance/utils/app_device_info.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:cnattendance/utils/fcm_token.dart';
+import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:http/http.dart' as http;
 
 class Auth with ChangeNotifier {
   String appUrl = "";
@@ -60,13 +60,38 @@ class Auth with ChangeNotifier {
 
       debugPrint('Login FCM token: ${FcmToken.mask(fcm)}');
       debugPrint('Uploading login FCM token for user: $username');
-      final response = await http.post(uri, headers: headers, body: {
+      final deviceDetails = await AppDeviceInfo.getDetails();
+      final body = <String, String>{
         'username': username,
         'password': password,
         'fcm_token': fcm!,
-        'device_type': Platform.isIOS ? 'ios' : 'android',
-        'uuid': await DeviceUUid().getUniqueDeviceId(),
-      });
+        'device_type': deviceDetails.deviceType,
+        'uuid': deviceDetails.uuid,
+        'device_name': deviceDetails.deviceName,
+        'device_model': deviceDetails.deviceModel,
+        'os_version': deviceDetails.osVersion,
+        'app_name': deviceDetails.appName,
+        'app_version': deviceDetails.appVersion,
+        'app_build': deviceDetails.appBuild,
+      };
+
+      try {
+        final permission = await Geolocator.checkPermission();
+        if (permission == LocationPermission.always ||
+            permission == LocationPermission.whileInUse) {
+          final position = await Geolocator.getLastKnownPosition() ??
+              await Geolocator.getCurrentPosition(
+                locationSettings: const LocationSettings(
+                  accuracy: LocationAccuracy.medium,
+                  timeLimit: Duration(seconds: 3),
+                ),
+              );
+          body['latitude'] = position.latitude.toString();
+          body['longitude'] = position.longitude.toString();
+        }
+      } catch (_) {}
+
+      final response = await http.post(uri, headers: headers, body: body);
 
       final responseData = json.decode(response.body);
       if (response.statusCode == 200) {

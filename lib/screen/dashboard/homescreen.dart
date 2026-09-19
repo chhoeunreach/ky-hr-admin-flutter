@@ -29,6 +29,9 @@ import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
 import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
 import 'package:provider/provider.dart';
+import 'package:cnattendance/data/source/network/model/dashboard/Dashboard.dart';
+import 'package:cnattendance/utils/app_device_info.dart';
+import 'package:cnattendance/widget/app_update_dialog.dart';
 import 'package:cnattendance/widget/headerprofile.dart';
 import 'package:quick_actions/quick_actions.dart';
 
@@ -46,6 +49,7 @@ class HomeScreenState extends State<HomeScreen> {
   bool isEnabled = true;
   bool isLoading = false;
   bool _dashboardLoadedOnce = false;
+  bool _updateDialogShown = false;
   DateTime? _lastDashboardRefreshAt;
 
   PersistentTabController controller;
@@ -56,7 +60,6 @@ class HomeScreenState extends State<HomeScreen> {
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback(
       (timeStamp) async {
-        locationStatus();
         checkNotificationState();
 
         quickActions.initialize((type) async {
@@ -308,10 +311,37 @@ class HomeScreenState extends State<HomeScreen> {
           .isBirthdayWished) {
         showBirthdayWish();
       }
+
+      if (dashboardResponse.data.appVersionInfo != null) {
+        _checkAppVersion(dashboardResponse.data.appVersionInfo);
+      }
       return 'loaded';
     } catch (e) {
       print(e);
       return 'loaded';
+    }
+  }
+
+  Future<void> _checkAppVersion(AppVersionInfo? versionInfo) async {
+    if (versionInfo == null || !mounted) return;
+    if (_updateDialogShown && !versionInfo.isForceUpdate) return;
+
+    final details = await AppDeviceInfo.getDetails();
+    final currentVersion = details.appVersion;
+    final latestVersion = versionInfo.latestVersion;
+
+    if (latestVersion.isNotEmpty &&
+        AppDeviceInfo.isVersionOlder(currentVersion, latestVersion)) {
+      _updateDialogShown = true;
+      if (!mounted) return;
+      await showAppUpdateDialog(
+        context: context,
+        currentVersion: currentVersion,
+        latestVersion: latestVersion,
+        downloadUrl: versionInfo.downloadUrl,
+        releaseNotes: versionInfo.releaseNotes,
+        isForceUpdate: versionInfo.isForceUpdate,
+      );
     }
   }
 
