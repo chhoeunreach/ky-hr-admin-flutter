@@ -59,13 +59,13 @@ Future<void> main() async {
     final delegate = await LocalizationDelegate.create(
         fallbackLocale: 'km',
         supportedLocales: [
+          'km',
           'en_US',
           'ar',
           'es',
           'ne',
           'fa',
           'in',
-          'km',
           'pt',
           'ru',
           'de',
@@ -76,6 +76,10 @@ Future<void> main() async {
     await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform);
     await GetStorage.init();
+    final initialStorage = GetStorage();
+    if (initialStorage.read("language") == null) {
+      await initialStorage.write("language", "km");
+    }
     ChatBadgeController.ensureRegistered();
 
     if (Platform.isAndroid) {

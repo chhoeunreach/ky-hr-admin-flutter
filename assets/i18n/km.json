@@ -61,7 +61,8 @@
     "service_iron": "អ៊ុត",
     "service_repair": "ជួសជុល",
     "service_buy_in": "ទិញចូល",
-    "service_icloud_cus": "iCloud Cus"
+    "service_icloud_cus": "iCloud Cus",
+    "no_weekly_report": "មិនមានរបាយការណ៍ប្រចាំសប្ដាហ៍"
   },
   "leave_screen": {
     "leave": "ការឈប់សម្រាក",
@@ -137,7 +138,6 @@
     "front_camera_not_available": "ឧបករណ៍នេះមិនមានកាមេរ៉ាមុខទេ។",
     "camera_not_ready": "កាមេរ៉ាមិនទាន់រួចរាល់ទេ។"
   },
-
   "more_screen": {
     "attendance_default_method": "វិធីវត្តមានលំនាំដើម",
     "default": "លំនាំដើម",
@@ -552,6 +552,31 @@
     "requesting": "កំពុងស្នើសុំ",
     "canceling": "កំពុងបោះបង់ សូមរង់ចាំ..",
     "signing_in": "កំពុងចូលប្រើ.."
+  },
+  "app_update": {
+    "title": "មានកំណែអាប់ដេតថ្មី!",
+    "optional_desc": "កំណែថ្មីនៃ Digital HR ត្រូវបានដាក់ឱ្យប្រើប្រាស់ជាមួយនឹងការកែលម្អបន្ថែម។",
+    "mandatory_desc": "តម្រូវឱ្យធ្វើបច្ចុប្បន្នភាពជាចាំបាច់ដើម្បីបន្តប្រើប្រាស់កម្មវិធី។",
+    "current_version": "កំណែបច្ចុប្បន្ន",
+    "latest_version": "កំណែចុងក្រោយ",
+    "update_now": "អាប់ដេតឥឡូវនេះ",
+    "later": "ពេលក្រោយ"
+  },
+  "notifications": {
+    "shift_reminder_title": "សួស្តី",
+    "check_in_reminder_body": "សូមកត់ត្រាវត្តមានចូលឱ្យទាន់ពេលវេលា ⏱️⌛️",
+    "check_out_reminder_body": "ជិតដល់ពេលចេញពីធ្វើការហើយ 😄⌛️ កុំភ្លេចកត់ត្រាវត្តមានចេញ ⏱️",
+    "open": "បើក",
+    "dismiss": "បដិសេធ"
+  },
+  "alerts": {
+    "please_login_first": "សូមចូលគណនីជាមុនសិន",
+    "invalid_qr": "QR Code មិនត្រឹមត្រូវ",
+    "no_qr_found": "រកមិនឃើញ QR Code ទេ",
+    "please_select_employee": "សូមជ្រើសរើសបុគ្គលិក",
+    "group_name_required": "សូមបញ្ចូលឈ្មោះក្រុម",
+    "select_at_least_one_member": "សូមជ្រើសរើសសមាជិកយ៉ាងតិចម្នាក់",
+    "group_created_success": "បានបង្កើតក្រុមដោយជោគជ័យ",
+    "attendance_method_set": "បានកំណត់វិធីចុះវត្តមានជា"
   }
-
 }

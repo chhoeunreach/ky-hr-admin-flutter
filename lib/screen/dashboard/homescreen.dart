@@ -213,7 +213,7 @@ class HomeScreenState extends State<HomeScreen> {
         });
       }
     } else {
-      showToast("Please Login First");
+      showToast(translate('alerts.please_login_first'));
     }
   }
 
@@ -228,7 +228,7 @@ class HomeScreenState extends State<HomeScreen> {
         isLoading = true;
         setState(() {
           EasyLoading.show(
-              status: "Requesting...", maskType: EasyLoadingMaskType.black);
+              status: translate('loader.loading'), maskType: EasyLoadingMaskType.black);
         });
         final status = await provider.getCheckInStatus();
         if (status) {
@@ -274,7 +274,7 @@ class HomeScreenState extends State<HomeScreen> {
         });
       }
     } else {
-      showToast("Please Login First");
+      showToast(translate('alerts.please_login_first'));
     }
   }
 

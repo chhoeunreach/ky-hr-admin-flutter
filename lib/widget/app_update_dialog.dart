@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_translate/flutter_translate.dart';
 import 'package:hexcolor/hexcolor.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -34,6 +35,15 @@ class AppUpdateDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final titleText = translate('app_update.title');
+    final descText = isForceUpdate
+        ? translate('app_update.mandatory_desc')
+        : translate('app_update.optional_desc');
+    final currentLabel = translate('app_update.current_version');
+    final latestLabel = translate('app_update.latest_version');
+    final updateNowText = translate('app_update.update_now');
+    final laterText = translate('app_update.later');
+
     return PopScope(
       canPop: !isForceUpdate,
       child: Dialog(
@@ -64,19 +74,21 @@ class AppUpdateDialog extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              const Text(
-                'Update Available!',
-                style: TextStyle(
-                  fontSize: 20,
+              Text(
+                titleText.isNotEmpty ? titleText : 'មានកំណែអាប់ដេតថ្មី!',
+                style: const TextStyle(
+                  fontSize: 19,
                   fontWeight: FontWeight.bold,
                   color: Colors.black87,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
-                isForceUpdate
-                    ? 'A mandatory update is required to continue using the application.'
-                    : 'A new version of Digital HR is available with improvements and fixes.',
+                descText.isNotEmpty
+                    ? descText
+                    : (isForceUpdate
+                        ? 'តម្រូវឱ្យធ្វើបច្ចុប្បន្នភាពជាចាំបាច់ដើម្បីបន្តប្រើប្រាស់កម្មវិធី។'
+                        : 'កំណែថ្មីនៃ Digital HR ត្រូវបានដាក់ឱ្យប្រើប្រាស់ជាមួយនឹងការកែលម្អបន្ថែម។'),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
@@ -98,7 +110,7 @@ class AppUpdateDialog extends StatelessWidget {
                     Column(
                       children: [
                         Text(
-                          'Current',
+                          currentLabel.isNotEmpty ? currentLabel : 'កំណែបច្ចុប្បន្ន',
                           style: TextStyle(
                             fontSize: 11,
                             color: Colors.grey.shade600,
@@ -123,7 +135,7 @@ class AppUpdateDialog extends StatelessWidget {
                     Column(
                       children: [
                         Text(
-                          'Latest',
+                          latestLabel.isNotEmpty ? latestLabel : 'កំណែចុងក្រោយ',
                           style: TextStyle(
                             fontSize: 11,
                             color: HexColor("#036eb7"),
@@ -177,14 +189,14 @@ class AppUpdateDialog extends StatelessWidget {
                     elevation: 2,
                   ),
                   onPressed: _launchDownload,
-                  child: const Row(
+                  child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.download_rounded, color: Colors.white, size: 20),
-                      SizedBox(width: 8),
+                      const Icon(Icons.download_rounded, color: Colors.white, size: 20),
+                      const SizedBox(width: 8),
                       Text(
-                        'Update Now',
-                        style: TextStyle(
+                        updateNowText.isNotEmpty ? updateNowText : 'អាប់ដេតឥឡូវនេះ',
+                        style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
@@ -201,7 +213,7 @@ class AppUpdateDialog extends StatelessWidget {
                   child: TextButton(
                     onPressed: () => Navigator.of(context).pop(),
                     child: Text(
-                      'Later',
+                      laterText.isNotEmpty ? laterText : 'ពេលក្រោយ',
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.grey.shade600,

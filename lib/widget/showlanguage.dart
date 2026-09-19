@@ -32,92 +32,93 @@ class ShowLanguage extends StatelessWidget{
                 ],
               ),
             ),
-            languageCard("English", "🇺🇸", "en"),
+            languageCard(context, "ខ្មែរ", "🇰🇭", "km"),
             Divider(
               endIndent: 10,
               indent: 10,
               height: 1,
               color: Colors.white30,
             ),
-            languageCard("ខ្មែរ", "🇰🇭", "km"),
+            languageCard(context, "English", "🇺🇸", "en"),
             Divider(
               endIndent: 10,
               indent: 10,
               height: 1,
               color: Colors.white30,
             ),
-            languageCard("русский", "🇷🇺", "ru"),
+            languageCard(context, "русский", "🇷🇺", "ru"),
             Divider(
               endIndent: 10,
               indent: 10,
               height: 1,
               color: Colors.white30,
             ),
-            languageCard("Española", "🇪🇸", "es"),
+            languageCard(context, "Española", "🇪🇸", "es"),
             Divider(
               endIndent: 10,
               indent: 10,
               height: 1,
               color: Colors.white30,
             ),
-            languageCard("فارسی", "🇮🇷", "fa"),
+            languageCard(context, "فارسی", "🇮🇷", "fa"),
             Divider(
               endIndent: 10,
               indent: 10,
               height: 1,
               color: Colors.white30,
             ),
-            languageCard("हिंदी", "🇮🇳", "in"),
+            languageCard(context, "हिंदी", "🇮🇳", "in"),
             Divider(
               endIndent: 10,
               indent: 10,
               height: 1,
               color: Colors.white30,
             ),
-            languageCard("Turkish", "🇹🇷", "tr"),
+            languageCard(context, "Turkish", "🇹🇷", "tr"),
             Divider(
               endIndent: 10,
               indent: 10,
               height: 1,
               color: Colors.white30,
             ),
-            languageCard("Deutsch", "🇩🇪", "de"),
+            languageCard(context, "Deutsch", "🇩🇪", "de"),
             Divider(
               endIndent: 10,
               indent: 10,
               height: 1,
               color: Colors.white30,
             ),
-            languageCard("Français", "🇫🇷", "fr"),
+            languageCard(context, "Français", "🇫🇷", "fr"),
             Divider(
               endIndent: 10,
               indent: 10,
               height: 1,
               color: Colors.white30,
             ),
-            languageCard("नेपाली", "🇳🇵", "ne"),
+            languageCard(context, "नेपाली", "🇳🇵", "ne"),
             Divider(
               endIndent: 10,
               indent: 10,
               height: 1,
               color: Colors.white30,
             ),
-            languageCard("عربي", "🇦🇪", "ar"),
+            languageCard(context, "عربي", "🇦🇪", "ar"),
             Divider(
               endIndent: 10,
               indent: 10,
               height: 1,
               color: Colors.white30,
             ),
-            languageCard("Português", "🇵🇹", "pt"),
+            languageCard(context, "Português", "🇵🇹", "pt"),
           ],
         ),
       ),
     );
   }
 
-  Widget languageCard(String title, String flag, String language) {
+  Widget languageCard(BuildContext context, String title, String flag, String language) {
     final storage = GetStorage();
+    final currentLang = storage.read("language") ?? "km";
     return ListTile(
       contentPadding: EdgeInsets.symmetric(horizontal: 5),
       dense: false,
@@ -126,7 +127,7 @@ class ShowLanguage extends StatelessWidget{
         flag,
         style: TextStyle(fontSize: 20),
       ),
-      trailing: language == storage.read("language")
+      trailing: language == currentLang
           ? Icon(
         Icons.check,
         color: Colors.white,
@@ -139,9 +140,9 @@ class ShowLanguage extends StatelessWidget{
       onTap: () {
         final storage = GetStorage();
         storage.write("language", language);
+        changeLocale(context, language);
         Get.updateLocale(Locale(language));
       },
     );
   }
-  
 }

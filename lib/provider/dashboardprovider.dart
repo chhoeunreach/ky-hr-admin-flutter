@@ -281,10 +281,10 @@ class DashboardProvider with ChangeNotifier {
         for (var shift in upcomingShifts) {
           scheduleNewNotification(
               shift,
-              "Please check in on time ⏱️⌛️",
+              "សូមកត់ត្រាវត្តមានចូលឱ្យទាន់ពេលវេលា ⏱️⌛️",
               startTime.hour,
               startTime.minute,
-              "Almost done with your shift 😄⌛️ Remember to checkout ⏱️",
+              "ជិតដល់ពេលចេញពីធ្វើការហើយ 😄⌛️ កុំភ្លេចកត់ត្រាវត្តមានចេញ ⏱️",
               endTime.hour,
               endTime.minute);
         }
@@ -954,16 +954,16 @@ class DashboardProvider with ChangeNotifier {
           content: NotificationContent(
               id: Random.Random().nextInt(1000000),
               channelKey: 'digital_hr_channel',
-              title: "Hello There",
+              title: "សួស្តី",
               body: startMessage,
               notificationLayout: NotificationLayout.Default,
               payload: {'notificationId': '1234567890'}),
           actionButtons: [
             NotificationActionButton(
-                key: 'REDIRECT', label: 'Open', actionType: ActionType.Default),
+                key: 'REDIRECT', label: 'បើក', actionType: ActionType.Default),
             NotificationActionButton(
                 key: 'DISMISS',
-                label: 'Dismiss',
+                label: 'បដិសេធ',
                 actionType: ActionType.DismissAction,
                 isDangerousOption: true)
           ],
@@ -975,16 +975,16 @@ class DashboardProvider with ChangeNotifier {
           content: NotificationContent(
               id: Random.Random().nextInt(1000000),
               channelKey: 'digital_hr_channel',
-              title: "Hello There",
+              title: "សួស្តី",
               body: endMessage,
               notificationLayout: NotificationLayout.Default,
               payload: {'notificationId': '1234567890'}),
           actionButtons: [
             NotificationActionButton(
-                key: 'REDIRECT', label: 'Open', actionType: ActionType.Default),
+                key: 'REDIRECT', label: 'បើក', actionType: ActionType.Default),
             NotificationActionButton(
                 key: 'DISMISS',
-                label: 'Dismiss',
+                label: 'បដិសេធ',
                 actionType: ActionType.DismissAction,
                 isDangerousOption: true)
           ],

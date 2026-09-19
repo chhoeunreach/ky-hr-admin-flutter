@@ -47,7 +47,7 @@
     "view_all": "View All",
     "weekly": "Weekly",
     "reports": "Reports",
-    "no_weekly_report": "No weekly report data yet",
+    "no_weekly_report": "No Weekly Report",
     "my_team": "My Team",
     "sun": "Sun",
     "mon": "Mon",
@@ -552,5 +552,31 @@
     "requesting": "Requesting",
     "canceling": "Canceling, Please Wait..",
     "signing_in": "Signing in.."
+  },
+  "app_update": {
+    "title": "Update Available!",
+    "optional_desc": "A new version of Digital HR is available with improvements and fixes.",
+    "mandatory_desc": "A mandatory update is required to continue using the application.",
+    "current_version": "Current",
+    "latest_version": "Latest",
+    "update_now": "Update Now",
+    "later": "Later"
+  },
+  "notifications": {
+    "shift_reminder_title": "Hello There",
+    "check_in_reminder_body": "Please check in on time ⏱️⌛️",
+    "check_out_reminder_body": "Almost done with your shift 😄⌛️ Remember to checkout ⏱️",
+    "open": "Open",
+    "dismiss": "Dismiss"
+  },
+  "alerts": {
+    "please_login_first": "Please Login First",
+    "invalid_qr": "Invalid QR Code",
+    "no_qr_found": "No QR Code found",
+    "please_select_employee": "Please select an employee",
+    "group_name_required": "Group name is required",
+    "select_at_least_one_member": "Select at least one member",
+    "group_created_success": "Group created successfully",
+    "attendance_method_set": "Attendance method set to"
   }
 }

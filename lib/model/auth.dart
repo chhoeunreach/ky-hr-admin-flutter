@@ -6,6 +6,7 @@ import 'package:cnattendance/utils/app_device_info.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:cnattendance/utils/fcm_token.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_translate/flutter_translate.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 
@@ -18,14 +19,14 @@ class Auth with ChangeNotifier {
       String decoded = utf8.decode(base64.decode(value));
 
       if (!decoded.contains("http")) {
-        showToast("Invalid QR Code");
+        showToast(translate('alerts.invalid_qr'));
         return;
       }
       preferences.saveAppUrl(decoded);
       appUrl = await preferences.getAppUrl();
       notifyListeners();
     } catch (e) {
-      showToast("Invalid QR Code, Try again");
+      showToast(translate('alerts.invalid_qr'));
     }
   }
 

@@ -10,7 +10,9 @@ class CustomAlertDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var message = title.toString().toLowerCase().contains("null") ? "Restart the router and try again." : title;
+    var message = title.toString().toLowerCase().contains("null")
+        ? "សូមបើកបិទរ៉ោតទ័រឡើងវិញ ហើយព្យាយាមម្តងទៀត។"
+        : title;
     return Container(
       color: Colors.white,
       padding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
