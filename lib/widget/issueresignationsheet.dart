@@ -1,12 +1,11 @@
-import 'package:cnattendance/model/leave.dart';
 import 'package:cnattendance/provider/leaveprovider.dart';
 import 'package:cnattendance/utils/navigationservice.dart';
 import 'package:cnattendance/widget/buttonborder.dart';
 import 'package:cnattendance/widget/customalertdialog.dart';
 import 'package:cnattendance/widget/radialDecoration.dart';
-import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:flutter_translate/flutter_translate.dart';
 import 'package:hexcolor/hexcolor.dart';
 import 'package:intl/intl.dart';
 import 'package:nepali_date_picker/nepali_date_picker.dart' as picker;
@@ -74,8 +73,10 @@ class IssueResignationSheetState extends State<IssueResignationSheet> {
         );
       }
     } else {
-      NavigationService()
-          .showSnackBar("Resignation Status", "Field must not be empty");
+      NavigationService().showSnackBar(
+        translate('resignation.status_title'),
+        translate('resignation.field_required'),
+      );
     }
   }
 
@@ -88,7 +89,8 @@ class IssueResignationSheetState extends State<IssueResignationSheet> {
   void showLoader() {
     setState(() {
       EasyLoading.show(
-          status: "Requesting...", maskType: EasyLoadingMaskType.black);
+          status: translate('resignation.requesting'),
+          maskType: EasyLoadingMaskType.black);
     });
   }
 
@@ -122,10 +124,8 @@ class IssueResignationSheetState extends State<IssueResignationSheet> {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<LeaveProvider>(context);
-    return WillPopScope(
-      onWillPop: () async {
-        return !isLoading;
-      },
+    return PopScope(
+      canPop: !isLoading,
       child: Container(
         decoration: RadialDecoration(),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -154,9 +154,9 @@ class IssueResignationSheetState extends State<IssueResignationSheet> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Apply Resignation',
-                      style: TextStyle(fontSize: 18, color: Colors.white),
+                    Text(
+                      translate('resignation.apply'),
+                      style: const TextStyle(fontSize: 18, color: Colors.white),
                     ),
                     IconButton(
                         onPressed: () {
@@ -176,7 +176,7 @@ class IssueResignationSheetState extends State<IssueResignationSheet> {
                   //editing controller of this TextField
                   cursorColor: Colors.white,
                   decoration: InputDecoration(
-                    hintText: 'Select Start Date',
+                    hintText: translate('resignation.select_start_date'),
                     hintStyle: TextStyle(color: Colors.white),
                     prefixIcon: Icon(Icons.calendar_month, color: Colors.white),
                     labelStyle: TextStyle(color: Colors.white),
@@ -227,12 +227,12 @@ class IssueResignationSheetState extends State<IssueResignationSheet> {
 
                     if (pickedDate != null) {
                       if (!(await provider.isAd())) {
-                        String formattedDate = NepaliDateFormat('yyyy-MM-dd')
+                        final formattedDate = NepaliDateFormat('yyyy-MM-dd')
                             .format((pickedDate as NepaliDateTime));
                         startNepaliDate = (pickedDate).toDateTime();
                         startDate.text = formattedDate;
                       } else {
-                        String formattedDate =
+                        final formattedDate =
                             DateFormat('yyyy-MM-dd').format(pickedDate);
                         setState(() {
                           startDate.text =
@@ -249,7 +249,7 @@ class IssueResignationSheetState extends State<IssueResignationSheet> {
                   controller: reason,
                   maxLines: 3,
                   onTapOutside: (event) {
-                    FocusScopeNode currentFocus = FocusScope.of(context);
+                    final currentFocus = FocusScope.of(context);
                     if (!currentFocus.hasPrimaryFocus &&
                         currentFocus.focusedChild != null) {
                       FocusManager.instance.primaryFocus?.unfocus();
@@ -260,7 +260,7 @@ class IssueResignationSheetState extends State<IssueResignationSheet> {
                   cursorColor: Colors.white,
                   keyboardType: TextInputType.multiline,
                   decoration: InputDecoration(
-                    hintText: 'Reason',
+                    hintText: translate('resignation.reason'),
                     hintStyle: TextStyle(color: Colors.white),
                     prefixIcon: Icon(Icons.edit_note, color: Colors.white),
                     labelStyle: TextStyle(color: Colors.white),
@@ -298,8 +298,11 @@ class IssueResignationSheetState extends State<IssueResignationSheet> {
                 Padding(
                   padding: const EdgeInsets.all(5.0),
                   child: Text(
-                    "RESIGNATION REQUEST " + status.toUpperCase(),
-                    style: TextStyle(fontSize: 15, color: Colors.white),
+                    translate('resignation.request_status').replaceAll(
+                      '{status}',
+                      status.toUpperCase(),
+                    ),
+                    style: const TextStyle(fontSize: 15, color: Colors.white),
                   ),
                 ),
               if (adminRemark.isNotEmpty)
@@ -307,8 +310,9 @@ class IssueResignationSheetState extends State<IssueResignationSheet> {
                   padding:
                       const EdgeInsets.only(left: 5.0, right: 5, bottom: 10),
                   child: Text(
-                    "Remark : " + adminRemark,
-                    style: TextStyle(fontSize: 15, color: Colors.white),
+                    translate('resignation.remark_value')
+                        .replaceAll('{remark}', adminRemark),
+                    style: const TextStyle(fontSize: 15, color: Colors.white),
                   ),
                 ),
               gaps(10),
@@ -320,7 +324,7 @@ class IssueResignationSheetState extends State<IssueResignationSheet> {
                       style: TextButton.styleFrom(
                         backgroundColor: canApply
                             ? HexColor("#036eb7")
-                            : HexColor("#036eb7").withOpacity(.2),
+                            : HexColor("#036eb7").withValues(alpha: .2),
                         padding: EdgeInsets.zero,
                         shape: ButtonBorder(),
                       ),
@@ -332,8 +336,8 @@ class IssueResignationSheetState extends State<IssueResignationSheet> {
                       child: Padding(
                         padding: const EdgeInsets.all(20.0),
                         child: Text(
-                          'Request Resignation',
-                          style: TextStyle(color: Colors.white),
+                          translate('resignation.request'),
+                          style: const TextStyle(color: Colors.white),
                         ),
                       )),
                 ),

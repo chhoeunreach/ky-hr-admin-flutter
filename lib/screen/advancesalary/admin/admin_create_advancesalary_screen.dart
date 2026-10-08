@@ -1,6 +1,7 @@
 import 'package:cnattendance/provider/admin_create_advancesalary_controller.dart';
 import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
 import 'package:hexcolor/hexcolor.dart';
 
@@ -14,7 +15,7 @@ class AdminCreateAdvanceSalaryScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
-          title: const Text("Create Admin Advance Salary"),
+          title: Text(translate('more_screen.create_admin_advance_salary')),
         ),
         bottomNavigationBar: SafeArea(
           child: Container(
@@ -142,4 +143,3 @@ class AdminCreateAdvanceSalaryScreen extends StatelessWidget {
     );
   }
 }
-

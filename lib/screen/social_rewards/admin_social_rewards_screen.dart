@@ -2,6 +2,7 @@ import 'package:cnattendance/model/social_reward.dart';
 import 'package:cnattendance/provider/social_rewards_controller.dart';
 import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
 
 class AdminSocialRewardsScreen extends StatelessWidget {
@@ -18,7 +19,7 @@ class AdminSocialRewardsScreen extends StatelessWidget {
         appBar: AppBar(
           elevation: 0,
           backgroundColor: Colors.transparent,
-          title: const Text('Social Rewards'),
+          title: Text(translate('social_rewards.title')),
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: model.onCreateClicked,
@@ -32,15 +33,15 @@ class AdminSocialRewardsScreen extends StatelessWidget {
               child: model.rewards.isEmpty && !model.isLoading.value
                   ? ListView(
                       padding: const EdgeInsets.all(24),
-                      children: const [
-                        SizedBox(height: 120),
-                        Icon(Icons.verified_outlined,
+                      children: [
+                        const SizedBox(height: 120),
+                        const Icon(Icons.verified_outlined,
                             color: Colors.white70, size: 42),
-                        SizedBox(height: 12),
+                        const SizedBox(height: 12),
                         Text(
-                          'No social reward entries yet',
+                          translate('social_rewards.no_entries'),
                           textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.white70),
+                          style: const TextStyle(color: Colors.white70),
                         ),
                       ],
                     )

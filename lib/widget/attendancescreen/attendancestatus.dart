@@ -16,7 +16,7 @@ class AttendanceStatus extends StatelessWidget {
         status['check_in_at'] != "-" && status['check_out_at'] == "-";
     final progressColor = _statusColor(dayStatus, active, enterprise);
     final title = statusLabel.isNotEmpty
-        ? statusLabel
+        ? _attendanceStatusLabel(dayStatus, statusLabel)
         : '${translate('attendance_screen.check_in')} | ${translate('attendance_screen.check_out')}';
     return Container(
       width: double.infinity,
@@ -87,6 +87,44 @@ class AttendanceStatus extends StatelessWidget {
       ),
     );
   }
+}
+
+String _attendanceStatusLabel(String status, String fallback) {
+  final normalizedStatus = status.trim().toLowerCase();
+  final normalizedFallback = fallback.trim().toLowerCase();
+  switch (normalizedStatus.isNotEmpty ? normalizedStatus : normalizedFallback) {
+    case 'present':
+      return translate('attendance_status.present');
+    case 'absent':
+      return translate('attendance_status.absent');
+    case 'leave':
+      return translate('attendance_status.leave');
+    case 'time_leave':
+      return translate('attendance_status.time_leave');
+    case 'leave_request':
+      return translate('attendance_status.leave_request');
+    case 'time_leave_request':
+      return translate('attendance_status.time_leave_request');
+    case 'holiday':
+      return translate('attendance_status.holiday');
+    case 'weekend':
+      return translate('attendance_status.weekend');
+    case 'late':
+      return translate('attendance_status.late');
+    case 'early':
+      return translate('attendance_status.early');
+  }
+
+  if (normalizedFallback == 'on review' || normalizedFallback == 'pending') {
+    return translate('attendance_status.pending');
+  }
+  if (normalizedFallback == 'approved') {
+    return translate('attendance_status.approved');
+  }
+  if (normalizedFallback == 'rejected') {
+    return translate('attendance_status.rejected');
+  }
+  return fallback;
 }
 
 Color _statusColor(String status, bool active, EnterpriseTheme enterprise) {

@@ -22,6 +22,9 @@ class ChatNotificationPayload {
   final String adminId;
   final String adminUsername;
   final String internalConversationId;
+  final String id;
+  final String noticeId;
+  final String notificationForId;
 
   const ChatNotificationPayload({
     required this.type,
@@ -45,6 +48,9 @@ class ChatNotificationPayload {
     required this.adminId,
     required this.adminUsername,
     required this.internalConversationId,
+    required this.id,
+    required this.noticeId,
+    required this.notificationForId,
   });
 
   factory ChatNotificationPayload.fromData(
@@ -76,6 +82,9 @@ class ChatNotificationPayload {
       adminId: _read(data, 'admin_id'),
       adminUsername: _read(data, 'admin_username'),
       internalConversationId: _read(data, 'internal_conversation_id'),
+      id: _read(data, 'id'),
+      noticeId: _read(data, 'notice_id'),
+      notificationForId: _read(data, 'notification_for_id'),
     );
 
     debugPrint('[PUSH] parsed notification payload=${payload.toLogMap()}');
@@ -106,6 +115,9 @@ class ChatNotificationPayload {
       'admin_id': adminId,
       'admin_username': adminUsername,
       'internal_conversation_id': internalConversationId,
+      'id': id,
+      'notice_id': noticeId,
+      'notification_for_id': notificationForId,
       'local_key': localKey,
     };
   }
@@ -124,6 +136,9 @@ class ChatNotificationPayload {
       'admin_id': adminId,
       'admin_username': adminUsername,
       'internal_conversation_id': internalConversationId,
+      'id': id,
+      'notice_id': noticeId,
+      'notification_for_id': notificationForId,
       'message': message,
       'media_url': mediaUrl,
     };

@@ -1,9 +1,14 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:hexcolor/hexcolor.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'buttonborder.dart';
+
+const String _iosTestFlightUpdateUrl =
+    'https://testflight.apple.com/join/hPG4ZA38';
 
 class AppUpdateDialog extends StatelessWidget {
   final String currentVersion;
@@ -24,13 +29,17 @@ class AppUpdateDialog extends StatelessWidget {
   }) : super(key: key);
 
   Future<void> _launchDownload() async {
-    final targetUrl = downloadUrl.trim().isNotEmpty
-        ? downloadUrl.trim()
-        : 'https://hr.kneayerng.com';
+    final targetUrl = Platform.isIOS
+        ? _iosTestFlightUpdateUrl
+        : (downloadUrl.trim().isNotEmpty
+            ? downloadUrl.trim()
+            : 'https://hr.kneayerng.com');
     final parsed = Uri.tryParse(targetUrl);
     final uri = parsed != null && parsed.hasScheme && parsed.hasAuthority
         ? parsed
-        : Uri.parse('https://hr.kneayerng.com');
+        : Uri.parse(Platform.isIOS
+            ? _iosTestFlightUpdateUrl
+            : 'https://hr.kneayerng.com');
     try {
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);

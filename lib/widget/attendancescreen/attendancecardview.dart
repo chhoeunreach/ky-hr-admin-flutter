@@ -2,6 +2,7 @@ import 'package:cnattendance/model/employeeattendancereport.dart';
 import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/widget/profile/attendance_detail_bottom_sheet.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_translate/flutter_translate.dart';
 
 class AttendanceCardView extends StatelessWidget {
   final int index;
@@ -29,7 +30,8 @@ class AttendanceCardView extends StatelessWidget {
       orElse: () => attendances.first,
     );
     final statusColor = _statusColor(statusItem.dayStatus, statusItem);
-    final statusLabel = statusItem.statusLabel;
+    final statusLabel =
+        _attendanceStatusLabel(statusItem.dayStatus, statusItem.statusLabel);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
@@ -158,6 +160,44 @@ class AttendanceCardView extends StatelessWidget {
       ),
     );
   }
+}
+
+String _attendanceStatusLabel(String status, String fallback) {
+  final normalizedStatus = status.trim().toLowerCase();
+  final normalizedFallback = fallback.trim().toLowerCase();
+  switch (normalizedStatus.isNotEmpty ? normalizedStatus : normalizedFallback) {
+    case 'present':
+      return translate('attendance_status.present');
+    case 'absent':
+      return translate('attendance_status.absent');
+    case 'leave':
+      return translate('attendance_status.leave');
+    case 'time_leave':
+      return translate('attendance_status.time_leave');
+    case 'leave_request':
+      return translate('attendance_status.leave_request');
+    case 'time_leave_request':
+      return translate('attendance_status.time_leave_request');
+    case 'holiday':
+      return translate('attendance_status.holiday');
+    case 'weekend':
+      return translate('attendance_status.weekend');
+    case 'late':
+      return translate('attendance_status.late');
+    case 'early':
+      return translate('attendance_status.early');
+  }
+
+  if (normalizedFallback == 'on review' || normalizedFallback == 'pending') {
+    return translate('attendance_status.pending');
+  }
+  if (normalizedFallback == 'approved') {
+    return translate('attendance_status.approved');
+  }
+  if (normalizedFallback == 'rejected') {
+    return translate('attendance_status.rejected');
+  }
+  return fallback;
 }
 
 Color _statusColor(String status, EmployeeAttendanceReport attendance) {

@@ -78,9 +78,9 @@ class _MeetingAttendanceScreenState extends State<MeetingAttendanceScreen> {
         elevation: 0,
         centerTitle: true,
         backgroundColor: enterprise.primary,
-        title: const Text(
-          'Meeting Attendance',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+        title: Text(
+          translate('more_screen.meeting_attendance'),
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
         ),
       ),
       body: _isLoading

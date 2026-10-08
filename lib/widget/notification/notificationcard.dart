@@ -1,6 +1,7 @@
 import 'package:cnattendance/screen/general/generalscreen.dart';
 import 'package:cnattendance/model/notification.dart' as app_notification;
 import 'package:cnattendance/provider/notificationcontroller.dart';
+import 'package:cnattendance/screen/profile/notice_detail_screen.dart';
 import 'package:cnattendance/widget/buttonborder.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -24,14 +25,34 @@ class NotificationCard extends StatelessWidget {
           await controller.markNotificationAsRead(notification);
           final title = notification.title;
           final desc = notification.description;
+          final type = notification.type.trim().toLowerCase();
+          final noticeId = notification.notificationForId;
           final isUpdate = title.contains('អាប់ដេត') ||
               title.toLowerCase().contains('update') ||
               desc.contains('អាប់ដេត') ||
               desc.toLowerCase().contains('update') ||
               desc.contains('កំណែថ្មី');
 
+          if (type == 'notice' && noticeId > 0) {
+            Get.to(() => NoticeDetailScreen(
+                  notice: app_notification.Notification(
+                    id: noticeId,
+                    title: notification.title,
+                    description: notification.description,
+                    month: notification.month,
+                    day: notification.day,
+                    date: notification.date,
+                    isRead: notification.isRead,
+                    type: notification.type,
+                    notificationForId: noticeId,
+                  ),
+                ));
+            return;
+          }
+
           Get.to(GeneralScreen(), arguments: {
             "id": notification.id,
+            "notice_id": noticeId,
             "title": notification.title,
             "message": notification.description,
             "date": notification.date.toIso8601String(),

@@ -54,46 +54,61 @@ class ServerStatusService {
     return checkServer(await _preferences.getAppUrl());
   }
 
-  Future<ServerCheckResult> checkServer(String serverUrl) async {
+  Future<ServerCheckResult> checkServer(String serverUrl) {
+    return _probe(serverUrl, requireAppBackend: false);
+  }
+
+  Future<ServerCheckResult> switchServer(String scannedValue) async {
+    final result = await _probe(scannedValue, requireAppBackend: true);
+    if (result.isConnected) {
+      await _preferences.saveAppUrl(result.url);
+    }
+    return result;
+  }
+
+  Future<ServerCheckResult> _probe(
+    String serverUrl, {
+    required bool requireAppBackend,
+  }) async {
     try {
       final normalizedUrl = normalizeScannedServer(serverUrl);
-      final token = await _preferences.getToken();
-      final uri = Uri.parse('$normalizedUrl${Constant.DASHBOARD_URL}');
-
-      final headers = <String, String>{
-        'Accept': 'application/json; charset=UTF-8',
-        if (token.isNotEmpty) 'Authorization': 'Bearer $token',
-      };
+      final uri = Uri.parse('$normalizedUrl${Constant.APP_VERSION_URL}');
 
       final response = await _client
-          .get(uri, headers: headers)
-          .timeout(const Duration(seconds: 8));
+          .get(uri, headers: const {'Accept': 'application/json; charset=UTF-8'})
+          .timeout(const Duration(seconds: 15));
 
-      if (response.statusCode == 200) {
+      final appBackend = response.statusCode == 200 &&
+          _looksLikeAppBackend(response.body);
+
+      if (requireAppBackend && !appBackend) {
         return ServerCheckResult(
           url: normalizedUrl,
-          isConnected: true,
+          isConnected: false,
           statusCode: response.statusCode,
-          message: 'Connected. Your account can use this server.',
+          message: response.statusCode >= 500
+              ? 'Server reached, but it returned HTTP ${response.statusCode}.'
+              : 'Server reached, but it does not look like an HR attendance server.',
         );
       }
 
-      if (response.statusCode == 401 || response.statusCode == 403) {
+      if (response.statusCode >= 500) {
         return ServerCheckResult(
           url: normalizedUrl,
           isConnected: false,
           statusCode: response.statusCode,
           message:
-              'Server reached, but this login token is not accepted there.',
+              'Server is online, but returned HTTP ${response.statusCode}. It may be having problems.',
         );
       }
 
       return ServerCheckResult(
         url: normalizedUrl,
-        isConnected: false,
+        isConnected: true,
         statusCode: response.statusCode,
-        message: _serverMessage(response.body) ??
-            'Server reached, but returned HTTP ${response.statusCode}.',
+        message: response.statusCode == 200
+            ? 'Connected. Server is reachable.'
+            : 'Server is reachable (HTTP ${response.statusCode}).',
       );
     } on TimeoutException {
       return ServerCheckResult(
@@ -122,21 +137,14 @@ class ServerStatusService {
     }
   }
 
-  Future<ServerCheckResult> switchServer(String scannedValue) async {
-    final result = await checkServer(scannedValue);
-    if (result.isConnected) {
-      await _preferences.saveAppUrl(result.url);
-    }
-    return result;
-  }
-
-  String? _serverMessage(String body) {
+  bool _looksLikeAppBackend(String body) {
     try {
       final decoded = json.decode(body);
-      if (decoded is Map && decoded['message'] != null) {
-        return decoded['message'].toString();
-      }
-    } catch (_) {}
-    return null;
+      return decoded is Map &&
+          decoded.containsKey('status') &&
+          decoded.containsKey('message');
+    } catch (_) {
+      return false;
+    }
   }
 }

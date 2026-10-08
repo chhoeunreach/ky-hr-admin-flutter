@@ -347,8 +347,8 @@ class MoreScreenState extends State<MoreScreen> {
                                     Icons.payments_outlined, PaySlipScreen()),
                             features["payroll-management"] != "1"
                                 ? SizedBox.shrink()
-                                : Services("SSF History", Icons.payments,
-                                    SsfHistoryScreen()),
+                                : Services(translate('more_screen.ssf_history'),
+                                    Icons.payments, SsfHistoryScreen()),
                             features["advance-salary"] != "1"
                                 ? SizedBox.shrink()
                                 : Services(
@@ -358,27 +358,32 @@ class MoreScreenState extends State<MoreScreen> {
                             features["social-rewards"] != "1"
                                 ? SizedBox.shrink()
                                 : Services(
-                                    "Social Rewards",
+                                    translate('more_screen.social_rewards'),
                                     Icons.campaign,
                                     SocialSubmissionScreen(
                                       employeeId: employeeId,
                                     )),
-                            Services("My ID Card", Icons.badge_rounded,
+                            Services(
+                                translate('more_screen.my_id_card'),
+                                Icons.badge_rounded,
                                 const FrontSidePreviewPage()),
                             Services(
-                              "Meeting Attendance",
+                              translate('more_screen.meeting_attendance'),
                               Icons.qr_code_scanner,
                               const MeetingAttendanceScreen(),
                             ),
                             features["advance-salary-admin"] != "1"
                                 ? SizedBox.shrink()
                                 : Services(
-                                    "Admin Advance Salary",
+                                    translate(
+                                        'more_screen.admin_advance_salary'),
                                     Icons.admin_panel_settings,
                                     AdminAdvanceSalaryScreen()),
                             features["social-rewards-admin"] != "1"
                                 ? SizedBox.shrink()
-                                : Services("Social Rewards", Icons.verified,
+                                : Services(
+                                    translate('more_screen.social_rewards'),
+                                    Icons.verified,
                                     const AdminSocialRewardsScreen()),
                             /*features["loan"] != "1"
                                 ? SizedBox.shrink()
@@ -537,7 +542,7 @@ class MoreScreenState extends State<MoreScreen> {
                             features["resignation"] != "1"
                                 ? SizedBox.shrink()
                                 : Services(
-                                    "Resignation",
+                                    translate('more_screen.resignation'),
                                     Icons.group_remove_outlined,
                                     ProfileScreen(),
                                     control: 5,

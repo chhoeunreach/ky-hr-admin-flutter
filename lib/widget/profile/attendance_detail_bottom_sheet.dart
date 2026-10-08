@@ -19,15 +19,18 @@ class AttendanceDetailBottomSheetState
   @override
   Widget build(BuildContext context) {
     double workedHr = 0;
-    double workingHr = widget.attendances.first.working_hours_min;
-    final statusLabel = widget.attendances.first.statusLabel;
+    final workingHr = widget.attendances.first.working_hours_min;
+    final statusLabel = _attendanceStatusLabel(
+      widget.attendances.first.dayStatus,
+      widget.attendances.first.statusLabel,
+    );
     final dayStatus = widget.attendances.first.dayStatus;
 
-    for(var att in widget.attendances){
+    for (final att in widget.attendances) {
       workedHr = workedHr + att.worked_hours_min;
     }
 
-    double extraTime = workingHr - workedHr;
+    final extraTime = workingHr - workedHr;
 
     return Container(
       decoration: RadialDecoration(),
@@ -196,8 +199,46 @@ class AttendanceDetailBottomSheetState
   }
 }
 
+String _attendanceStatusLabel(String status, String fallback) {
+  final normalizedStatus = status.trim().toLowerCase();
+  final normalizedFallback = fallback.trim().toLowerCase();
+  switch (normalizedStatus.isNotEmpty ? normalizedStatus : normalizedFallback) {
+    case 'present':
+      return translate('attendance_status.present');
+    case 'absent':
+      return translate('attendance_status.absent');
+    case 'leave':
+      return translate('attendance_status.leave');
+    case 'time_leave':
+      return translate('attendance_status.time_leave');
+    case 'leave_request':
+      return translate('attendance_status.leave_request');
+    case 'time_leave_request':
+      return translate('attendance_status.time_leave_request');
+    case 'holiday':
+      return translate('attendance_status.holiday');
+    case 'weekend':
+      return translate('attendance_status.weekend');
+    case 'late':
+      return translate('attendance_status.late');
+    case 'early':
+      return translate('attendance_status.early');
+  }
+
+  if (normalizedFallback == 'on review' || normalizedFallback == 'pending') {
+    return translate('attendance_status.pending');
+  }
+  if (normalizedFallback == 'approved') {
+    return translate('attendance_status.approved');
+  }
+  if (normalizedFallback == 'rejected') {
+    return translate('attendance_status.rejected');
+  }
+  return fallback;
+}
+
 String convertMinutesToFormattedString(double minutes) {
-  int hours = (minutes / 60).floor();
-  int remainingMinutes = (minutes % 60).round();
+  final hours = (minutes / 60).floor();
+  final remainingMinutes = (minutes % 60).round();
   return '${hours}h ${remainingMinutes}m';
 }

@@ -26,16 +26,17 @@ class NotificationHistory {
     final box = GetStorage();
     final existing = _readRawEntries(box);
     final date = (message.sentTime ?? DateTime.now()).toUtc().toIso8601String();
-    final dedupeKey = (message.messageId != null &&
-            message.messageId!.trim().isNotEmpty)
-        ? 'message:${message.messageId!.trim()}'
-        : '$trimmedTitle|$trimmedBody|$date';
+    final dedupeKey =
+        (message.messageId != null && message.messageId!.trim().isNotEmpty)
+            ? 'message:${message.messageId!.trim()}'
+            : '$trimmedTitle|$trimmedBody|$date';
 
     existing.removeWhere((item) => item['key'] == dedupeKey);
     existing.insert(0, {
       'key': dedupeKey,
       'messageId': message.messageId,
       'type': message.data['type']?.toString() ?? '',
+      'notification_for_id': _noticeIdFromData(message.data),
       'title': trimmedTitle,
       'description': trimmedBody,
       'date': date,
@@ -78,6 +79,8 @@ class NotificationHistory {
           date: parsedDate,
           localKey: item['key']?.toString(),
           isRead: item['isRead'] == true,
+          type: item['type']?.toString() ?? '',
+          notificationForId: _parseInt(item['notification_for_id']),
         ),
       );
     }
@@ -135,5 +138,24 @@ class NotificationHistory {
         .whereType<Map>()
         .map((item) => Map<String, dynamic>.from(item))
         .toList();
+  }
+
+  static int _parseInt(dynamic value) {
+    if (value is int) {
+      return value;
+    }
+
+    return int.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  static String _noticeIdFromData(Map<String, dynamic> data) {
+    for (final key in const ['notice_id', 'notification_for_id', 'id']) {
+      final value = data[key]?.toString().trim() ?? '';
+      if (value.isNotEmpty) {
+        return value;
+      }
+    }
+
+    return '';
   }
 }

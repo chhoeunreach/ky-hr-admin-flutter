@@ -683,8 +683,7 @@ class CheckAttendanceState extends State<CheckAttendance>
     } else if (attandanceType == "NFC") {
       final isAvailable = await NfcManager.instance.isAvailable();
       if (!isAvailable) {
-        showToast(
-            "NFC is not present. Please enable NFC or try different method");
+        showToast(translate('attendance_messages.nfc_not_present'));
         return;
       }
       showNFCScanner();
@@ -1037,7 +1036,7 @@ class CheckAttendanceState extends State<CheckAttendance>
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
-                        'Working Time',
+                        translate('attendance_screen.working_time'),
                         style: TextStyle(
                           color: panelTextColor,
                           fontWeight: FontWeight.w800,
@@ -1466,7 +1465,7 @@ class _AttendanceGoogleMapFrameState extends State<_AttendanceGoogleMapFrame>
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    'Google Map',
+                    translate('attendance_messages.google_map'),
                     style: TextStyle(
                       color: widget.enterprise.text,
                       fontSize: 10,

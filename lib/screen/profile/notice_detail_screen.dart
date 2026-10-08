@@ -190,14 +190,28 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
                               ],
                             ),
                             const SizedBox(height: 14),
-                            SelectionArea(
-                              child: Html(
-                                data: fullDescription.trim().isEmpty
-                                    ? '-'
-                                    : fullDescription,
-                                style: _descriptionHtmlStyle(),
+                            if (_hasImage(fullDescription))
+                              SizedBox(
+                                height: 320,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(14),
+                                  child: RichNoticeDescriptionViewer(
+                                    html: fullDescription.trim().isEmpty
+                                        ? '-'
+                                        : fullDescription,
+                                    baseUrl: appBaseUrl,
+                                  ),
+                                ),
+                              )
+                            else
+                              SelectionArea(
+                                child: Html(
+                                  data: fullDescription.trim().isEmpty
+                                      ? '-'
+                                      : fullDescription,
+                                  style: _descriptionHtmlStyle(),
+                                ),
                               ),
-                            ),
                             const SizedBox(height: 16),
                             SizedBox(
                               width: double.infinity,
@@ -269,6 +283,10 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
         textDecoration: TextDecoration.underline,
       ),
     };
+  }
+
+  bool _hasImage(String html) {
+    return RegExp(r'<img\b', caseSensitive: false).hasMatch(html);
   }
 
   void _showFullDescriptionSheet() {

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:cnattendance/data/source/datastore/preferences.dart';
 import 'package:cnattendance/utils/app_device_info.dart';
@@ -18,6 +19,9 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:nepali_date_picker/nepali_date_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+const String _iosTestFlightUpdateUrl =
+    'https://testflight.apple.com/join/hPG4ZA38';
 
 class GeneralScreen extends StatefulWidget {
   @override
@@ -40,12 +44,15 @@ class _GeneralScreenState extends State<GeneralScreen> {
   }
 
   Future<void> _openDownload(String url) async {
-    final targetUrl =
-        url.trim().isNotEmpty ? url.trim() : 'https://hr.kneayerng.com';
+    final targetUrl = Platform.isIOS
+        ? _iosTestFlightUpdateUrl
+        : (url.trim().isNotEmpty ? url.trim() : 'https://hr.kneayerng.com');
     final parsed = Uri.tryParse(targetUrl);
     final uri = parsed != null && parsed.hasScheme && parsed.hasAuthority
         ? parsed
-        : Uri.parse('https://hr.kneayerng.com');
+        : Uri.parse(Platform.isIOS
+            ? _iosTestFlightUpdateUrl
+            : 'https://hr.kneayerng.com');
     try {
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -53,8 +60,15 @@ class _GeneralScreenState extends State<GeneralScreen> {
     } catch (_) {}
   }
 
-  Future<void> _loadFullDescription(int id, String fallback) async {
-    if (id <= 0 || isLoadingFullMessage) {
+  Future<void> _loadFullDescription(
+    int id,
+    String fallback, {
+    int noticeId = 0,
+    String type = '',
+  }) async {
+    final normalizedType = type.trim().toLowerCase();
+    final detailId = normalizedType == 'notice' && noticeId > 0 ? noticeId : id;
+    if (detailId <= 0 || isLoadingFullMessage) {
       return;
     }
 
@@ -66,9 +80,10 @@ class _GeneralScreenState extends State<GeneralScreen> {
       final preferences = Preferences();
       final baseUrl = await preferences.getAppUrl();
       appBaseUrl = baseUrl;
-      final uri = Uri.parse(
-        '$baseUrl${Constant.NOTIFICATION_URL}/$id',
-      );
+      final detailPath = normalizedType == 'notice'
+          ? '${Constant.NOTICE_URL}/$detailId'
+          : '${Constant.NOTIFICATION_URL}/$detailId';
+      final uri = Uri.parse('$baseUrl$detailPath');
       final token = await preferences.getToken();
       final response = await http.get(uri, headers: {
         'Content-Type': 'application/json',
@@ -129,19 +144,23 @@ class _GeneralScreenState extends State<GeneralScreen> {
   Widget build(BuildContext context) {
     final param = Get.arguments is Map ? Get.arguments as Map : {};
     final id = int.tryParse(param["id"]?.toString() ?? "") ?? 0;
+    final noticeId = int.tryParse(param["notice_id"]?.toString() ?? "") ?? 0;
     final title = param["title"]?.toString() ?? "";
     final message = param["message"]?.toString() ?? "";
+    final type = param["type"]?.toString().toLowerCase() ?? "";
     if (fullMessage.isEmpty) {
       fullMessage = message;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _loadFullDescription(id, message);
+        _loadFullDescription(
+          id,
+          message,
+          noticeId: noticeId,
+          type: type,
+        );
       });
     }
     final date = param["date"]?.toString() ?? "";
-    final type = param["type"]?.toString().toLowerCase() ?? "";
-    final downloadUrl = (param["download_url"]?.toString().isNotEmpty ?? false)
-        ? param["download_url"].toString()
-        : "https://hr.kneayerng.com";
+    final downloadUrl = _platformDownloadUrl(param);
 
     final isUpdate = type == "app_update" ||
         title.contains('អាប់ដេត') ||
@@ -361,14 +380,28 @@ class _GeneralScreenState extends State<GeneralScreen> {
                                 ],
                               ),
                               SizedBox(height: 14),
-                              SelectionArea(
-                                child: Html(
-                                  data: fullMessage.trim().isEmpty
-                                      ? '-'
-                                      : fullMessage,
-                                  style: _descriptionHtmlStyle(),
+                              if (_hasImage(fullMessage))
+                                SizedBox(
+                                  height: 320,
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(14),
+                                    child: RichNoticeDescriptionViewer(
+                                      html: fullMessage.trim().isEmpty
+                                          ? '-'
+                                          : fullMessage,
+                                      baseUrl: appBaseUrl,
+                                    ),
+                                  ),
+                                )
+                              else
+                                SelectionArea(
+                                  child: Html(
+                                    data: fullMessage.trim().isEmpty
+                                        ? '-'
+                                        : fullMessage,
+                                    style: _descriptionHtmlStyle(),
+                                  ),
                                 ),
-                              ),
                               SizedBox(height: 16),
                               SizedBox(
                                 width: double.infinity,
@@ -392,7 +425,12 @@ class _GeneralScreenState extends State<GeneralScreen> {
                                     ),
                                   ),
                                   onPressed: () async {
-                                    await _loadFullDescription(id, message);
+                                    await _loadFullDescription(
+                                      id,
+                                      message,
+                                      noticeId: noticeId,
+                                      type: type,
+                                    );
                                     if (mounted) {
                                       _showFullDescriptionSheet(
                                         title.isNotEmpty
@@ -416,6 +454,35 @@ class _GeneralScreenState extends State<GeneralScreen> {
         ),
       ),
     );
+  }
+
+  String _platformDownloadUrl(Map param) {
+    String read(List<String> keys) {
+      for (final key in keys) {
+        final value = param[key]?.toString().trim() ?? '';
+        if (value.isNotEmpty) return value;
+      }
+      return '';
+    }
+
+    final platformUrl = Platform.isIOS
+        ? read([
+            'ios_url',
+            'app_store_url',
+            'apple_store_url',
+            'ios_download_url',
+          ])
+        : read([
+            'android_url',
+            'play_store_url',
+            'android_download_url',
+          ]);
+
+    if (platformUrl.isNotEmpty) return platformUrl;
+    if (Platform.isIOS) return _iosTestFlightUpdateUrl;
+
+    final fallbackUrl = read(['download_url', 'url']);
+    return fallbackUrl.isNotEmpty ? fallbackUrl : 'https://hr.kneayerng.com';
   }
 
   Map<String, Style> _descriptionHtmlStyle() {
@@ -442,6 +509,10 @@ class _GeneralScreenState extends State<GeneralScreen> {
         textDecoration: TextDecoration.underline,
       ),
     };
+  }
+
+  bool _hasImage(String html) {
+    return RegExp(r'<img\b', caseSensitive: false).hasMatch(html);
   }
 
   void _showFullDescriptionSheet(String title) {

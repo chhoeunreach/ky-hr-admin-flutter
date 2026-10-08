@@ -6,6 +6,7 @@ import 'package:cnattendance/utils/constant.dart';
 import 'package:cnattendance/widget/customqrscanner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:flutter_translate/flutter_translate.dart';
 import 'package:provider/provider.dart';
 
 class ServerStatusTile extends StatefulWidget {
@@ -37,7 +38,7 @@ class _ServerStatusTileState extends State<ServerStatusTile> {
     }
 
     EasyLoading.show(
-      status: 'Checking server',
+      status: translate('server_status.checking_server'),
       maskType: EasyLoadingMaskType.black,
     );
 
@@ -55,7 +56,7 @@ class _ServerStatusTileState extends State<ServerStatusTile> {
         debugPrint('Server changed, but dashboard refresh failed: $e');
       }
       if (!mounted) return;
-      showToast('Server changed successfully.');
+      showToast(translate('server_status.server_changed_successfully'));
     } else {
       showToast(result.message);
     }
@@ -85,7 +86,7 @@ class _ServerStatusTileState extends State<ServerStatusTile> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Server Status',
+                  translate('server_status.title'),
                   style: TextStyle(color: enterprise.text, fontSize: 16),
                 ),
               ),
@@ -96,7 +97,7 @@ class _ServerStatusTileState extends State<ServerStatusTile> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Current server',
+                translate('server_status.current_server'),
                 style: TextStyle(
                   color: enterprise.mutedText,
                   fontSize: 12,
@@ -124,8 +125,9 @@ class _ServerStatusTileState extends State<ServerStatusTile> {
                   Expanded(
                     child: Text(
                       _checking
-                          ? 'Checking...'
-                          : result?.message ?? 'Tap Check to test connection.',
+                          ? translate('server_status.checking')
+                          : result?.message ??
+                              translate('server_status.tap_check'),
                       style: TextStyle(color: enterprise.text, fontSize: 13),
                     ),
                   ),
@@ -136,7 +138,7 @@ class _ServerStatusTileState extends State<ServerStatusTile> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Close'),
+              child: Text(translate('server_status.close')),
             ),
             TextButton.icon(
               onPressed: _checking
@@ -149,7 +151,7 @@ class _ServerStatusTileState extends State<ServerStatusTile> {
                       }
                     },
               icon: const Icon(Icons.refresh_rounded, size: 18),
-              label: const Text('Check'),
+              label: Text(translate('server_status.check')),
             ),
             ElevatedButton.icon(
               onPressed: () {
@@ -157,7 +159,7 @@ class _ServerStatusTileState extends State<ServerStatusTile> {
                 _scanAndSwitch();
               },
               icon: const Icon(Icons.qr_code_scanner_rounded, size: 18),
-              label: const Text('Scan'),
+              label: Text(translate('server_status.scan')),
             ),
           ],
         );
@@ -209,7 +211,7 @@ class _ServerStatusTileState extends State<ServerStatusTile> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Server Status',
+                      translate('server_status.title'),
                       style: TextStyle(
                         color: enterprise.text,
                         fontSize: 13.5,
@@ -218,7 +220,9 @@ class _ServerStatusTileState extends State<ServerStatusTile> {
                     ),
                     if (result != null)
                       Text(
-                        result.isConnected ? 'Connected' : result.message,
+                        result.isConnected
+                            ? translate('server_status.connected')
+                            : result.message,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(

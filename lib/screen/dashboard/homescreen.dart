@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:cnattendance/data/source/datastore/preferences.dart';
 import 'package:cnattendance/data/source/network/model/login/User.dart';
@@ -34,6 +35,9 @@ import 'package:cnattendance/utils/app_device_info.dart';
 import 'package:cnattendance/widget/app_update_dialog.dart';
 import 'package:cnattendance/widget/headerprofile.dart';
 import 'package:quick_actions/quick_actions.dart';
+
+const String _iosTestFlightUpdateUrl =
+    'https://testflight.apple.com/join/hPG4ZA38';
 
 class HomeScreen extends StatefulWidget {
   final PersistentTabController controller;
@@ -140,10 +144,7 @@ class HomeScreenState extends State<HomeScreen> {
       if (isUpdate && mounted) {
         final details = await AppDeviceInfo.getDetails();
         final targetVersion = message.data['target_version']?.toString() ?? '';
-        final downloadUrl =
-            (message.data['download_url']?.toString().isNotEmpty ?? false)
-                ? message.data['download_url']!.toString()
-                : 'https://hr.kneayerng.com';
+        final downloadUrl = _platformDownloadUrl(message.data);
         final forceUpdate = message.data['force_update'] == '1' ||
             message.data['force_update'] == true;
 
@@ -165,8 +166,7 @@ class HomeScreenState extends State<HomeScreen> {
         "message": body,
         "date": "",
         "type": message.data['type']?.toString() ?? '',
-        "download_url": message.data['download_url']?.toString() ??
-            'https://hr.kneayerng.com',
+        "download_url": _platformDownloadUrl(message.data),
       });
     });
   }
@@ -384,6 +384,35 @@ class HomeScreenState extends State<HomeScreen> {
         isForceUpdate: versionInfo.isForceUpdate,
       );
     }
+  }
+
+  String _platformDownloadUrl(Map<String, dynamic> data) {
+    String read(List<String> keys) {
+      for (final key in keys) {
+        final value = data[key]?.toString().trim() ?? '';
+        if (value.isNotEmpty) return value;
+      }
+      return '';
+    }
+
+    final platformUrl = Platform.isIOS
+        ? read([
+            'ios_url',
+            'app_store_url',
+            'apple_store_url',
+            'ios_download_url',
+          ])
+        : read([
+            'android_url',
+            'play_store_url',
+            'android_download_url',
+          ]);
+
+    if (platformUrl.isNotEmpty) return platformUrl;
+    if (Platform.isIOS) return _iosTestFlightUpdateUrl;
+
+    final fallbackUrl = read(['download_url', 'url']);
+    return fallbackUrl.isNotEmpty ? fallbackUrl : 'https://hr.kneayerng.com';
   }
 
   void showBirthdayWish() {

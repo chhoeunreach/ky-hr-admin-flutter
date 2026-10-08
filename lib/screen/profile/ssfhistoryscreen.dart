@@ -1,7 +1,4 @@
-import 'package:cnattendance/model/month.dart';
-import 'package:cnattendance/provider/payslipprovider.dart';
 import 'package:cnattendance/provider/ssfprovider.dart';
-import 'package:cnattendance/screen/profile/payslipdetailscreen.dart';
 import 'package:cnattendance/widget/buttonborder.dart';
 import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
@@ -12,20 +9,19 @@ import 'package:hexcolor/hexcolor.dart';
 import 'package:provider/provider.dart';
 
 class SsfHistoryScreen extends StatefulWidget {
-  bool initital = true;
-
   @override
   State<StatefulWidget> createState() => SsfHistoryScreenState();
 }
 
 class SsfHistoryScreenState extends State<SsfHistoryScreen> {
   bool showAll = true;
+  bool _initial = true;
 
   @override
   Future<void> didChangeDependencies() async {
-    if (widget.initital) {
+    if (_initial) {
       context.read<SSFProvider>().getBS();
-      widget.initital = false;
+      _initial = false;
     }
     super.didChangeDependencies();
   }
@@ -34,9 +30,9 @@ class SsfHistoryScreenState extends State<SsfHistoryScreen> {
   Widget build(BuildContext context) {
     final year = context.watch<SSFProvider>().year;
 
-    var selectedYear = context.watch<SSFProvider>().selectedYear;
-    var ssfList = context.watch<SSFProvider>().ssfList;
-    var currency = context.watch<SSFProvider>().currency;
+    final selectedYear = context.watch<SSFProvider>().selectedYear;
+    final ssfList = context.watch<SSFProvider>().ssfList;
+    final currency = context.watch<SSFProvider>().currency;
 
     return Container(
       decoration: RadialDecoration(),
@@ -44,7 +40,7 @@ class SsfHistoryScreenState extends State<SsfHistoryScreen> {
         backgroundColor: Colors.transparent,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
-          title: Text("SSF History"),
+          title: Text(translate('more_screen.ssf_history')),
           elevation: 0,
         ),
         body: SingleChildScrollView(
@@ -197,8 +193,8 @@ class SsfHistoryScreenState extends State<SsfHistoryScreen> {
                               padding: EdgeInsets.all(2.0),
                               child: Center(
                                 child: Text(
-                                  "Request SSF History",
-                                  style: TextStyle(color: Colors.white),
+                                  translate('more_screen.request_ssf_history'),
+                                  style: const TextStyle(color: Colors.white),
                                 ),
                               ),
                             ))

@@ -66,17 +66,17 @@ class NotificationController extends GetxController {
   }
 
   Future<NotificationResponse> getNotification() async {
-    Preferences preferences = Preferences();
-    var uri =
+    final preferences = Preferences();
+    final uri =
         Uri.parse(await preferences.getAppUrl() + Constant.NOTIFICATION_URL)
             .replace(queryParameters: {
       'page': page.toString(),
       'per_page': per_page.toString(),
     });
 
-    String token = await preferences.getToken();
+    final token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
@@ -93,7 +93,7 @@ class NotificationController extends GetxController {
         await makeNotificationList(jsonResponse.data);
         return jsonResponse;
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         throw errorMessage;
       }
     } catch (e) {
@@ -102,8 +102,8 @@ class NotificationController extends GetxController {
   }
 
   Future<void> makeNotificationList(List<NotifiactionDomain> data) async {
-    Preferences preferences = Preferences();
-    bool isAd = await preferences.getEnglishDate();
+    final preferences = Preferences();
+    final isAd = await preferences.getEnglishDate();
 
     if (page == 1) {
       _notificationList.clear();
@@ -116,10 +116,9 @@ class NotificationController extends GetxController {
     }
 
     if (data.isNotEmpty) {
-      for (var item in data) {
-        DateTime tempDate =
-            _parseNotificationDate(item.notificationPublishedDate);
-        NepaliDateTime nepaliDate = tempDate.toNepaliDateTime();
+      for (final item in data) {
+        final tempDate = _parseNotificationDate(item.notificationPublishedDate);
+        final nepaliDate = tempDate.toNepaliDateTime();
         print(nepaliDate);
 
         _addNotificationIfMissing(
@@ -134,7 +133,9 @@ class NotificationController extends GetxController {
                   ? DateFormat('dd').format(tempDate)
                   : NepaliDateFormat('dd').format(nepaliDate),
               date: tempDate,
-              isRead: item.isRead),
+              isRead: item.isRead,
+              type: item.type,
+              notificationForId: item.notificationForId),
         );
       }
 

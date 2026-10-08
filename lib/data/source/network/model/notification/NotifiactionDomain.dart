@@ -5,6 +5,8 @@ class NotifiactionDomain {
     required this.description,
     required this.notificationPublishedDate,
     required this.isRead,
+    required this.type,
+    required this.notificationForId,
   });
 
   factory NotifiactionDomain.fromJson(dynamic json) {
@@ -20,6 +22,8 @@ class NotifiactionDomain {
       notificationPublishedDate:
           json['notification_published_date']?.toString() ?? "",
       isRead: _parseIsRead(json['is_read']),
+      type: json['type']?.toString() ?? "",
+      notificationForId: _parseInt(json['notification_for_id']),
     );
   }
 
@@ -28,6 +32,8 @@ class NotifiactionDomain {
   String description;
   String notificationPublishedDate;
   bool isRead;
+  String type;
+  int notificationForId;
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{};
@@ -36,6 +42,8 @@ class NotifiactionDomain {
     map['description'] = description;
     map['notification_published_date'] = notificationPublishedDate;
     map['is_read'] = isRead;
+    map['type'] = type;
+    map['notification_for_id'] = notificationForId;
     return map;
   }
 
@@ -46,5 +54,13 @@ class NotifiactionDomain {
 
     final normalized = value?.toString().trim().toLowerCase();
     return normalized == '1' || normalized == 'true';
+  }
+
+  static int _parseInt(dynamic value) {
+    if (value is int) {
+      return value;
+    }
+
+    return int.tryParse(value?.toString() ?? '') ?? 0;
   }
 }

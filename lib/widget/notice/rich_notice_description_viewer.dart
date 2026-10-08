@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
@@ -61,7 +63,7 @@ class _RichNoticeDescriptionViewerState
 
   String _document(String content) {
     final body = _looksLikeHtml(content)
-        ? content
+        ? _normalizeImageSources(content)
         : const HtmlEscape().convert(content).replaceAll('\n', '<br>');
 
     return '''
@@ -83,6 +85,8 @@ class _RichNoticeDescriptionViewerState
       line-height: 1.65;
       overflow-wrap: anywhere;
       word-break: break-word;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
       -webkit-user-select: text;
       user-select: text;
     }
@@ -147,11 +151,67 @@ class _RichNoticeDescriptionViewerState
     return RegExp(r'<[a-z][\s\S]*>', caseSensitive: false).hasMatch(value);
   }
 
+  String _normalizeImageSources(String html) {
+    final baseUrl = widget.baseUrl?.trim();
+    final baseUri =
+        baseUrl == null || baseUrl.isEmpty ? null : Uri.tryParse(baseUrl);
+    if (baseUri == null || !baseUri.hasScheme || baseUri.host.isEmpty) {
+      return html;
+    }
+
+    return html.replaceAllMapped(
+      RegExp(r'''(<img\b[^>]*\bsrc=["'])([^"']+)(["'][^>]*>)''',
+          caseSensitive: false),
+      (match) {
+        final prefix = match.group(1)!;
+        final source = match.group(2)!;
+        final suffix = match.group(3)!;
+        return '$prefix${_absoluteImageUrl(source, baseUri)}$suffix';
+      },
+    );
+  }
+
+  String _absoluteImageUrl(String source, Uri baseUri) {
+    final trimmed = source.trim();
+    if (trimmed.startsWith('data:') ||
+        trimmed.startsWith('blob:') ||
+        trimmed.startsWith('file:')) {
+      return trimmed;
+    }
+
+    final parsed = Uri.tryParse(trimmed);
+    if (parsed != null && parsed.hasScheme) {
+      if (parsed.scheme == 'http' && baseUri.scheme == 'https') {
+        return parsed.replace(scheme: 'https').toString();
+      }
+      return trimmed;
+    }
+
+    if (trimmed.startsWith('//')) {
+      return '${baseUri.scheme}:$trimmed';
+    }
+
+    final root = '${baseUri.scheme}://${baseUri.host}'
+        '${baseUri.hasPort ? ':${baseUri.port}' : ''}';
+    if (trimmed.startsWith('/')) {
+      return '$root$trimmed';
+    }
+
+    return Uri.parse(root).resolve(trimmed).toString();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        WebViewWidget(controller: _controller),
+        WebViewWidget(
+          controller: _controller,
+          gestureRecognizers: {
+            Factory<OneSequenceGestureRecognizer>(
+              () => EagerGestureRecognizer(),
+            ),
+          },
+        ),
         if (_isLoading)
           const Center(
             child: CircularProgressIndicator(

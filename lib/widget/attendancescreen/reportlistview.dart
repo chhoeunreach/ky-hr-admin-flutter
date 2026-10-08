@@ -209,7 +209,7 @@ class ReportListView extends StatelessWidget {
             Expanded(
               flex: 2,
               child: Container(
-                child: Text('Status',
+                child: Text(translate('attendance_screen.status'),
                     maxLines: 1,
                     overflow: TextOverflow.clip,
                     style: TextStyle(fontSize: 12, color: Colors.white),
@@ -219,7 +219,7 @@ class ReportListView extends StatelessWidget {
             Expanded(
               flex: 1,
               child: Container(
-                child: Text("Action",
+                child: Text(translate('attendance_screen.action'),
                     maxLines: 1,
                     overflow: TextOverflow.clip,
                     style: TextStyle(fontSize: 12, color: Colors.white),

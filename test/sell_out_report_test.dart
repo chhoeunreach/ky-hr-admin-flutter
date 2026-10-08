@@ -4,30 +4,68 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('SellOutReport commission', () {
-    test('sell earns commission when customer phone is valid', () {
+    test('sell earns commission when full-time qty reaches 100', () {
       final report = SellOutReport(
         serviceType: 'Sell',
         customerPhone: '01234567',
         lines: [
-          SellOutReportLine(qty: 2, unitPrice: 51),
-          SellOutReportLine(qty: 1, unitPrice: 52),
+          SellOutReportLine(qty: 100, unitPrice: 1),
         ],
       );
 
-      expect(report.commission, 0.75);
+      expect(report.commission, 25.00);
     });
 
-    test('material earns 0.25 commission per item when customer phone is valid',
+    test('sell earns commission when part-time qty reaches 50', () {
+      final report = SellOutReport(
+        serviceType: 'Sell',
+        customerPhone: '01234567',
+        sellerWorkCategory: 'part_timer',
+        lines: [
+          SellOutReportLine(qty: 50, unitPrice: 1),
+        ],
+      );
+
+      expect(report.commission, 12.50);
+    });
+
+    test('material earns 0.25 commission per report when invoice total is 10',
         () {
       final report = SellOutReport(
         serviceType: 'Material',
+        customerPhone: '01234567',
+        lines: [
+          SellOutReportLine(qty: 1, unitPrice: 10),
+        ],
+      );
+
+      expect(report.commission, 0.25);
+    });
+
+    test('iron earns 0.20 commission per report when customer phone is valid',
+        () {
+      final report = SellOutReport(
+        serviceType: 'Iron',
         customerPhone: '01234567',
         lines: [
           SellOutReportLine(qty: 2),
         ],
       );
 
-      expect(report.commission, 0.50);
+      expect(report.commission, 0.20);
+    });
+
+    test('khmer iron with invisible spacing earns 0.20 commission per report',
+        () {
+      final report = SellOutReport(
+        serviceType: 'អ៊ុត\u200B',
+        customerPhone: '01234567',
+        lines: [
+          SellOutReportLine(qty: 2),
+        ],
+      );
+
+      expect(report.commission, 0.20);
     });
 
     test('sell gets no commission without customer phone', () {
@@ -54,25 +92,37 @@ void main() {
       expect(report.commission, 0);
     });
 
-    test('sell gets no commission when unit price is 50 or less', () {
+    test('repair earns 0.20 commission per report when customer phone is valid',
+        () {
       final report = SellOutReport(
-        serviceType: 'Sell',
+        serviceType: 'Repair',
         customerPhone: '01234567',
         lines: [
-          SellOutReportLine(qty: 2, unitPrice: 50),
+          SellOutReportLine(qty: 2),
+        ],
+      );
+
+      expect(report.commission, 0.20);
+    });
+
+    test('material gets no commission when invoice total is less than 10', () {
+      final report = SellOutReport(
+        serviceType: 'Material',
+        customerPhone: '01234567',
+        lines: [
+          SellOutReportLine(qty: 1, unitPrice: 9.99),
         ],
       );
 
       expect(report.commission, 0);
     });
 
-    test('sell gets no commission when any line unit price is 50 or less', () {
+    test('sell gets no commission when full-time qty is less than 100', () {
       final report = SellOutReport(
         serviceType: 'Sell',
         customerPhone: '01234567',
         lines: [
-          SellOutReportLine(qty: 2, unitPrice: 51),
-          SellOutReportLine(qty: 1, unitPrice: 50),
+          SellOutReportLine(qty: 99, unitPrice: 1),
         ],
       );
 
@@ -81,7 +131,7 @@ void main() {
 
     test('non-commissionable services stay at zero with a valid phone', () {
       final report = SellOutReport(
-        serviceType: 'Repair',
+        serviceType: 'Buy In',
         customerPhone: '01234567',
         lines: [
           SellOutReportLine(qty: 2),

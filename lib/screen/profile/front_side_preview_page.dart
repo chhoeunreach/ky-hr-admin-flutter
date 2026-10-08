@@ -8,6 +8,7 @@ import 'package:cnattendance/utils/card_file_exporter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:flutter_translate/flutter_translate.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
@@ -119,15 +120,15 @@ class _FrontSidePreviewPageState extends State<FrontSidePreviewPage> {
         backgroundColor: Colors.white,
         foregroundColor: _FrontCardPainter.navy,
         elevation: 0,
-        title: const Text('Front Side Preview'),
+        title: Text(translate('more_screen.my_id_card')),
         actions: [
           IconButton(
-            tooltip: 'Refresh',
+            tooltip: translate('common.refresh'),
             onPressed: _loadCard,
             icon: const Icon(Icons.refresh_rounded),
           ),
           IconButton(
-            tooltip: 'Download',
+            tooltip: translate('common.download'),
             onPressed: _loading ? null : () => _downloadCard(card),
             icon: const Icon(Icons.download_rounded),
           ),

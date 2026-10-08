@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:flutter_translate/flutter_translate.dart';
 import 'package:hexcolor/hexcolor.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_cropper/image_cropper.dart';
@@ -24,6 +25,16 @@ const Color _sellOutMuted = Color(0xff697386);
 const Color _sellOutBorder = Color(0xffdde6f2);
 const String _iCloudCustomerServiceType = 'iCloud Cus';
 
+String _sellOutTr(String key) => translate('sell_out_report.$key');
+
+String _sellOutTrWith(String key, Map<String, String> values) {
+  var text = _sellOutTr(key);
+  values.forEach((name, value) {
+    text = text.replaceAll('{$name}', value);
+  });
+  return text;
+}
+
 class SellOutReportScreen extends StatefulWidget {
   static const String routeName = '/sell-out-report';
 
@@ -36,12 +47,167 @@ class SellOutReportScreen extends StatefulWidget {
   State<SellOutReportScreen> createState() => _SellOutReportListScreenState();
 }
 
+void _showSellOutCommissionRules(BuildContext context) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (context) {
+      return DraggableScrollableSheet(
+        initialChildSize: 0.58,
+        minChildSize: 0.35,
+        maxChildSize: 0.88,
+        builder: (context, scrollController) {
+          return Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: ListView(
+              controller: scrollController,
+              padding: const EdgeInsets.fromLTRB(18, 16, 18, 28),
+              children: [
+                Center(
+                  child: Container(
+                    width: 42,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0xffcfd7e6),
+                      borderRadius: BorderRadius.circular(99),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  _sellOutTr('commission_rules'),
+                  style: TextStyle(
+                    color: _sellOutText,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _CommissionRuleTile(
+                  title: _sellOutTr('iron'),
+                  condition: _sellOutTr('phone_required'),
+                  rate: '\$0.20',
+                  expression: _sellOutTr('invoice_count_x_020'),
+                ),
+                _CommissionRuleTile(
+                  title: _sellOutTr('material'),
+                  condition: _sellOutTr('material_condition'),
+                  rate: '\$0.25',
+                  expression: _sellOutTr('invoice_count_x_025'),
+                ),
+                _CommissionRuleTile(
+                  title: _sellOutTr('repair'),
+                  condition: _sellOutTr('phone_required'),
+                  rate: '\$0.20',
+                  expression: _sellOutTr('invoice_count_x_020'),
+                ),
+                _CommissionRuleTile(
+                  title: _sellOutTr('sell'),
+                  condition: _sellOutTr('sell_condition'),
+                  rate: '\$0.25',
+                  expression: _sellOutTr('qualified_qty_x_025'),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    },
+  );
+}
+
+class _CommissionRuleTile extends StatelessWidget {
+  const _CommissionRuleTile({
+    required this.title,
+    required this.condition,
+    required this.rate,
+    required this.expression,
+  });
+
+  final String title;
+  final String condition;
+  final String rate;
+  final String expression;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xfff5f8fc),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _sellOutBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    color: _sellOutText,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: _sellOutBlue.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(99),
+                ),
+                child: Text(
+                  rate,
+                  style: const TextStyle(
+                    color: _sellOutBlue,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            condition,
+            style: const TextStyle(
+              color: _sellOutText,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              height: 1.35,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            expression,
+            style: const TextStyle(
+              color: _sellOutMuted,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _SellOutReportListScreenState extends State<SellOutReportScreen> {
   final _apiService = SellOutApiService();
   final _searchController = TextEditingController();
   late Future<List<SellOutReport>> _reportsFuture;
   late DateTimeRange _dateRange;
   String _searchQuery = '';
+  String _conditionFilter = 'all';
 
   @override
   void initState() {
@@ -144,7 +310,7 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
         backgroundColor: Colors.transparent,
         appBar: AppBar(
           title: Text(widget.serviceType.isEmpty
-              ? 'Sell Out Report'
+              ? _sellOutTr('title')
               : widget.serviceType),
           centerTitle: true,
           backgroundColor: _sellOutNavy,
@@ -165,8 +331,8 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
                   ),
                 ),
                 icon: const Icon(Icons.add, size: 18),
-                label: const Text(
-                  'Add New',
+                label: Text(
+                  _sellOutTr('add_new'),
                   style: TextStyle(fontWeight: FontWeight.w600),
                 ),
               ),
@@ -221,8 +387,8 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
           foregroundColor: Colors.white,
           icon: const Icon(Icons.add),
           elevation: 3,
-          label: const Text(
-            'Add New',
+          label: Text(
+            _sellOutTr('add_new'),
             style: TextStyle(fontWeight: FontWeight.w700),
           ),
         ),
@@ -257,6 +423,13 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
         ].join(' ').toLowerCase();
         if (!haystack.contains(query)) return false;
       }
+      if (_conditionFilter == 'qualified' && !report.isCommissionEligible) {
+        return false;
+      }
+      if (_conditionFilter == 'failed' &&
+          (!report.isCommissionable || report.isCommissionEligible)) {
+        return false;
+      }
       return true;
     }).toList();
   }
@@ -269,7 +442,7 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
         onChanged: (value) => setState(() => _searchQuery = value),
         style: const TextStyle(color: _sellOutText, fontSize: 14),
         decoration: InputDecoration(
-          hintText: 'Search invoice, customer, phone...',
+          hintText: _sellOutTr('search_hint'),
           hintStyle: const TextStyle(color: _sellOutMuted, fontSize: 14),
           prefixIcon: const Icon(Icons.search, color: _sellOutMuted),
           suffixIcon: _searchQuery.isEmpty
@@ -311,6 +484,13 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
         reports.fold<int>(0, (sum, report) => sum + report.totalQty);
     final totalCommission =
         reports.fold<double>(0, (sum, report) => sum + report.commission);
+    final qualifiedCount =
+        reports.where((report) => report.isCommissionEligible).length;
+    final failedCount = reports
+        .where(
+            (report) => report.isCommissionable && !report.isCommissionEligible)
+        .length;
+    final summaries = _buildTypeSummaries(reports);
 
     return Card(
       color: _sellOutSurface,
@@ -346,8 +526,8 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Sell Summary',
+                      Text(
+                        _sellOutTr('sell_summary'),
                         style: TextStyle(
                           color: _sellOutText,
                           fontSize: 17,
@@ -368,19 +548,21 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
                 ),
                 const SizedBox(width: 8),
                 _buildDateAction(
-                  tooltip: 'Today',
+                  tooltip: _sellOutTr('today'),
                   icon: Icons.today_outlined,
                   onPressed: _resetDateRangeToToday,
                 ),
                 const SizedBox(width: 8),
                 _buildDateAction(
-                  tooltip: 'Filter date',
+                  tooltip: _sellOutTr('filter_date'),
                   icon: Icons.date_range_outlined,
                   onPressed: _pickDateRange,
                 ),
               ],
             ),
             const SizedBox(height: 16),
+            _buildConditionFilterTabs(),
+            const SizedBox(height: 14),
             LayoutBuilder(
               builder: (context, constraints) {
                 return Wrap(
@@ -390,7 +572,7 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
                     SizedBox(
                       width: (constraints.maxWidth - 10) / 2,
                       child: _buildSummaryTile(
-                        'Reports',
+                        _sellOutTr('reports'),
                         reports.length.toString(),
                         Icons.receipt_long_outlined,
                       ),
@@ -398,7 +580,7 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
                     SizedBox(
                       width: (constraints.maxWidth - 10) / 2,
                       child: _buildSummaryTile(
-                        'Qty',
+                        _sellOutTr('qty'),
                         totalQty.toString(),
                         Icons.inventory_2_outlined,
                       ),
@@ -406,17 +588,164 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
                     SizedBox(
                       width: (constraints.maxWidth - 10) / 2,
                       child: _buildSummaryTile(
-                        'Commission',
+                        _sellOutTr('commission'),
                         '\$${totalCommission.toStringAsFixed(2)}',
                         Icons.payments_outlined,
+                      ),
+                    ),
+                    SizedBox(
+                      width: (constraints.maxWidth - 10) / 2,
+                      child: _buildSummaryTile(
+                        _sellOutTr('qualified'),
+                        qualifiedCount.toString(),
+                        Icons.verified_outlined,
+                      ),
+                    ),
+                    SizedBox(
+                      width: (constraints.maxWidth - 10) / 2,
+                      child: _buildSummaryTile(
+                        _sellOutTr('failed'),
+                        failedCount.toString(),
+                        Icons.report_problem_outlined,
                       ),
                     ),
                   ],
                 );
               },
             ),
+            if (summaries.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              ...summaries.map(_buildTypeSummaryRow),
+            ],
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildConditionFilterTabs() {
+    return Row(
+      children: [
+        _buildConditionFilterChip('all', _sellOutTr('all')),
+        const SizedBox(width: 8),
+        _buildConditionFilterChip('qualified', _sellOutTr('qualified')),
+        const SizedBox(width: 8),
+        _buildConditionFilterChip('failed', _sellOutTr('failed')),
+      ],
+    );
+  }
+
+  Widget _buildConditionFilterChip(String value, String label) {
+    final selected = _conditionFilter == value;
+    return Expanded(
+      child: InkWell(
+        onTap: () => setState(() => _conditionFilter = value),
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          height: 38,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: selected ? _sellOutBlue : const Color(0xfff5f8fc),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: selected ? _sellOutBlue : _sellOutBorder,
+            ),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: selected ? Colors.white : _sellOutText,
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<_SellTypeSummary> _buildTypeSummaries(List<SellOutReport> reports) {
+    final grouped = <String, List<SellOutReport>>{};
+    for (final report in reports) {
+      final key = SellOutReport.canonicalServiceType(report.serviceType);
+      grouped.putIfAbsent(key, () => []).add(report);
+    }
+
+    return grouped.entries.map((entry) {
+      final items = entry.value;
+      return _SellTypeSummary(
+        label: _sellTypeLabel(entry.key, items.first.serviceType),
+        reports: items.length,
+        qualified: items.where((report) => report.isCommissionEligible).length,
+        failed: items
+            .where((report) =>
+                report.isCommissionable && !report.isCommissionEligible)
+            .length,
+        commission:
+            items.fold<double>(0, (sum, report) => sum + report.commission),
+      );
+    }).toList()
+      ..sort((a, b) => a.label.compareTo(b.label));
+  }
+
+  String _sellTypeLabel(String canonical, String fallback) {
+    switch (canonical) {
+      case 'sell':
+        return _sellOutTr('sell');
+      case 'material':
+        return _sellOutTr('material');
+      case 'iron':
+        return _sellOutTr('iron');
+      case 'repair':
+        return _sellOutTr('repair');
+      default:
+        return fallback.trim().isEmpty ? _sellOutTr('other') : fallback;
+    }
+  }
+
+  Widget _buildTypeSummaryRow(_SellTypeSummary summary) {
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xfff8fbff),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: _sellOutBorder),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              summary.label,
+              style: const TextStyle(
+                color: _sellOutText,
+                fontWeight: FontWeight.w900,
+                fontSize: 13,
+              ),
+            ),
+          ),
+          Text(
+            _sellOutTrWith('type_summary_line', {
+              'reports': summary.reports.toString(),
+              'qualified': summary.qualified.toString(),
+              'failed': summary.failed.toString(),
+            }),
+            style: const TextStyle(
+              color: _sellOutMuted,
+              fontWeight: FontWeight.w700,
+              fontSize: 11,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '\$${summary.commission.toStringAsFixed(2)}',
+            style: const TextStyle(
+              color: _sellOutBlue,
+              fontWeight: FontWeight.w900,
+              fontSize: 12,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -487,7 +816,9 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
   String _formatDateRange(DateTimeRange range) {
     final start = _formatDateOnly(range.start);
     final end = _formatDateOnly(range.end);
-    return start == end ? start : '$start to $end';
+    return start == end
+        ? start
+        : _sellOutTrWith('date_range_to', {'start': start, 'end': end});
   }
 
   String _formatDateOnly(DateTime value) {
@@ -506,7 +837,7 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
             const Icon(Icons.error_outline, color: Colors.red, size: 56),
             const SizedBox(height: 12),
             Text(
-              'Unable to load sell out reports',
+              _sellOutTr('unable_to_load'),
               style: TextStyle(
                 color: HexColor('#011754'),
                 fontWeight: FontWeight.w700,
@@ -524,7 +855,7 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
             ElevatedButton.icon(
               onPressed: _refresh,
               icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
+              label: Text(_sellOutTr('retry')),
               style: ElevatedButton.styleFrom(
                 backgroundColor: HexColor('#036eb7'),
                 foregroundColor: Colors.white,
@@ -563,8 +894,8 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
-              'No sell out reports found',
+            Text(
+              _sellOutTr('no_reports_found'),
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: _sellOutText,
@@ -573,8 +904,8 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Try another date range or add a new report.',
+            Text(
+              _sellOutTr('no_reports_hint'),
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: _sellOutMuted,
@@ -586,7 +917,7 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
             OutlinedButton.icon(
               onPressed: _openCreate,
               icon: const Icon(Icons.add, size: 18),
-              label: const Text('Add New'),
+              label: Text(_sellOutTr('add_new')),
               style: OutlinedButton.styleFrom(
                 foregroundColor: _sellOutBlue,
                 side: const BorderSide(color: _sellOutBlue),
@@ -628,13 +959,22 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
                   Expanded(
                     child: Text(
                       report.invoiceNo.isEmpty
-                          ? 'Invoice pending'
+                          ? _sellOutTr('invoice_pending')
                           : report.invoiceNo,
                       style: TextStyle(
                         color: _sellOutText,
                         fontWeight: FontWeight.w800,
                         fontSize: 15,
                       ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: _sellOutTr('view_commission_rules'),
+                    onPressed: () => _showSellOutCommissionRules(context),
+                    icon: const Icon(
+                      Icons.rule_rounded,
+                      size: 18,
+                      color: _sellOutMuted,
                     ),
                   ),
                   Text(
@@ -662,7 +1002,8 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
               if (originalInvoice.isNotEmpty) ...[
                 const SizedBox(height: 4),
                 Text(
-                  'Original: $originalInvoice',
+                  _sellOutTrWith(
+                      'original_invoice_value', {'invoice': originalInvoice}),
                   style: const TextStyle(color: _sellOutMuted, fontSize: 12),
                 ),
               ],
@@ -670,6 +1011,10 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
                 const SizedBox(height: 12),
                 ...report.lines.map((line) => _buildReportLineSummary(
                     line, report.requiresSerialNumberValidation)),
+              ],
+              if (report.isCommissionable && !report.isCommissionEligible) ...[
+                const SizedBox(height: 8),
+                _buildFailedConditionBox(report),
               ],
               const SizedBox(height: 10),
               Wrap(
@@ -680,10 +1025,17 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
                       report.customerName.isEmpty ? '-' : report.customerName),
                   if (report.customerPhone.isNotEmpty)
                     _buildChip(Icons.phone, report.customerPhone),
-                  _buildChip(Icons.inventory_2, '${report.totalQty} qty'),
+                  _buildChip(
+                    Icons.inventory_2,
+                    _sellOutTrWith(
+                        'qty_value', {'qty': report.totalQty.toString()}),
+                  ),
                   if (report.isCommissionable)
-                    _buildChip(Icons.payments_outlined,
-                        'Commission \$${report.commission.toStringAsFixed(2)}'),
+                    _buildChip(
+                      Icons.payments_outlined,
+                      _sellOutTrWith('commission_value',
+                          {'amount': report.commission.toStringAsFixed(2)}),
+                    ),
                 ],
               ),
               if (report.createdAt.isNotEmpty) ...[
@@ -702,8 +1054,9 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
 
   Widget _buildReportLineSummary(SellOutReportLine line,
       [bool showSerialNumber = false]) {
-    final productName =
-        line.productName.trim().isEmpty ? 'Product pending' : line.productName;
+    final productName = line.productName.trim().isEmpty
+        ? _sellOutTr('product_pending')
+        : line.productName;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
@@ -726,7 +1079,7 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
               ),
               const SizedBox(width: 8),
               Text(
-                'Qty ${line.qty}',
+                _sellOutTrWith('qty_value', {'qty': line.qty.toString()}),
                 style: const TextStyle(
                   color: _sellOutMuted,
                   fontSize: 12,
@@ -748,7 +1101,8 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
             Padding(
               padding: const EdgeInsets.only(top: 2),
               child: Text(
-                'Serial: ${line.serialNumber.trim()}',
+                _sellOutTrWith(
+                    'serial_value', {'serial': line.serialNumber.trim()}),
                 style: const TextStyle(
                   color: _sellOutMuted,
                   fontSize: 12,
@@ -759,6 +1113,55 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildFailedConditionBox(SellOutReport report) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: const Color(0xfffff7ed),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xffffd7aa)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.info_outline,
+            color: Color(0xffc2410c),
+            size: 17,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              _commissionFailureReasonLabels(report).join(', '),
+              style: const TextStyle(
+                color: Color(0xff9a3412),
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                height: 1.35,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<String> _commissionFailureReasonLabels(SellOutReport report) {
+    if (!report.isCommissionable)
+      return [_sellOutTr('no_commission_condition')];
+    return [
+      if (!report.hasValidCustomerPhone) _sellOutTr('failed_phone_required'),
+      if (!report.hasValidMaterialInvoiceTotal)
+        _sellOutTr('failed_material_total'),
+      if (!report.hasQualifiedSellQty)
+        _sellOutTrWith(
+          'failed_sell_qty',
+          {'threshold': report.sellQtyThreshold.toString()},
+        ),
+    ];
   }
 
   Widget _buildChip(IconData icon, String text) {
@@ -802,6 +1205,22 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
         .firstMatch(note);
     return match?.group(1) ?? '';
   }
+}
+
+class _SellTypeSummary {
+  const _SellTypeSummary({
+    required this.label,
+    required this.reports,
+    required this.qualified,
+    required this.failed,
+    required this.commission,
+  });
+
+  final String label;
+  final int reports;
+  final int qualified;
+  final int failed;
+  final double commission;
 }
 
 class SellOutReportCreateScreen extends StatefulWidget {
@@ -848,7 +1267,7 @@ class _SellOutReportDetailScreenState extends State<SellOutReportDetailScreen> {
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
-          title: const Text('Sell Out Detail'),
+          title: Text(_sellOutTr('detail_title')),
           backgroundColor: HexColor('#011754'),
           foregroundColor: Colors.white,
           elevation: 0,
@@ -877,26 +1296,28 @@ class _SellOutReportDetailScreenState extends State<SellOutReportDetailScreen> {
               padding: const EdgeInsets.all(16),
               children: [
                 _detailCard(
-                  'Header',
+                  _sellOutTr('header'),
                   [
-                    _detailRow('Invoice', report.invoiceNo),
-                    _detailRow('Original Invoice', report.originalInvoiceNo),
-                    _detailRow('Seller', report.sellerName),
-                    _detailRow('Branch', report.branchName),
-                    _detailRow('Customer', report.customerName),
-                    _detailRow('Customer Phone', report.customerPhone),
-                    _detailRow('Service Type', report.serviceType),
-                    _detailRow('Payment', report.paymentMethod),
+                    _detailRow(_sellOutTr('invoice'), report.invoiceNo),
+                    _detailRow(_sellOutTr('original_invoice'),
+                        report.originalInvoiceNo),
+                    _detailRow(_sellOutTr('seller'), report.sellerName),
+                    _detailRow(_sellOutTr('branch'), report.branchName),
+                    _detailRow(_sellOutTr('customer'), report.customerName),
                     _detailRow(
-                        'Total', '\$${report.totalAmount.toStringAsFixed(2)}'),
-                    _detailRow('Commission',
+                        _sellOutTr('customer_phone'), report.customerPhone),
+                    _detailRow(_sellOutTr('service_type'), report.serviceType),
+                    _detailRow(_sellOutTr('payment'), report.paymentMethod),
+                    _detailRow(_sellOutTr('total'),
+                        '\$${report.totalAmount.toStringAsFixed(2)}'),
+                    _detailRow(_sellOutTr('commission'),
                         '\$${report.commission.toStringAsFixed(2)}'),
-                    _detailRow('Created At', report.createdAt),
+                    _detailRow(_sellOutTr('created_at'), report.createdAt),
                   ],
                 ),
                 const SizedBox(height: 12),
                 _detailCard(
-                  'Product Lines',
+                  _sellOutTr('product_lines'),
                   report.lines.map((line) {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12),
@@ -905,7 +1326,7 @@ class _SellOutReportDetailScreenState extends State<SellOutReportDetailScreen> {
                         children: [
                           Text(
                             line.productName.isEmpty
-                                ? 'Product'
+                                ? _sellOutTr('product')
                                 : line.productName,
                             style: TextStyle(
                               color: HexColor('#011754'),
@@ -913,17 +1334,17 @@ class _SellOutReportDetailScreenState extends State<SellOutReportDetailScreen> {
                             ),
                           ),
                           const SizedBox(height: 4),
-                          _detailRow('SKU', line.sku),
+                          _detailRow(_sellOutTr('sku'), line.sku),
                           _detailRow('IMEI', line.imei),
                           _detailRow('IMEI2', line.imei2),
-                          _detailRow('Serial', line.serialNumber),
-                          _detailRow('Model', line.modelNumber),
-                          _detailRow('Color', line.color),
-                          _detailRow('Storage', line.storage),
-                          _detailRow('Qty', line.qty.toString()),
-                          _detailRow('Unit Price',
+                          _detailRow(_sellOutTr('serial'), line.serialNumber),
+                          _detailRow(_sellOutTr('model'), line.modelNumber),
+                          _detailRow(_sellOutTr('color'), line.color),
+                          _detailRow(_sellOutTr('storage'), line.storage),
+                          _detailRow(_sellOutTr('qty'), line.qty.toString()),
+                          _detailRow(_sellOutTr('unit_price'),
                               '\$${line.unitPrice.toStringAsFixed(2)}'),
-                          _detailRow('Subtotal',
+                          _detailRow(_sellOutTr('subtotal'),
                               '\$${line.subtotal.toStringAsFixed(2)}'),
                           if (line.photoUrls.isNotEmpty) ...[
                             const SizedBox(height: 8),
@@ -964,18 +1385,19 @@ class _SellOutReportDetailScreenState extends State<SellOutReportDetailScreen> {
                 ),
                 if (report.photoUrls.isNotEmpty) ...[
                   const SizedBox(height: 12),
-                  _buildPhotoUrlCard('Photos', report.photoUrls),
+                  _buildPhotoUrlCard(_sellOutTr('photos'), report.photoUrls),
                 ],
                 if (report.note.isNotEmpty ||
                     report.extractedText.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   _detailCard(
-                    'Notes',
+                    _sellOutTr('notes'),
                     [
                       if (report.note.isNotEmpty)
-                        _textBlock('Note', report.note),
+                        _textBlock(_sellOutTr('note'), report.note),
                       if (report.extractedText.isNotEmpty)
-                        _textBlock('Extracted Text', report.extractedText),
+                        _textBlock(
+                            _sellOutTr('extracted_text'), report.extractedText),
                     ],
                   ),
                 ],
@@ -1143,7 +1565,7 @@ class _PhotoViewerScreenState extends State<_PhotoViewerScreen> {
       final url = widget.photoUrls[_currentIndex];
       final response = await http.get(Uri.parse(url));
       if (response.statusCode != 200) {
-        throw Exception('Failed to download photo');
+        throw Exception(_sellOutTr('failed_to_download_photo'));
       }
       final dir = await getTemporaryDirectory();
       final ext =
@@ -1156,7 +1578,9 @@ class _PhotoViewerScreenState extends State<_PhotoViewerScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Download failed: $e')),
+        SnackBar(
+            content: Text(
+                _sellOutTrWith('download_failed', {'error': e.toString()}))),
       );
     } finally {
       if (mounted) setState(() => _isDownloading = false);
@@ -1408,7 +1832,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
     _report.sellerName = _sellerNameCtrl.text.trim();
     _report.branchName = _branchNameCtrl.text.trim();
     _report.customerName = _customerNameCtrl.text.trim().isEmpty
-        ? 'Walk-In Customer'
+        ? _sellOutTr('walk_in_customer')
         : _customerNameCtrl.text.trim();
     _report.customerPhone = _customerPhoneCtrl.text.trim();
     _report.paymentMethod = _paymentMethodCtrl.text.trim();
@@ -1436,16 +1860,51 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
     // something — but once they've typed, validate live on every keystroke.
     if (text.isEmpty) {
       return _showSerialValidationErrors
-          ? SellOutReport.validateSerialNumber(text)
+          ? _translateSerialNumberError(
+              SellOutReport.validateSerialNumber(text))
           : null;
     }
-    return SellOutReport.validateSerialNumber(text);
+    return _translateSerialNumberError(
+        SellOutReport.validateSerialNumber(text));
+  }
+
+  String? _translateSerialNumberError(String? message) {
+    if (message == null) return null;
+    switch (message) {
+      case 'Serial Number is required.':
+        return _sellOutTr('serial_required');
+      case 'Serial Number must be 6-16 characters.':
+        return _sellOutTr('serial_length');
+      case 'Serial Number must contain only letters and numbers.':
+        return _sellOutTr('serial_letters_numbers');
+    }
+    return message;
+  }
+
+  String? _validateSerialNumbersForDisplay() {
+    if (!_report.requiresSerialNumberValidation) return null;
+    for (int i = 0; i < _report.lines.length; i++) {
+      final message = _translateSerialNumberError(
+          SellOutReport.validateSerialNumber(_report.lines[i].serialNumber));
+      if (message != null) {
+        return _sellOutTrWith('product_serial_error', {
+          'product': _sellOutTrWith(
+            'product_number',
+            {'number': (i + 1).toString()},
+          ),
+          'error': message,
+        });
+      }
+    }
+    return null;
   }
 
   String? get _customerPhoneError {
     if (!_showCustomerPhoneError) return null;
     final phone = _customerPhoneCtrl.text.trim();
-    if (phone.isNotEmpty && phone.length <= 6) return 'More than 6 chars';
+    if (phone.isNotEmpty && phone.length <= 6) {
+      return _sellOutTr('more_than_6_chars');
+    }
     return null;
   }
 
@@ -1533,7 +1992,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
       maxHeight: 1600,
       uiSettings: [
         AndroidUiSettings(
-          toolbarTitle: 'Crop Photo',
+          toolbarTitle: _sellOutTr('crop_photo'),
           toolbarColor: _sellOutBlue,
           toolbarWidgetColor: Colors.white,
           activeControlsWidgetColor: _sellOutBlue,
@@ -1541,9 +2000,9 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
           lockAspectRatio: false,
         ),
         IOSUiSettings(
-          title: 'Crop Photo',
-          doneButtonTitle: 'Use Photo',
-          cancelButtonTitle: 'Cancel',
+          title: _sellOutTr('crop_photo'),
+          doneButtonTitle: _sellOutTr('use_photo'),
+          cancelButtonTitle: _sellOutTr('cancel'),
           aspectRatioLockEnabled: false,
         ),
       ],
@@ -1689,8 +2148,8 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
     if (index >= _lineControllers.length) return;
     final ctrls = _lineControllers[index];
     if (ctrls.photoPaths.isEmpty) {
-      _showError(
-          'No Product Photos', 'Please take or select product photos first.');
+      _showError(_sellOutTr('no_product_photos'),
+          _sellOutTr('no_product_photos_message'));
       return;
     }
 
@@ -1707,7 +2166,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
       _replaceProductExtractedText(index, extracted);
       _autoFillProductLineFromText(index, extracted);
     } catch (e) {
-      _showError('Product Extract Failed', e.toString());
+      _showError(_sellOutTr('product_extract_failed'), e.toString());
     } finally {
       setState(() => ctrls.isOcrLoading = false);
     }
@@ -1715,8 +2174,8 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
 
   Future<void> _extractICloudText() async {
     if (_iCloudPhotoPaths.isEmpty) {
-      _showError(
-          'No iCloud Photos', 'Please take or select iCloud photos first.');
+      _showError(_sellOutTr('no_icloud_photos'),
+          _sellOutTr('no_icloud_photos_message'));
       return;
     }
 
@@ -1728,7 +2187,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
       _replaceICloudExtractedText(extracted);
       _autoFillICloudInfoFromText(extracted);
     } catch (e) {
-      _showError('iCloud Extract Failed', e.toString());
+      _showError(_sellOutTr('icloud_extract_failed'), e.toString());
     } finally {
       if (mounted) {
         setState(() => _isICloudOcrLoading = false);
@@ -1850,7 +2309,8 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
 
   void _removeProductLine(int index) {
     if (_report.lines.length <= 1) {
-      _showError('Cannot Remove', 'At least one product line is required.');
+      _showError(
+          _sellOutTr('cannot_remove'), _sellOutTr('one_product_required'));
       return;
     }
     _syncAllLines();
@@ -1871,25 +2331,26 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
     _syncPhotoPaths();
 
     if (_report.sellerName.isEmpty) {
-      _showError('Validation Error', 'Seller name is required.');
+      _showError(_sellOutTr('validation_error'), _sellOutTr('seller_required'));
       return;
     }
     if (_report.customerPhone.isNotEmpty && _report.customerPhone.length <= 6) {
       setState(() => _showCustomerPhoneError = true);
       _showError(
-        'Validation Error',
-        'Customer phone must be more than 6 characters, or leave it empty for no commission.',
+        _sellOutTr('validation_error'),
+        _sellOutTr('customer_phone_validation'),
       );
       return;
     }
-    final serialError = _report.validateSerialNumbers();
+    final serialError = _validateSerialNumbersForDisplay();
     if (serialError != null) {
       setState(() => _showSerialValidationErrors = true);
-      _showError('Validation Error', serialError);
+      _showError(_sellOutTr('validation_error'), serialError);
       return;
     }
     setState(() => _isSubmitting = true);
-    EasyLoading.show(status: _isEditing ? 'Updating...' : 'Submitting...');
+    EasyLoading.show(
+        status: _isEditing ? _sellOutTr('updating') : _sellOutTr('submitting'));
 
     try {
       final response = _isEditing
@@ -1906,14 +2367,17 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
       setState(() => _isSubmitting = false);
       if (mounted) {
         _showError(
-            _isEditing ? 'Update Failed' : 'Submission Failed', e.toString());
+            _isEditing
+                ? _sellOutTr('update_failed')
+                : _sellOutTr('submission_failed'),
+            e.toString());
       }
     }
   }
 
   void _showSuccessDialog(Map<String, dynamic> response) {
-    final message = response['message']?.toString() ??
-        'Sell Out Report submitted successfully!';
+    final message =
+        response['message']?.toString() ?? _sellOutTr('submitted_successfully');
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -1924,7 +2388,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
             const Icon(Icons.check_circle, color: Colors.green, size: 64),
             const SizedBox(height: 16),
             Text(
-              'Success',
+              _sellOutTr('success'),
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
@@ -1946,7 +2410,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
               Navigator.pop(context, true);
             },
             child: Text(
-              'OK',
+              _sellOutTr('ok'),
               style: TextStyle(
                 color: HexColor('#036eb7'),
                 fontWeight: FontWeight.w600,
@@ -1988,7 +2452,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text(
-              'Close',
+              _sellOutTr('close'),
               style: TextStyle(
                 color: HexColor('#036eb7'),
                 fontWeight: FontWeight.w600,
@@ -2007,9 +2471,9 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
         backgroundColor: Colors.transparent,
         appBar: AppBar(
           title: Text(_isEditing
-              ? 'Edit Report'
+              ? _sellOutTr('edit_report')
               : (widget.serviceType.isEmpty
-                  ? 'Sell Out Report'
+                  ? _sellOutTr('title')
                   : widget.serviceType)),
           centerTitle: true,
           backgroundColor: _sellOutNavy,
@@ -2114,9 +2578,10 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildCollapseHeader(
-              title: 'Invoice Information',
+              title: _sellOutTr('invoice_information'),
               expanded: _isInvoiceExpanded,
-              trailingText: '${_invoicePhotoPaths.length} photo(s)',
+              trailingText: _sellOutTrWith('photo_count',
+                  {'count': _invoicePhotoPaths.length.toString()}),
               onTap: () {
                 setState(() => _isInvoiceExpanded = !_isInvoiceExpanded);
               },
@@ -2132,7 +2597,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                         children: [
                           Expanded(
                             child: _buildCompactInfoField(
-                              'Service Type',
+                              _sellOutTr('service_type'),
                               _serviceTypeCtrl.text,
                               Icons.category,
                             ),
@@ -2140,7 +2605,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                           const SizedBox(width: 6),
                           Expanded(
                             child: _buildCompactInfoField(
-                              'Seller Name',
+                              _sellOutTr('seller_name'),
                               _sellerNameCtrl.text,
                               Icons.person,
                             ),
@@ -2148,7 +2613,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                           const SizedBox(width: 6),
                           Expanded(
                             child: _buildCompactInfoField(
-                              'Branch Name',
+                              _sellOutTr('branch_name'),
                               _branchNameCtrl.text,
                               Icons.business,
                             ),
@@ -2161,7 +2626,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                         children: [
                           Expanded(
                             child: _buildCompactInfoField(
-                              'Seller Name',
+                              _sellOutTr('seller_name'),
                               _sellerNameCtrl.text,
                               Icons.person,
                             ),
@@ -2169,7 +2634,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                           const SizedBox(width: 6),
                           Expanded(
                             child: _buildCompactInfoField(
-                              'Branch Name',
+                              _sellOutTr('branch_name'),
                               _branchNameCtrl.text,
                               Icons.business,
                             ),
@@ -2183,7 +2648,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                         Expanded(
                           child: _buildTextField(
                             _customerPhoneCtrl,
-                            'Customer Phone',
+                            _sellOutTr('customer_phone'),
                             Icons.phone,
                             keyboardType: TextInputType.phone,
                             errorText: _customerPhoneError,
@@ -2194,7 +2659,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                         Expanded(
                           child: _buildTextField(
                             _noteCtrl,
-                            'Note',
+                            _sellOutTr('note'),
                             Icons.note,
                           ),
                         ),
@@ -2322,11 +2787,12 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle('Invoice Photos'),
+        _buildSectionTitle(_sellOutTr('invoice_photos')),
         if (_isEditing && _report.photoUrls.isNotEmpty) ...[
           const SizedBox(height: 6),
           Text(
-            'Already uploaded (${_report.photoUrls.length})',
+            _sellOutTrWith('already_uploaded',
+                {'count': _report.photoUrls.length.toString()}),
             style: const TextStyle(
               fontSize: 11,
               color: _sellOutMuted,
@@ -2344,13 +2810,13 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
         Row(
           children: [
             Expanded(
-              child: _buildPhotoButton(
-                  'Take Invoice', Icons.camera_alt, _takeInvoicePhoto),
+              child: _buildPhotoButton(_sellOutTr('take_invoice'),
+                  Icons.camera_alt, _takeInvoicePhoto),
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: _buildPhotoButton(
-                  'From Gallery', Icons.photo_library, _pickInvoiceFromGallery),
+              child: _buildPhotoButton(_sellOutTr('from_gallery'),
+                  Icons.photo_library, _pickInvoiceFromGallery),
             ),
           ],
         ),
@@ -2360,7 +2826,8 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
         ],
         const SizedBox(height: 6),
         Text(
-          '${_invoicePhotoPaths.length} invoice photo(s) selected',
+          _sellOutTrWith('invoice_photos_selected',
+              {'count': _invoicePhotoPaths.length.toString()}),
           style: const TextStyle(
             fontSize: 11,
             color: _sellOutMuted,
@@ -2506,16 +2973,17 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Remove Photo'),
-        content: const Text('Remove this uploaded photo from the report?'),
+        title: Text(_sellOutTr('remove_photo')),
+        content: Text(_sellOutTr('remove_photo_confirm')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(_sellOutTr('cancel')),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Remove', style: TextStyle(color: Colors.red)),
+            child: Text(_sellOutTr('remove'),
+                style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -2530,7 +2998,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
       });
     } catch (e) {
       if (!mounted) return;
-      _showError('Remove Failed', e.toString());
+      _showError(_sellOutTr('remove_failed'), e.toString());
     }
   }
 
@@ -2549,9 +3017,10 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildCollapseHeader(
-              title: 'iCloud Information',
+              title: _sellOutTr('icloud_information'),
               expanded: _isICloudExpanded,
-              trailingText: '${_iCloudPhotoPaths.length} photo(s)',
+              trailingText: _sellOutTrWith('photo_count',
+                  {'count': _iCloudPhotoPaths.length.toString()}),
               onTap: () {
                 setState(() => _isICloudExpanded = !_isICloudExpanded);
               },
@@ -2567,7 +3036,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                       children: [
                         Expanded(
                           child: _buildPhotoButton(
-                            'Take iCloud',
+                            _sellOutTr('take_icloud'),
                             Icons.camera_alt,
                             _takeICloudPhoto,
                           ),
@@ -2575,7 +3044,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: _buildPhotoButton(
-                            'From Gallery',
+                            _sellOutTr('from_gallery'),
                             Icons.photo_library,
                             _pickICloudFromGallery,
                           ),
@@ -2603,8 +3072,8 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                               : const Icon(Icons.text_fields),
                           label: Text(
                             _isICloudOcrLoading
-                                ? 'Extracting...'
-                                : 'Extract & Auto Fill iCloud',
+                                ? _sellOutTr('extracting')
+                                : _sellOutTr('extract_autofill_icloud'),
                           ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: _sellOutBlue,
@@ -2620,13 +3089,13 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                     const SizedBox(height: 6),
                     _buildTextField(
                       _iCloudAccountNameCtrl,
-                      'Account Name',
+                      _sellOutTr('account_name'),
                       Icons.account_circle,
                     ),
                     const SizedBox(height: 6),
                     _buildTextField(
                       _iCloudAppleIdCtrl,
-                      'Apple ID / Email',
+                      _sellOutTr('apple_id_email'),
                       Icons.alternate_email,
                       keyboardType: TextInputType.emailAddress,
                     ),
@@ -2636,7 +3105,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                         Expanded(
                           child: _buildTextField(
                             _iCloudStorageCtrl,
-                            'iCloud Storage',
+                            _sellOutTr('icloud_storage'),
                             Icons.cloud_outlined,
                           ),
                         ),
@@ -2644,7 +3113,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                         Expanded(
                           child: _buildTextField(
                             _iCloudTrustedPhoneCtrl,
-                            'Trusted Phone',
+                            _sellOutTr('trusted_phone'),
                             Icons.phone_iphone,
                             keyboardType: TextInputType.phone,
                           ),
@@ -2654,7 +3123,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                     const SizedBox(height: 6),
                     _buildTextField(
                       _iCloudDevicesCtrl,
-                      'Devices',
+                      _sellOutTr('devices'),
                       Icons.devices,
                       maxLines: 3,
                     ),
@@ -2689,9 +3158,10 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildSectionTitle('Product Lines'),
+                _buildSectionTitle(_sellOutTr('product_lines')),
                 Text(
-                  '${_report.lines.length} line(s)',
+                  _sellOutTrWith(
+                      'line_count', {'count': _report.lines.length.toString()}),
                   style: const TextStyle(
                     fontSize: 11,
                     color: _sellOutMuted,
@@ -2715,7 +3185,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
               child: OutlinedButton.icon(
                 onPressed: _addProductLine,
                 icon: const Icon(Icons.add, size: 18),
-                label: const Text('Add Product Line'),
+                label: Text(_sellOutTr('add_product_line')),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: _sellOutBlue,
                   backgroundColor: _sellOutBlue.withValues(alpha: 0.06),
@@ -2773,7 +3243,8 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                           Expanded(
                             child: Text(
                               line.productName.trim().isEmpty
-                                  ? 'Product #${index + 1}'
+                                  ? _sellOutTrWith('product_number',
+                                      {'number': (index + 1).toString()})
                                   : line.productName.trim(),
                               style: TextStyle(
                                 fontSize: 13,
@@ -2798,7 +3269,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                 TextButton.icon(
                   onPressed: () => _removeProductLine(index),
                   icon: const Icon(Icons.delete_outline, size: 18),
-                  label: const Text('Remove'),
+                  label: Text(_sellOutTr('remove')),
                   style: TextButton.styleFrom(
                     foregroundColor: Colors.red,
                     padding:
@@ -2823,8 +3294,10 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                   Row(
                     children: [
                       Expanded(
-                        child: _buildLineField(ctrls.productName,
-                            'Product Name', (v) => line.productName = v),
+                        child: _buildLineField(
+                            ctrls.productName,
+                            _sellOutTr('product_name'),
+                            (v) => line.productName = v),
                       ),
                       const SizedBox(width: 6),
                       Expanded(
@@ -2839,7 +3312,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                       Expanded(
                         child: _buildLineField(
                           ctrls.serialNumber,
-                          'Serial Number',
+                          _sellOutTr('serial_number'),
                           (v) => line.serialNumber = v,
                           errorText: _serialNumberError(ctrls),
                           keyboardType: TextInputType.visiblePassword,
@@ -2854,8 +3327,8 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                       ),
                       const SizedBox(width: 6),
                       Expanded(
-                        child: _buildLineField(
-                            ctrls.color, 'Color', (v) => line.color = v),
+                        child: _buildLineField(ctrls.color, _sellOutTr('color'),
+                            (v) => line.color = v),
                       ),
                     ],
                   ),
@@ -2863,24 +3336,27 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                   Row(
                     children: [
                       Expanded(
-                        child: _buildLineField(
-                            ctrls.storage, 'Storage', (v) => line.storage = v),
+                        child: _buildLineField(ctrls.storage,
+                            _sellOutTr('storage'), (v) => line.storage = v),
                       ),
                       const SizedBox(width: 6),
                       Expanded(
-                        child: _buildLineField(ctrls.qty, 'Qty',
+                        child: _buildLineField(ctrls.qty, _sellOutTr('qty'),
                             (v) => line.qty = int.tryParse(v) ?? 0),
                       ),
                       const SizedBox(width: 6),
                       Expanded(
-                        child: _buildLineField(ctrls.unitPrice, 'Unit Price',
+                        child: _buildLineField(
+                            ctrls.unitPrice,
+                            _sellOutTr('unit_price'),
                             (v) => line.unitPrice = double.tryParse(v) ?? 0.0),
                       ),
                     ],
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Subtotal: \$${line.subtotal.toStringAsFixed(2)}',
+                    _sellOutTrWith('subtotal_value',
+                        {'amount': line.subtotal.toStringAsFixed(2)}),
                     style: TextStyle(
                       fontWeight: FontWeight.w800,
                       color: _sellOutBlue,
@@ -2913,7 +3389,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Product Photos',
+            _sellOutTr('product_photos'),
             style: const TextStyle(
               color: _sellOutText,
               fontWeight: FontWeight.w800,
@@ -2923,7 +3399,8 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
           if (_isEditing && line.photoUrls.isNotEmpty) ...[
             const SizedBox(height: 6),
             Text(
-              'Already uploaded (${line.photoUrls.length})',
+              _sellOutTrWith('already_uploaded',
+                  {'count': line.photoUrls.length.toString()}),
               style: const TextStyle(
                 fontSize: 11,
                 color: _sellOutMuted,
@@ -2942,7 +3419,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
             children: [
               Expanded(
                 child: _buildPhotoButton(
-                  'Take Product',
+                  _sellOutTr('take_product'),
                   Icons.camera_alt,
                   () => _takeProductPhoto(index),
                 ),
@@ -2950,7 +3427,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
               const SizedBox(width: 6),
               Expanded(
                 child: _buildPhotoButton(
-                  'From Gallery',
+                  _sellOutTr('from_gallery'),
                   Icons.photo_library,
                   () => _pickProductFromGallery(index),
                 ),
@@ -2964,7 +3441,9 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                   ctrls.showOcrText ? Icons.visibility_off : Icons.visibility,
                   size: 16,
                 ),
-                label: Text(ctrls.showOcrText ? 'Hide' : 'Text'),
+                label: Text(ctrls.showOcrText
+                    ? _sellOutTr('hide')
+                    : _sellOutTr('text')),
                 style: TextButton.styleFrom(
                   foregroundColor: _sellOutBlue,
                   padding:
@@ -2994,8 +3473,8 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                   controller: ctrls.ocrText,
                   maxLines: 3,
                   decoration: InputDecoration(
-                    labelText: 'Product Text',
-                    hintText: 'Product text will appear here...',
+                    labelText: _sellOutTr('product_text'),
+                    hintText: _sellOutTr('product_text_hint'),
                     alignLabelWithHint: true,
                     filled: true,
                     fillColor: Colors.white,
@@ -3045,8 +3524,8 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                         : const Icon(Icons.text_fields),
                     label: Text(
                       ctrls.isOcrLoading
-                          ? 'Extracting...'
-                          : 'Extract & Auto Fill Product',
+                          ? _sellOutTr('extracting')
+                          : _sellOutTr('extract_autofill_product'),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _sellOutBlue,
@@ -3124,17 +3603,100 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
   }
 
   String _commissionStatusText() {
-    if (_report.isCommissionEligible) return 'Earned';
-    if (!_report.isCommissionable)
-      return 'Not earned: no commission for this service.';
+    if (_report.isCommissionEligible) return _sellOutTr('earned');
+    if (!_report.isCommissionable) {
+      return _sellOutTr('not_earned_no_commission');
+    }
 
     final incompletePoints = <String>[
-      if (!_report.hasValidCustomerPhone) 'Customer phone',
-      if (!_report.hasValidSellUnitPrice) 'Unit price more than \$50',
+      if (!_report.hasValidCustomerPhone) _sellOutTr('customer_phone'),
+      if (!_report.hasValidMaterialInvoiceTotal)
+        _sellOutTr('invoice_total_at_least_10'),
+      if (!_report.hasQualifiedSellQty)
+        _sellOutTrWith(
+          'sell_qty_at_least',
+          {'threshold': _report.sellQtyThreshold.toString()},
+        ),
     ];
 
-    if (incompletePoints.isEmpty) return 'Not earned yet.';
-    return 'Not earned yet. Not complete: ${incompletePoints.join(', ')}.';
+    if (incompletePoints.isEmpty) return _sellOutTr('not_earned_yet');
+    return _sellOutTrWith(
+      'not_complete',
+      {'conditions': incompletePoints.join(', ')},
+    );
+  }
+
+  void _showCommissionRules() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.58,
+          minChildSize: 0.35,
+          maxChildSize: 0.88,
+          builder: (context, scrollController) {
+            return Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: ListView(
+                controller: scrollController,
+                padding: const EdgeInsets.fromLTRB(18, 16, 18, 28),
+                children: [
+                  Center(
+                    child: Container(
+                      width: 42,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: const Color(0xffcfd7e6),
+                        borderRadius: BorderRadius.circular(99),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    _sellOutTr('commission_rules'),
+                    style: TextStyle(
+                      color: _sellOutText,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _CommissionRuleTile(
+                    title: _sellOutTr('iron'),
+                    condition: _sellOutTr('phone_required'),
+                    rate: '\$0.20',
+                    expression: _sellOutTr('invoice_count_x_020'),
+                  ),
+                  _CommissionRuleTile(
+                    title: _sellOutTr('material'),
+                    condition: _sellOutTr('material_condition'),
+                    rate: '\$0.25',
+                    expression: _sellOutTr('invoice_count_x_025'),
+                  ),
+                  _CommissionRuleTile(
+                    title: _sellOutTr('repair'),
+                    condition: _sellOutTr('phone_required'),
+                    rate: '\$0.20',
+                    expression: _sellOutTr('invoice_count_x_020'),
+                  ),
+                  _CommissionRuleTile(
+                    title: _sellOutTr('sell'),
+                    condition: _sellOutTr('sell_condition'),
+                    rate: '\$0.25',
+                    expression: _sellOutTr('qualified_qty_x_025'),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   Widget _buildTotalSection() {
@@ -3148,20 +3710,35 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Summary',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    _sellOutTr('summary'),
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  tooltip: _sellOutTr('view_commission_rules'),
+                  onPressed: _showCommissionRules,
+                  icon: const Icon(
+                    Icons.rule_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Total Qty',
+                Text(
+                  _sellOutTr('total_qty'),
                   style: TextStyle(fontSize: 12, color: Colors.white70),
                 ),
                 Text(
@@ -3178,8 +3755,8 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Total Amount',
+                Text(
+                  _sellOutTr('total_amount'),
                   style: TextStyle(fontSize: 12, color: Colors.white70),
                 ),
                 Text(
@@ -3196,8 +3773,8 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Commission',
+                Text(
+                  _sellOutTr('commission'),
                   style: TextStyle(fontSize: 12, color: Colors.white70),
                 ),
                 Text(
@@ -3242,8 +3819,10 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
               )
             : const Icon(Icons.send),
         label: Text(_isSubmitting
-            ? (_isEditing ? 'Updating...' : 'Submitting...')
-            : (_isEditing ? 'Update Report' : 'Submit Report')),
+            ? (_isEditing ? _sellOutTr('updating') : _sellOutTr('submitting'))
+            : (_isEditing
+                ? _sellOutTr('update_report')
+                : _sellOutTr('submit_report'))),
         style: ElevatedButton.styleFrom(
           backgroundColor: _sellOutBlue,
           foregroundColor: Colors.white,

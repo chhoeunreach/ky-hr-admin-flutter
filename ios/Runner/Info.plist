@@ -46,6 +46,11 @@
 	<string>KY CHECKIN needs microphone access so you can send voice messages in chat.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>KY CHECKIN needs photo library access so you can send photos in chat.</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>

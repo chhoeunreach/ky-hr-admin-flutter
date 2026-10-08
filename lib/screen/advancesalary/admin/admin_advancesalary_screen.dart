@@ -2,6 +2,7 @@ import 'package:cnattendance/model/advancesalary.dart';
 import 'package:cnattendance/provider/admin_advancesalary_list_controller.dart';
 import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
 
 class AdminAdvanceSalaryScreen extends StatelessWidget {
@@ -15,17 +16,17 @@ class AdminAdvanceSalaryScreen extends StatelessWidget {
         appBar: AppBar(
           elevation: 0,
           backgroundColor: Colors.transparent,
-          title: const Text("Admin Advance Salary"),
+          title: Text(translate('more_screen.admin_advance_salary')),
         ),
         floatingActionButton: FloatingActionButton(
             onPressed: () {
               model.onAdminAdvanceSalaryCreateClicked();
             },
+            backgroundColor: Colors.blue,
             child: const Icon(
               Icons.add,
               color: Colors.white,
-            ),
-            backgroundColor: Colors.blue),
+            )),
         body: Obx(
           () => SafeArea(
             child: Padding(
@@ -37,7 +38,7 @@ class AdminAdvanceSalaryScreen extends StatelessWidget {
                 child: ListView.builder(
                   itemCount: model.salaryList.length,
                   itemBuilder: (context, index) {
-                    AdvanceSalary item = model.salaryList[index];
+                    final AdvanceSalary item = model.salaryList[index];
                     return Container(
                       margin: const EdgeInsets.symmetric(vertical: 8),
                       child: ListTile(
@@ -94,4 +95,3 @@ class AdminAdvanceSalaryScreen extends StatelessWidget {
     );
   }
 }
-

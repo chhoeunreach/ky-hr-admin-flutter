@@ -2,7 +2,11 @@ import 'sell_out_report_line.dart';
 
 class SellOutReport {
   static const double sellCommissionPerItem = 0.25;
-  static const double ironCommissionPerItem = 0.20;
+  static const double ironCommissionPerReport = 0.20;
+  static const double materialCommissionPerReport = 0.25;
+  static const double repairCommissionPerReport = 0.20;
+  static const int partTimeSellQtyThreshold = 50;
+  static const int fullTimeSellQtyThreshold = 100;
 
   /// Service type labels are stored on the report exactly as the translated
   /// label shown in the UI at creation time. Since the app's language can
@@ -22,6 +26,7 @@ class SellOutReport {
     'sell',
     'material',
     'iron',
+    'repair',
   };
   static const Set<String> serialNumberRequiredCanonicalTypes = {
     'sell',
@@ -30,7 +35,7 @@ class SellOutReport {
   static final RegExp serialNumberPattern = RegExp(r'^[A-Za-z0-9]+$');
 
   static String canonicalServiceType(String raw) {
-    final trimmed = raw.trim();
+    final trimmed = raw.replaceAll(RegExp(r'[\u200B-\u200D\uFEFF]'), '').trim();
     for (final entry in _serviceTypeAliases.entries) {
       if (entry.value.contains(trimmed)) return entry.key;
     }
@@ -49,6 +54,8 @@ class SellOutReport {
   String note;
   String extractedText;
   double? serverTotalAmount;
+  double? serverCommission;
+  String sellerWorkCategory;
   String createdAt;
   int? linesCount;
   int? photosCount;
@@ -70,6 +77,8 @@ class SellOutReport {
     this.note = '',
     this.extractedText = '',
     this.serverTotalAmount,
+    this.serverCommission,
+    this.sellerWorkCategory = '',
     this.createdAt = '',
     this.linesCount,
     this.photosCount,
@@ -114,6 +123,8 @@ class SellOutReport {
       note: _asString(json['note']),
       extractedText: _asString(json['extracted_text']),
       serverTotalAmount: _asNullableDouble(json['total_amount']),
+      serverCommission: _asNullableDouble(json['commission']),
+      sellerWorkCategory: _asString(json['seller_work_category']),
       createdAt: _asString(json['created_at']),
       linesCount: _asInt(json['lines_count']),
       photosCount: _asInt(json['photos_count']),
@@ -140,9 +151,21 @@ class SellOutReport {
 
   bool get hasValidCustomerPhone => customerPhone.trim().length > 6;
 
-  bool get hasValidSellUnitPrice {
+  bool get hasValidMaterialInvoiceTotal {
+    if (canonicalServiceType(serviceType) != 'material') return true;
+    return totalAmount >= 10;
+  }
+
+  int get sellQtyThreshold {
+    final category = sellerWorkCategory.trim().toLowerCase();
+    return category == 'part_timer'
+        ? partTimeSellQtyThreshold
+        : fullTimeSellQtyThreshold;
+  }
+
+  bool get hasQualifiedSellQty {
     if (canonicalServiceType(serviceType) != 'sell') return true;
-    return lines.every((line) => line.unitPrice > 50);
+    return totalQty >= sellQtyThreshold;
   }
 
   bool get isCommissionable {
@@ -151,7 +174,21 @@ class SellOutReport {
   }
 
   bool get isCommissionEligible {
-    return isCommissionable && hasValidCustomerPhone && hasValidSellUnitPrice;
+    return isCommissionable &&
+        hasValidCustomerPhone &&
+        hasValidMaterialInvoiceTotal &&
+        hasQualifiedSellQty;
+  }
+
+  List<String> get commissionFailureReasons {
+    if (!isCommissionable) return const ['No commission condition'];
+    final reasons = <String>[
+      if (!hasValidCustomerPhone) 'Phone number required',
+      if (!hasValidMaterialInvoiceTotal) 'Invoice total must be at least \$10',
+      if (!hasQualifiedSellQty)
+        'Qty must be at least $sellQtyThreshold for Sell',
+    ];
+    return reasons;
   }
 
   bool get requiresSerialNumberValidation {
@@ -160,14 +197,32 @@ class SellOutReport {
   }
 
   double get commission {
+    if (serverCommission != null) return serverCommission!;
     if (!isCommissionEligible) return 0;
-    return totalQty * commissionRate;
+    switch (canonicalServiceType(serviceType)) {
+      case 'iron':
+        return ironCommissionPerReport;
+      case 'material':
+        return materialCommissionPerReport;
+      case 'repair':
+        return repairCommissionPerReport;
+      case 'sell':
+        return totalQty * sellCommissionPerItem;
+    }
+    return 0;
   }
 
   double get commissionRate {
-    return canonicalServiceType(serviceType) == 'iron'
-        ? ironCommissionPerItem
-        : sellCommissionPerItem;
+    switch (canonicalServiceType(serviceType)) {
+      case 'iron':
+        return ironCommissionPerReport;
+      case 'material':
+        return materialCommissionPerReport;
+      case 'repair':
+        return repairCommissionPerReport;
+      default:
+        return sellCommissionPerItem;
+    }
   }
 
   static String? validateSerialNumber(String value) {
@@ -208,6 +263,8 @@ class SellOutReport {
     note = '';
     extractedText = '';
     serverTotalAmount = null;
+    serverCommission = null;
+    sellerWorkCategory = '';
     createdAt = '';
     linesCount = null;
     photosCount = null;
