@@ -9,7 +9,34 @@ import 'package:http/http.dart' as http;
 import 'package:http_interceptor_plus/http_interceptor_plus.dart';
 
 class MoreScreenProvider with ChangeNotifier {
-  late Map<String, String> features = {};
+  Map<String, String> features = {
+    "project-management": "1",
+    "meeting": "1",
+    "tada": "1",
+    "payroll-management": "1",
+    "advance-salary": "1",
+    "advance-salary-approve": "0",
+    "advance-salary-admin": "0",
+    "support": "1",
+    "dark-mode": "1",
+    "attendance": "1",
+    "leave-request": "1",
+    "time-leave": "1",
+    "holiday": "1",
+    "notice": "1",
+    "sell-staff-report": "1",
+    "nfc-qr": "1",
+    "award": "1",
+    "training": "1",
+    "loan": "1",
+    "event": "1",
+    "complaint": "1",
+    "warning": "1",
+    "resignation": "1",
+    "assets": "1",
+    "social-rewards": "0",
+    "social-rewards-admin": "0",
+  };
   bool showNfc = true;
 
   void changeAttendanceMethod(String type) {
@@ -19,10 +46,17 @@ class MoreScreenProvider with ChangeNotifier {
   }
 
   Future<void> getFeatures() async {
-    Preferences preferences = Preferences();
-    features = await preferences.getFeatures();
-    showNfc = await preferences.getShowNfc();
-    notifyListeners();
+    try {
+      Preferences preferences = Preferences();
+      final loadedFeatures = await preferences.getFeatures();
+      if (loadedFeatures.isNotEmpty) {
+        features = loadedFeatures;
+      }
+      showNfc = await preferences.getShowNfc();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('getFeatures error: $e');
+    }
   }
 
   Future<Logoutresponse> logout() async {

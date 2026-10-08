@@ -51,7 +51,7 @@ import workmanager_apple
       _ application: UIApplication,
       didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
     ) {
-        Messaging.messaging().apnsToken = deviceToken
+        Messaging.messaging().setAPNSToken(deviceToken, type: .unknown)
         let token = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
         logPush("APNs device token registered: \(token)")
         super.application(application, didRegisterForRemoteNotificationsWithDeviceToken: deviceToken)

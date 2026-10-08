@@ -73,6 +73,7 @@ class PaymentQrCode {
   PaymentQrCode({
     required this.paymentName,
     required this.qrCodeUrl,
+    required this.link,
   });
 
   factory PaymentQrCode.fromJson(dynamic json) {
@@ -80,16 +81,25 @@ class PaymentQrCode {
     return PaymentQrCode(
       paymentName: (data['payment_name'] ?? '').toString(),
       qrCodeUrl: (data['qr_code_url'] ?? data['qr_code'] ?? '').toString(),
+      link: (data['payment_link'] ??
+              data['payment_url'] ??
+              data['link_url'] ??
+              data['link'] ??
+              data['url'] ??
+              '')
+          .toString(),
     );
   }
 
   final String paymentName;
   final String qrCodeUrl;
+  final String link;
 
   Map<String, dynamic> toJson() {
     return {
       'payment_name': paymentName,
       'qr_code_url': qrCodeUrl,
+      'payment_link': link,
     };
   }
 }

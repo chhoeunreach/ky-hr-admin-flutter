@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:cnattendance/data/source/datastore/preferences.dart';
@@ -6,6 +7,7 @@ import 'package:cnattendance/model/group_chat_detail.dart';
 import 'package:cnattendance/model/group_chat_message.dart';
 import 'package:cnattendance/provider/chatbadgecontroller.dart';
 import 'package:cnattendance/repositories/group_chat_repository.dart';
+import 'package:cnattendance/services/voice_recorder_service.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:cnattendance/utils/chat_background_store.dart';
 import 'package:flutter/cupertino.dart';
@@ -13,12 +15,18 @@ import 'package:get/get.dart';
 
 class GroupChatController extends GetxController {
   final GroupChatRepository _repository = GroupChatRepository();
+  final VoiceRecorderService _voiceRecorderService = VoiceRecorderService();
+  Timer? _recordingTimer;
+  VoiceRecordingResult? _pendingVoiceRecording;
 
   final chatController = TextEditingController();
   final scrollController = ScrollController();
 
   var isLoading = false.obs;
   var isSending = false.obs;
+  var isRecording = false.obs;
+  var recordingSeconds = 0.obs;
+  var hasPendingVoiceRecording = false.obs;
   var isAtBottom = true.obs;
   var backgroundPath = "".obs;
   var groups = <GroupChat>[].obs;
@@ -142,6 +150,145 @@ class GroupChatController extends GetxController {
     } finally {
       isSending.value = false;
     }
+  }
+
+  Future<void> toggleVoiceRecording() async {
+    if (isRecording.value) {
+      await stopVoiceRecording();
+      return;
+    }
+    await startVoiceRecording();
+  }
+
+  Future<void> startVoiceRecording() async {
+    try {
+      final hasPermission = await _voiceRecorderService.hasPermission();
+      if (!hasPermission) {
+        showToast("Microphone permission is required to send voice messages");
+        return;
+      }
+
+      _pendingVoiceRecording = null;
+      hasPendingVoiceRecording.value = false;
+      recordingSeconds.value = 0;
+      isRecording.value = true;
+      _startRecordingTimer();
+      await _voiceRecorderService.start();
+    } catch (e) {
+      await _resetRecordingState(deletePendingFile: true);
+      showToast(e.toString());
+    }
+  }
+
+  Future<void> stopVoiceRecording() async {
+    try {
+      final result = await _voiceRecorderService.stop();
+      _stopRecordingTimer();
+      isRecording.value = false;
+
+      if (result == null) {
+        await _resetRecordingState(deletePendingFile: false);
+        return;
+      }
+
+      _pendingVoiceRecording = result;
+      hasPendingVoiceRecording.value = true;
+      recordingSeconds.value = _durationSeconds(result.duration);
+    } catch (e) {
+      await _resetRecordingState(deletePendingFile: true);
+      showToast(e.toString());
+    }
+  }
+
+  Future<void> cancelVoiceRecording() async {
+    try {
+      if (isRecording.value) {
+        await _voiceRecorderService.cancel();
+      }
+      await _resetRecordingState(deletePendingFile: true);
+    } catch (e) {
+      await _resetRecordingState(deletePendingFile: true);
+      showToast(e.toString());
+    }
+  }
+
+  Future<void> sendVoiceRecording(int groupId) async {
+    isSending.value = true;
+
+    if (isRecording.value) {
+      await stopVoiceRecording();
+    }
+
+    final recording = _pendingVoiceRecording;
+    if (recording == null) {
+      await _resetRecordingState(deletePendingFile: false);
+      isSending.value = false;
+      return;
+    }
+
+    try {
+      final upload = await _repository.uploadMedia(recording.path, 'voice');
+      final message = await _repository.sendMediaMessage(
+        groupId,
+        type: 'voice',
+        mediaUrl: upload['media_url'] ?? upload['url'] ?? '',
+        mediaPath: upload['media_path'] ?? upload['path'],
+        durationSeconds: _durationSeconds(recording.duration),
+      );
+      chatMessages.add(message);
+      _clearPendingVoiceUi();
+      unawaited(_deleteRecordingFile(recording.path));
+      _scrollToBottom();
+    } catch (e) {
+      await _resetRecordingState(deletePendingFile: true);
+      showToast(e.toString());
+    } finally {
+      isSending.value = false;
+    }
+  }
+
+  void _startRecordingTimer() {
+    _recordingTimer?.cancel();
+    _recordingTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      recordingSeconds.value += 1;
+    });
+  }
+
+  void _stopRecordingTimer() {
+    _recordingTimer?.cancel();
+    _recordingTimer = null;
+  }
+
+  Future<void> _resetRecordingState({required bool deletePendingFile}) async {
+    _stopRecordingTimer();
+    isRecording.value = false;
+
+    final pendingRecording = _pendingVoiceRecording;
+    _clearPendingVoiceUi();
+
+    if (deletePendingFile && pendingRecording != null) {
+      await _deleteRecordingFile(pendingRecording.path);
+    }
+  }
+
+  void _clearPendingVoiceUi() {
+    _pendingVoiceRecording = null;
+    hasPendingVoiceRecording.value = false;
+    recordingSeconds.value = 0;
+    isRecording.value = false;
+  }
+
+  Future<void> _deleteRecordingFile(String path) async {
+    try {
+      await _voiceRecorderService.delete(path);
+    } catch (error) {
+      debugPrint('[VOICE_RECORD] delete failed: $error');
+    }
+  }
+
+  int _durationSeconds(Duration duration) {
+    final seconds = duration.inSeconds;
+    return seconds <= 0 ? 1 : seconds;
   }
 
   Future<void> sendFileMessage(int groupId, String filePath,
@@ -339,10 +486,13 @@ class GroupChatController extends GetxController {
     final last = chatMessages.last;
     switch (last.messageType) {
       case 'image':
+      case 'photo':
         return 'Sent a photo';
       case 'voice':
+      case 'audio':
         return 'Sent a voice message';
       case 'file':
+      case 'document':
         return 'Sent a file';
       case 'location':
         return 'Sent a location';
@@ -369,6 +519,11 @@ class GroupChatController extends GetxController {
 
   @override
   void onClose() {
+    _stopRecordingTimer();
+    if (isRecording.value) {
+      _voiceRecorderService.cancel();
+    }
+    _voiceRecorderService.dispose();
     ChatBadgeController.ensureRegistered()
         .clearActiveConversation('group_${currentGroupId.value}');
     chatController.dispose();

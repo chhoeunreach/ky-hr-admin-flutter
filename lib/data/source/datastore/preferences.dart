@@ -228,9 +228,10 @@ class Preferences with ChangeNotifier {
     await prefs.setBool(HARD_RESET_APP, value);
   }
 
-  void saveAppUrl(String value) async {
+  Future<void> saveAppUrl(String value) async {
     final prefs = await _sharedPrefs;
     await prefs.setString(APP_URL, value);
+    notifyListeners();
   }
 
   Future<void> saveAttendanceType(String value) async {

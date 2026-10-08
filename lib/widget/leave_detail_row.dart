@@ -37,10 +37,10 @@ class LeaveDetailRow extends StatelessWidget {
     }
 
     return ClipRRect(
-      borderRadius: BorderRadius.only(topLeft: Radius.circular(10),bottomRight: Radius.circular(10)),
+      borderRadius: BorderRadius.circular(12),
       child: Container(
         color: Colors.white12,
-        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -51,18 +51,22 @@ class LeaveDetailRow extends StatelessWidget {
                 children: [
                   Text(
                     name,
-                    style: TextStyle(color: Colors.white, fontSize: 18),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 5),
+                    padding: const EdgeInsets.symmetric(vertical: 3),
                     child: Text(
                       "$from - $to",
-                      style: TextStyle(color: Colors.white, fontSize: 12),
+                      style: const TextStyle(color: Colors.white, fontSize: 11),
                     ),
                   ),
                   Text(
                     authorization == '' ? "N/A" : "By: $authorization",
-                    style: TextStyle(color: HexColor("#036eb7"), fontSize: 12),
+                    style: TextStyle(color: HexColor("#036eb7"), fontSize: 11),
                   ),
                 ],
               ),
@@ -73,27 +77,30 @@ class LeaveDetailRow extends StatelessWidget {
                 textBaseline: TextBaseline.alphabetic,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    padding: const EdgeInsets.only(bottom: 4.0),
                     child: Text(
                       requestedAt,
-                      style: TextStyle(color: Colors.white, fontSize: 12),
+                      style: const TextStyle(color: Colors.white, fontSize: 11),
                     ),
                   ),
                   GestureDetector(
                     onTap: () {
-                      if(status.toLowerCase() == "pending"){
+                      if (status.toLowerCase() == "pending") {
                         onLeaveCancelledClicked(id);
                       }
                     },
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(8),
                       child: Container(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
                         color: getStatus(),
                         child: Text(
                           status,
-                          style: TextStyle(color: Colors.white, fontSize: 12),
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600),
                         ),
                       ),
                     ),

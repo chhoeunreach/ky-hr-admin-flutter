@@ -62,6 +62,7 @@ class Constant {
   static const UPDATE_FCM_TOKEN_URL = "$API_URL/users/update-fcm-token";
   static const NOTIFICATION_URL = "$API_URL/notifications";
   static const NOTICE_URL = "$API_URL/notices";
+  static const APP_LINKS_URL = "$API_URL/app-links";
   static const MEETING_URL = "$API_URL/team-meetings";
   static const MEETING_ATTENDANCE_STATUS_URL =
       "$API_URL/team-meetings/attendance/status";

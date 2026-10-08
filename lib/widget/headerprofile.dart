@@ -3,6 +3,7 @@ import 'package:cnattendance/provider/notificationcontroller.dart';
 import 'package:cnattendance/provider/prefprovider.dart';
 import 'package:cnattendance/screen/profile/NotificationScreen.dart';
 import 'package:cnattendance/screen/profile/profilescreen.dart';
+import 'package:cnattendance/services/server_status_service.dart';
 import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -15,6 +16,10 @@ import '../provider/dashboardprovider.dart';
 import 'customalertdialog.dart';
 
 class HeaderProfile extends StatefulWidget {
+  const HeaderProfile({super.key, this.showServerTest = false});
+
+  final bool showServerTest;
+
   @override
   State<StatefulWidget> createState() => HeaderState();
 }
@@ -62,6 +67,52 @@ class HeaderState extends State<HeaderProfile> {
           },
         );
       });
+    }
+  }
+
+  Future<void> testServerConnection() async {
+    try {
+      setState(() {
+        EasyLoading.show(
+            status: 'Checking server', maskType: EasyLoadingMaskType.black);
+      });
+
+      final result = await ServerStatusService().checkCurrentServer();
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        EasyLoading.dismiss(animation: true);
+      });
+
+      showDialog(
+        context: context,
+        builder: (context) {
+          return Dialog(
+            child: CustomAlertDialog(
+              '${result.isConnected ? 'Connected' : 'Not connected'}\n\n'
+              '${result.message}\n\n'
+              'Server: ${result.url}',
+            ),
+          );
+        },
+      );
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        EasyLoading.dismiss(animation: true);
+      });
+      showDialog(
+        context: context,
+        builder: (context) {
+          return Dialog(
+            child: CustomAlertDialog(e.toString()),
+          );
+        },
+      );
     }
   }
 
@@ -168,6 +219,15 @@ class HeaderState extends State<HeaderProfile> {
                   icon: Icons.location_on_rounded,
                   color: enterprise.accent,
                   onPressed: sendLocation,
+                ),
+              ),
+            if (widget.showServerTest)
+              Tooltip(
+                message: "Test Server Connection",
+                child: _HeaderIconButton(
+                  icon: Icons.dns_rounded,
+                  color: enterprise.accent,
+                  onPressed: testServerConnection,
                 ),
               ),
             Tooltip(

@@ -6,6 +6,7 @@ import 'package:cnattendance/data/source/network/connect.dart';
 import 'package:cnattendance/model/group_chat.dart';
 import 'package:cnattendance/model/group_chat_detail.dart';
 import 'package:cnattendance/model/group_chat_message.dart';
+import 'package:cnattendance/services/chat_media_upload_service.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_interceptor_plus/http_interceptor_plus.dart';
@@ -13,12 +14,15 @@ import 'package:http_interceptor_plus/http_interceptor_plus.dart';
 class GroupChatRepository {
   final Preferences _preferences;
   final Connect _connect;
+  final ChatMediaUploadService _mediaUploadService;
 
   GroupChatRepository({
     Preferences? preferences,
     Connect? connect,
+    ChatMediaUploadService? mediaUploadService,
   })  : _preferences = preferences ?? Preferences(),
-        _connect = connect ?? Connect();
+        _connect = connect ?? Connect(),
+        _mediaUploadService = mediaUploadService ?? ChatMediaUploadService();
 
   Future<List<GroupChat>> getGroups() async {
     final response = await _connect.getResponse(
@@ -224,15 +228,33 @@ class GroupChatRepository {
     int? mediaHeight,
   }) async {
     final body = <String, dynamic>{
+      'message': '',
+      'type': type,
       'message_type': type,
+      'media_type': type,
+      'chat_message_type': type,
       'media_url': mediaUrl,
     };
-    if (mediaPath != null) body['media_path'] = mediaPath;
-    if (fileName != null) body['file_name'] = fileName;
-    if (durationSeconds != null)
+    if (mediaPath != null && mediaPath.isNotEmpty) {
+      body['media_path'] = mediaPath;
+      body['path'] = mediaPath;
+    }
+    if (fileName != null && fileName.isNotEmpty) {
+      body['file_name'] = fileName;
+      body['filename'] = fileName;
+    }
+    if (durationSeconds != null) {
       body['duration_seconds'] = durationSeconds.toString();
-    if (mediaWidth != null) body['media_width'] = mediaWidth.toString();
-    if (mediaHeight != null) body['media_height'] = mediaHeight.toString();
+      body['duration'] = durationSeconds.toString();
+    }
+    if (mediaWidth != null) {
+      body['media_width'] = mediaWidth.toString();
+      body['width'] = mediaWidth.toString();
+    }
+    if (mediaHeight != null) {
+      body['media_height'] = mediaHeight.toString();
+      body['height'] = mediaHeight.toString();
+    }
 
     final response = await _connect.postResponse(
       '${Constant.GROUP_CHAT}/$groupId/messages',
@@ -251,7 +273,10 @@ class GroupChatRepository {
       '${Constant.GROUP_CHAT}/$groupId/messages',
       await _headers(),
       {
+        'message': '',
+        'type': 'location',
         'message_type': 'location',
+        'chat_message_type': 'location',
         'latitude': latitude.toString(),
         'longitude': longitude.toString(),
       },
@@ -260,28 +285,20 @@ class GroupChatRepository {
   }
 
   Future<Map<String, dynamic>> uploadMedia(String filePath, String type) async {
-    final token = await _preferences.getToken();
-    final appUrl = await _preferences.getAppUrl();
-    final uri = Uri.parse('$appUrl${Constant.GROUP_CHAT_MEDIA_UPLOAD}');
-
-    final request = http.MultipartRequest('POST', uri);
-    request.headers['Accept'] = 'application/json; charset=UTF-8';
-    request.headers['Authorization'] = 'Bearer $token';
-    request.fields['type'] = type;
-    request.files.add(await http.MultipartFile.fromPath('file', filePath));
-
-    final streamedResponse = await request.send();
-    final response = await http.Response.fromStream(streamedResponse);
-    final data = _decodeBody(response.body);
-
-    if (response.statusCode == 200) {
-      final responseData = data['data'];
-      if (responseData is Map) {
-        return Map<String, dynamic>.from(responseData);
-      }
-      return {};
-    }
-    throw _errorMessage(data);
+    final upload = await _mediaUploadService.upload(
+      file: File(filePath),
+      type: type,
+      customEndpoint: Constant.GROUP_CHAT_MEDIA_UPLOAD,
+    );
+    return {
+      'url': upload.url,
+      'media_url': upload.url,
+      'path': upload.path,
+      'media_path': upload.path,
+      'width': upload.width,
+      'height': upload.height,
+      'type': upload.type,
+    };
   }
 
   Future<Map<String, String>> _headers() async {

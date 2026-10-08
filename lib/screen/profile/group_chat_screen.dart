@@ -6,6 +6,7 @@ import 'package:cnattendance/screen/profile/group_info_screen.dart';
 import 'package:cnattendance/widget/chat/chat_file_bubble.dart';
 import 'package:cnattendance/widget/chat/chat_image_bubble.dart';
 import 'package:cnattendance/widget/chat/chat_location_bubble.dart';
+import 'package:cnattendance/widget/chat/chat_voice_bubble.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
@@ -49,6 +50,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   @override
   void dispose() {
     _controller.scrollController.removeListener(_controller.onScroll);
+    Get.delete<GroupChatController>(tag: 'group_chat_${widget.groupId}');
     super.dispose();
   }
 
@@ -580,7 +582,12 @@ class _MessageBubble extends StatelessWidget {
                             isIncoming: !isMe,
                           ),
                         if (!message.isDeleted && message.isVoice)
-                          _VoiceBubble(mediaUrl: message.mediaUrl, durationSeconds: message.durationSeconds),
+                          ChatVoiceBubble(
+                            mediaUrl: message.mediaUrl ?? '',
+                            mediaPath: message.mediaPath ?? '',
+                            isIncoming: !isMe,
+                            durationSeconds: message.durationSeconds,
+                          ),
                         if (!message.isDeleted && message.isLocation)
                           ChatLocationBubble(
                             latitude: message.latitude ?? 0,
@@ -646,31 +653,7 @@ class _MessageBubble extends StatelessWidget {
   }
 }
 
-class _VoiceBubble extends StatelessWidget {
-  final String? mediaUrl;
-  final int? durationSeconds;
 
-  const _VoiceBubble({this.mediaUrl, this.durationSeconds});
-
-  @override
-  Widget build(BuildContext context) {
-    final duration = durationSeconds != null ? '${durationSeconds! ~/ 60}:${(durationSeconds! % 60).toString().padLeft(2, '0')}' : '0:00';
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(Icons.play_circle_filled, color: Colors.amber[200], size: 28),
-        const SizedBox(width: 8),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Voice message', style: TextStyle(color: Colors.white, fontSize: 14)),
-            Text(duration, style: const TextStyle(color: Colors.white38, fontSize: 11)),
-          ],
-        ),
-      ],
-    );
-  }
-}
 
 BoxDecoration _groupBackgroundDecoration(String path) {
   if (path.trim().isNotEmpty && File(path).existsSync()) {
@@ -755,97 +738,246 @@ class _ChatInputBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (showAttachments)
+    return Obx(() {
+      final isRecordingActive = controller.isRecording.value || controller.hasPendingVoiceRecording.value;
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (showAttachments && !isRecordingActive)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.15),
+                border: Border(top: BorderSide(color: Colors.white.withOpacity(0.05))),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _AttachmentButton(icon: Icons.image, label: 'Photo', color: Colors.purple[300]!, onTap: onPickImage),
+                  _AttachmentButton(icon: Icons.insert_drive_file, label: 'File', color: Colors.blue[300]!, onTap: onPickFile),
+                  _AttachmentButton(icon: Icons.mic, label: 'Voice', color: Colors.amber[300]!, onTap: () {
+                    FocusScope.of(context).unfocus();
+                    onToggleAttachments();
+                    controller.startVoiceRecording();
+                  }),
+                  _AttachmentButton(icon: Icons.location_on, label: 'Location', color: Colors.green[300]!, onTap: onPickLocation),
+                ],
+              ),
+            ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.15),
-              border: Border(top: BorderSide(color: Colors.white.withOpacity(0.05))),
+              color: Colors.white.withOpacity(0.05),
+              border: Border(top: BorderSide(color: Colors.white.withOpacity(0.08))),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _AttachmentButton(icon: Icons.image, label: 'Photo', color: Colors.purple[300]!, onTap: onPickImage),
-                _AttachmentButton(icon: Icons.insert_drive_file, label: 'File', color: Colors.blue[300]!, onTap: onPickFile),
-                _AttachmentButton(icon: Icons.location_on, label: 'Location', color: Colors.green[300]!, onTap: onPickLocation),
-              ],
-            ),
-          ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
-            border: Border(top: BorderSide(color: Colors.white.withOpacity(0.08))),
-          ),
-          child: Row(
-            children: [
-              GestureDetector(
-                onTap: onToggleAttachments,
-                child: Container(
-                  width: 36, height: 36,
-                  decoration: BoxDecoration(
-                    color: showAttachments ? const Color(0xFF036eb7) : Colors.white.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: Icon(
-                    showAttachments ? Icons.close : Icons.add,
-                    color: Colors.white, size: 20,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.06),
-                    borderRadius: BorderRadius.circular(22),
-                  ),
-                  child: TextField(
-                    controller: controller.chatController,
-                    style: const TextStyle(color: Colors.white, fontSize: 15),
-                    decoration: const InputDecoration(
-                      hintText: 'Message...',
-                      hintStyle: TextStyle(color: Colors.grey),
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(vertical: 10),
-                    ),
-                    cursorColor: Colors.white,
-                    textInputAction: TextInputAction.send,
-                    onSubmitted: (value) => controller.sendTextMessage(groupId, value),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 4),
-              Obx(() => controller.isSending.value
-                  ? const Padding(
-                      padding: EdgeInsets.all(8),
-                      child: SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white54)),
-                    )
-                  : GestureDetector(
-                      onTap: () {
-                        final text = controller.chatController.text;
-                        if (text.isNotEmpty) {
-                          controller.sendTextMessage(groupId, text);
-                        }
-                      },
-                      child: Container(
-                        width: 36, height: 36,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF036eb7),
-                          shape: BoxShape.circle,
+            child: isRecordingActive
+                ? _GroupRecordingControls(controller: controller, groupId: groupId)
+                : Row(
+                    children: [
+                      GestureDetector(
+                        onTap: onToggleAttachments,
+                        child: Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: showAttachments ? const Color(0xFF036eb7) : Colors.white.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                          child: Icon(
+                            showAttachments ? Icons.close : Icons.add,
+                            color: Colors.white,
+                            size: 20,
+                          ),
                         ),
-                        child: const Icon(Icons.send, color: Colors.white, size: 18),
                       ),
-                    )),
-            ],
+                      const SizedBox(width: 6),
+                      GestureDetector(
+                        onTap: controller.isSending.value
+                            ? null
+                            : () {
+                                FocusScope.of(context).unfocus();
+                                controller.startVoiceRecording();
+                              },
+                        child: Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                          child: const Icon(
+                            Icons.mic,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.06),
+                            borderRadius: BorderRadius.circular(22),
+                          ),
+                          child: TextField(
+                            controller: controller.chatController,
+                            style: const TextStyle(color: Colors.white, fontSize: 15),
+                            decoration: const InputDecoration(
+                              hintText: 'Message...',
+                              hintStyle: TextStyle(color: Colors.grey),
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.symmetric(vertical: 10),
+                            ),
+                            cursorColor: Colors.white,
+                            textInputAction: TextInputAction.send,
+                            onSubmitted: (value) => controller.sendTextMessage(groupId, value),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      controller.isSending.value
+                          ? const Padding(
+                              padding: EdgeInsets.all(8),
+                              child: SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white54),
+                              ),
+                            )
+                          : GestureDetector(
+                              onTap: () {
+                                final text = controller.chatController.text;
+                                if (text.isNotEmpty) {
+                                  controller.sendTextMessage(groupId, text);
+                                }
+                              },
+                              child: Container(
+                                width: 36,
+                                height: 36,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF036eb7),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.send, color: Colors.white, size: 18),
+                              ),
+                            ),
+                    ],
+                  ),
           ),
-        ),
-      ],
-    );
+        ],
+      );
+    });
+  }
+}
+
+class _GroupRecordingControls extends StatelessWidget {
+  final GroupChatController controller;
+  final int groupId;
+
+  const _GroupRecordingControls({
+    required this.controller,
+    required this.groupId,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final isRecording = controller.isRecording.value;
+      final isSending = controller.isSending.value;
+      final seconds = controller.recordingSeconds.value;
+
+      return Row(
+        children: [
+          GestureDetector(
+            onTap: isSending ? null : controller.cancelVoiceRecording,
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: const Color(0xffef4444).withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.close_rounded,
+                color: Color(0xffef4444),
+                size: 20,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Container(
+              height: 42,
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              decoration: BoxDecoration(
+                color: const Color(0xff14264c),
+                borderRadius: BorderRadius.circular(21),
+                border: Border.all(color: const Color(0xff24406f)),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    isRecording ? Icons.mic : Icons.check_circle,
+                    color: const Color(0xffef4444),
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    _formatDuration(seconds),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const Spacer(),
+                  if (isRecording)
+                    IconButton(
+                      constraints: const BoxConstraints.tightFor(width: 34, height: 34),
+                      padding: EdgeInsets.zero,
+                      onPressed: isSending ? null : controller.stopVoiceRecording,
+                      icon: const Icon(
+                        Icons.stop_circle,
+                        color: Color(0xffef4444),
+                        size: 24,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          isSending
+              ? const Padding(
+                  padding: EdgeInsets.all(8),
+                  child: SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white54),
+                  ),
+                )
+              : GestureDetector(
+                  onTap: () => controller.sendVoiceRecording(groupId),
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF036eb7),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.send, color: Colors.white, size: 18),
+                  ),
+                ),
+        ],
+      );
+    });
+  }
+
+  String _formatDuration(int totalSeconds) {
+    final minutes = totalSeconds ~/ 60;
+    final seconds = totalSeconds % 60;
+    return '$minutes:${seconds.toString().padLeft(2, '0')}';
   }
 }
 

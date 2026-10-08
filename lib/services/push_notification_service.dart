@@ -16,7 +16,6 @@ import 'package:cnattendance/utils/app_badge_sync.dart';
 import 'package:cnattendance/utils/chat_unread_store.dart';
 import 'package:cnattendance/utils/chat/notification_payload_parser.dart';
 import 'package:cnattendance/utils/fcm_token.dart';
-import 'package:cnattendance/utils/incoming_chat_listener.dart';
 import 'package:cnattendance/utils/navigationservice.dart';
 import 'package:cnattendance/utils/notification_history.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -27,7 +26,8 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:in_app_notification/in_app_notification.dart';
-import 'package:overlay_support/overlay_support.dart';
+import 'package:cnattendance/utils/app_device_info.dart';
+import 'package:cnattendance/widget/app_update_dialog.dart';
 import '../firebase_options.dart';
 import '../utils/constant.dart';
 
@@ -178,7 +178,62 @@ class PushNotificationService {
     }
   }
 
-  static NotificationContent _chatNotificationContent(
+  static bool _isAppUpdatePayload(Map<String, dynamic> data,
+      {String? title, String? body}) {
+    final type = data['type']?.toString().toLowerCase().trim() ?? '';
+    if (type == 'app_update' || type == 'version_update') return true;
+    if (data['action']?.toString().toLowerCase().trim() == 'app_update') {
+      return true;
+    }
+    if (data.containsKey('target_version') || data.containsKey('latest_version')) {
+      return true;
+    }
+    final t = (title ?? data['notification_title'] ?? data['title'] ?? '')
+        .toString()
+        .toLowerCase();
+    final b = (body ?? data['message'] ?? data['body'] ?? data['description'] ?? '')
+        .toString()
+        .toLowerCase();
+    if (t.contains('អាប់ដេត') || t.contains('update') || t.contains('version')) {
+      return true;
+    }
+    if (b.contains('អាប់ដេត') || b.contains('កំណែថ្មី')) {
+      return true;
+    }
+    return false;
+  }
+
+  static Future<void> _showAppUpdatePrompt({
+    required String targetVersion,
+    required String downloadUrl,
+    required String title,
+    required String message,
+    required bool forceUpdate,
+  }) async {
+    final context = NavigationService.navigatorKey.currentContext ?? Get.context;
+    if (context == null) {
+      debugPrint('Unable to show app update prompt: no active BuildContext');
+      return;
+    }
+
+    try {
+      final details = await AppDeviceInfo.getDetails();
+      final currentVersion = details.appVersion;
+      await showAppUpdateDialog(
+        context: context,
+        currentVersion: currentVersion,
+        latestVersion: targetVersion.isNotEmpty ? targetVersion : currentVersion,
+        downloadUrl: downloadUrl.isNotEmpty ? downloadUrl : 'https://hr.kneayerng.com',
+        releaseNotes: message,
+        alertTitle: title,
+        isForceUpdate: forceUpdate,
+      );
+    } catch (e) {
+      debugPrint('Failed to show AppUpdateDialog: $e');
+    }
+  }
+
+  static NotificationContent _buildNotificationContent(
     RemoteMessage message, {
     int? badge,
     String? localKey,
@@ -186,11 +241,13 @@ class PushNotificationService {
     final payload = _notificationPayload(message, localKey: localKey);
     final type = payload['type'] ?? '';
     final isGroupChat = type == 'group_chat';
+    final isDirectChat = type == 'chat';
+    final isChat = isGroupChat || isDirectChat;
     final senderName = (payload['sender_name']?.trim().isNotEmpty ?? false)
         ? payload['sender_name']!.trim()
         : _messageTitle(message);
     final conversationTitle =
-        isGroupChat ? (payload['title'] ?? 'Digital HRMS Chat') : senderName;
+        isGroupChat ? (payload['title'] ?? 'Digital HRMS Chat') : (isDirectChat ? senderName : _messageTitle(message));
     final avatar = payload['sender_image']?.trim() ?? '';
 
     return NotificationContent(
@@ -198,11 +255,15 @@ class PushNotificationService {
       channelKey: 'digital_hr_channel',
       title: conversationTitle,
       body: _messageBody(message),
-      summary: isGroupChat ? senderName : 'Digital HRMS Chat',
-      category: NotificationCategory.Message,
+      summary: isChat
+          ? (isGroupChat ? senderName : 'Digital HRMS Chat')
+          : 'Digital HRMS',
+      category: isChat
+          ? NotificationCategory.Message
+          : NotificationCategory.Reminder,
       notificationLayout: isGroupChat
           ? NotificationLayout.MessagingGroup
-          : NotificationLayout.Messaging,
+          : (isDirectChat ? NotificationLayout.Messaging : NotificationLayout.Default),
       groupKey: payload['conversation_id']?.isNotEmpty == true
           ? payload['conversation_id']
           : payload['type'],
@@ -212,6 +273,7 @@ class PushNotificationService {
       payload: payload,
     );
   }
+
 
   static String _toastMessage(RemoteMessage message) {
     final title = _messageTitle(message).trim();
@@ -247,6 +309,41 @@ class PushNotificationService {
     }
 
     final type = payload["type"];
+
+    if (_isAppUpdatePayload(payload, title: payload["title"], body: payload["message"])) {
+      final targetVersion = payload['target_version'] ?? '';
+      final downloadUrl = (payload['download_url']?.isNotEmpty ?? false)
+          ? payload['download_url']!
+          : 'https://hr.kneayerng.com';
+      final forceUpdate = _parseBoolLike(payload['force_update']);
+      final title = payload['title'] ?? 'មានកំណែអាប់ដេតថ្មី';
+      final message = payload['message'] ?? '';
+
+      final context = NavigationService.navigatorKey.currentContext ?? Get.context;
+      if (context != null) {
+        final details = await AppDeviceInfo.getDetails();
+        final currentVersion = details.appVersion;
+        await showAppUpdateDialog(
+          context: context,
+          currentVersion: currentVersion,
+          latestVersion: targetVersion.isNotEmpty ? targetVersion : currentVersion,
+          downloadUrl: downloadUrl,
+          releaseNotes: message,
+          alertTitle: title,
+          isForceUpdate: forceUpdate,
+        );
+        return;
+      }
+
+      Get.to(GeneralScreen(), arguments: {
+        "title": title,
+        "message": message,
+        "date": "",
+        "type": "app_update",
+        "download_url": downloadUrl,
+      });
+      return;
+    }
 
     if (type == "chat") {
       if (_isAdminThreadPayload(payload)) {
@@ -294,7 +391,9 @@ class PushNotificationService {
     Get.to(GeneralScreen(), arguments: {
       "title": payload["title"] ?? "Notification",
       "message": payload["message"] ?? "",
-      "date": ""
+      "date": "",
+      "type": payload["type"] ?? "",
+      "download_url": payload["download_url"] ?? "https://hr.kneayerng.com",
     });
   }
 
@@ -322,14 +421,18 @@ class PushNotificationService {
     RemoteMessage message, {
     String? localKey,
   }) async {
-    final badge = await _currentUnreadNotificationBadge();
-    await AwesomeNotifications().createNotification(
-      content: _chatNotificationContent(
-        message,
-        badge: badge,
-        localKey: localKey,
-      ),
-    );
+    try {
+      final badge = await _currentUnreadNotificationBadge();
+      await AwesomeNotifications().createNotification(
+        content: _buildNotificationContent(
+          message,
+          badge: badge,
+          localKey: localKey,
+        ),
+      );
+    } catch (e) {
+      debugPrint('Failed to show foreground notification: $e');
+    }
   }
 
   static Future<void> _syncUnreadBadgeFromStorage() async {
@@ -548,13 +651,17 @@ class PushNotificationService {
     );
     if (message.notification == null) {
       final badge = await _currentUnreadNotificationBadge();
-      await AwesomeNotifications().createNotification(
-        content: _chatNotificationContent(
-          message,
-          badge: badge,
-          localKey: localKey,
-        ),
-      );
+      try {
+        await AwesomeNotifications().createNotification(
+          content: _buildNotificationContent(
+            message,
+            badge: badge,
+            localKey: localKey,
+          ),
+        );
+      } catch (e) {
+        debugPrint('Failed to show background notification: $e');
+      }
     }
     print(message.data.toString());
   }
@@ -597,7 +704,7 @@ class PushNotificationService {
         badge: true,
         carPlay: false,
         criticalAlert: false,
-        provisional: true,
+        provisional: false,
         sound: true,
       );
 
@@ -620,6 +727,11 @@ class PushNotificationService {
           sound: true,
         );
         await _reportIosPushSetupStatus();
+      }
+
+      final fcmToken = await FcmToken.get();
+      if (fcmToken != null && fcmToken.isNotEmpty) {
+        await _syncFcmTokenWithBackend(fcmToken);
       }
 
       final initialMessage =
@@ -660,6 +772,17 @@ class PushNotificationService {
           channelShowBadge: true,
           defaultColor: const Color(0xFF9D50DD),
           ledColor: Colors.white,
+          importance: NotificationImportance.High,
+        ),
+        NotificationChannel(
+          channelGroupKey: 'digital_hr_group',
+          channelKey: 'ahpu_channel_11',
+          channelName: 'Digital Hr alerts',
+          channelDescription: 'Digital HR Updates & Alerts',
+          channelShowBadge: true,
+          defaultColor: const Color(0xFF9D50DD),
+          ledColor: Colors.white,
+          importance: NotificationImportance.High,
         ),
       ],
       channelGroups: [
@@ -697,6 +820,20 @@ class PushNotificationService {
       );
       await _showForegroundSystemNotification(event, localKey: localKey);
       _showMessengerAlert(event, localKey: localKey);
+
+      if (_isAppUpdatePayload(event.data,
+          title: _messageTitle(event), body: _messageBody(event))) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _showAppUpdatePrompt(
+            targetVersion: event.data['target_version']?.toString() ?? '',
+            downloadUrl: event.data['download_url']?.toString() ??
+                'https://hr.kneayerng.com',
+            title: _messageTitle(event),
+            message: _messageBody(event),
+            forceUpdate: _parseBoolLike(event.data['force_update']),
+          );
+        });
+      }
     });
 
     FirebaseMessaging.instance.onTokenRefresh.listen((token) {

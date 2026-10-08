@@ -7,11 +7,16 @@ class NoticeDomain {
   });
 
   factory NoticeDomain.fromJson(dynamic json) {
+    final htmlDescription = json['description_html']?.toString();
+    final plainDescription = json['description']?.toString();
+
     return NoticeDomain(
       id: json['id'],
-      noticeTitle: json['notice_title'].toString() ?? "",
-      description: json['description'].toString() ?? "",
-      noticePublishedDate: json['notice_published_date'].toString() ?? "",
+      noticeTitle: json['notice_title']?.toString() ?? "",
+      description: (htmlDescription != null && htmlDescription.isNotEmpty)
+          ? htmlDescription
+          : (plainDescription ?? ""),
+      noticePublishedDate: json['notice_published_date']?.toString() ?? "",
     );
   }
 

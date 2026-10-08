@@ -12,6 +12,7 @@ import 'package:cnattendance/screen/meeting_attendance/meeting_attendance_screen
 import 'package:cnattendance/screen/profile/aboutscreen.dart';
 import 'package:cnattendance/screen/profile/changepasswordscreen.dart';
 import 'package:cnattendance/screen/profile/companyrulesscreen.dart';
+import 'package:cnattendance/screen/links/link_list_screen.dart';
 import 'package:cnattendance/screen/profile/front_side_preview_page.dart';
 import 'package:cnattendance/screen/profile/holidayscreen.dart';
 import 'package:cnattendance/screen/profile/leavecalendarscreen.dart';
@@ -35,6 +36,7 @@ import 'package:cnattendance/utils/constant.dart';
 import 'package:cnattendance/widget/headerprofile.dart';
 import 'package:cnattendance/widgets/theme_selector.dart';
 import 'package:cnattendance/widget/premium_background.dart';
+import 'package:cnattendance/widget/server_status_tile.dart';
 import 'package:flutter/material.dart';
 import 'package:cnattendance/widget/morescreen/services.dart';
 import 'package:flutter_translate/flutter_translate.dart';
@@ -48,6 +50,16 @@ class MoreScreen extends StatefulWidget {
 }
 
 class MoreScreenState extends State<MoreScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<MoreScreenProvider>().getFeatures();
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final attendanceType = context.watch<PrefProvider>().attendanceType;
@@ -389,6 +401,9 @@ class MoreScreenState extends State<MoreScreen> {
                                     Icons.support_agent, SupportScreen()),
                             Services(translate('more_screen.company_rules'),
                                 Icons.rule_folder, CompanyRulesScreen()),
+                            Services(translate('more_screen.links'), Icons.link,
+                                const LinkListScreen()),
+                            const ServerStatusTile(),
                             Services(translate('more_screen.about_us'),
                                 Icons.info, AboutScreen('about-us')),
                             Services(

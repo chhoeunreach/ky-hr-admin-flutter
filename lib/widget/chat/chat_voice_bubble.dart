@@ -149,11 +149,11 @@ class _ChatVoiceBubbleState extends State<ChatVoiceBubble> {
 
   @override
   Widget build(BuildContext context) {
-    final foreground = Colors.white;
-    final secondary = Colors.white;
+    const foreground = Colors.white;
+    const secondary = Colors.white;
     final playBackground =
         widget.isIncoming ? const Color(0xff1684f8) : const Color(0x26000000);
-    final playForeground = Colors.white;
+    const playForeground = Colors.white;
     final progress = _playbackProgress();
 
     return ConstrainedBox(
@@ -272,44 +272,19 @@ class _ChatVoiceBubbleState extends State<ChatVoiceBubble> {
     return Uri.encodeFull(resolvedUrl);
   }
 
-  bool _looksLikeAudioUrl(String value) {
-    if (value.isEmpty) {
-      return false;
-    }
-
-    final uri = Uri.tryParse(value);
-    if (uri == null || !uri.hasScheme || uri.host.isEmpty) {
-      return false;
-    }
-
-    final path = uri.path.trim().toLowerCase();
-    if (path.isEmpty || path == '/' || path.endsWith('.html')) {
-      return false;
-    }
-
-    const audioExtensions = [
-      '.m4a',
-      '.mp4',
-      '.mp3',
-      '.wav',
-      '.aac',
-      '.webm',
-      '.ogg',
-      '.oga',
-    ];
-    return audioExtensions.any(path.endsWith) ||
-        path.contains('/voice/') ||
-        path.contains('/audio/');
-  }
-
   Future<String> _repairAudioUrl(String value) async {
     final url = value.trim();
-    if (!_looksLikeAudioUrl(url)) {
+    if (url.isEmpty) {
       return '';
     }
 
     final uri = Uri.tryParse(url);
     if (uri == null || !uri.hasScheme || uri.host.isEmpty) {
+      return '';
+    }
+
+    final path = uri.path.trim().toLowerCase();
+    if (path.isEmpty || path == '/' || path.endsWith('.html')) {
       return '';
     }
 
@@ -319,16 +294,21 @@ class _ChatVoiceBubbleState extends State<ChatVoiceBubble> {
       return url;
     }
 
-    final path = uri.path.trim();
-    if (path.startsWith('/storage/')) {
+    final origPath = uri.path.trim();
+    if (origPath.startsWith('/storage/')) {
       return url;
     }
 
-    final lowerPath = path.toLowerCase();
-    if (lowerPath.startsWith('/chat/voice/') || lowerPath.startsWith('chat/voice/')) {
-      final normalizedPath = path.startsWith('/')
-          ? '/storage$path'
-          : '/storage/$path';
+    final lowerPath = origPath.toLowerCase();
+    if (lowerPath.startsWith('/chat/voice/') ||
+        lowerPath.startsWith('chat/voice/') ||
+        lowerPath.startsWith('/chat/audio/') ||
+        lowerPath.startsWith('chat/audio/') ||
+        lowerPath.contains('/voice/') ||
+        lowerPath.contains('/audio/')) {
+      final normalizedPath = origPath.startsWith('/')
+          ? '/storage$origPath'
+          : '/storage/$origPath';
       return uri.replace(path: normalizedPath).toString();
     }
 

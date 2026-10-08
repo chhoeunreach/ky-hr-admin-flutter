@@ -8,10 +8,15 @@ class NotifiactionDomain {
   });
 
   factory NotifiactionDomain.fromJson(dynamic json) {
+    final htmlDescription = json['description_html']?.toString();
+    final plainDescription = json['description']?.toString();
+
     return NotifiactionDomain(
       id: json['id'],
       notificationTitle: json['notification_title']?.toString() ?? "",
-      description: json['description']?.toString() ?? "",
+      description: (htmlDescription != null && htmlDescription.isNotEmpty)
+          ? htmlDescription
+          : (plainDescription ?? ""),
       notificationPublishedDate:
           json['notification_published_date']?.toString() ?? "",
       isRead: _parseIsRead(json['is_read']),

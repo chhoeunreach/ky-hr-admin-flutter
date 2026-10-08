@@ -10,6 +10,7 @@ class AppUpdateDialog extends StatelessWidget {
   final String latestVersion;
   final String downloadUrl;
   final String? releaseNotes;
+  final String? alertTitle;
   final bool isForceUpdate;
 
   const AppUpdateDialog({
@@ -18,6 +19,7 @@ class AppUpdateDialog extends StatelessWidget {
     required this.latestVersion,
     required this.downloadUrl,
     this.releaseNotes,
+    this.alertTitle,
     this.isForceUpdate = false,
   }) : super(key: key);
 
@@ -25,7 +27,10 @@ class AppUpdateDialog extends StatelessWidget {
     final targetUrl = downloadUrl.trim().isNotEmpty
         ? downloadUrl.trim()
         : 'https://hr.kneayerng.com';
-    final uri = Uri.parse(targetUrl);
+    final parsed = Uri.tryParse(targetUrl);
+    final uri = parsed != null && parsed.hasScheme && parsed.hasAuthority
+        ? parsed
+        : Uri.parse('https://hr.kneayerng.com');
     try {
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -35,10 +40,15 @@ class AppUpdateDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final titleText = translate('app_update.title');
-    final descText = isForceUpdate
-        ? translate('app_update.mandatory_desc')
-        : translate('app_update.optional_desc');
+    final titleFromKey = translate('app_update.title');
+    final titleText = (alertTitle != null && alertTitle!.trim().isNotEmpty)
+        ? alertTitle!.trim()
+        : (titleFromKey.isNotEmpty ? titleFromKey : 'មានកំណែអាប់ដេតថ្មី!');
+    final descText = (releaseNotes != null && releaseNotes!.trim().isNotEmpty)
+        ? releaseNotes!.trim()
+        : (isForceUpdate
+            ? translate('app_update.mandatory_desc')
+            : translate('app_update.optional_desc'));
     final currentLabel = translate('app_update.current_version');
     final latestLabel = translate('app_update.latest_version');
     final updateNowText = translate('app_update.update_now');
@@ -98,7 +108,8 @@ class AppUpdateDialog extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
                   color: Colors.grey.shade100,
                   borderRadius: BorderRadius.circular(12),
@@ -110,7 +121,9 @@ class AppUpdateDialog extends StatelessWidget {
                     Column(
                       children: [
                         Text(
-                          currentLabel.isNotEmpty ? currentLabel : 'កំណែបច្ចុប្បន្ន',
+                          currentLabel.isNotEmpty
+                              ? currentLabel
+                              : 'កំណែបច្ចុប្បន្ន',
                           style: TextStyle(
                             fontSize: 11,
                             color: Colors.grey.shade600,
@@ -118,7 +131,9 @@ class AppUpdateDialog extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          currentVersion.isNotEmpty ? 'v$currentVersion' : 'v1.0.0',
+                          currentVersion.isNotEmpty
+                              ? 'v$currentVersion'
+                              : 'v1.0.0',
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
@@ -192,10 +207,13 @@ class AppUpdateDialog extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.download_rounded, color: Colors.white, size: 20),
+                      const Icon(Icons.download_rounded,
+                          color: Colors.white, size: 20),
                       const SizedBox(width: 8),
                       Text(
-                        updateNowText.isNotEmpty ? updateNowText : 'អាប់ដេតឥឡូវនេះ',
+                        updateNowText.isNotEmpty
+                            ? updateNowText
+                            : 'អាប់ដេតឥឡូវនេះ',
                         style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
@@ -237,6 +255,7 @@ Future<void> showAppUpdateDialog({
   required String latestVersion,
   required String downloadUrl,
   String? releaseNotes,
+  String? alertTitle,
   bool isForceUpdate = false,
 }) {
   return showDialog(
@@ -247,6 +266,7 @@ Future<void> showAppUpdateDialog({
       latestVersion: latestVersion,
       downloadUrl: downloadUrl,
       releaseNotes: releaseNotes,
+      alertTitle: alertTitle,
       isForceUpdate: isForceUpdate,
     ),
   );

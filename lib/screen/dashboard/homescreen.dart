@@ -127,10 +127,46 @@ class HomeScreenState extends State<HomeScreen> {
           await NotificationHistory.markAsRead(localKey);
         }
       }
+
+      final title = _initialMessageTitle(message);
+      final body = _initialMessageBody(message);
+      final isUpdate = message.data['type'] == 'app_update' ||
+          message.data.containsKey('target_version') ||
+          title.contains('អាប់ដេត') ||
+          title.toLowerCase().contains('update') ||
+          body.contains('អាប់ដេត') ||
+          body.toLowerCase().contains('update');
+
+      if (isUpdate && mounted) {
+        final details = await AppDeviceInfo.getDetails();
+        final targetVersion = message.data['target_version']?.toString() ?? '';
+        final downloadUrl =
+            (message.data['download_url']?.toString().isNotEmpty ?? false)
+                ? message.data['download_url']!.toString()
+                : 'https://hr.kneayerng.com';
+        final forceUpdate = message.data['force_update'] == '1' ||
+            message.data['force_update'] == true;
+
+        await showAppUpdateDialog(
+          context: context,
+          currentVersion: details.appVersion,
+          latestVersion:
+              targetVersion.isNotEmpty ? targetVersion : details.appVersion,
+          downloadUrl: downloadUrl,
+          releaseNotes: body,
+          alertTitle: title,
+          isForceUpdate: forceUpdate,
+        );
+        return;
+      }
+
       Get.to(GeneralScreen(), arguments: {
-        "title": _initialMessageTitle(message),
-        "message": _initialMessageBody(message),
-        "date": ""
+        "title": title,
+        "message": body,
+        "date": "",
+        "type": message.data['type']?.toString() ?? '',
+        "download_url": message.data['download_url']?.toString() ??
+            'https://hr.kneayerng.com',
       });
     });
   }
@@ -228,7 +264,8 @@ class HomeScreenState extends State<HomeScreen> {
         isLoading = true;
         setState(() {
           EasyLoading.show(
-              status: translate('loader.loading'), maskType: EasyLoadingMaskType.black);
+              status: translate('loader.loading'),
+              maskType: EasyLoadingMaskType.black);
         });
         final status = await provider.getCheckInStatus();
         if (status) {
@@ -316,8 +353,7 @@ class HomeScreenState extends State<HomeScreen> {
         _checkAppVersion(dashboardResponse.data.appVersionInfo);
       }
       return 'loaded';
-    } catch (e) {
-      print(e);
+    } catch (_) {
       return 'loaded';
     }
   }
@@ -330,16 +366,21 @@ class HomeScreenState extends State<HomeScreen> {
     final currentVersion = details.appVersion;
     final latestVersion = versionInfo.latestVersion;
 
-    if (latestVersion.isNotEmpty &&
-        AppDeviceInfo.isVersionOlder(currentVersion, latestVersion)) {
+    final shouldShow = versionInfo.showAlert ||
+        (latestVersion.isNotEmpty &&
+            AppDeviceInfo.isVersionOlder(currentVersion, latestVersion));
+
+    if (shouldShow) {
       _updateDialogShown = true;
       if (!mounted) return;
       await showAppUpdateDialog(
         context: context,
         currentVersion: currentVersion,
-        latestVersion: latestVersion,
+        latestVersion:
+            latestVersion.isNotEmpty ? latestVersion : currentVersion,
         downloadUrl: versionInfo.downloadUrl,
         releaseNotes: versionInfo.releaseNotes,
+        alertTitle: versionInfo.alertTitle,
         isForceUpdate: versionInfo.isForceUpdate,
       );
     }
@@ -398,7 +439,7 @@ class HomeScreenState extends State<HomeScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      HeaderProfile(),
+                      const HeaderProfile(showServerTest: true),
                       CheckAttendance(),
                       OverviewDashboard(controller),
                       UpcomingHoliday(),

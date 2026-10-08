@@ -14,12 +14,12 @@ class LeaveListDashboard extends StatelessWidget {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: leaves.length,
-          padding: EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              childAspectRatio: 2.15,
-              mainAxisSpacing: 8,
-              crossAxisSpacing: 8),
+              childAspectRatio: 2.35,
+              mainAxisSpacing: 6,
+              crossAxisSpacing: 6),
           itemBuilder: (ctx, i) => ChangeNotifierProvider.value(
                 value: leaves[i],
                 child: LeaveRow(leaves[i].id, leaves[i].name,

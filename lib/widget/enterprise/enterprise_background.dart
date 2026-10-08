@@ -619,16 +619,16 @@ class _PremiumBackgroundRecipe {
       case AppThemeMode.premiumGradient:
         return _recipe(
           colors: const [
-            Color(0xff063946),
-            Color(0xff0f766e),
-            Color(0xff075985),
-            Color(0xff031621),
+            Color(0xff021a24),
+            Color(0xff0e7490),
+            Color(0xff1d4ed8),
+            Color(0xff010e14),
           ],
-          mapTint: const Color(0xff22d3ee),
-          mapOpacity: 0.12,
-          glow: const Color(0xff14b8a6),
-          accent: const Color(0xff38bdf8),
-          wave: const Color(0xff22d3ee),
+          mapTint: const Color(0xff00f5d4),
+          mapOpacity: 0.16,
+          glow: const Color(0xff06b6d4),
+          accent: const Color(0xff00f5d4),
+          wave: const Color(0xff06b6d4),
           detail: _BackgroundDetailStyle.bubbles,
           detailColor: const Color(0xff67e8f9),
         );

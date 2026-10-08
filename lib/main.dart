@@ -13,6 +13,7 @@ import 'package:cnattendance/provider/payslipprovider.dart';
 import 'package:cnattendance/provider/prefprovider.dart';
 import 'package:cnattendance/provider/profileprovider.dart';
 import 'package:cnattendance/provider/ssfprovider.dart';
+import 'package:cnattendance/features/repair_price/providers/repair_price_provider.dart';
 import 'package:cnattendance/services/background_sync_manager.dart';
 import 'package:cnattendance/services/database_helper.dart';
 import 'package:cnattendance/services/push_notification_service.dart';
@@ -199,6 +200,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           ),
           ChangeNotifierProvider(
             create: (ctx) => ThemeProvider()..load(),
+          ),
+          ChangeNotifierProvider(
+            create: (ctx) => RepairPriceProvider(),
           ),
         ],
         child: Portal(

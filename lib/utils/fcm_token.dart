@@ -26,7 +26,21 @@ class FcmToken {
     for (int attempt = 0; attempt < retries; attempt++) {
       try {
         if (Platform.isIOS) {
-          await FirebaseMessaging.instance.getAPNSToken();
+          String? apnsToken;
+          for (int i = 0; i < 6; i++) {
+            apnsToken = await FirebaseMessaging.instance.getAPNSToken();
+            if (apnsToken != null && apnsToken.trim().isNotEmpty) {
+              break;
+            }
+            await Future.delayed(const Duration(milliseconds: 500));
+          }
+          if (apnsToken == null || apnsToken.trim().isEmpty) {
+            debugPrint('Waiting for iOS APNS token before fetching FCM token...');
+            if (attempt < retries - 1) {
+              await Future.delayed(const Duration(seconds: 1));
+              continue;
+            }
+          }
         }
 
         final token = await FirebaseMessaging.instance.getToken();

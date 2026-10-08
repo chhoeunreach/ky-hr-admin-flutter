@@ -21,7 +21,6 @@ import 'package:cnattendance/model/holiday.dart';
 import 'package:cnattendance/screen/auth/login_screen.dart';
 import 'package:cnattendance/utils/app_device_info.dart';
 import 'package:cnattendance/utils/constant.dart';
-import 'package:cnattendance/utils/fcm_token.dart';
 import 'package:cnattendance/utils/locationstatus.dart';
 import 'package:cnattendance/utils/wifiinfo.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -140,30 +139,29 @@ class DashboardProvider with ChangeNotifier {
   }
 
   Future<Dashboardresponse> getDashboard() async {
-    Preferences preferences = Preferences();
+    final preferences = Preferences();
     animated = getAnimation();
-    var uri = Uri.parse(await preferences.getAppUrl() + Constant.DASHBOARD_URL);
+    final uri =
+        Uri.parse(await preferences.getAppUrl() + Constant.DASHBOARD_URL);
 
-    String token = await preferences.getToken();
+    final token = await preferences.getToken();
 
-    final fcm = await FcmToken.get(retries: 1);
-
-    Map<String, String> headers = {
+    final headers = <String, String>{
       'Content-Type': 'application/json',
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token',
     };
 
-    if (FcmToken.isValid(fcm)) {
-      headers['fcm_token'] = fcm!;
-      debugPrint('Dashboard FCM refresh token: ${FcmToken.mask(fcm)}');
-    } else {
-      debugPrint('Dashboard FCM refresh skipped: token missing');
-    }
+    try {
+      final appDetails = await AppDeviceInfo.getDetails();
+      if (appDetails.appVersion.isNotEmpty) {
+        headers['X-App-Version'] = appDetails.appVersion;
+        headers['App-Version'] = appDetails.appVersion;
+      }
+    } catch (_) {}
 
     final response = await http.get(uri, headers: headers);
-    log(response.body.toString());
-    final responseData = json.decode(response.body);
+    final responseData = _decodeResponseBody(response.body);
 
     if (response.statusCode == 200) {
       _updateWorkspaceLocationFromResponse(responseData);
@@ -298,9 +296,24 @@ class DashboardProvider with ChangeNotifier {
         Get.offAll(LoginScreen());
       }
 
-      var errorMessage = responseData['message'];
-      print(errorMessage.toString());
+      final serverMessage = responseData['message']?.toString() ??
+          'Dashboard request failed (${response.statusCode})';
+      final errorMessage = response.statusCode >= 500
+          ? 'Dashboard is temporarily unavailable. Please try again later.'
+          : serverMessage;
       throw errorMessage;
+    }
+  }
+
+  Map<String, dynamic> _decodeResponseBody(String body) {
+    try {
+      final decoded = json.decode(body);
+      if (decoded is Map<String, dynamic>) {
+        return decoded;
+      }
+      return {'message': decoded.toString()};
+    } catch (_) {
+      return {'message': body.isEmpty ? 'Empty server response' : body};
     }
   }
 

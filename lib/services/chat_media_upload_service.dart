@@ -80,9 +80,11 @@ class ChatMediaUploadService {
   Future<ChatMediaUpload> upload({
     required File file,
     required String type,
+    String? customEndpoint,
   }) async {
     final appUrl = await _preferences.getAppUrl();
-    final uri = Uri.parse('$appUrl${Constant.CHAT_MEDIA_UPLOAD}');
+    final endpoint = customEndpoint ?? Constant.CHAT_MEDIA_UPLOAD;
+    final uri = Uri.parse('$appUrl$endpoint');
     final token = await _preferences.getToken();
     final extension = _extensionFromPath(file.path);
     final uploadType = _uploadTypeFor(type);
@@ -103,6 +105,19 @@ class ChatMediaUploadService {
       mimeType: mimeType,
     );
     var responseData = _decodeBody(response.body);
+
+    if (response.statusCode == 404 &&
+        customEndpoint != null &&
+        customEndpoint != Constant.CHAT_MEDIA_UPLOAD) {
+      debugPrint(
+        '[CHAT_UPLOAD] custom endpoint $customEndpoint returned 404, falling back to ${Constant.CHAT_MEDIA_UPLOAD}',
+      );
+      return upload(
+        file: file,
+        type: type,
+        customEndpoint: Constant.CHAT_MEDIA_UPLOAD,
+      );
+    }
 
     if ((response.statusCode == 422 || response.statusCode == 400) &&
         uploadType == 'document' &&

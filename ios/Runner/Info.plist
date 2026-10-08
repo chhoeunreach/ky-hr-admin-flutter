@@ -32,17 +32,10 @@
 	<true/>
 	<key>NFCReaderUsageDescription</key>
 	<string>KY CHECKIN uses NFC to scan tags and sync them with the server.</string>
-	<key>NSBonjourServices</key>
-	<array>
-		<string>_dartobservatory._tcp</string>
-		<string>_dartVmService._tcp</string>
-	</array>
 	<key>NSCameraUsageDescription</key>
 	<string>KY CHECKIN uses the camera to scan QR codes and support facial recognition.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>KY CHECKIN uses Face ID to help you check in and check out securely.</string>
-	<key>NSLocalNetworkUsageDescription</key>
-	<string>KY CHECKIN uses the local network during development to connect Flutter debugging services.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>KY CHECKIN needs your location to validate check-in and check-out.</string>
 	<key>NSLocationUsageDescription</key>

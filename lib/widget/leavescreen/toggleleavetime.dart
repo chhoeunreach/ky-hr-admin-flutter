@@ -36,13 +36,14 @@ class ToggleLeaveTime extends StatelessWidget {
           activeFgColor: Colors.white,
           inactiveFgColor: Colors.white,
           inactiveBgColor: Colors.transparent,
-          minWidth: 100,
-          minHeight: 45,
+          minWidth: 88,
+          minHeight: 34,
+          fontSize: 12.0,
           initialLabelIndex: provider.selectedMonth == 0 ? 1 : 0,
           totalSwitches: 2,
           onToggle: (index) {
             if (index == 0) {
-              DateTime now = DateTime.now();
+              final DateTime now = DateTime.now();
               provider.setMonth(now.month);
               onToggleChanged();
             } else {

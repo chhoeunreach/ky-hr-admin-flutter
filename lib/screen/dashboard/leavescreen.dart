@@ -96,46 +96,54 @@ class LeaveScreenState extends State<LeaveScreen> with WidgetsBindingObserver {
                     HeaderProfile(),
                     Container(
                         padding:
-                            EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                            const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                         width: double.infinity,
                         child: Text(
                           translate('leave_screen.leave'),
-                          style: TextStyle(fontSize: 17, color: Colors.white),
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
                         )),
                     LeaveListDashboard(),
                     Visibility(
                       visible: showActions,
                       child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 14),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
                           child: LeaveButton()),
                     ),
-                    SizedBox(height: 10),
+                    const SizedBox(height: 8),
                     Visibility(
                       visible: showDetails,
                       child: Text(
                         translate('leave_screen.recent_leave_activity'),
-                        style: TextStyle(color: Colors.white, fontSize: 16),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
-                    SizedBox(height: 5),
+                    const SizedBox(height: 4),
                     Stack(
                       children: [
                         Align(
                           child: Padding(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 16),
+                                horizontal: 12, vertical: 8),
                             child: Card(
                               color: Colors.white12,
                               shape: ButtonBorder(),
                               child: Padding(
-                                padding: const EdgeInsets.only(top: 42),
+                                padding: const EdgeInsets.only(top: 30),
                                 child: Column(
                                   children: [
                                     Visibility(
                                       visible: showDetails,
                                       child: Padding(
                                           padding: const EdgeInsets.symmetric(
-                                              horizontal: 12.0, vertical: 6),
+                                              horizontal: 10.0, vertical: 4),
                                           child: LeavetypeFilter()),
                                     ),
                                     Visibility(
@@ -152,7 +160,7 @@ class LeaveScreenState extends State<LeaveScreen> with WidgetsBindingObserver {
                             visible: showDetails,
                             child: Padding(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 14.0, vertical: 6),
+                                    horizontal: 12.0, vertical: 4),
                                 child: ToggleLeaveTime()),
                           ),
                         )

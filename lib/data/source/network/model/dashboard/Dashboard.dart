@@ -129,14 +129,20 @@ class AppVersionInfo {
   final String minVersion;
   final String downloadUrl;
   final String releaseNotes;
+  final String alertTitle;
   final bool isForceUpdate;
+  final bool showAlert;
+  final bool isUpdateAvailable;
 
   AppVersionInfo({
     required this.latestVersion,
     required this.minVersion,
     required this.downloadUrl,
     required this.releaseNotes,
+    this.alertTitle = '',
     required this.isForceUpdate,
+    this.showAlert = false,
+    this.isUpdateAvailable = false,
   });
 
   factory AppVersionInfo.fromJson(dynamic json) {
@@ -146,18 +152,28 @@ class AppVersionInfo {
         minVersion: '',
         downloadUrl: 'https://hr.kneayerng.com',
         releaseNotes: '',
+        alertTitle: '',
         isForceUpdate: false,
+        showAlert: false,
+        isUpdateAvailable: false,
       );
     }
     return AppVersionInfo(
-      latestVersion: (json['latest_version'] ?? json['version'] ?? '').toString(),
-      minVersion: (json['min_version'] ?? '').toString(),
-      downloadUrl: (json['download_url'] ?? json['url'] ?? 'https://hr.kneayerng.com').toString(),
-      releaseNotes: (json['release_notes'] ?? '').toString(),
+      latestVersion: (json['latest_version'] ?? json['target_version'] ?? json['version'] ?? '').toString(),
+      minVersion: (json['min_required_version'] ?? json['min_version'] ?? '').toString(),
+      downloadUrl: (json['download_url'] ?? json['android_url'] ?? json['url'] ?? 'https://hr.kneayerng.com').toString(),
+      releaseNotes: (json['update_message'] ?? json['alert_message'] ?? json['release_notes'] ?? '').toString(),
+      alertTitle: (json['alert_title'] ?? '').toString(),
       isForceUpdate: json['is_force_update'] == true ||
           json['force_update'] == true ||
+          json['is_update_required'] == true ||
+          json['force_update'] == 1 ||
           json['is_force_update'] == 1 ||
           json['is_force_update'] == '1',
+      showAlert: json['show_alert'] == true ||
+          json['is_update_available'] == true ||
+          json['is_update_required'] == true,
+      isUpdateAvailable: json['is_update_available'] == true,
     );
   }
 }
