@@ -5,6 +5,7 @@ import 'package:cnattendance/data/source/network/model/login/Loginresponse.dart'
 import 'package:cnattendance/utils/app_device_info.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:cnattendance/utils/fcm_token.dart';
+import 'package:cnattendance/services/server_configuration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:geolocator/geolocator.dart';
@@ -16,13 +17,8 @@ class Auth with ChangeNotifier {
 
   Future<void> saveAppUrl(String value) async {
     try {
-      String decoded = utf8.decode(base64.decode(value));
-
-      if (!decoded.contains("http")) {
-        showToast(translate('alerts.invalid_qr'));
-        return;
-      }
-      preferences.saveAppUrl(decoded);
+      final configuration = ServerConfiguration.parse(value);
+      await preferences.saveServerConfiguration(configuration);
       appUrl = await preferences.getAppUrl();
       notifyListeners();
     } catch (e) {
@@ -31,13 +27,13 @@ class Auth with ChangeNotifier {
   }
 
   Future<void> resetAppUrl() async {
-    preferences.saveAppUrl("");
+    await preferences.saveAppUrl("");
     appUrl = await preferences.getAppUrl();
     notifyListeners();
   }
 
   Future<void> skipAppUrl() async {
-    preferences.saveAppUrl(Constant.appUrl);
+    await preferences.saveAppUrl(Constant.appUrl);
     appUrl = await preferences.getAppUrl();
     notifyListeners();
   }

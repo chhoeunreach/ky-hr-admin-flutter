@@ -3,6 +3,8 @@ import 'dart:convert';
 
 import 'package:cnattendance/data/source/datastore/preferences.dart';
 import 'package:cnattendance/utils/constant.dart';
+import 'package:cnattendance/services/server_url_resolver.dart';
+import 'package:cnattendance/services/server_configuration.dart';
 import 'package:http/http.dart' as http;
 
 class ServerCheckResult {
@@ -21,7 +23,11 @@ class ServerCheckResult {
 
 class ServerStatusService {
   ServerStatusService({Preferences? preferences, http.Client? client})
-      : _preferences = preferences ?? Preferences(),
+      : _preferences = preferences ??
+            Preferences(
+              serverUrlResolver:
+                  client == null ? null : ServerUrlResolver(client: client),
+            ),
         _client = client ?? http.Client();
 
   final Preferences _preferences;
@@ -30,28 +36,24 @@ class ServerStatusService {
   Future<String> currentServerUrl() => _preferences.getAppUrl();
 
   String normalizeScannedServer(String value) {
-    var candidate = value.trim();
-
-    try {
-      final decoded = utf8.decode(base64.decode(candidate)).trim();
-      if (decoded.isNotEmpty) {
-        candidate = decoded;
-      }
-    } catch (_) {}
-
-    final uri = Uri.tryParse(candidate);
-    if (uri == null ||
-        !uri.hasScheme ||
-        (uri.scheme != 'http' && uri.scheme != 'https') ||
-        uri.host.trim().isEmpty) {
-      throw const FormatException('Invalid server QR code or URL.');
-    }
-
-    return candidate.endsWith('/') ? candidate : '$candidate/';
+    return ServerConfiguration.parse(value).primaryUrl;
   }
 
   Future<ServerCheckResult> checkCurrentServer() async {
-    return checkServer(await _preferences.getAppUrl());
+    final configuredUrl = await _preferences.getConfiguredAppUrl();
+    final selectedUrl = await _preferences.getAppUrl(forceCheck: true);
+    final result = await checkServer(selectedUrl);
+    if (result.isConnected &&
+        ServerUrlResolver.normalize(configuredUrl) !=
+            ServerUrlResolver.normalize(selectedUrl)) {
+      return ServerCheckResult(
+        url: result.url,
+        isConnected: true,
+        statusCode: result.statusCode,
+        message: 'Connected to backup server. Primary server is unavailable.',
+      );
+    }
+    return result;
   }
 
   Future<ServerCheckResult> checkServer(String serverUrl) {
@@ -59,9 +61,33 @@ class ServerStatusService {
   }
 
   Future<ServerCheckResult> switchServer(String scannedValue) async {
-    final result = await _probe(scannedValue, requireAppBackend: true);
+    late final ServerConfiguration configuration;
+    try {
+      configuration = ServerConfiguration.parse(scannedValue);
+    } on FormatException catch (e) {
+      return ServerCheckResult(
+          url: scannedValue, isConnected: false, message: e.message);
+    }
+    var result =
+        await _probe(configuration.primaryUrl, requireAppBackend: true);
+    if (!result.isConnected &&
+        (result.statusCode == null || result.statusCode! >= 500) &&
+        configuration.fallbackUrl != null) {
+      result =
+          await _probe(configuration.fallbackUrl!, requireAppBackend: true);
+      if (result.isConnected) {
+        result = ServerCheckResult(
+          url: result.url,
+          isConnected: true,
+          statusCode: result.statusCode,
+          message: 'Connected to backup server. Primary server is unavailable.',
+        );
+      }
+    }
     if (result.isConnected) {
-      await _preferences.saveAppUrl(result.url);
+      // Preserve the primary so automatic recovery still works after scanning
+      // a backup-enabled QR while the primary is unavailable.
+      await _preferences.saveServerConfiguration(configuration);
     }
     return result;
   }
@@ -74,12 +100,12 @@ class ServerStatusService {
       final normalizedUrl = normalizeScannedServer(serverUrl);
       final uri = Uri.parse('$normalizedUrl${Constant.APP_VERSION_URL}');
 
-      final response = await _client
-          .get(uri, headers: const {'Accept': 'application/json; charset=UTF-8'})
-          .timeout(const Duration(seconds: 15));
+      final response = await _client.get(uri, headers: const {
+        'Accept': 'application/json; charset=UTF-8'
+      }).timeout(const Duration(seconds: 15));
 
-      final appBackend = response.statusCode == 200 &&
-          _looksLikeAppBackend(response.body);
+      final appBackend =
+          response.statusCode == 200 && _looksLikeAppBackend(response.body);
 
       if (requireAppBackend && !appBackend) {
         return ServerCheckResult(

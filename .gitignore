@@ -45,3 +45,9 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 /android/key.properties
+# Android APK files
+*.apk
+*.aab
+
+# Release folders
+release-apk/

@@ -3,10 +3,16 @@ import 'package:cnattendance/data/source/network/model/dashboard/User.dart'
     as DashboardUser;
 import 'package:cnattendance/data/source/network/model/login/Login.dart';
 import 'package:cnattendance/utils/constant.dart';
+import 'package:cnattendance/services/server_url_resolver.dart';
+import 'package:cnattendance/services/server_configuration.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Preferences with ChangeNotifier {
+  Preferences({ServerUrlResolver? serverUrlResolver})
+      : _serverUrlResolver = serverUrlResolver ?? ServerUrlResolver.shared;
+
+  final ServerUrlResolver _serverUrlResolver;
   SharedPreferences? _prefs;
 
   Future<SharedPreferences> get _sharedPrefs async {
@@ -231,7 +237,23 @@ class Preferences with ChangeNotifier {
   Future<void> saveAppUrl(String value) async {
     final prefs = await _sharedPrefs;
     await prefs.setString(APP_URL, value);
+    _serverUrlResolver.invalidate(value);
     notifyListeners();
+  }
+
+  Future<void> saveServerConfiguration(
+      ServerConfiguration configuration) async {
+    final prefs = await _sharedPrefs;
+    final primary = configuration.primaryUrl;
+    if (configuration.hasFallback) {
+      final key = 'server_fallback:$primary';
+      if (configuration.fallbackUrl == null) {
+        await prefs.remove(key);
+      } else {
+        await prefs.setString(key, configuration.fallbackUrl!);
+      }
+    }
+    await saveAppUrl(primary);
   }
 
   Future<void> saveAttendanceType(String value) async {
@@ -373,9 +395,18 @@ class Preferences with ChangeNotifier {
     return prefs.getBool(APP_IN_ENGLISH) ?? true;
   }
 
-  Future<String> getAppUrl() async {
+  Future<String> getConfiguredAppUrl() async {
     final prefs = await _sharedPrefs;
     return prefs.getString(APP_URL) ?? Constant.appUrl;
+  }
+
+  Future<String> getAppUrl({bool forceCheck = false}) async {
+    final prefs = await _sharedPrefs;
+    return _serverUrlResolver.resolve(
+      prefs.getString(APP_URL) ?? Constant.appUrl,
+      prefs,
+      forceCheck: forceCheck,
+    );
   }
 
   Future<bool> getHardReset() async {
