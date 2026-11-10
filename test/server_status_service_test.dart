@@ -1,6 +1,8 @@
 import 'package:cnattendance/services/server_status_service.dart';
 import 'package:cnattendance/services/server_url_resolver.dart';
 import 'package:cnattendance/data/source/datastore/preferences.dart';
+import 'package:cnattendance/data/source/network/model/login/Login.dart';
+import 'package:cnattendance/data/source/network/model/login/User.dart';
 import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -19,6 +21,9 @@ void main() {
     SharedPreferences.setMockInitialValues({
       appUrlKey: 'https://example.com/',
       'user_token': 'token',
+      'user_id': 42,
+      'verified_company_server': 'https://example.com/',
+      'login_server': 'https://example.com/',
     });
   });
 
@@ -102,30 +107,84 @@ void main() {
 
   group('ServerStatusService.switchServer', () {
     test(
-        'fresh scan connects to backup while primary is offline and keeps primary',
+        'backup works before login and preserves successful login across restart',
         () async {
+      var primaryDown = false;
       final client = MockClient((request) async {
-        if (request.url.host == 'primary.example') {
+        if (request.url.host == 'primary.example' && primaryDown) {
           throw http.ClientException('Connection refused');
         }
-        return http.Response(appEnvelope, 200);
+        if (request.url.path == '/api/app-version') {
+          return http.Response(appEnvelope, 200);
+        }
+        expect(request.url.host, 'backup.example');
+        expect(request.headers['Authorization'], 'Bearer login-token');
+        return http.Response('{"status":true}', 200);
       });
       final preferences =
           Preferences(serverUrlResolver: ServerUrlResolver(client: client));
       final service =
           ServerStatusService(preferences: preferences, client: client);
-      final qr = base64Encode(utf8.encode(jsonEncode({
+      final result =
+          await service.switchServer(base64Encode(utf8.encode(jsonEncode({
         'server_url': 'https://primary.example/',
         'server_fallback_url': 'https://backup.example/',
-      })));
-      final result = await service.switchServer(qr);
+      }))));
       expect(result.isConnected, isTrue);
-      expect(result.url, 'https://backup.example/');
-      expect(
-          await preferences.getConfiguredAppUrl(), 'https://primary.example/');
+      expect(result.url, 'https://primary.example/');
+
+      primaryDown = true;
       expect(await preferences.getAppUrl(), 'https://backup.example/');
+      primaryDown = false;
+
+      // Persist the successful login, then recreate preferences/resolver as on
+      // restart. Failover must keep the session without another scan or login.
+      await preferences.saveUser(Login(
+        user: User(
+            id: 42,
+            name: 'Employee',
+            email: 'employee@example.com',
+            username: 'employee',
+            avatar: '',
+            workspace_type: '1'),
+        tokens: 'login-token',
+      ));
+      primaryDown = true;
+      final restarted =
+          Preferences(serverUrlResolver: ServerUrlResolver(client: client));
+      expect(await restarted.getAppUrl(), 'https://backup.example/');
+      expect(await restarted.getConfiguredAppUrl(), 'https://primary.example/');
+      expect(await restarted.getUserId(), 42);
+      final response = await client.get(
+        Uri.parse('${await restarted.getAppUrl()}api/dashboard'),
+        headers: {'Authorization': 'Bearer ${await restarted.getToken()}'},
+      );
+      expect(response.statusCode, 200);
+      await restarted.clearPrefs();
+      expect((await SharedPreferences.getInstance()).getString('login_server'),
+          isNull);
       expect(
-          (await service.checkCurrentServer()).url, 'https://backup.example/');
+          (await SharedPreferences.getInstance())
+              .getString('verified_company_server'),
+          isNull);
+      client.close();
+    });
+    test('fresh scan never connects to backup before successful login',
+        () async {
+      final client = MockClient((request) async {
+        expect(request.url.host, 'primary.example');
+        throw http.ClientException('Connection refused');
+      });
+      final preferences =
+          Preferences(serverUrlResolver: ServerUrlResolver(client: client));
+      final service =
+          ServerStatusService(preferences: preferences, client: client);
+      final result = await service.switchServer(jsonEncode({
+        'server_url': 'https://primary.example/',
+        'server_fallback_url': 'https://backup.example/',
+      }));
+      expect(result.isConnected, isFalse);
+      expect(await preferences.getConfiguredAppUrl(), 'https://example.com/');
     });
 
     test('failed backup scan preserves previously configured server', () async {
@@ -164,6 +223,15 @@ void main() {
 
       final result = await service.switchServer('https://other.example.com');
 
+      expect(result.isConnected, isFalse);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString(appUrlKey), 'https://example.com/');
+    });
+
+    test('failed HR response cannot verify a company', () async {
+      final service = buildService(MockClient((request) async => http.Response(
+          '{"status":false,"message":"Company unavailable"}', 200)));
+      final result = await service.switchServer('https://other.example.com');
       expect(result.isConnected, isFalse);
       final prefs = await SharedPreferences.getInstance();
       expect(prefs.getString(appUrlKey), 'https://example.com/');

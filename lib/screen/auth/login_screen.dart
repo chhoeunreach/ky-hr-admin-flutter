@@ -39,7 +39,6 @@ class loginScreenState extends State<LoginScreen> {
   void didChangeDependencies() {
     if (widget.initial) {
       widget.initial = false;
-      context.read<Auth>().resetAppUrl();
       context.read<Auth>().getAppUrl();
     }
     super.didChangeDependencies();
@@ -71,9 +70,16 @@ class loginScreenState extends State<LoginScreen> {
 
   Future<void> scanQr() async {
     final result = await showCustomQrScanner(context);
+    if (!mounted) return;
     if (result != null && result.trim().isNotEmpty) {
-      print('User typed: $result');
-      context.read<Auth>().saveAppUrl(result ?? "");
+      EasyLoading.show(
+          status: translate('welcome_screen.verify_button'),
+          maskType: EasyLoadingMaskType.black);
+      try {
+        await context.read<Auth>().saveAppUrl(result);
+      } finally {
+        EasyLoading.dismiss(animation: true);
+      }
     }
   }
 

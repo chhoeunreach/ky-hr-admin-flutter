@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:cnattendance/features/pos/pages/pos_workspace_screen.dart';
 
 import 'package:cnattendance/data/source/datastore/preferences.dart';
 import 'package:cnattendance/model/auth.dart';
@@ -251,8 +252,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                               MeetingDetailScreen(),
                           PaySlipDetailScreen.routeName: (_) =>
                               PaySlipDetailScreen(),
+                          PosWorkspaceScreen.routeName: (_) =>
+                              const PosWorkspaceScreen(),
                           SellOutReportScreen.routeName: (_) =>
-                              SellOutReportScreen(),
+                              const SellOutReportScreen(),
                         },
                         builder: EasyLoading.init(),
                       ),

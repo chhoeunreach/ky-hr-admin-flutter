@@ -3,15 +3,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
-Future<String?> showCustomQrScanner(BuildContext context) async {
+Future<String?> showCustomQrScanner(BuildContext context,
+    {String? title}) async {
   return showDialog<String>(
     context: context,
-    builder: (context) => const _CustomQrScannerDialog(),
+    builder: (context) => _CustomQrScannerDialog(title: title),
   );
 }
 
 class _CustomQrScannerDialog extends StatefulWidget {
-  const _CustomQrScannerDialog();
+  const _CustomQrScannerDialog({this.title});
+  final String? title;
 
   @override
   State<_CustomQrScannerDialog> createState() => _CustomQrScannerDialogState();
@@ -62,7 +64,7 @@ class _CustomQrScannerDialogState extends State<_CustomQrScannerDialog> {
         children: [
           Expanded(
             child: Text(
-              translate('attendance_messages.scan_qr_code'),
+              widget.title ?? translate('attendance_messages.scan_qr_code'),
               style: TextStyle(color: colorScheme.onSurface, fontSize: 14),
             ),
           ),

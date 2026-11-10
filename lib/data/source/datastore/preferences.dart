@@ -81,6 +81,14 @@ class Preferences with ChangeNotifier {
     await prefs.setString(USER_BRANCH, '');
     await prefs.setString(WORKSPACE, user.workspace_type);
 
+    final primary = ServerUrlResolver.normalize(await getConfiguredAppUrl());
+    if (primary != null &&
+        prefs.getString('verified_company_server') == primary) {
+      await prefs.setString('login_server', primary);
+    } else {
+      await prefs.remove('login_server');
+    }
+
     notifyListeners();
 
     return true;
@@ -202,6 +210,9 @@ class Preferences with ChangeNotifier {
   Future<void> clearPrefs() async {
     final prefs = await _sharedPrefs;
 
+    await prefs.remove('login_server');
+    await prefs.remove('verified_company_server');
+
     await prefs.setInt(USER_ID, 0);
     await prefs.setString(USER_TOKEN, '');
     await prefs.setString(USER_AVATAR, '');
@@ -236,24 +247,33 @@ class Preferences with ChangeNotifier {
 
   Future<void> saveAppUrl(String value) async {
     final prefs = await _sharedPrefs;
+    if (ServerUrlResolver.normalize(value) !=
+        prefs.getString('verified_company_server')) {
+      await prefs.remove('login_server');
+      await prefs.remove('verified_company_server');
+    }
     await prefs.setString(APP_URL, value);
     _serverUrlResolver.invalidate(value);
     notifyListeners();
   }
 
-  Future<void> saveServerConfiguration(
-      ServerConfiguration configuration) async {
+  Future<void> saveServerConfiguration(ServerConfiguration configuration,
+      {bool verified = false}) async {
     final prefs = await _sharedPrefs;
     final primary = configuration.primaryUrl;
+    await _serverUrlResolver.seedDefaults(primary, prefs);
     if (configuration.hasFallback) {
       final key = 'server_fallback:$primary';
       if (configuration.fallbackUrl == null) {
-        await prefs.remove(key);
+        await prefs.setString(key, '');
       } else {
         await prefs.setString(key, configuration.fallbackUrl!);
       }
     }
     await saveAppUrl(primary);
+    if (verified) {
+      await prefs.setString('verified_company_server', primary);
+    }
   }
 
   Future<void> saveAttendanceType(String value) async {
@@ -397,13 +417,14 @@ class Preferences with ChangeNotifier {
 
   Future<String> getConfiguredAppUrl() async {
     final prefs = await _sharedPrefs;
-    return prefs.getString(APP_URL) ?? Constant.appUrl;
+    final saved = prefs.getString(APP_URL)?.trim();
+    return saved == null || saved.isEmpty ? Constant.appUrl : saved;
   }
 
   Future<String> getAppUrl({bool forceCheck = false}) async {
     final prefs = await _sharedPrefs;
     return _serverUrlResolver.resolve(
-      prefs.getString(APP_URL) ?? Constant.appUrl,
+      await getConfiguredAppUrl(),
       prefs,
       forceCheck: forceCheck,
     );

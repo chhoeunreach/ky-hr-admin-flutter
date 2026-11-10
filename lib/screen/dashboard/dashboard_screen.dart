@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:cnattendance/features/pos/pages/pos_workspace_screen.dart';
 import 'dart:ui';
 
 import 'package:cnattendance/data/source/network/model/dashboard/User.dart';
@@ -94,6 +95,12 @@ class DashboardScreenState extends State<DashboardScreen> {
                 paymentQrCodes,
               ),
               _drawerSectionLabel(enterprise, 'Services'),
+              _drawerMenuItem(enterprise,
+                  icon: Icons.dashboard_outlined,
+                  label: translate('pos.dashboard'), onTap: () {
+                Navigator.of(context).pop();
+                Get.to(() => const PosWorkspaceScreen());
+              }),
               _sellOutDrawerItem(
                 context,
                 enterprise,

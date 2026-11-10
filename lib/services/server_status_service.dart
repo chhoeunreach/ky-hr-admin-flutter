@@ -68,26 +68,10 @@ class ServerStatusService {
       return ServerCheckResult(
           url: scannedValue, isConnected: false, message: e.message);
     }
-    var result =
+    final result =
         await _probe(configuration.primaryUrl, requireAppBackend: true);
-    if (!result.isConnected &&
-        (result.statusCode == null || result.statusCode! >= 500) &&
-        configuration.fallbackUrl != null) {
-      result =
-          await _probe(configuration.fallbackUrl!, requireAppBackend: true);
-      if (result.isConnected) {
-        result = ServerCheckResult(
-          url: result.url,
-          isConnected: true,
-          statusCode: result.statusCode,
-          message: 'Connected to backup server. Primary server is unavailable.',
-        );
-      }
-    }
     if (result.isConnected) {
-      // Preserve the primary so automatic recovery still works after scanning
-      // a backup-enabled QR while the primary is unavailable.
-      await _preferences.saveServerConfiguration(configuration);
+      await _preferences.saveServerConfiguration(configuration, verified: true);
     }
     return result;
   }
@@ -167,7 +151,7 @@ class ServerStatusService {
     try {
       final decoded = json.decode(body);
       return decoded is Map &&
-          decoded.containsKey('status') &&
+          decoded['status'] == true &&
           decoded.containsKey('message');
     } catch (_) {
       return false;

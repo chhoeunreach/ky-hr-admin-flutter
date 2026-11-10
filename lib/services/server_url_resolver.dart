@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:cnattendance/config/backend_server_defaults.dart';
 
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -23,6 +24,18 @@ class ServerUrlResolver {
     _cached.remove(normalize(url));
   }
 
+  Future<void> seedDefaults(String url, SharedPreferences prefs) async {
+    final primary = normalize(url);
+    if (primary != normalize(BackendServerDefaults.primaryUrl)) return;
+    final backup = normalize(BackendServerDefaults.fallbackUrl) ?? '';
+    final marker = 'server_defaults:$primary';
+    if (prefs.getString(marker) != backup) {
+      await prefs.setString('server_fallback:$primary', backup);
+      await prefs.setString(marker, backup);
+      _cached.remove(primary);
+    }
+  }
+
   static String? normalize(String? value) {
     final uri = Uri.tryParse(value?.trim() ?? '');
     if (uri == null ||
@@ -40,27 +53,32 @@ class ServerUrlResolver {
       {bool forceCheck = false}) async {
     final primary = normalize(configuredUrl);
     if (primary == null) return configuredUrl;
+    await seedDefaults(primary, prefs);
     final cached = _cached[primary];
     if (!forceCheck &&
         cached != null &&
         cached.url != primary &&
         DateTime.now().difference(cached.checkedAt) < checkInterval) {
       // A cached backup can go offline too. Verify it before using it again.
-      if (_isBackend(await _probe(cached.url))) return cached.url;
+      if (_isBackend(await _probe(cached.url))) {
+        return cached.url;
+      }
       _cached.remove(primary);
     }
-    return _pending[primary] ??= _resolve(primary, prefs).whenComplete(() {
+    final selected =
+        await (_pending[primary] ??= _resolve(primary, prefs).whenComplete(() {
       _pending.remove(primary);
-    });
+    }));
+    return selected;
   }
 
   Future<String> _resolve(String primary, SharedPreferences prefs) async {
     final key = 'server_fallback:$primary';
     final response = await _probe(primary);
     var selected = primary;
-    if (response != null && response.statusCode < 500) {
+    if (_isBackend(response)) {
       // Only accept configuration from a successful HR backend envelope.
-      if (response.statusCode == 200) {
+      if (response != null) {
         try {
           final envelope = jsonDecode(response.body);
           final data = envelope is Map && envelope['status'] == true
@@ -70,7 +88,8 @@ class ServerUrlResolver {
             final value = data['server_fallback_url'];
             final fallback = normalize(value is String ? value : null);
             if (fallback == null || fallback == primary) {
-              await prefs.remove(key);
+              // An empty value explicitly disables even the bundled backup.
+              await prefs.setString(key, '');
             } else {
               await prefs.setString(key, fallback);
             }
@@ -80,7 +99,11 @@ class ServerUrlResolver {
         }
       }
     } else {
-      final fallback = normalize(prefs.getString(key));
+      final fallback = normalize(prefs.containsKey(key)
+          ? prefs.getString(key)
+          : primary == normalize(BackendServerDefaults.primaryUrl)
+              ? BackendServerDefaults.fallbackUrl
+              : null);
       if (fallback != null && fallback != primary) {
         final backupResponse = await _probe(fallback);
         if (_isBackend(backupResponse)) selected = fallback;

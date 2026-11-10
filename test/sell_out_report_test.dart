@@ -4,6 +4,33 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('SellOutReport commission', () {
+    test('Sale API service alias calculates the same commission as Sell', () {
+      final report = SellOutReport.fromJson({
+        'service_type': 'Sale',
+        'customer_phone': '012345678',
+        'seller_work_category': 'part_timer',
+        'lines': [
+          {'qty': 50, 'unit_price': 2}
+        ],
+      });
+      expect(report.isCommissionEligible, isTrue);
+      expect(report.calculatedCommission, 12.50);
+      expect(report.commission, 12.50);
+    });
+
+    test('server commission remains authoritative, including zero', () {
+      final report = SellOutReport(
+        serviceType: 'Sell',
+        customerPhone: '012345678',
+        lines: [SellOutReportLine(qty: 100, unitPrice: 2)],
+        serverCommission: 0,
+      );
+      expect(report.calculatedCommission, 25);
+      expect(report.commission, 0);
+      report.serverCommission = 30;
+      expect(report.commission, 30);
+    });
+
     test('sell earns commission when full-time qty reaches 100', () {
       final report = SellOutReport(
         serviceType: 'Sell',

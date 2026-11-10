@@ -1,0 +1,316 @@
+{
+    "status": true,
+    "commission_policy": {
+        "visible": true,
+        "can_calculate": true,
+        "can_change_mode": true,
+        "enabled": true,
+        "default_mode": "with_conditions",
+        "rules": {
+            "sell": {
+                "enabled": true,
+                "rate": 0.25,
+                "basis": "item",
+                "require_phone": true,
+                "minimum_amount": 0,
+                "part_time_quantity": 50,
+                "full_time_quantity": 100
+            },
+            "material": {
+                "enabled": true,
+                "rate": 0.25,
+                "basis": "invoice",
+                "require_phone": true,
+                "minimum_amount": 10,
+                "part_time_quantity": 0,
+                "full_time_quantity": 0
+            },
+            "iron": {
+                "enabled": true,
+                "rate": 0.2,
+                "basis": "invoice",
+                "require_phone": true,
+                "minimum_amount": 0,
+                "part_time_quantity": 0,
+                "full_time_quantity": 0
+            },
+            "repair": {
+                "enabled": true,
+                "rate": 0.2,
+                "basis": "invoice",
+                "require_phone": true,
+                "minimum_amount": 0,
+                "part_time_quantity": 0,
+                "full_time_quantity": 0
+            },
+            "buy_in": {
+                "enabled": false,
+                "rate": 0,
+                "basis": "invoice",
+                "require_phone": true,
+                "minimum_amount": 0,
+                "part_time_quantity": 0,
+                "full_time_quantity": 0
+            },
+            "icloud_cus": {
+                "enabled": false,
+                "rate": 0,
+                "basis": "invoice",
+                "require_phone": true,
+                "minimum_amount": 0,
+                "part_time_quantity": 0,
+                "full_time_quantity": 0
+            }
+        }
+    },
+    "data": [
+        {
+            "id": 6,
+            "invoice_no": "INV-5",
+            "original_invoice_no": "",
+            "customer_name": "Customer",
+            "customer_phone": "012345678",
+            "seller_name": "Employee",
+            "branch_name": "HQ",
+            "type": "buy_in",
+            "service_type": "Buy In",
+            "total_qty": 1,
+            "total_amount": 500,
+            "report_commission": 0,
+            "report_status": "not_applicable",
+            "period_qty": 1,
+            "created_at": "2026-11-09 12:00:00",
+            "payment_method": "Cash",
+            "operational_status": null,
+            "payment_status": null,
+            "can_edit": true
+        },
+        {
+            "id": 5,
+            "invoice_no": "INV-4",
+            "original_invoice_no": "",
+            "customer_name": "Customer",
+            "customer_phone": "012345678",
+            "seller_name": "Employee",
+            "branch_name": "HQ",
+            "type": "repair",
+            "service_type": "Repair",
+            "total_qty": 1,
+            "total_amount": 7,
+            "report_commission": 0.2,
+            "report_status": "qualified",
+            "period_qty": 1,
+            "created_at": "2026-11-09 12:00:00",
+            "payment_method": "Cash",
+            "operational_status": null,
+            "payment_status": null,
+            "can_edit": true
+        },
+        {
+            "id": 4,
+            "invoice_no": "INV-3",
+            "original_invoice_no": "",
+            "customer_name": "Customer",
+            "customer_phone": "012345678",
+            "seller_name": "Employee",
+            "branch_name": "HQ",
+            "type": "iron",
+            "service_type": "Iron",
+            "total_qty": 1,
+            "total_amount": 5,
+            "report_commission": 0.2,
+            "report_status": "qualified",
+            "period_qty": 1,
+            "created_at": "2026-11-09 12:00:00",
+            "payment_method": "Cash",
+            "operational_status": null,
+            "payment_status": null,
+            "can_edit": true
+        },
+        {
+            "id": 3,
+            "invoice_no": "INV-2",
+            "original_invoice_no": "",
+            "customer_name": "Customer",
+            "customer_phone": "012345678",
+            "seller_name": "Employee",
+            "branch_name": "HQ",
+            "type": "material",
+            "service_type": "Material",
+            "total_qty": 1,
+            "total_amount": 10,
+            "report_commission": 0.25,
+            "report_status": "qualified",
+            "period_qty": 1,
+            "created_at": "2026-11-09 12:00:00",
+            "payment_method": "Cash",
+            "operational_status": null,
+            "payment_status": null,
+            "can_edit": true
+        },
+        {
+            "id": 2,
+            "invoice_no": "INV-1",
+            "original_invoice_no": "",
+            "customer_name": "Customer",
+            "customer_phone": "012345678",
+            "seller_name": "Employee",
+            "branch_name": "HQ",
+            "type": "sell",
+            "service_type": "លក់",
+            "total_qty": 40,
+            "total_amount": 80,
+            "report_commission": 10,
+            "report_status": "qualified",
+            "period_qty": 100,
+            "created_at": "2026-11-09 12:00:00",
+            "payment_method": "Cash",
+            "operational_status": null,
+            "payment_status": null,
+            "can_edit": true
+        },
+        {
+            "id": 1,
+            "invoice_no": "INV-0",
+            "original_invoice_no": "",
+            "customer_name": "Customer",
+            "customer_phone": "012345678",
+            "seller_name": "Employee",
+            "branch_name": "HQ",
+            "type": "sell",
+            "service_type": "Sell",
+            "total_qty": 60,
+            "total_amount": 120,
+            "report_commission": 15,
+            "report_status": "qualified",
+            "period_qty": 100,
+            "created_at": "2026-11-09 12:00:00",
+            "payment_method": "Cash",
+            "operational_status": null,
+            "payment_status": null,
+            "can_edit": true
+        }
+    ],
+    "meta": {
+        "current_page": 1,
+        "per_page": 20,
+        "total": 6,
+        "last_page": 1
+    },
+    "summary": {
+        "total_transactions": 6,
+        "reports": 2,
+        "quantity": 100,
+        "qualified": 2,
+        "failed": 0,
+        "sales_amount": 222,
+        "commission": 25.65,
+        "module_quantity": 104,
+        "module_amount": 722,
+        "module_qualified": 5,
+        "module_failed": 0,
+        "material_amount": 10,
+        "iron_amount": 5,
+        "repair_amount": 7,
+        "buy_in_amount": 500,
+        "gross_profit": null,
+        "gross_profit_available": false
+    },
+    "categories": [
+        {
+            "type": "sell",
+            "transactions": 2,
+            "quantity": 100,
+            "amount": 200,
+            "commission": 25,
+            "is_purchase": false
+        },
+        {
+            "type": "material",
+            "transactions": 1,
+            "quantity": 1,
+            "amount": 10,
+            "commission": 0.25,
+            "is_purchase": false
+        },
+        {
+            "type": "iron",
+            "transactions": 1,
+            "quantity": 1,
+            "amount": 5,
+            "commission": 0.2,
+            "is_purchase": false
+        },
+        {
+            "type": "repair",
+            "transactions": 1,
+            "quantity": 1,
+            "amount": 7,
+            "commission": 0.2,
+            "is_purchase": false
+        },
+        {
+            "type": "buy_in",
+            "transactions": 1,
+            "quantity": 1,
+            "amount": 500,
+            "commission": 0,
+            "is_purchase": true
+        }
+    ],
+    "chart": {
+        "bucket": "day",
+        "points": [
+            {
+                "date": "2026-11-09",
+                "amount": 222,
+                "buy_in_amount": 500,
+                "quantity": 100
+            }
+        ]
+    },
+    "filters": {
+        "date_from": "2026-11-09",
+        "date_to": "2026-11-09",
+        "commission_mode": "with_conditions"
+    },
+    "options": {
+        "branches": [
+            "HQ"
+        ],
+        "employees": [
+            "Employee"
+        ],
+        "types": [
+            "sell",
+            "material",
+            "iron",
+            "repair",
+            "buy_in"
+        ],
+        "statuses": [
+            "qualified",
+            "failed",
+            "not_applicable"
+        ]
+    },
+    "permissions": {
+        "scope": "own_reports",
+        "can_create": true,
+        "modules": [
+            "sell",
+            "material",
+            "iron",
+            "repair",
+            "buy_in"
+        ]
+    },
+    "capabilities": {
+        "gross_profit": false,
+        "operational_status": false,
+        "payment_status": false,
+        "repair_orders": false
+    },
+    "currency_symbol": "$",
+    "business_name": "HQ"
+}

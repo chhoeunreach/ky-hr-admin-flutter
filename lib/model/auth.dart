@@ -5,7 +5,7 @@ import 'package:cnattendance/data/source/network/model/login/Loginresponse.dart'
 import 'package:cnattendance/utils/app_device_info.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:cnattendance/utils/fcm_token.dart';
-import 'package:cnattendance/services/server_configuration.dart';
+import 'package:cnattendance/services/server_status_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:geolocator/geolocator.dart';
@@ -17,8 +17,12 @@ class Auth with ChangeNotifier {
 
   Future<void> saveAppUrl(String value) async {
     try {
-      final configuration = ServerConfiguration.parse(value);
-      await preferences.saveServerConfiguration(configuration);
+      final result = await ServerStatusService(preferences: preferences)
+          .switchServer(value);
+      if (!result.isConnected) {
+        showToast(result.message);
+        return;
+      }
       appUrl = await preferences.getAppUrl();
       notifyListeners();
     } catch (e) {
@@ -28,7 +32,7 @@ class Auth with ChangeNotifier {
 
   Future<void> resetAppUrl() async {
     await preferences.saveAppUrl("");
-    appUrl = await preferences.getAppUrl();
+    appUrl = "";
     notifyListeners();
   }
 
@@ -44,9 +48,6 @@ class Auth with ChangeNotifier {
   }
 
   Future<Loginresponse> login(String username, String password) async {
-    var uri = Uri.parse(await preferences.getAppUrl() + Constant.LOGIN_URL);
-    print(uri);
-
     Map<String, String> headers = {"Accept": "application/json; charset=UTF-8"};
 
     try {
@@ -88,13 +89,15 @@ class Auth with ChangeNotifier {
         }
       } catch (_) {}
 
+      // Resolve immediately before sending credentials so an unavailable primary
+      // does not prevent login through the company's configured backup.
+      final uri = Uri.parse(await preferences.getAppUrl() + Constant.LOGIN_URL);
       final response = await http.post(uri, headers: headers, body: body);
 
       final responseData = json.decode(response.body);
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 && responseData['status'] == true) {
         debugPrint('Login success and FCM token submitted for user: $username');
 
-        Preferences preferences = Preferences();
         final responseJson = Loginresponse.fromJson(responseData);
         await preferences.saveUser(responseJson.data);
 

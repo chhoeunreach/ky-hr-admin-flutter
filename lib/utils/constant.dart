@@ -1,4 +1,5 @@
 import 'package:cnattendance/model/month.dart';
+import 'package:cnattendance/config/backend_server_defaults.dart';
 import 'package:cnattendance/utils/navigationservice.dart';
 import 'package:cnattendance/widget/customalertdialog.dart';
 import 'package:flutter/material.dart';
@@ -12,7 +13,7 @@ class Constant {
   static const localhost = "http://192.168.1.66:8000/";
   static const codecanyon = "https://digitalhr.cyclonenepal.com/";
 
-  static const appUrl = production;
+  static const appUrl = BackendServerDefaults.primaryUrl;
 
   /**
    * Change value based on your need.

@@ -1,4 +1,6 @@
 import 'package:dio/dio.dart';
+import 'package:cnattendance/models/commission_policy.dart';
+import 'package:cnattendance/features/pos/models/pos_report.dart';
 import 'package:cnattendance/data/source/datastore/preferences.dart';
 import 'package:cnattendance/models/sell_out_report.dart';
 import 'package:cnattendance/utils/constant.dart';
@@ -6,10 +8,43 @@ import 'package:cnattendance/utils/constant.dart';
 class SellOutApiService {
   final Dio _dio;
   final Preferences _preferences;
+  CommissionPolicy commissionPolicy = const CommissionPolicy();
 
-  SellOutApiService()
-      : _dio = Dio(),
-        _preferences = Preferences();
+  SellOutApiService({Dio? dio, Preferences? preferences})
+      : _dio = dio ??
+            Dio(BaseOptions(connectTimeout: const Duration(seconds: 15))),
+        _preferences = preferences ?? Preferences();
+
+  Future<Response<dynamic>> _reportingRequest(PosFilters filters,
+      {bool csv = false}) async {
+    final token = await _preferences.getToken();
+    final baseUrl = await _preferences.getAppUrl();
+    return _dio.get('${baseUrl}${Constant.SELL_OUT_REPORT_URL}',
+        queryParameters: {...filters.toQuery(), if (csv) 'export': 'csv'},
+        options: Options(
+            headers: {
+              'Accept': 'application/json',
+              'Authorization': 'Bearer $token'
+            },
+            responseType: csv ? ResponseType.bytes : ResponseType.json,
+            sendTimeout: const Duration(seconds: 30),
+            receiveTimeout: const Duration(seconds: 45)));
+  }
+
+  Future<PosReport> fetchReporting(PosFilters filters) async {
+    final response = await _reportingRequest(filters);
+    final json = posMap(response.data);
+    if (json['meta'] is! Map || json['summary'] is! Map)
+      throw const FormatException('pos_server_update_required');
+    return PosReport.fromJson(json);
+  }
+
+  Future<List<int>> exportReporting(PosFilters filters) async {
+    final response = await _reportingRequest(filters, csv: true);
+    if (!(response.headers.value('content-type') ?? '').contains('text/csv'))
+      throw const FormatException('pos_server_update_required');
+    return List<int>.from(response.data as List);
+  }
 
   Future<List<SellOutReport>> fetchReports() async {
     final token = await _preferences.getToken();
@@ -25,11 +60,27 @@ class SellOutApiService {
       ),
     );
 
+    commissionPolicy =
+        CommissionPolicy.fromJson(posMap(response.data)['commission_policy']);
     final items = _extractList(response.data);
     return items
         .whereType<Map>()
-        .map((item) => SellOutReport.fromJson(Map<String, dynamic>.from(item)))
+        .map((item) => SellOutReport.fromJson(Map<String, dynamic>.from(item))
+          ..commissionPolicy = commissionPolicy)
         .toList();
+  }
+
+  Future<CommissionPolicy> fetchCommissionPolicy() async {
+    final token = await _preferences.getToken();
+    final baseUrl = await _preferences.getAppUrl();
+    final response = await _dio.get(
+        '${baseUrl}${Constant.SELL_OUT_REPORT_URL}/commission-policy',
+        options: Options(headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token'
+        }, receiveTimeout: const Duration(seconds: 30)));
+    return commissionPolicy =
+        CommissionPolicy.fromJson(posMap(response.data)['data']);
   }
 
   Future<SellOutReport> fetchReport(int id) async {
@@ -48,7 +99,9 @@ class SellOutApiService {
 
     final data = response.data;
     if (data is Map && data['data'] is Map) {
-      return SellOutReport.fromJson(Map<String, dynamic>.from(data['data']));
+      return SellOutReport.fromJson(Map<String, dynamic>.from(data['data']))
+        ..commissionPolicy =
+            CommissionPolicy.fromJson(data['commission_policy']);
     }
     if (data is Map) {
       return SellOutReport.fromJson(Map<String, dynamic>.from(data));
@@ -132,6 +185,8 @@ class SellOutApiService {
     final formData = FormData();
 
     formData.fields.add(MapEntry('seller_name', report.sellerName));
+    formData.fields
+        .add(MapEntry('original_invoice_no', report.originalInvoiceNo));
     formData.fields.add(MapEntry('branch_name', report.branchName));
     formData.fields.add(MapEntry('customer_name', report.customerName));
     formData.fields.add(MapEntry('customer_phone', report.customerPhone));

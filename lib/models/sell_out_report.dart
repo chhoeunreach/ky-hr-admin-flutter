@@ -1,4 +1,5 @@
 import 'sell_out_report_line.dart';
+import 'commission_policy.dart';
 
 class SellOutReport {
   static const double sellCommissionPerItem = 0.25;
@@ -14,7 +15,7 @@ class SellOutReport {
   /// time, e.g. "Iron" was briefly mistranslated as "Scots"), comparisons
   /// must go through [canonicalServiceType] instead of matching raw strings.
   static const Map<String, Set<String>> _serviceTypeAliases = {
-    'sell': {'Sell', 'លក់'},
+    'sell': {'Sell', 'Sale', 'លក់'},
     'material': {'Material', 'សម្ភារ'},
     'iron': {'Iron', 'Scots', 'អ៊ុត'},
     'repair': {'Repair', 'ជួសជុល'},
@@ -37,11 +38,15 @@ class SellOutReport {
   static String canonicalServiceType(String raw) {
     final trimmed = raw.replaceAll(RegExp(r'[\u200B-\u200D\uFEFF]'), '').trim();
     for (final entry in _serviceTypeAliases.entries) {
-      if (entry.value.contains(trimmed)) return entry.key;
+      if (entry.key == trimmed.toLowerCase() ||
+          entry.value
+              .any((alias) => alias.toLowerCase() == trimmed.toLowerCase()))
+        return entry.key;
     }
     return trimmed;
   }
 
+  CommissionPolicy? commissionPolicy;
   int? id;
   String invoiceNo;
   String originalInvoiceNo;
@@ -65,6 +70,7 @@ class SellOutReport {
   List<int?> photoIds;
 
   SellOutReport({
+    this.commissionPolicy,
     this.id,
     this.invoiceNo = '',
     this.originalInvoiceNo = '',
@@ -111,6 +117,8 @@ class SellOutReport {
     final photoIdItems = photoEntries.map((entry) => entry.key).toList();
 
     return SellOutReport(
+      commissionPolicy:
+          json['commission_visible'] == false ? const CommissionPolicy() : null,
       id: _asInt(json['id']),
       invoiceNo: _asString(json['invoice_no']),
       originalInvoiceNo: _asString(json['original_invoice_no']),
@@ -153,10 +161,17 @@ class SellOutReport {
 
   bool get hasValidMaterialInvoiceTotal {
     if (canonicalServiceType(serviceType) != 'material') return true;
-    return totalAmount >= 10;
+    return totalAmount >=
+        (commissionPolicy
+                ?.rules[canonicalServiceType(serviceType)]?.minimumAmount ??
+            10);
   }
 
   int get sellQtyThreshold {
+    if (commissionPolicy != null)
+      return commissionPolicy!.rules[canonicalServiceType(serviceType)]
+              ?.threshold(sellerWorkCategory) ??
+          0;
     final category = sellerWorkCategory.trim().toLowerCase();
     return category == 'part_timer'
         ? partTimeSellQtyThreshold
@@ -169,11 +184,22 @@ class SellOutReport {
   }
 
   bool get isCommissionable {
+    if (commissionPolicy != null) {
+      if (!commissionPolicy!.canCalculate && (serverCommission ?? 0) > 0)
+        return true;
+      return commissionPolicy!.isEnabled(canonicalServiceType(serviceType));
+    }
     return commissionableCanonicalTypes
         .contains(canonicalServiceType(serviceType));
   }
 
   bool get isCommissionEligible {
+    if (commissionPolicy != null)
+      return commissionPolicy!.visible &&
+          commissionPolicy!
+              .failures(canonicalServiceType(serviceType), totalQty,
+                  totalAmount, customerPhone, sellerWorkCategory)
+              .isEmpty;
     return isCommissionable &&
         hasValidCustomerPhone &&
         hasValidMaterialInvoiceTotal &&
@@ -196,8 +222,17 @@ class SellOutReport {
         .contains(canonicalServiceType(serviceType));
   }
 
-  double get commission {
-    if (serverCommission != null) return serverCommission!;
+  double get commission => commissionPolicy?.visible == false
+      ? 0
+      : serverCommission ?? calculatedCommission;
+
+  /// The local rule calculation, before an authoritative API value is applied.
+  double get calculatedCommission {
+    if (commissionPolicy != null)
+      return commissionPolicy!.canCalculate
+          ? commissionPolicy!.calculate(canonicalServiceType(serviceType),
+              totalQty, totalAmount, customerPhone, sellerWorkCategory)
+          : 0;
     if (!isCommissionEligible) return 0;
     switch (canonicalServiceType(serviceType)) {
       case 'iron':
@@ -213,6 +248,9 @@ class SellOutReport {
   }
 
   double get commissionRate {
+    if (commissionPolicy != null)
+      return commissionPolicy!.rules[canonicalServiceType(serviceType)]?.rate ??
+          0;
     switch (canonicalServiceType(serviceType)) {
       case 'iron':
         return ironCommissionPerReport;
