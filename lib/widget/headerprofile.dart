@@ -26,6 +26,7 @@ class HeaderProfile extends StatefulWidget {
 
 class HeaderState extends State<HeaderProfile> {
   late final NotificationController notificationController;
+  bool _notificationsRequested = false;
 
   @override
   void initState() {
@@ -33,7 +34,19 @@ class HeaderState extends State<HeaderProfile> {
     notificationController = Get.isRegistered<NotificationController>()
         ? Get.find<NotificationController>()
         : Get.put(NotificationController(), permanent: true);
-    notificationController.ensureLoaded();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final allowed =
+        context.watch<DashboardProvider>().features['notifications'] == '1';
+    if (allowed && !_notificationsRequested) {
+      _notificationsRequested = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) notificationController.ensureLoaded();
+      });
+    }
   }
 
   Future<void> sendLocation() async {
@@ -120,6 +133,7 @@ class HeaderState extends State<HeaderProfile> {
   Widget build(BuildContext context) {
     final provider = Provider.of<PrefProvider>(context);
     final enterprise = EnterpriseTheme.of(context);
+    final features = context.watch<DashboardProvider>().features;
     final isEnabledLocation =
         context.watch<DashboardProvider>().isLocationEnabled;
     return Padding(
@@ -131,12 +145,15 @@ class HeaderState extends State<HeaderProfile> {
           children: [
             InkWell(
               borderRadius: BorderRadius.circular(28),
-              onTap: () {
-                pushScreen(context,
-                    screen: ProfileScreen(),
-                    withNavBar: false,
-                    pageTransitionAnimation: PageTransitionAnimation.fade);
-              },
+              onTap: features["profile"] != "1"
+                  ? null
+                  : () {
+                      pushScreen(context,
+                          screen: ProfileScreen(),
+                          withNavBar: false,
+                          pageTransitionAnimation:
+                              PageTransitionAnimation.fade);
+                    },
               child: Container(
                 padding: const EdgeInsets.all(2),
                 decoration: BoxDecoration(
@@ -230,78 +247,79 @@ class HeaderState extends State<HeaderProfile> {
                   onPressed: testServerConnection,
                 ),
               ),
-            Tooltip(
-              message: "Notifications",
-              child: Obx(
-                () => TweenAnimationBuilder<double>(
-                  tween: Tween(
-                    begin: 0,
-                    end: notificationController.badgeCount > 0 ? 1 : 0,
-                  ),
-                  duration: const Duration(milliseconds: 700),
-                  curve: Curves.elasticOut,
-                  builder: (context, value, child) {
-                    return Transform.scale(
-                      scale: 1 + (value * 0.08),
-                      child: Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          _HeaderIconButton(
-                            icon: notificationController.badgeCount > 0
-                                ? Icons.notifications_active_rounded
-                                : Icons.notifications_rounded,
-                            color: enterprise.text,
-                            onPressed: () {
-                              pushScreen(context,
-                                  screen: NotificationScreen(),
-                                  withNavBar: false,
-                                  pageTransitionAnimation:
-                                      PageTransitionAnimation.fade);
-                            },
-                          ),
-                          if (notificationController.badgeCount > 0)
-                            Positioned(
-                              right: 2,
-                              top: 2,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 5, vertical: 2),
-                                constraints: const BoxConstraints(
-                                  minWidth: 18,
-                                  minHeight: 18,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.redAccent,
-                                  borderRadius: BorderRadius.circular(20),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.redAccent
-                                          .withValues(alpha: 0.45),
-                                      blurRadius: 12,
+            if (features["notifications"] == "1")
+              Tooltip(
+                message: "Notifications",
+                child: Obx(
+                  () => TweenAnimationBuilder<double>(
+                    tween: Tween(
+                      begin: 0,
+                      end: notificationController.badgeCount > 0 ? 1 : 0,
+                    ),
+                    duration: const Duration(milliseconds: 700),
+                    curve: Curves.elasticOut,
+                    builder: (context, value, child) {
+                      return Transform.scale(
+                        scale: 1 + (value * 0.08),
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            _HeaderIconButton(
+                              icon: notificationController.badgeCount > 0
+                                  ? Icons.notifications_active_rounded
+                                  : Icons.notifications_rounded,
+                              color: enterprise.text,
+                              onPressed: () {
+                                pushScreen(context,
+                                    screen: NotificationScreen(),
+                                    withNavBar: false,
+                                    pageTransitionAnimation:
+                                        PageTransitionAnimation.fade);
+                              },
+                            ),
+                            if (notificationController.badgeCount > 0)
+                              Positioned(
+                                right: 2,
+                                top: 2,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 5, vertical: 2),
+                                  constraints: const BoxConstraints(
+                                    minWidth: 18,
+                                    minHeight: 18,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.redAccent,
+                                    borderRadius: BorderRadius.circular(20),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.redAccent
+                                            .withValues(alpha: 0.45),
+                                        blurRadius: 12,
+                                      ),
+                                    ],
+                                  ),
+                                  child: Text(
+                                    notificationController.badgeCount > 99
+                                        ? '99+'
+                                        : notificationController.badgeCount
+                                            .toString(),
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w800,
                                     ),
-                                  ],
-                                ),
-                                child: Text(
-                                  notificationController.badgeCount > 99
-                                      ? '99+'
-                                      : notificationController.badgeCount
-                                          .toString(),
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w800,
                                   ),
                                 ),
                               ),
-                            ),
-                        ],
-                      ),
-                    );
-                  },
+                          ],
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
-            ),
           ],
         ),
       ),

@@ -17,6 +17,7 @@ class SalesDashboard extends StatefulWidget {
     this.calculation,
     this.reportsTitle,
     this.amountLabel,
+    this.showProductNames = true,
     this.serviceIcon = Icons.shopping_bag_outlined,
     required this.translate,
     required this.onOpen,
@@ -32,6 +33,7 @@ class SalesDashboard extends StatefulWidget {
   final ReportCommissionCalculation? calculation;
   final String? reportsTitle;
   final String? amountLabel;
+  final bool showProductNames;
   final IconData serviceIcon;
   final String Function(String) translate;
   final ValueChanged<SellOutReport> onOpen;
@@ -494,7 +496,10 @@ class _SalesDashboardState extends State<SalesDashboard> {
                                   borderRadius: BorderRadius.circular(10)),
                               child: Row(children: [
                                 _cell(tr('invoice'), 3, header: true),
-                                _cell(tr('customer'),
+                                _cell(
+                                    tr(widget.showProductNames
+                                        ? 'product_name'
+                                        : 'customer'),
                                     constraints.maxWidth < 600 ? 2 : 3,
                                     header: true),
                                 _cell(tr('qty'), 1, header: true),
@@ -517,17 +522,25 @@ class _SalesDashboardState extends State<SalesDashboard> {
         ]));
   }
 
-  Widget _cell(String text, int flex, {bool header = false, Color? color}) =>
-      Expanded(
-          flex: flex,
-          child: Text(text,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                  color: color ?? (header ? salesMuted : salesInk),
-                  fontSize: 12,
-                  fontWeight: header ? FontWeight.w700 : FontWeight.w600)));
+  Widget _cell(String text, int flex,
+      {bool header = false, Color? color, bool tooltip = false}) {
+    final label = Text(text,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+            color: color ?? (header ? salesMuted : salesInk),
+            fontSize: 12,
+            fontWeight: header ? FontWeight.w700 : FontWeight.w600));
+    return Expanded(
+        flex: flex,
+        child: tooltip ? Tooltip(message: text, child: label) : label);
+  }
 
   Widget _reportRow(SellOutReport report, {required bool compact}) {
+    final productNames = report.lines
+        .map((line) => line.productName.trim())
+        .where((name) => name.isNotEmpty)
+        .toSet()
+        .join(', ');
     final eligible = calculation.isEligible(report);
     final statusColor = !report.isCommissionable
         ? salesMuted
@@ -576,10 +589,13 @@ class _SalesDashboardState extends State<SalesDashboard> {
                         ])),
                   ])),
               _cell(
-                  report.customerName.isEmpty
-                      ? tr('walk_in_customer')
-                      : report.customerName,
-                  compact ? 2 : 3),
+                  widget.showProductNames
+                      ? (productNames.isEmpty ? '—' : productNames)
+                      : report.customerName.isEmpty
+                          ? tr('walk_in_customer')
+                          : report.customerName,
+                  compact ? 2 : 3,
+                  tooltip: widget.showProductNames),
               _cell('${report.totalQty}', 1),
               Expanded(
                   flex: 2,

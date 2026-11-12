@@ -1,3 +1,4 @@
+import 'package:cnattendance/features/home_highlights/home_highlight_open_screen.dart';
 import 'package:cnattendance/screen/general/generalscreen.dart';
 import 'package:cnattendance/model/notification.dart' as app_notification;
 import 'package:cnattendance/provider/notificationcontroller.dart';
@@ -32,6 +33,11 @@ class NotificationCard extends StatelessWidget {
               desc.contains('អាប់ដេត') ||
               desc.toLowerCase().contains('update') ||
               desc.contains('កំណែថ្មី');
+
+          if (type == 'home_highlight' && noticeId > 0) {
+            Get.to(() => HomeHighlightOpenScreen(id: noticeId));
+            return;
+          }
 
           if (type == 'notice' && noticeId > 0) {
             Get.to(() => NoticeDetailScreen(

@@ -8,6 +8,9 @@ class MeetingAttendanceItem {
     required this.qrPayload,
     required this.isJoined,
     this.checkedInAtFormatted,
+    this.attendanceStatus = 'open',
+    this.checkInOpensAt,
+    this.checkInClosesAt,
   });
 
   factory MeetingAttendanceItem.fromJson(Map<String, dynamic> json) {
@@ -21,9 +24,20 @@ class MeetingAttendanceItem {
       isJoined: json['is_joined'] == true ||
           json['is_joined'] == 1 ||
           json['is_joined'].toString() == '1',
+      attendanceStatus: _asString(json['attendance_status']).isEmpty
+          ? 'open'
+          : _asString(json['attendance_status']),
+      checkInOpensAt: DateTime.tryParse(_asString(json['check_in_opens_at'])),
+      checkInClosesAt: DateTime.tryParse(_asString(json['check_in_closes_at'])),
       checkedInAtFormatted: _asNullableString(json['checked_in_at_formatted']),
     );
   }
+
+  final String attendanceStatus;
+  final DateTime? checkInOpensAt;
+  final DateTime? checkInClosesAt;
+
+  bool get canCheckIn => !isJoined && attendanceStatus == 'open';
 
   final int id;
   final String title;

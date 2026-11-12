@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:core';
 import 'dart:developer';
@@ -17,6 +18,7 @@ import 'package:cnattendance/data/source/network/model/teamsheet/Employee.dart'
     as employees;
 import 'package:cnattendance/data/source/network/model/trainingresponse/trainingresponse.dart';
 import 'package:cnattendance/model/award.dart';
+import 'package:cnattendance/models/monthly_attendance_summary.dart';
 import 'package:cnattendance/model/holiday.dart';
 import 'package:cnattendance/screen/auth/login_screen.dart';
 import 'package:cnattendance/utils/app_device_info.dart';
@@ -35,6 +37,53 @@ import 'package:intl/intl.dart';
 import 'package:nepali_date_picker/nepali_date_picker.dart';
 
 class DashboardProvider with ChangeNotifier {
+  DashboardProvider({
+    Preferences? attendanceSummaryPreferences,
+    http.Client? attendanceSummaryClient,
+  })  : _monthlySummaryPreferences =
+            attendanceSummaryPreferences ?? Preferences(),
+        _monthlySummaryClient = attendanceSummaryClient;
+
+  final Preferences _monthlySummaryPreferences;
+  final http.Client? _monthlySummaryClient;
+  MonthlyAttendanceSummary? monthlyAttendanceSummary;
+  int _monthlySummaryRevision = 0;
+  bool _summaryDisposed = false;
+
+  @override
+  void dispose() {
+    _summaryDisposed = true;
+    _monthlySummaryRevision++;
+    super.dispose();
+  }
+
+  Future<void> refreshMonthlyAttendanceSummary() async {
+    if (_summaryDisposed) return;
+    final revision = ++_monthlySummaryRevision;
+    monthlyAttendanceSummary = null;
+    notifyListeners();
+    try {
+      final preferences = _monthlySummaryPreferences;
+      final get = _monthlySummaryClient?.get ?? http.get;
+      final response = await get(
+        Uri.parse(
+            '${await preferences.getAppUrl()}${Constant.DASHBOARD_URL}/attendance-summary'),
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer ${await preferences.getToken()}',
+        },
+      ).timeout(const Duration(seconds: 15));
+      if (revision != _monthlySummaryRevision) return;
+      monthlyAttendanceSummary = response.statusCode == 200
+          ? MonthlyAttendanceSummary.fromJson(jsonDecode(response.body)['data'])
+          : null;
+    } catch (_) {
+      if (revision != _monthlySummaryRevision) return;
+      monthlyAttendanceSummary = null;
+    }
+    notifyListeners();
+  }
+
   final Map<String, String> _overviewList = {
     'present': '0',
     'holiday': '0',
@@ -139,6 +188,7 @@ class DashboardProvider with ChangeNotifier {
   }
 
   Future<Dashboardresponse> getDashboard() async {
+    final summaryRevision = _monthlySummaryRevision;
     final preferences = Preferences();
     animated = getAnimation();
     final uri =
@@ -191,11 +241,15 @@ class DashboardProvider with ChangeNotifier {
         }
       }
 
+      if (summaryRevision == _monthlySummaryRevision) {
+        monthlyAttendanceSummary =
+            dashboardResponse.data.monthlyAttendanceSummary;
+      }
       updateAttendanceStatus(dashboardResponse.data.employeeTodayAttendance);
       updateOverView(dashboardResponse.data.overview);
 
       makeWeeklyReport(dashboardResponse.data.employeeWeeklyReport);
-      controlFeatures(dashboardResponse.data.features);
+      await controlFeatures(dashboardResponse.data.features);
       await preferences.saveUserDashboard(dashboardResponse.data.user);
 
       employeeList = dashboardResponse.data.employee;
@@ -693,7 +747,7 @@ class DashboardProvider with ChangeNotifier {
     return "$hour hr $minGone min";
   }
 
-  void controlFeatures(List<Feature> features) {
+  Future<void> controlFeatures(List<Feature> features) async {
     Preferences preferences = Preferences();
     Map<String, String> featureList = <String, String>{};
 
@@ -701,7 +755,8 @@ class DashboardProvider with ChangeNotifier {
       featureList[feature.key] = feature.status;
     }
 
-    preferences.setFeatures(featureList);
+    this.features = featureList;
+    await preferences.setFeatures(featureList);
   }
 
   Future<bool> getCheckInStatus() async {
@@ -934,6 +989,7 @@ class DashboardProvider with ChangeNotifier {
           checkInAt: attendanceResponse.data.checkInAt,
           checkOutAt: attendanceResponse.data.checkOutAt,
           productionTime: attendanceResponse.data.productiveTimeInMin));
+      unawaited(refreshMonthlyAttendanceSummary());
 
       return attendanceResponse;
     } else {
@@ -1035,6 +1091,7 @@ class DashboardProvider with ChangeNotifier {
           checkInAt: attendanceResponse.data.checkInAt,
           checkOutAt: attendanceResponse.data.checkOutAt,
           productionTime: attendanceResponse.data.productiveTimeInMin));
+      unawaited(refreshMonthlyAttendanceSummary());
 
       return attendanceResponse;
     } else {
@@ -1125,6 +1182,7 @@ class DashboardProvider with ChangeNotifier {
           checkInAt: attendanceResponse.data.checkInAt,
           checkOutAt: attendanceResponse.data.checkOutAt,
           productionTime: attendanceResponse.data.productiveTimeInMin));
+      unawaited(refreshMonthlyAttendanceSummary());
       noteController.clear();
       return attendanceResponse;
     } else {

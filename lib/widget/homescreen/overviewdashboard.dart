@@ -1,3 +1,5 @@
+import 'package:cnattendance/screen/dashboard/attendancescreen.dart';
+import 'package:cnattendance/screen/dashboard/leavescreen.dart';
 import 'package:cnattendance/provider/dashboardprovider.dart';
 import 'package:cnattendance/provider/prefprovider.dart';
 import 'package:cnattendance/screen/awards/awardsscreen.dart';
@@ -83,7 +85,8 @@ class _OverviewDashboardState extends State<OverviewDashboard> {
                   value: _overview['present']!,
                   icon: "assets/icons/present_icon.png",
                   callback: () {
-                    widget.controller.jumpToTab(3);
+                    pushScreen(context,
+                        screen: AttendanceScreen(), withNavBar: false);
                   },
                 ),
               if (features["holiday"] == "1")
@@ -104,7 +107,8 @@ class _OverviewDashboardState extends State<OverviewDashboard> {
                   value: _overview['leave']!,
                   icon: Icons.sick,
                   callback: () {
-                    widget.controller.jumpToTab(2);
+                    pushScreen(context,
+                        screen: LeaveScreen(), withNavBar: false);
                   },
                 ),
               if (features["event"] == "1")

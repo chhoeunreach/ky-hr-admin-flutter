@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:cnattendance/data/source/network/model/login/User.dart';
 import 'package:cnattendance/data/source/network/model/dashboard/User.dart'
     as DashboardUser;
@@ -72,6 +73,7 @@ class Preferences with ChangeNotifier {
     final user = data.user;
     final prefs = await _sharedPrefs;
 
+    await prefs.remove('role_features_v2');
     await prefs.setString(USER_TOKEN, data.tokens);
     await prefs.setInt(USER_ID, user.id);
     await prefs.setString(USER_AVATAR, user.avatar);
@@ -111,88 +113,33 @@ class Preferences with ChangeNotifier {
     return true;
   }
 
+  /// Replace the complete server snapshot so revoked and newly added permissions
+  /// never fall back to a previous grant or a hard-coded enabled default.
   Future<void> setFeatures(Map<String, String> features) async {
     final prefs = await _sharedPrefs;
-
-    await prefs.setString(
-        PROJECT_MANAGEMENT, features["project-management"] ?? "0");
-    await prefs.setString(MEETING, features["meeting"] ?? "0");
-    await prefs.setString(TADA, features["tada"] ?? "0");
-    await prefs.setString(
-        PAYROLL_MANGEMENT, features["payroll-management"] ?? "0");
-    await prefs.setString(ADVANCE_SALARY, features["advance-salary"] ?? "0");
-    await prefs.setString(
-        ADVANCE_SALARY_APPROVE, features["advance-salary-approve"] ?? "0");
-    await prefs.setString(
-        ADMIN_ADVANCE_SALARY, features["advance-salary-admin"] ?? "0");
-    await prefs.setString(SUPPORT, features["support"] ?? "0");
-    await prefs.setString(DARK_MODE, features["dark-mode"] ?? "0");
-    await prefs.setString(ATTENDANCE, features["attendance"] ?? "1");
-    await prefs.setString(LEAVE_REQUEST, features["leave-request"] ?? "1");
-    await prefs.setString(TIME_LEAVE, features["time-leave"] ?? "1");
-    await prefs.setString(HOLIDAY, features["holiday"] ?? "1");
-    await prefs.setString(NOTICE, features["notice"] ?? "1");
-    await prefs.setString(
-        SELL_STAFF_REPORT, features["sell-staff-report"] ?? "1");
-    await prefs.setString(NFC_QR, features["nfc-qr"] ?? "0");
-    await prefs.setString(AWARD, features["award"] ?? "0");
-    await prefs.setString(TRAINING, features["training"] ?? "0");
-    await prefs.setString(LOAN, features["loan"] ?? "0");
-    await prefs.setString(EVENT, features["event"] ?? "0");
-    await prefs.setString(COMPLAIN, features["complaint"] ?? "0");
-    await prefs.setString(WARNING, features["warning"] ?? "0");
-    await prefs.setString(RESIGNATION, features["resignation"] ?? "0");
-    await prefs.setString(ASSETS, features["assets"] ?? "0");
-    await prefs.setString(
-        SOCIAL_REWARDS,
-        features["social-rewards"] ??
-            features["social-media-marketing"] ??
-            features["social"] ??
-            "0");
-    await prefs.setString(
-        SOCIAL_REWARDS_ADMIN, features["social-rewards-admin"] ?? "0");
-
+    await prefs.setString('role_features_v2', jsonEncode(features));
     notifyListeners();
   }
 
   Future<Map<String, String>> getFeatures() async {
-    final features = <String, String>{};
     final prefs = await _sharedPrefs;
+    final snapshot = prefs.getString('role_features_v2');
+    if (snapshot == null) return {};
+    try {
+      return Map<String, String>.from(jsonDecode(snapshot) as Map);
+    } catch (_) {
+      return {};
+    }
+  }
 
-    features["project-management"] =
-        await prefs.getString(PROJECT_MANAGEMENT) ?? "1";
-    features["meeting"] = await prefs.getString(MEETING) ?? "1";
-    features["tada"] = await prefs.getString(TADA) ?? "1";
-    features["payroll-management"] =
-        await prefs.getString(PAYROLL_MANGEMENT) ?? "1";
-    features["advance-salary"] = await prefs.getString(ADVANCE_SALARY) ?? "1";
-    features["advance-salary-approve"] =
-        await prefs.getString(ADVANCE_SALARY_APPROVE) ?? "0";
-    features["advance-salary-admin"] =
-        await prefs.getString(ADMIN_ADVANCE_SALARY) ?? "0";
-    features["support"] = await prefs.getString(SUPPORT) ?? "1";
-    features["dark-mode"] = await prefs.getString(DARK_MODE) ?? "1";
-    features["attendance"] = await prefs.getString(ATTENDANCE) ?? "1";
-    features["leave-request"] = await prefs.getString(LEAVE_REQUEST) ?? "1";
-    features["time-leave"] = await prefs.getString(TIME_LEAVE) ?? "1";
-    features["holiday"] = await prefs.getString(HOLIDAY) ?? "1";
-    features["notice"] = await prefs.getString(NOTICE) ?? "1";
-    features["sell-staff-report"] =
-        await prefs.getString(SELL_STAFF_REPORT) ?? "1";
-    features["nfc-qr"] = await prefs.getString(NFC_QR) ?? "1";
-    features["award"] = await prefs.getString(AWARD) ?? "1";
-    features["training"] = await prefs.getString(TRAINING) ?? "1";
-    features["loan"] = await prefs.getString(LOAN) ?? "1";
-    features["event"] = await prefs.getString(EVENT) ?? "1";
-    features["complaint"] = await prefs.getString(COMPLAIN) ?? "1";
-    features["warning"] = await prefs.getString(WARNING) ?? "1";
-    features["resignation"] = await prefs.getString(RESIGNATION) ?? "1";
-    features["assets"] = await prefs.getString(ASSETS) ?? "1";
-    features["social-rewards"] = await prefs.getString(SOCIAL_REWARDS) ?? "0";
-    features["social-rewards-admin"] =
-        await prefs.getString(SOCIAL_REWARDS_ADMIN) ?? "0";
+  Future<void> setRailExpanded(bool expanded) async {
+    final prefs = await _sharedPrefs;
+    await prefs.setBool('rail_expanded_v1', expanded);
+  }
 
-    return features;
+  Future<bool?> getRailExpanded() async {
+    final prefs = await _sharedPrefs;
+    return prefs.getBool('rail_expanded_v1');
   }
 
   void saveBasicUser(User user) async {
@@ -212,6 +159,7 @@ class Preferences with ChangeNotifier {
 
     await prefs.remove('login_server');
     await prefs.remove('verified_company_server');
+    await prefs.remove('role_features_v2');
 
     await prefs.setInt(USER_ID, 0);
     await prefs.setString(USER_TOKEN, '');

@@ -35,6 +35,13 @@ const String _iCloudCustomerServiceType = 'iCloud Cus';
 
 String _sellOutTr(String key) => translate('sell_out_report.$key');
 
+String _displayServiceType(String serviceType) {
+  final canonical = SellOutReport.canonicalServiceType(serviceType);
+  return canonical == 'icloud_cus' || canonical == 'sell_sim'
+      ? posServiceLabel(canonical)
+      : serviceType;
+}
+
 String _sellOutTrWith(String key, Map<String, String> values) {
   var text = _sellOutTr(key);
   values.forEach((name, value) {
@@ -75,8 +82,14 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
       widget.serviceType.isEmpty || _canonicalService == 'sell';
   String get _serviceLabel {
     if (_isSales) return translate('home_screen.service_sell');
-    if (['material', 'iron', 'repair', 'buy_in', 'icloud_cus']
-        .contains(_canonicalService)) {
+    if ([
+      'material',
+      'iron',
+      'repair',
+      'buy_in',
+      'icloud_cus',
+      'sell_sim'
+    ].contains(_canonicalService)) {
       return translate('home_screen.service_$_canonicalService');
     }
     return widget.serviceType;
@@ -94,6 +107,8 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
         return Icons.add_shopping_cart_outlined;
       case 'icloud_cus':
         return Icons.cloud_outlined;
+      case 'sell_sim':
+        return Icons.sim_card_outlined;
       default:
         return Icons.shopping_bag_outlined;
     }
@@ -156,13 +171,14 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
     );
   }
 
-  bool _isEditableToday(SellOutReport report) {
-    final created = DateTime.tryParse(report.createdAt);
-    if (created == null) return false;
-    return _dateOnly(created.toLocal()) == _dateOnly(DateTime.now());
-  }
+  bool _isEditableToday(SellOutReport report) => report.isCreatedToday();
 
   Future<void> _openEdit(SellOutReport report) async {
+    if (!_isEditableToday(report)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_sellOutTr('edit_today_only'))));
+      return;
+    }
     final updated = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => SellOutReportCreateScreen(
@@ -396,7 +412,7 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
     }
     Navigator.of(context).pushReplacement(MaterialPageRoute(
         builder: (_) => SellOutReportScreen(
-            serviceType: posServiceLabel(module),
+            serviceType: posServiceType(module),
             reportLoader: widget.reportLoader)));
   }
 
@@ -584,6 +600,7 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
                                 else
                                   SalesDashboard(
                                     reports: filtered,
+                                    showProductNames: _isSales || ['material', 'iron', 'repair', 'buy_in'].contains(_canonicalService),
                                     calculation: calculation,
                                     reportsTitle: isSales
                                         ? null
@@ -985,7 +1002,8 @@ class _SellOutReportDetailScreenState extends State<SellOutReportDetailScreen> {
                     _detailRow(_sellOutTr('customer'), report.customerName),
                     _detailRow(
                         _sellOutTr('customer_phone'), report.customerPhone),
-                    _detailRow(_sellOutTr('service_type'), report.serviceType),
+                    _detailRow(_sellOutTr('service_type'),
+                        _displayServiceType(report.serviceType)),
                     _detailRow(_sellOutTr('payment'), report.paymentMethod),
                     _detailRow(_sellOutTr('total'),
                         '\$${report.totalAmount.toStringAsFixed(2)}'),
@@ -1441,6 +1459,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
         serviceType: existing.serviceType,
         paymentMethod: existing.paymentMethod,
         note: existing.note,
+        extractedText: existing.extractedText,
         serverTotalAmount: existing.serverTotalAmount,
         createdAt: existing.createdAt,
         lines: existing.lines.map((l) => l.copyWith()).toList(),
@@ -1453,6 +1472,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
       _customerPhoneCtrl.text = _report.customerPhone;
       _paymentMethodCtrl.text = _report.paymentMethod;
       _noteCtrl.text = _report.note;
+      if (_isICloudCustomer) _restoreICloudFields(existing);
     } else {
       _report = SellOutReport(commissionPolicy: widget.commissionPolicy);
       _report.serviceType = widget.serviceType;
@@ -1561,8 +1581,10 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
         return;
       final serial = result.trim();
       if (serial.isEmpty) return;
-      final error = _translateSerialNumberError(
-          SellOutReport.validateSerialNumber(serial));
+      final error = _requiresSerialNumberValidation
+          ? _translateSerialNumberError(
+              SellOutReport.validateSerialNumber(serial))
+          : null;
       if (error != null) {
         _showError(_sellOutTr('validation_error'), error);
         return;
@@ -1657,6 +1679,36 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
     ].join('\n\n');
   }
 
+  void _restoreICloudFields(SellOutReport existing) {
+    final fields = <String, String>{};
+    final block = RegExp(r'(?:^|\n\n)iCloud Info\n([\s\S]*)$')
+        .firstMatch(existing.note);
+    if (block != null) {
+      _noteCtrl.text = existing.note.substring(0, block.start).trim();
+      String? key;
+      for (final row in block.group(1)!.split('\n')) {
+        final match = RegExp(r'^(Account Name|Apple ID|iCloud Storage|Trusted Phone|Devices):\s*(.*)$')
+            .firstMatch(row);
+        if (match != null) {
+          key = match.group(1)!;
+          fields[key] = match.group(2)!;
+        } else if (key != null) {
+          fields[key] = '${fields[key]}\n$row';
+        }
+      }
+    }
+    final line = existing.lines.isEmpty ? null : existing.lines.first;
+    final separator = line?.productName.indexOf(' - ') ?? -1;
+    final account = separator >= 0
+        ? line!.productName.substring(separator + 3)
+        : '';
+    _iCloudAccountNameCtrl.text = fields['Account Name'] ?? account;
+    _iCloudAppleIdCtrl.text = fields['Apple ID'] ?? line?.sku ?? '';
+    _iCloudStorageCtrl.text = fields['iCloud Storage'] ?? line?.storage ?? '';
+    _iCloudTrustedPhoneCtrl.text = fields['Trusted Phone'] ?? '';
+    _iCloudDevicesCtrl.text = fields['Devices'] ?? line?.modelNumber ?? '';
+  }
+
   String _formatICloudInfo() {
     final rows = <String>[];
     void add(String label, String value) {
@@ -1680,8 +1732,8 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
     final trustedPhone = _iCloudTrustedPhoneCtrl.text.trim();
     final devices = _iCloudDevicesCtrl.text.trim();
 
-    final productName =
-        accountName.isNotEmpty ? 'iCloud Cus - $accountName' : 'iCloud Cus';
+    final label = posServiceLabel('icloud_cus');
+    final productName = accountName.isNotEmpty ? '$label - $accountName' : label;
 
     _report.lines = [
       SellOutReportLine(
@@ -2055,6 +2107,10 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
   }
 
   Future<void> _submit() async {
+    if (_isEditing && !widget.existingReport!.isCreatedToday()) {
+      _showError(_sellOutTr('update_failed'), _sellOutTr('edit_today_only'));
+      return;
+    }
     _syncHeaderToReport();
     _syncAllLines();
     if (_isICloudCustomer) {
@@ -2207,7 +2263,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
               ? _sellOutTr('edit_report')
               : (widget.serviceType.isEmpty
                   ? _sellOutTr('title')
-                  : widget.serviceType)),
+                  : _isICloudCustomer ? posServiceLabel('icloud_cus') : widget.serviceType)),
           centerTitle: true,
           backgroundColor: _sellOutNavy,
           foregroundColor: Colors.white,
@@ -2331,7 +2387,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                           Expanded(
                             child: _buildCompactInfoField(
                               _sellOutTr('service_type'),
-                              _serviceTypeCtrl.text,
+                              _displayServiceType(_serviceTypeCtrl.text),
                               Icons.category,
                             ),
                           ),
@@ -3049,9 +3105,9 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                           (v) => line.serialNumber = v,
                           errorText: _serialNumberError(ctrls),
                           suffixIcon: (_report.serviceType.trim().isEmpty ||
-                                  SellOutReport.canonicalServiceType(
-                                          _report.serviceType) ==
-                                      'sell')
+                                  {'sell', 'material'}.contains(
+                                      SellOutReport.canonicalServiceType(
+                                          _report.serviceType)))
                               ? IconButton(
                                   key: ValueKey('sell-serial-scan-$index'),
                                   tooltip: _sellOutTr('scan_serial_number'),

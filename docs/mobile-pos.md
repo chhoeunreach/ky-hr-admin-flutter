@@ -144,3 +144,5 @@ Sales and Dashboard now share a neutral background, white dropdown/menu surfaces
 The API adds `categories[].commission` from the same filtered aggregate as the report summary, and omits that field for roles without commission visibility. Layout and navigation checks cover English/Khmer at phone and tablet widths. The current API fixture was regenerated from the isolated Laravel SQLite response.
 
 Business breakdown/surface update verification: 55 targeted Flutter UI/API tests and 45 backend tests passed; analysis is clean. Visual review covered the new surfaces and aligned columns. Android debug and iOS simulator builds both succeeded.
+
+Same-day editing is verified for Sell, Material, Iron, Repair, Buy In, and iCloud Customer. Flutter checks the creation date before opening and submitting an edit, including forms left open overnight. The API independently enforces ownership and the application's current-day boundary. iCloud edits restore saved account fields and keep the free-text note separate from the generated iCloud block. Report edits retain extracted OCR text.

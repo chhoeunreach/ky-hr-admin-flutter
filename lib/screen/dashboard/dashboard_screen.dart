@@ -1,8 +1,10 @@
+import 'package:cnattendance/features/community/social_feed_screen.dart';
 import 'dart:io';
 import 'package:cnattendance/features/pos/pages/pos_workspace_screen.dart';
 import 'dart:ui';
 
 import 'package:cnattendance/data/source/network/model/dashboard/User.dart';
+import 'package:cnattendance/data/source/datastore/preferences.dart';
 import 'package:cnattendance/provider/dashboardprovider.dart';
 import 'package:cnattendance/provider/prefprovider.dart';
 import 'package:cnattendance/screen/dashboard/chatlistscreen.dart';
@@ -41,6 +43,7 @@ class DashboardScreenState extends State<DashboardScreen> {
       PersistentTabController(initialIndex: 0);
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _selectedRailIndex = 0;
+  bool? _railExpanded;
 
   bool _loadedUser = false;
 
@@ -53,6 +56,15 @@ class DashboardScreenState extends State<DashboardScreen> {
       }
       _loadedUser = true;
       context.read<PrefProvider>().getUser();
+    });
+    _restoreRailState();
+  }
+
+  Future<void> _restoreRailState() async {
+    final expanded = await Preferences().getRailExpanded();
+    if (!mounted || expanded == null) return;
+    setState(() {
+      _railExpanded = expanded;
     });
   }
 
@@ -97,7 +109,8 @@ class DashboardScreenState extends State<DashboardScreen> {
               _drawerSectionLabel(enterprise, 'Services'),
               _drawerMenuItem(enterprise,
                   icon: Icons.dashboard_outlined,
-                  label: translate('pos.dashboard'), onTap: () {
+                  label: translate('pos.dashboard'),
+                  permissionKey: 'sell-staff-report', onTap: () {
                 Navigator.of(context).pop();
                 Get.to(() => const PosWorkspaceScreen());
               }),
@@ -106,6 +119,13 @@ class DashboardScreenState extends State<DashboardScreen> {
                 enterprise,
                 translate('home_screen.service_sell'),
                 Icons.point_of_sale,
+              ),
+              _sellOutDrawerItem(
+                context,
+                enterprise,
+                translate('home_screen.service_sell_sim'),
+                Icons.sim_card,
+                serviceTypeValue: 'SellSim',
               ),
               _sellOutDrawerItem(
                 context,
@@ -136,13 +156,22 @@ class DashboardScreenState extends State<DashboardScreen> {
                 enterprise,
                 translate('home_screen.service_icloud_cus'),
                 Icons.cloud_outlined,
+                serviceTypeValue: 'iCloud Cus',
               ),
               _drawerDivider(enterprise),
               _drawerSectionLabel(enterprise, 'Tools'),
+              _drawerMenuItem(enterprise,
+                  icon: Icons.dynamic_feed_outlined,
+                  label: translate('community.social_feed'),
+                  permissionKey: 'social-feed', onTap: () {
+                Navigator.of(context).pop();
+                Get.to(() => const SocialFeedScreen());
+              }),
               _drawerMenuItem(
                 enterprise,
                 icon: Icons.calculate_outlined,
-                label: 'Loan Calculate',
+                label: translate('loan_calculate_screen.loan_calculator'),
+                permissionKey: 'loan',
                 onTap: () {
                   Navigator.of(context).pop();
                   Get.to(() => LoanCalculateScreen());
@@ -152,6 +181,7 @@ class DashboardScreenState extends State<DashboardScreen> {
                 enterprise,
                 icon: Icons.campaign_outlined,
                 label: translate('dashboard_screen.social_rewards'),
+                permissionKey: 'social-rewards',
                 onTap: () {
                   Navigator.of(context).pop();
                   Get.to(
@@ -162,7 +192,8 @@ class DashboardScreenState extends State<DashboardScreen> {
               _drawerMenuItem(
                 enterprise,
                 icon: Icons.badge_rounded,
-                label: 'View My Card',
+                label: translate('dashboard_screen.view_my_card'),
+                permissionKey: 'id-card',
                 onTap: () {
                   Navigator.of(context).pop();
                   Get.to(() => const FrontSidePreviewPage());
@@ -172,6 +203,7 @@ class DashboardScreenState extends State<DashboardScreen> {
                 enterprise,
                 icon: Icons.link,
                 label: translate('more_screen.links'),
+                permissionKey: 'links',
                 onTap: () {
                   Navigator.of(context).pop();
                   Get.to(() => const LinkListScreen());
@@ -194,9 +226,10 @@ class DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildRailLayout(BuildContext context, double width) {
     final colorScheme = Theme.of(context).colorScheme;
-    final extended = width >= 1100;
+    final extended = _railExpanded ?? (width >= 1100);
     final repairProvider = Provider.of<RepairPriceProvider>(context);
     final bool showRepairTab = repairProvider.canView;
+    final features = context.watch<DashboardProvider>().features;
 
     final destinations = <NavigationRailDestination>[
       NavigationRailDestination(
@@ -204,17 +237,24 @@ class DashboardScreenState extends State<DashboardScreen> {
         selectedIcon: const Icon(Icons.dashboard),
         label: Text(translate('dashboard_screen.home')),
       ),
+      if (features["social-feed"] == "1")
+        NavigationRailDestination(
+          icon: const Icon(Icons.dynamic_feed_outlined),
+          selectedIcon: const Icon(Icons.dynamic_feed),
+          label: Text(translate('community.social_feed')),
+        ),
       if (showRepairTab)
         NavigationRailDestination(
           icon: const Icon(Icons.build_circle_outlined),
           selectedIcon: const Icon(Icons.build_circle),
           label: Text(translate('dashboard_screen.repair_list')),
         ),
-      NavigationRailDestination(
-        icon: const Icon(Icons.analytics_outlined),
-        selectedIcon: const Icon(Icons.analytics),
-        label: Text(translate('dashboard_screen.attendance')),
-      ),
+      if (features["attendance"] == "1")
+        NavigationRailDestination(
+          icon: const Icon(Icons.analytics_outlined),
+          selectedIcon: const Icon(Icons.analytics),
+          label: Text(translate('dashboard_screen.attendance')),
+        ),
       NavigationRailDestination(
         icon: const Icon(Icons.settings_outlined),
         selectedIcon: const Icon(Icons.settings),
@@ -223,8 +263,9 @@ class DashboardScreenState extends State<DashboardScreen> {
     ];
     final pages = <Widget>[
       HomeScreen(_controller),
+      if (features["social-feed"] == "1") const SocialFeedScreen(),
       if (showRepairTab) const RepairDevicePage(),
-      AttendanceScreen(),
+      if (features["attendance"] == "1") AttendanceScreen(),
       MoreScreen(),
     ];
 
@@ -247,7 +288,7 @@ class DashboardScreenState extends State<DashboardScreen> {
             ],
           ),
           child: NavigationRail(
-            selectedIndex: _selectedRailIndex,
+            selectedIndex: _selectedRailIndex.clamp(0, destinations.length - 1),
             extended: extended,
             minWidth: 76,
             minExtendedWidth: 204,
@@ -277,7 +318,7 @@ class DashboardScreenState extends State<DashboardScreen> {
               fontWeight: FontWeight.w700,
             ),
             leading: Padding(
-              padding: const EdgeInsets.fromLTRB(10, 10, 10, 22),
+              padding: const EdgeInsets.fromLTRB(10, 6, 10, 22),
               child: extended
                   ? Row(
                       children: [
@@ -301,14 +342,22 @@ class DashboardScreenState extends State<DashboardScreen> {
                             ),
                           ),
                         ),
+                        const SizedBox(width: 4),
+                        _railToggleButton(extended: true),
                       ],
                     )
-                  : IconButton.filledTonal(
-                      tooltip: 'Menu',
-                      icon: const Icon(Icons.menu),
-                      onPressed: () {
-                        _scaffoldKey.currentState?.openDrawer();
-                      },
+                  : Column(
+                      children: [
+                        IconButton.filledTonal(
+                          tooltip: 'Menu',
+                          icon: const Icon(Icons.menu),
+                          onPressed: () {
+                            _scaffoldKey.currentState?.openDrawer();
+                          },
+                        ),
+                        const SizedBox(height: 8),
+                        _railToggleButton(extended: false),
+                      ],
                     ),
             ),
             destinations: destinations,
@@ -330,10 +379,27 @@ class DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  Widget _railToggleButton({required bool extended}) {
+    return IconButton.filledTonal(
+      tooltip: extended ? 'Collapse sidebar' : 'Expand sidebar',
+      icon: Icon(
+        extended ? Icons.chevron_left_rounded : Icons.chevron_right_rounded,
+      ),
+      onPressed: () {
+        final next = !extended;
+        setState(() {
+          _railExpanded = next;
+        });
+        Preferences().setRailExpanded(next);
+      },
+    );
+  }
+
   Widget _buildMobileTabs(BuildContext context) {
     final enterprise = EnterpriseTheme.of(context);
     final repairProvider = Provider.of<RepairPriceProvider>(context);
     final bool showRepairTab = repairProvider.canView;
+    final features = context.watch<DashboardProvider>().features;
 
     final tabs = [
       PersistentTabConfig(
@@ -342,6 +408,13 @@ class DashboardScreenState extends State<DashboardScreen> {
             const Icon(Icons.home_filled),
             translate('dashboard_screen.home'),
           )),
+      if (features["social-feed"] == "1")
+        PersistentTabConfig(
+            screen: const SocialFeedScreen(),
+            item: getItemConfig(
+              const Icon(Icons.dynamic_feed_outlined),
+              translate('community.social_feed'),
+            )),
       if (showRepairTab)
         PersistentTabConfig(
             screen: const RepairDevicePage(),
@@ -349,24 +422,27 @@ class DashboardScreenState extends State<DashboardScreen> {
               const Icon(Icons.build_circle_outlined),
               translate('dashboard_screen.repair_list'),
             )),
-      PersistentTabConfig(
-          screen: ChatListScreen(),
-          item: getItemConfig(
-            const Icon(Icons.chat_bubble),
-            translate('dashboard_screen.chat'),
-          )),
-      PersistentTabConfig(
-          screen: LeaveScreen(),
-          item: getItemConfig(
-            const Icon(Icons.sick),
-            translate('dashboard_screen.leave'),
-          )),
-      PersistentTabConfig(
-          screen: AttendanceScreen(),
-          item: getItemConfig(
-            const Icon(Icons.co_present_outlined),
-            translate('dashboard_screen.attendance'),
-          )),
+      if (features["chat"] == "1")
+        PersistentTabConfig(
+            screen: ChatListScreen(),
+            item: getItemConfig(
+              const Icon(Icons.chat_bubble),
+              translate('dashboard_screen.chat'),
+            )),
+      if (features["leave-request"] == "1")
+        PersistentTabConfig(
+            screen: LeaveScreen(),
+            item: getItemConfig(
+              const Icon(Icons.sick),
+              translate('dashboard_screen.leave'),
+            )),
+      if (features["attendance"] == "1")
+        PersistentTabConfig(
+            screen: AttendanceScreen(),
+            item: getItemConfig(
+              const Icon(Icons.co_present_outlined),
+              translate('dashboard_screen.attendance'),
+            )),
       PersistentTabConfig(
           screen: MoreScreen(),
           item: getItemConfig(
@@ -382,7 +458,8 @@ class DashboardScreenState extends State<DashboardScreen> {
     return Stack(
       children: [
         PersistentTabView(
-          key: ValueKey('persistent_tab_bar_${showRepairTab ? 6 : 5}'),
+          key: ValueKey(
+              'tabs_${features["social-feed"]}_${showRepairTab}_${features["chat"]}_${features["leave-request"]}_${features["attendance"]}'),
           controller: _controller,
           backgroundColor: themedChromeColor(),
           handleAndroidBackButtonPress: true,
@@ -420,15 +497,18 @@ class DashboardScreenState extends State<DashboardScreen> {
     BuildContext context,
     EnterpriseTheme enterprise,
     String serviceType,
-    IconData icon,
-  ) {
+    IconData icon, {
+    String? serviceTypeValue,
+  }) {
     return _drawerMenuItem(
       enterprise,
       icon: icon,
       label: serviceType,
+      permissionKey: "sell-staff-report",
       onTap: () {
         Navigator.of(context).pop();
-        Get.to(() => SellOutReportScreen(serviceType: serviceType));
+        Get.to(() =>
+            SellOutReportScreen(serviceType: serviceTypeValue ?? serviceType));
       },
     );
   }
@@ -438,7 +518,12 @@ class DashboardScreenState extends State<DashboardScreen> {
     required IconData icon,
     required String label,
     required VoidCallback onTap,
+    String? permissionKey,
   }) {
+    if (permissionKey != null &&
+        context.watch<DashboardProvider>().features[permissionKey] != '1') {
+      return const SizedBox.shrink();
+    }
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
       child: Material(

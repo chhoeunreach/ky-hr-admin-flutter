@@ -65,6 +65,30 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('Material scan fills the selected row and preserves its serial rules',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(form((_) async => '  MAT-123456789012345678  ',
+        lines: 2, serviceType: 'Material'));
+    await tester.pumpAndSettle();
+    await tapScan(tester, 1);
+    expect(tester.widget<TextField>(serial(0)).controller!.text, 'ORIGINAL0');
+    expect(tester.widget<TextField>(serial(1)).controller!.text,
+        'MAT-123456789012345678');
+    await tester.enterText(serial(1), 'MANUAL-123');
+    expect(tester.widget<TextField>(serial(1)).controller!.text, 'MANUAL-123');
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('cancelled Material scan preserves its serial', (tester) async {
+    await tester.pumpWidget(form((_) async => null, serviceType: 'Material'));
+    await tester.pumpAndSettle();
+    await tapScan(tester, 0);
+    expect(tester.widget<TextField>(serial(0)).controller!.text, 'ORIGINAL0');
+    expect(tester.takeException(), isNull);
+  });
+
   for (final value in <String?>[
     null,
     '',
@@ -85,9 +109,9 @@ void main() {
     });
   }
 
-  for (final service in ['', 'លក់']) {
+  for (final service in ['', 'លក់', 'Material', 'សម្ភារ']) {
     testWidgets(
-        'scanner supports the default and localized Sell form: $service',
+        'scanner supports Sell and Material forms including localized types: $service',
         (tester) async {
       await tester.binding.setSurfaceSize(const Size(320, 1000));
       addTearDown(() => tester.binding.setSurfaceSize(null));

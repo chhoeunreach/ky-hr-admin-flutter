@@ -6,6 +6,7 @@ import 'package:cnattendance/widget/customqrscanner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_translate/flutter_translate.dart';
+import 'package:intl/intl.dart';
 
 class MeetingAttendanceScreen extends StatefulWidget {
   const MeetingAttendanceScreen({Key? key}) : super(key: key);
@@ -19,6 +20,8 @@ class _MeetingAttendanceScreenState extends State<MeetingAttendanceScreen> {
   final _repository = MeetingAttendanceRepository();
   List<MeetingAttendanceItem> _meetings = [];
   bool _isLoading = true;
+  bool _isScanning = false;
+  String? _loadError;
 
   @override
   void initState() {
@@ -33,6 +36,7 @@ class _MeetingAttendanceScreenState extends State<MeetingAttendanceScreen> {
         return;
       }
       setState(() {
+        _loadError = null;
         _meetings = meetings;
         _isLoading = false;
       });
@@ -42,29 +46,30 @@ class _MeetingAttendanceScreenState extends State<MeetingAttendanceScreen> {
       }
       setState(() {
         _isLoading = false;
+        _loadError = e.toString();
       });
-      showToast(e.toString());
     }
   }
 
   Future<void> _scanMeetingQr() async {
-    final qrPayload = await showCustomQrScanner(context);
-    if (qrPayload == null || qrPayload.trim().isEmpty) {
-      return;
-    }
-
+    if (_isScanning) return;
+    setState(() => _isScanning = true);
     try {
+      final qrPayload = await showCustomQrScanner(context);
+      if (!mounted || qrPayload == null || qrPayload.trim().isEmpty) return;
       EasyLoading.show(
         status: translate('loader.loading'),
         maskType: EasyLoadingMaskType.black,
       );
       final response = await _repository.scan(qrPayload.trim());
-      EasyLoading.dismiss(animation: true);
+      if (!mounted) return;
       showToast(response.message);
       await _loadMeetings();
     } catch (e) {
+      if (mounted) showToast(e.toString());
+    } finally {
       EasyLoading.dismiss(animation: true);
-      showToast(e.toString());
+      if (mounted) setState(() => _isScanning = false);
     }
   }
 
@@ -91,9 +96,25 @@ class _MeetingAttendanceScreenState extends State<MeetingAttendanceScreen> {
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.fromLTRB(16, 18, 16, 28),
                 children: [
-                  _ScanCard(onScan: _scanMeetingQr),
+                  _ScanCard(onScan: _isScanning ? null : _scanMeetingQr),
+                  const SizedBox(height: 12),
+                  Text(
+                    '${_meetings.where((m) => m.isJoined).length} joined · '
+                    '${_meetings.where((m) => m.canCheckIn).length} open for check-in',
+                    style: TextStyle(color: enterprise.mutedText),
+                  ),
+                  if (_loadError != null) ...[
+                    const SizedBox(height: 12),
+                    Text(_loadError!,
+                        style: TextStyle(
+                            color: Theme.of(context).colorScheme.error)),
+                    TextButton.icon(
+                        onPressed: _loadMeetings,
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Retry')),
+                  ],
                   const SizedBox(height: 16),
-                  if (_meetings.isEmpty)
+                  if (_meetings.isEmpty && _loadError == null)
                     Padding(
                       padding: const EdgeInsets.only(top: 60),
                       child: Center(
@@ -108,7 +129,12 @@ class _MeetingAttendanceScreenState extends State<MeetingAttendanceScreen> {
                     )
                   else
                     for (final meeting in _meetings) ...[
-                      _MeetingAttendanceCard(meeting: meeting),
+                      _MeetingAttendanceCard(
+                        meeting: meeting,
+                        onScan: meeting.canCheckIn && !_isScanning
+                            ? _scanMeetingQr
+                            : null,
+                      ),
                       const SizedBox(height: 12),
                     ],
                 ],
@@ -121,7 +147,7 @@ class _MeetingAttendanceScreenState extends State<MeetingAttendanceScreen> {
 class _ScanCard extends StatelessWidget {
   const _ScanCard({required this.onScan});
 
-  final VoidCallback onScan;
+  final VoidCallback? onScan;
 
   @override
   Widget build(BuildContext context) {
@@ -166,7 +192,9 @@ class _ScanCard extends StatelessWidget {
 }
 
 class _MeetingAttendanceCard extends StatelessWidget {
-  const _MeetingAttendanceCard({required this.meeting});
+  const _MeetingAttendanceCard({required this.meeting, this.onScan});
+
+  final VoidCallback? onScan;
 
   final MeetingAttendanceItem meeting;
 
@@ -204,7 +232,14 @@ class _MeetingAttendanceCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
-                  meeting.isJoined ? 'Joined' : 'Pending',
+                  meeting.isJoined
+                      ? 'Joined'
+                      : switch (meeting.attendanceStatus) {
+                          'disabled' => 'Disabled',
+                          'upcoming' => 'Upcoming',
+                          'closed' => 'Closed',
+                          _ => 'Pending',
+                        },
                   style: TextStyle(
                     color: meeting.isJoined ? Colors.green : Colors.orange,
                     fontWeight: FontWeight.w900,
@@ -221,6 +256,23 @@ class _MeetingAttendanceCard extends StatelessWidget {
             icon: Icons.event_outlined,
             text: '${meeting.meetingDate} • ${meeting.meetingStartTime}',
           ),
+          if (meeting.checkInOpensAt != null &&
+              meeting.checkInClosesAt != null) ...[
+            const SizedBox(height: 6),
+            _MeetingMeta(
+              icon: Icons.schedule,
+              text:
+                  'Check-in: ${DateFormat('MMM d, HH:mm').format(meeting.checkInOpensAt!.toLocal())}'
+                  ' – ${DateFormat('MMM d, HH:mm').format(meeting.checkInClosesAt!.toLocal())}',
+            ),
+          ],
+          if (meeting.canCheckIn) ...[
+            const SizedBox(height: 10),
+            OutlinedButton.icon(
+                onPressed: onScan,
+                icon: const Icon(Icons.qr_code_scanner),
+                label: const Text('Scan to join')),
+          ],
           if (meeting.checkedInAtFormatted != null) ...[
             const SizedBox(height: 6),
             _MeetingMeta(

@@ -9,7 +9,9 @@ class Feature {
     return Feature(
         name: json['name'].toString(),
         key: json['key'].toString(),
-        status: json['status'].toString());
+        status: ['1', 'true'].contains(json['status'].toString().toLowerCase())
+            ? '1'
+            : '0');
   }
 
   String name;

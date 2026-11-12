@@ -11,6 +11,7 @@ import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:cnattendance/widget/attendance_selfie_camera.dart';
 import 'package:cnattendance/widget/attendance_bottom_sheet.dart';
+import 'package:cnattendance/widget/homescreen/monthly_attendance_summary.dart';
 import 'package:cnattendance/widget/customalertdialog.dart';
 import 'package:cnattendance/widget/customnfcdialog.dart';
 import 'package:cnattendance/widget/profile/note_bottom_sheet.dart';
@@ -48,10 +49,6 @@ class CheckAttendanceState extends State<CheckAttendance>
   double? _zoneDistanceMeters;
   String? _zoneError;
   DateTime? _lastZoneRefreshAt;
-  String formattedDate =
-      DateFormat('EEEE , MMMM d , yyyy').format(DateTime.now());
-  String nepaliFormattedDate =
-      NepaliDateFormat('EEE , MMMM d , yyyy').format(NepaliDateTime.now());
 
   @override
   void initState() {
@@ -62,7 +59,16 @@ class CheckAttendanceState extends State<CheckAttendance>
     )..repeat();
     _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) {
-        setState(() => _now = DateTime.now());
+        final now = DateTime.now();
+        final dayChanged = now.year != _now.year ||
+            now.month != _now.month ||
+            now.day != _now.day;
+        setState(() => _now = now);
+        if (dayChanged) {
+          unawaited(context
+              .read<DashboardProvider>()
+              .refreshMonthlyAttendanceSummary());
+        }
       }
     });
   }
@@ -749,7 +755,10 @@ class CheckAttendanceState extends State<CheckAttendance>
           ),
           const SizedBox(height: 4),
           Text(
-            isAD ? formattedDate : nepaliFormattedDate,
+            isAD
+                ? DateFormat('EEEE , MMMM d , yyyy').format(_now)
+                : NepaliDateFormat('EEE , MMMM d , yyyy')
+                    .format(_now.toNepaliDateTime()),
             textAlign: TextAlign.center,
             style: TextStyle(
               color: enterprise.mutedText,
@@ -964,7 +973,15 @@ class CheckAttendanceState extends State<CheckAttendance>
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          _buildClock(enterprise, isAD),
+          HomeAttendanceClockSummary(
+            clock: _buildClock(enterprise, isAD),
+            highlightsEnabled:
+                dashboardProvider.features["home-highlights"] == "1",
+            summary: dashboardProvider.monthlyAttendanceSummary?.month ==
+                    DateFormat('yyyy-MM').format(_now)
+                ? dashboardProvider.monthlyAttendanceSummary
+                : null,
+          ),
           const SizedBox(height: 10),
           if (attendanceMessage != null)
             Padding(
@@ -1093,23 +1110,6 @@ class CheckAttendanceState extends State<CheckAttendance>
         ],
       ),
     );
-  }
-
-  Future<void> checkAd() async {
-    final pref = Provider.of<PrefProvider>(context);
-    if (await pref.getIsAd()) {
-      formattedDate = DateFormat('EEEE , MMMM d , yyyy').format(DateTime.now());
-    } else {
-      nepaliFormattedDate = NepaliDateFormat('EEE , MMMM d , yyyy')
-          .format(DateTime.now().toNepaliDateTime());
-    }
-    setState(() {});
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    checkAd();
   }
 }
 

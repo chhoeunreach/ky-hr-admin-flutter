@@ -230,4 +230,60 @@ void main() {
     await resolver.seedDefaults(BackendServerDefaults.primaryUrl, prefs);
     expect(prefs.getString(key), 'https://runtime-backup.example/');
   });
+
+  group('onAllServersUnreachable', () {
+    tearDown(() => ServerUrlResolver.onAllServersUnreachable = null);
+
+    test('notified with backup when primary and backup are both down',
+        () async {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('server_fallback:$primary', backup);
+      (String, String?)? notified;
+      ServerUrlResolver.onAllServersUnreachable =
+          (p, f) => notified = (p, f);
+      final resolver = ServerUrlResolver(
+          client: MockClient((request) async =>
+              throw http.ClientException('Connection refused')));
+      expect(await resolver.resolve(primary, prefs), primary);
+      expect(notified, (primary, backup));
+    });
+
+    test('notified without backup when no backup is configured', () async {
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.containsKey('server_fallback:$primary'), isFalse);
+      (String, String?)? notified;
+      ServerUrlResolver.onAllServersUnreachable =
+          (p, f) => notified = (p, f);
+      final resolver = ServerUrlResolver(
+          client: MockClient((request) async =>
+              throw http.ClientException('Connection refused')));
+      expect(await resolver.resolve(primary, prefs), primary);
+      expect(notified, (primary, null));
+    });
+
+    test('not notified when the backup is reachable', () async {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('server_fallback:$primary', backup);
+      var notified = false;
+      ServerUrlResolver.onAllServersUnreachable = (_, __) => notified = true;
+      final resolver = ServerUrlResolver(client: MockClient((request) async {
+        if (request.url.host == 'primary.example') {
+          throw http.ClientException('Connection refused');
+        }
+        return envelope();
+      }));
+      expect(await resolver.resolve(primary, prefs), backup);
+      expect(notified, isFalse);
+    });
+
+    test('not notified when the primary is reachable', () async {
+      final prefs = await SharedPreferences.getInstance();
+      var notified = false;
+      ServerUrlResolver.onAllServersUnreachable = (_, __) => notified = true;
+      final resolver =
+          ServerUrlResolver(client: MockClient((request) async => envelope()));
+      expect(await resolver.resolve(primary, prefs), primary);
+      expect(notified, isFalse);
+    });
+  });
 }

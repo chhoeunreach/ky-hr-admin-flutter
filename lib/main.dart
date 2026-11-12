@@ -16,8 +16,10 @@ import 'package:cnattendance/provider/profileprovider.dart';
 import 'package:cnattendance/provider/ssfprovider.dart';
 import 'package:cnattendance/features/repair_price/providers/repair_price_provider.dart';
 import 'package:cnattendance/services/background_sync_manager.dart';
+import 'package:cnattendance/services/connection_alert.dart';
 import 'package:cnattendance/services/database_helper.dart';
 import 'package:cnattendance/services/push_notification_service.dart';
+import 'package:cnattendance/services/server_url_resolver.dart';
 import 'package:cnattendance/screen/auth/login_screen.dart';
 import 'package:cnattendance/screen/dashboard/dashboard_screen.dart';
 import 'package:cnattendance/screen/profile/editprofilescreen.dart';
@@ -57,6 +59,39 @@ Future<void> _messageHandler(RemoteMessage message) async {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  ErrorWidget.builder = (details) {
+    debugPrint('Widget build failed: ${details.exception}');
+    return const Material(
+      color: Color(0xfff5f8fd),
+      child: Center(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.error_outline_rounded,
+                  color: Color(0xffc53030), size: 46),
+              SizedBox(height: 12),
+              Text('Unable to display this screen',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      color: Color(0xff253858),
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700)),
+              SizedBox(height: 6),
+              Text('Please go back and try again.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Color(0xff5f6f82))),
+            ],
+          ),
+        ),
+      ),
+    );
+  };
+  // When neither the primary nor the backup server is reachable, block the UI
+  // with a connection alert that keeps retrying until a server responds.
+  ServerUrlResolver.onAllServersUnreachable = (primary, fallback) =>
+      ConnectionAlert.show(primaryUrl: primary, fallbackUrl: fallback);
   try {
     final delegate = await LocalizationDelegate.create(
         fallbackLocale: 'km',

@@ -14,9 +14,11 @@ dependencies:
     sdk: flutter
   provider: ^6.0.3
   http: ^1.2.0
+  crypto: ^3.0.5
   http_parser: ^4.0.2
   dio: ^5.1.2
   html: ^0.15.1
+  characters: ^1.4.0
   flutter_svg: ^2.0.10+1
   shared_preferences: ^2.0.6
   flutter_easyloading: ^3.0.5
@@ -99,6 +101,9 @@ dependencies:
   connectivity_plus: ^6.0.5
   webview_flutter: ^4.10.0
   package_info_plus: ^9.0.1
+  video_thumbnail: ^0.5.3
+  video_player: ^2.9.2
+  visibility_detector: ^0.2.2
 
 
 dependency_overrides:

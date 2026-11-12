@@ -13,54 +13,19 @@ class LeaveButton extends StatelessWidget {
     final provider = Provider.of<DashboardProvider>(context);
     return Row(
       children: [
-        Expanded(
-            child: Padding(
-          padding: EdgeInsets.only(right: 4),
-          child: TextButton(
-              style: TextButton.styleFrom(
-                  backgroundColor: HexColor("#036eb7"),
-                  shape: ButtonBorder(),
-                  minimumSize: const Size(0, 38),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 7)),
-              onPressed: () {
-                showModalBottomSheet(
-                    elevation: 0,
-                    context: context,
-                    useRootNavigator: true,
-                    isScrollControlled: true,
-                    shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(20),
-                            topRight: Radius.circular(20))),
-                    builder: (context) {
-                      return Padding(
-                        padding: MediaQuery.of(context).viewInsets,
-                        child: IssueLeaveSheet(),
-                      );
-                    });
-              },
+        if (provider.features['mobile.function.Leave.saveLeaveRequestDetail'] ==
+            '1')
+          Expanded(
               child: Padding(
-                padding: EdgeInsets.zero,
-                child: Text(
-                  translate('leave_screen.issue_leave'),
-                  style: TextStyle(color: Colors.white),
-                ),
-              )),
-        )),
-        Expanded(
-            child: Padding(
-          padding: EdgeInsets.only(left: 4),
-          child: TextButton(
-              style: TextButton.styleFrom(
-                  backgroundColor: HexColor("#036eb7"),
-                  shape: ButtonBorder(),
-                  minimumSize: const Size(0, 38),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 7)),
-              onPressed: () {
-                if (provider.attendanceList['check-in'] != '-' &&
-                    provider.attendanceList['check-out'] == '-') {
+            padding: EdgeInsets.only(right: 4),
+            child: TextButton(
+                style: TextButton.styleFrom(
+                    backgroundColor: HexColor("#036eb7"),
+                    shape: ButtonBorder(),
+                    minimumSize: const Size(0, 38),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 7)),
+                onPressed: () {
                   showModalBottomSheet(
                       elevation: 0,
                       context: context,
@@ -73,35 +38,74 @@ class LeaveButton extends StatelessWidget {
                       builder: (context) {
                         return Padding(
                           padding: MediaQuery.of(context).viewInsets,
-                          child: EarlyLeaveSheet(true),
+                          child: IssueLeaveSheet(),
                         );
                       });
-                } else {
-                  showModalBottomSheet(
-                      elevation: 0,
-                      context: context,
-                      useRootNavigator: true,
-                      isScrollControlled: true,
-                      shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(20),
-                              topRight: Radius.circular(20))),
-                      builder: (context) {
-                        return Padding(
-                          padding: MediaQuery.of(context).viewInsets,
-                          child: EarlyLeaveSheet(false),
-                        );
-                      });
-                }
-              },
+                },
+                child: Padding(
+                  padding: EdgeInsets.zero,
+                  child: Text(
+                    translate('leave_screen.issue_leave'),
+                    style: TextStyle(color: Colors.white),
+                  ),
+                )),
+          )),
+        if (provider.features['mobile.function.Leave.saveLeaveRequestDetail'] ==
+            '1')
+          Expanded(
               child: Padding(
-                padding: EdgeInsets.zero,
-                child: Text(
-                  translate('leave_screen.time_leave'),
-                  style: TextStyle(color: Colors.white),
-                ),
-              )),
-        )),
+            padding: EdgeInsets.only(left: 4),
+            child: TextButton(
+                style: TextButton.styleFrom(
+                    backgroundColor: HexColor("#036eb7"),
+                    shape: ButtonBorder(),
+                    minimumSize: const Size(0, 38),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 7)),
+                onPressed: () {
+                  if (provider.attendanceList['check-in'] != '-' &&
+                      provider.attendanceList['check-out'] == '-') {
+                    showModalBottomSheet(
+                        elevation: 0,
+                        context: context,
+                        useRootNavigator: true,
+                        isScrollControlled: true,
+                        shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(20),
+                                topRight: Radius.circular(20))),
+                        builder: (context) {
+                          return Padding(
+                            padding: MediaQuery.of(context).viewInsets,
+                            child: EarlyLeaveSheet(true),
+                          );
+                        });
+                  } else {
+                    showModalBottomSheet(
+                        elevation: 0,
+                        context: context,
+                        useRootNavigator: true,
+                        isScrollControlled: true,
+                        shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(20),
+                                topRight: Radius.circular(20))),
+                        builder: (context) {
+                          return Padding(
+                            padding: MediaQuery.of(context).viewInsets,
+                            child: EarlyLeaveSheet(false),
+                          );
+                        });
+                  }
+                },
+                child: Padding(
+                  padding: EdgeInsets.zero,
+                  child: Text(
+                    translate('leave_screen.time_leave'),
+                    style: TextStyle(color: Colors.white),
+                  ),
+                )),
+          )),
       ],
     );
   }

@@ -1,3 +1,4 @@
+import 'package:cnattendance/features/home_highlights/home_highlight_open_screen.dart';
 import 'dart:async';
 import 'dart:io';
 
@@ -163,6 +164,7 @@ class PushNotificationService {
       message: _messageBody(message),
     ).toMap(localKey: localKey ?? "");
     for (final key in const [
+      'home_highlight_id',
       'target_version',
       'latest_version',
       'download_url',
@@ -371,6 +373,11 @@ class PushNotificationService {
     }
 
     final type = payload["type"];
+    final highlightId = homeHighlightNotificationId(payload);
+    if (highlightId != null) {
+      Get.to(() => HomeHighlightOpenScreen(id: highlightId));
+      return;
+    }
 
     if (_isAppUpdatePayload(payload,
         title: payload["title"], body: payload["message"])) {

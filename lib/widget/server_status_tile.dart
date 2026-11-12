@@ -37,6 +37,19 @@ class _ServerStatusTileState extends State<ServerStatusTile> {
       return;
     }
 
+    final String targetUrl;
+    try {
+      targetUrl = _service.normalizeScannedServer(scannedValue);
+    } on FormatException {
+      showToast(translate('alerts.invalid_qr'));
+      return;
+    }
+
+    final confirmed = await _confirmServerChange(targetUrl);
+    if (confirmed != true || !mounted) {
+      return;
+    }
+
     EasyLoading.show(
       status: translate('server_status.checking_server'),
       maskType: EasyLoadingMaskType.black,
@@ -60,6 +73,56 @@ class _ServerStatusTileState extends State<ServerStatusTile> {
     } else {
       showToast(result.message);
     }
+  }
+
+  Future<bool?> _confirmServerChange(String targetUrl) {
+    return showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        final enterprise = EnterpriseTheme.of(dialogContext);
+        return AlertDialog(
+          backgroundColor: enterprise.surface,
+          title: Row(
+            children: [
+              Icon(Icons.swap_horiz_rounded,
+                  color: enterprise.primary, size: 22),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  translate('server_status.change_server_title'),
+                  style: TextStyle(color: enterprise.text, fontSize: 16),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                translate('server_status.change_server_message'),
+                style: TextStyle(color: enterprise.text, fontSize: 13),
+              ),
+              const SizedBox(height: 10),
+              SelectableText(
+                targetUrl,
+                style: TextStyle(color: enterprise.mutedText, fontSize: 13),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(translate('server_status.cancel')),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(translate('server_status.confirm')),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _showStatusDialog() async {

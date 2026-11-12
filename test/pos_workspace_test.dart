@@ -47,7 +47,7 @@ void main() {
           as Map<String, dynamic>);
   Widget app(WorkspaceRepository repository, {String initial = 'dashboard'}) {
     Widget module(String type) => SellOutReportScreen(
-          serviceType: posServiceLabel(type),
+          serviceType: posServiceType(type),
           reportLoader: () async => [...posModules, 'icloud_cus']
               .map((service) => SellOutReport(
                     id: [...posModules, 'icloud_cus'].indexOf(service) + 1,
@@ -147,6 +147,10 @@ void main() {
               .widget<SellOutReportScreen>(find.byType(SellOutReportScreen));
           expect(
               SellOutReport.canonicalServiceType(screen.serviceType), module);
+          if (module == 'icloud_cus') {
+            expect(screen.serviceType, 'iCloud Cus');
+            expect(find.textContaining(posServiceLabel(module)), findsWidgets);
+          }
           expect(find.byKey(const ValueKey('sales-page-size')), findsOneWidget);
           expect(tester.takeException(), isNull);
         }

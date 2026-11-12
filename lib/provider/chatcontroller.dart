@@ -45,6 +45,13 @@ class ChatController extends GetxController {
 
   Preferences pref = Preferences();
 
+  Future<bool> _allowsChatFunction(String ability) async {
+    final features = await pref.getFeatures();
+    if (features['chat'] == '1' && features[ability] == '1') return true;
+    showToast('You do not have permission to use this chat function.');
+    return false;
+  }
+
   @override
   Future<void> onReady() async {
     host.value = Get.arguments["name"];
@@ -53,13 +60,14 @@ class ChatController extends GetxController {
     hostEmployeeId = Get.arguments["employeeId"]?.toString() ?? "";
     currentUsername = await pref.getUsername();
 
-    setConversationDetail(hostUsername, currentUsername);
+    await setConversationDetail(hostUsername, currentUsername);
     await ChatBadgeController.ensureRegistered().setActiveConversation(convoId);
     await loadBackground();
     super.onReady();
   }
 
-  void setConversationDetail(String user1, String user2) {
+  Future<void> setConversationDetail(String user1, String user2) async {
+    if (!await _allowsChatFunction('view_employee_chat')) return;
     int result = user1.compareTo(user2);
     if (result < 0) {
       convoId = user1 + user2;
@@ -69,16 +77,20 @@ class ChatController extends GetxController {
       convoId = user1 + user2;
     }
 
-    FirebaseFirestore.instance.collection('conversations').doc(convoId).set({
+    await FirebaseFirestore.instance
+        .collection('conversations')
+        .doc(convoId)
+        .set({
       'id': convoId,
       'user1': user1,
       'user2': user2,
     });
 
-    listenChat();
+    await listenChat();
   }
 
   Future<void> sendMessage(String message) async {
+    if (!await _allowsChatFunction('send_employee_chat')) return;
     try {
       var fcm = await FirebaseMessaging.instance.getToken();
       print(fcm);
@@ -270,6 +282,7 @@ class ChatController extends GetxController {
   }
 
   Future<void> sendCurrentLocation() async {
+    if (!await _allowsChatFunction('send_employee_chat')) return;
     try {
       isUploading.value = true;
       final position = await _determineCurrentPosition();
@@ -320,6 +333,7 @@ class ChatController extends GetxController {
     required String pushMessage,
     int? durationSeconds,
   }) async {
+    if (!await _allowsChatFunction('send_employee_chat')) return;
     final senderUsername = await pref.getUsername();
     final senderName = await _senderDisplayName(senderUsername);
 
@@ -384,6 +398,7 @@ class ChatController extends GetxController {
   }
 
   Future<void> listenChat() async {
+    if (!await _allowsChatFunction('view_employee_chat')) return;
     await _chatSubscription?.cancel();
 
     final docRef = FirebaseFirestore.instance
@@ -453,6 +468,7 @@ class ChatController extends GetxController {
   }
 
   Future<void> editMessage(Chat message, String text) async {
+    if (!await _allowsChatFunction('mobile.function.DirectChat.edit')) return;
     if (!canModifyMessage(message) || message.documentId.isEmpty) {
       showToast('Messages can only be edited within 15 minutes.');
       return;
@@ -471,6 +487,7 @@ class ChatController extends GetxController {
   }
 
   Future<void> deleteMessage(Chat message) async {
+    if (!await _allowsChatFunction('mobile.function.DirectChat.delete')) return;
     if (!canModifyMessage(message) || message.documentId.isEmpty) {
       showToast('Messages can only be deleted within 15 minutes.');
       return;

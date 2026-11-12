@@ -1,3 +1,4 @@
+import 'package:cnattendance/provider/dashboardprovider.dart';
 import 'package:cnattendance/provider/profileprovider.dart';
 import 'package:cnattendance/screen/profile/front_side_preview_page.dart';
 import 'package:cnattendance/widget/profile/basicdetail.dart';
@@ -58,13 +59,15 @@ class ProfileScreenState extends State<ProfileScreen> {
           elevation: 0,
           title: Text(translate('profile_screen.profile')),
           actions: [
-            IconButton(
-              tooltip: 'My Card',
-              onPressed: () {
-                Navigator.of(context).pushNamed(FrontSidePreviewPage.routeName);
-              },
-              icon: const Icon(Icons.badge_rounded),
-            ),
+            if (context.watch<DashboardProvider>().features["id-card"] == "1")
+              IconButton(
+                tooltip: translate('dashboard_screen.view_my_card'),
+                onPressed: () {
+                  Navigator.of(context)
+                      .pushNamed(FrontSidePreviewPage.routeName);
+                },
+                icon: const Icon(Icons.badge_rounded),
+              ),
           ],
         ),
         resizeToAvoidBottomInset: true,
@@ -77,7 +80,9 @@ class ProfileScreenState extends State<ProfileScreen> {
             child: Column(
               children: [
                 Heading(),
-                _buildMyCardButton(context),
+                if (context.watch<DashboardProvider>().features["id-card"] ==
+                    "1")
+                  _buildMyCardButton(context),
                 userProfile.post != ''
                     ? Container(
                         padding: const EdgeInsets.only(
@@ -132,7 +137,7 @@ class ProfileScreenState extends State<ProfileScreen> {
             Navigator.of(context).pushNamed(FrontSidePreviewPage.routeName);
           },
           icon: const Icon(Icons.badge_rounded),
-          label: const Text('View My Card'),
+          label: Text(translate('dashboard_screen.view_my_card')),
           style: OutlinedButton.styleFrom(
             foregroundColor: Colors.white,
             side: const BorderSide(color: Colors.white54),

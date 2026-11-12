@@ -149,6 +149,10 @@ class NotificationHistory {
   }
 
   static String _noticeIdFromData(Map<String, dynamic> data) {
+    if (data['type'] == 'home_highlight') {
+      final id = int.tryParse('${data['home_highlight_id'] ?? ''}');
+      if (id != null && id > 0) return '$id';
+    }
     for (final key in const ['notice_id', 'notification_for_id', 'id']) {
       final value = data[key]?.toString().trim() ?? '';
       if (value.isNotEmpty) {

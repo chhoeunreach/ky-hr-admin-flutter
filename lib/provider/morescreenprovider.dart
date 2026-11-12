@@ -9,35 +9,8 @@ import 'package:http/http.dart' as http;
 import 'package:http_interceptor_plus/http_interceptor_plus.dart';
 
 class MoreScreenProvider with ChangeNotifier {
-  Map<String, String> features = {
-    "project-management": "1",
-    "meeting": "1",
-    "tada": "1",
-    "payroll-management": "1",
-    "advance-salary": "1",
-    "advance-salary-approve": "0",
-    "advance-salary-admin": "0",
-    "support": "1",
-    "dark-mode": "1",
-    "attendance": "1",
-    "leave-request": "1",
-    "time-leave": "1",
-    "holiday": "1",
-    "notice": "1",
-    "sell-staff-report": "1",
-    "nfc-qr": "1",
-    "award": "1",
-    "training": "1",
-    "loan": "1",
-    "event": "1",
-    "complaint": "1",
-    "warning": "1",
-    "resignation": "1",
-    "assets": "1",
-    "social-rewards": "0",
-    "social-rewards-admin": "0",
-  };
-  bool showNfc = true;
+  Map<String, String> features = {};
+  bool showNfc = false;
 
   void changeAttendanceMethod(String type) {
     Preferences preferences = Preferences();
@@ -49,9 +22,7 @@ class MoreScreenProvider with ChangeNotifier {
     try {
       Preferences preferences = Preferences();
       final loadedFeatures = await preferences.getFeatures();
-      if (loadedFeatures.isNotEmpty) {
-        features = loadedFeatures;
-      }
+      features = loadedFeatures;
       showNfc = await preferences.getShowNfc();
       notifyListeners();
     } catch (e) {
@@ -61,7 +32,7 @@ class MoreScreenProvider with ChangeNotifier {
 
   Future<Logoutresponse> logout() async {
     Preferences preferences = Preferences();
-    var uri = Uri.parse(await preferences.getAppUrl()+Constant.LOGOUT_URL);
+    var uri = Uri.parse(await preferences.getAppUrl() + Constant.LOGOUT_URL);
 
     String token = await preferences.getToken();
 
@@ -79,7 +50,10 @@ class MoreScreenProvider with ChangeNotifier {
       if (response.statusCode == 200 || response.statusCode == 401) {
         final jsonResponse = Logoutresponse.fromJson(responseData);
 
-        preferences.clearPrefs();
+        await preferences.clearPrefs();
+        features = {};
+        showNfc = false;
+        notifyListeners();
         return jsonResponse;
       } else {
         var errorMessage = responseData['message'];
@@ -96,12 +70,12 @@ class MoreScreenProvider with ChangeNotifier {
     String? model = deviceInfo['model'];
     String? name = deviceInfo['name'];
 
-    return ("${name??""} ${brand??""} ${model??""}");
+    return ("${name ?? ""} ${brand ?? ""} ${model ?? ""}");
   }
 
   Future<void> addNfcApi(String title, String identifier) async {
     Preferences preferences = Preferences();
-    var uri = Uri.parse(await preferences.getAppUrl()+Constant.ADD_NFC_URL);
+    var uri = Uri.parse(await preferences.getAppUrl() + Constant.ADD_NFC_URL);
 
     String token = await preferences.getToken();
 

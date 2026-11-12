@@ -53,19 +53,32 @@ the selected backup automatically.
 Business requests are not replayed automatically. If an outage starts between a
 successful probe and the business request, that request can still fail; the next
 request checks again. Both servers must serve the same users, authentication keys,
-database, and uploaded files. When both servers are unavailable, normal request
-error handling applies. Selecting another server uses that server's own saved
+database, and uploaded files. Selecting another server uses that server's own saved
 backup configuration. An explicit null backup from the primary clears its saved
 backup.
+
+When the primary and the backup are both unreachable, the resolver notifies
+`ServerUrlResolver.onAllServersUnreachable` and `main()` shows a blocking
+connection alert (`lib/services/connection_alert.dart`). The alert cannot be
+dismissed by tapping outside or with the back button. Its Retry button and an
+automatic re-check every 10 seconds run a fresh primary-then-backup probe
+(`ServerStatusService.checkCurrentServer`), and the alert closes itself as soon
+as either server responds, so the user is prompted to connect until the connection
+error clears. Normal per-screen error handling (snackbars) still applies
+underneath the alert.
 
 The primary server remains saved when the backup is selected. Failed server scans
 leave the previous configuration intact. QR codes accept base64 JSON with `server_url` and
 `server_fallback_url`, as well as the previous base64 URL and plain URL formats.
+The admin Print QR page encodes the host currently serving that page (for example
+the LAN address of a local deployment), so scanning connects the app to the
+server that printed the code; localhost requests fall back to the configured
+`MOBILE_APP_URL`.
 
 Verification:
 
 ```sh
-flutter test test/server_configuration_test.dart test/server_url_resolver_test.dart test/server_status_service_test.dart
+flutter test test/connection_alert_test.dart test/server_configuration_test.dart test/server_url_resolver_test.dart test/server_status_service_test.dart
 # Simulate primary failure and check the real public backup without changing production.
 flutter test test/integration/server_failover_live_test.dart --dart-define=TEST_PUBLIC_FAILOVER=true
 # Optional check with the real primary offline and backup online.

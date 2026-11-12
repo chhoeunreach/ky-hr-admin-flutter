@@ -2,6 +2,15 @@ import 'sell_out_report_line.dart';
 import 'commission_policy.dart';
 
 class SellOutReport {
+  bool isCreatedToday({DateTime? now}) {
+    final created = DateTime.tryParse(createdAt)?.toLocal();
+    final current = (now ?? DateTime.now()).toLocal();
+    return created != null &&
+        created.year == current.year &&
+        created.month == current.month &&
+        created.day == current.day;
+  }
+
   static const double sellCommissionPerItem = 0.25;
   static const double ironCommissionPerReport = 0.20;
   static const double materialCommissionPerReport = 0.25;
@@ -16,6 +25,7 @@ class SellOutReport {
   /// must go through [canonicalServiceType] instead of matching raw strings.
   static const Map<String, Set<String>> _serviceTypeAliases = {
     'sell': {'Sell', 'Sale', 'លក់'},
+    'sell_sim': {'SellSim', 'Sell Sim', 'លក់ស៊ីម'},
     'material': {'Material', 'សម្ភារ'},
     'iron': {'Iron', 'Scots', 'អ៊ុត'},
     'repair': {'Repair', 'ជួសជុល'},

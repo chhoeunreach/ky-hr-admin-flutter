@@ -1,3 +1,4 @@
+import 'package:cnattendance/features/community/flash_view_presenter.dart';
 import 'dart:async';
 import 'dart:io';
 
@@ -53,6 +54,7 @@ class HomeScreenState extends State<HomeScreen> {
   bool isEnabled = true;
   bool isLoading = false;
   bool _dashboardLoadedOnce = false;
+  bool _dashboardRefreshInFlight = false;
   bool _updateDialogShown = false;
   DateTime? _lastDashboardRefreshAt;
 
@@ -316,6 +318,7 @@ class HomeScreenState extends State<HomeScreen> {
   }
 
   Future<String> loadDashboard({bool force = false}) async {
+    if (_dashboardRefreshInFlight) return 'loaded';
     final now = DateTime.now();
     if (!force &&
         _lastDashboardRefreshAt != null &&
@@ -324,6 +327,7 @@ class HomeScreenState extends State<HomeScreen> {
       return 'loaded';
     }
 
+    _dashboardRefreshInFlight = true;
     try {
       final dashboardResponse =
           await Provider.of<DashboardProvider>(context, listen: false)
@@ -346,15 +350,21 @@ class HomeScreenState extends State<HomeScreen> {
 
       if (!Provider.of<DashboardProvider>(context, listen: false)
           .isBirthdayWished) {
-        showBirthdayWish();
+        await showBirthdayWish();
       }
 
       if (dashboardResponse.data.appVersionInfo != null) {
-        _checkAppVersion(dashboardResponse.data.appVersionInfo);
+        await _checkAppVersion(dashboardResponse.data.appVersionInfo);
+      }
+      if (mounted &&
+          !(dashboardResponse.data.appVersionInfo?.isForceUpdate ?? false)) {
+        await FlashViewPresenter.showPending(context);
       }
       return 'loaded';
     } catch (_) {
       return 'loaded';
+    } finally {
+      _dashboardRefreshInFlight = false;
     }
   }
 
@@ -415,8 +425,8 @@ class HomeScreenState extends State<HomeScreen> {
     return fallbackUrl.isNotEmpty ? fallbackUrl : 'https://hr.kneayerng.com';
   }
 
-  void showBirthdayWish() {
-    showDialog(
+  Future<void> showBirthdayWish() async {
+    await showDialog(
       context: context,
       builder: (BuildContext context) {
         return Dialog(
@@ -469,9 +479,17 @@ class HomeScreenState extends State<HomeScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const HeaderProfile(showServerTest: true),
-                      CheckAttendance(),
+                      if (context
+                              .watch<DashboardProvider>()
+                              .features["attendance"] ==
+                          "1")
+                        CheckAttendance(),
                       OverviewDashboard(controller),
-                      UpcomingHoliday(),
+                      if (context
+                              .watch<DashboardProvider>()
+                              .features["holiday"] ==
+                          "1")
+                        UpcomingHoliday(),
                       Selector<DashboardProvider, Map<String, String>>(
                         selector: (_, provider) => provider.features,
                         builder: (_, features, __) => Column(
@@ -483,8 +501,16 @@ class HomeScreenState extends State<HomeScreen> {
                           ],
                         ),
                       ),
-                      WeeklyReportChart(),
-                      MyTeam(),
+                      if (context
+                              .watch<DashboardProvider>()
+                              .features["attendance"] ==
+                          "1")
+                        WeeklyReportChart(),
+                      if (context
+                              .watch<DashboardProvider>()
+                              .features["team-sheet"] ==
+                          "1")
+                        MyTeam(),
                       const SizedBox(height: 12),
                     ],
                   ),

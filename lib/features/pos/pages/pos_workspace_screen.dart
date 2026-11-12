@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:cnattendance/widget/sell_out/commission_rules_sheet.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_translate/flutter_translate.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -70,7 +71,7 @@ class _PosWorkspaceBodyState extends State<_PosWorkspaceBody> {
       Navigator.of(context).pushReplacement(MaterialPageRoute(
           builder: (_) =>
               widget.moduleBuilder?.call(module) ??
-              SellOutReportScreen(serviceType: posServiceLabel(module))));
+              SellOutReportScreen(serviceType: posServiceType(module))));
       return;
     }
     _search.clear();
@@ -129,7 +130,7 @@ class _PosWorkspaceBodyState extends State<_PosWorkspaceBody> {
         !(model.report?.modules.contains(type) ?? false)) return;
     final created = await Navigator.of(context).push<bool>(MaterialPageRoute(
         builder: (_) => SellOutReportCreateScreen(
-            serviceType: posServiceLabel(type),
+            serviceType: posServiceType(type),
             commissionPolicy: model.report?.commissionPolicy)));
     if (created == true && mounted) await model.refresh();
   }
@@ -142,6 +143,11 @@ class _PosWorkspaceBodyState extends State<_PosWorkspaceBody> {
     try {
       final full = await _api.fetchReport(row.report.id!);
       if (!mounted) return;
+      if (!full.isCreatedToday()) {
+        _message(translate('sell_out_report.edit_today_only'));
+        await model.refresh();
+        return;
+      }
       final updated = await Navigator.of(context).push<bool>(MaterialPageRoute(
           builder: (_) => SellOutReportCreateScreen(
               serviceType: full.serviceType, existingReport: full)));

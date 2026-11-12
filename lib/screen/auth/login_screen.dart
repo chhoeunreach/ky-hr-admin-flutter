@@ -1,3 +1,4 @@
+import 'package:cnattendance/provider/dashboardprovider.dart';
 import 'package:cnattendance/model/auth.dart';
 import 'package:cnattendance/screen/dashboard/dashboard_screen.dart';
 import 'package:cnattendance/widget/buttonborder.dart';
@@ -83,6 +84,36 @@ class loginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<bool?> _confirmResetServer() {
+    return showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        final enterprise = EnterpriseTheme.of(dialogContext);
+        return AlertDialog(
+          backgroundColor: enterprise.surface,
+          title: Text(
+            translate('login_screen.change_server_title'),
+            style: TextStyle(color: enterprise.text, fontSize: 16),
+          ),
+          content: Text(
+            translate('login_screen.change_server_message'),
+            style: TextStyle(color: enterprise.text, fontSize: 13),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(translate('server_status.cancel')),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(translate('server_status.confirm')),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   /*Future<void> loadQR() async {
     final MobileScannerController controller = MobileScannerController();
 
@@ -121,6 +152,8 @@ class loginScreenState extends State<LoginScreen> {
       final response = await Provider.of<Auth>(context, listen: false)
           .login(_usernameController.text, _passwordController.text);
 
+      if (!mounted) return;
+      await context.read<DashboardProvider>().getFeatures();
       if (!mounted) return;
 
       ScaffoldMessenger.of(context)
@@ -178,15 +211,15 @@ class loginScreenState extends State<LoginScreen> {
             child: IgnorePointer(
               ignoring: _isLoading,
               child: !hasUrl
-                    ? Container(
-                        color: Colors.transparent,
-                        height: MediaQuery.of(context).size.height,
-                        child: Padding(
-                          padding: const EdgeInsets.all(20.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              /*GestureDetector(
+                  ? Container(
+                      color: Colors.transparent,
+                      height: MediaQuery.of(context).size.height,
+                      child: Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            /*GestureDetector(
                                 onTap: () {
                                   context.read<Auth>().skipAppUrl();
                                 },
@@ -200,50 +233,49 @@ class loginScreenState extends State<LoginScreen> {
                                   ),
                                 ),
                               ),*/
-                              Expanded(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    GestureDetector(
-                                      onLongPress: () {
-                                        context.read<Auth>().skipAppUrl();
-                                      },
-                                      child: SizedBox(
-                                        width: 150,
-                                        height: 150,
-                                        child: Image.asset(
-                                            'assets/icons/logo_bnw.png',
-                                            color: Colors.white),
-                                      ),
+                            Expanded(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  GestureDetector(
+                                    onLongPress: () {
+                                      context.read<Auth>().skipAppUrl();
+                                    },
+                                    child: SizedBox(
+                                      width: 150,
+                                      height: 150,
+                                      child: Image.asset(
+                                          'assets/icons/logo_bnw.png',
+                                          color: Colors.white),
                                     ),
-                                    Container(
-                                      width: MediaQuery.of(context).size.width,
-                                      child: Row(
-                                        children: [
-                                          Expanded(
-                                            child: TextButton(
-                                                style: TextButton.styleFrom(
-                                                  backgroundColor:
-                                                      EnterpriseTheme.of(
-                                                              context)
-                                                          .primary,
-                                                  padding: EdgeInsets.zero,
-                                                  shape: ButtonBorder(),
+                                  ),
+                                  Container(
+                                    width: MediaQuery.of(context).size.width,
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: TextButton(
+                                              style: TextButton.styleFrom(
+                                                backgroundColor:
+                                                    EnterpriseTheme.of(context)
+                                                        .primary,
+                                                padding: EdgeInsets.zero,
+                                                shape: ButtonBorder(),
+                                              ),
+                                              onPressed: () {
+                                                scanQr();
+                                              },
+                                              child: Padding(
+                                                padding: EdgeInsets.all(20.0),
+                                                child: Text(
+                                                  translate(
+                                                      "welcome_screen.verify_button"),
+                                                  style: TextStyle(
+                                                      color: Colors.white),
                                                 ),
-                                                onPressed: () {
-                                                  scanQr();
-                                                },
-                                                child: Padding(
-                                                  padding: EdgeInsets.all(20.0),
-                                                  child: Text(
-                                                    translate(
-                                                        "welcome_screen.verify_button"),
-                                                    style: TextStyle(
-                                                        color: Colors.white),
-                                                  ),
-                                                )),
-                                          ),
-                                          /*SizedBox(
+                                              )),
+                                        ),
+                                        /*SizedBox(
                                             width: 10,
                                           ),
                                           IconButton(
@@ -265,178 +297,181 @@ class loginScreenState extends State<LoginScreen> {
                                                   size: 32,
                                                 ),
                                               ))*/
-                                        ],
-                                      ),
+                                      ],
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                      )
-                    : SingleChildScrollView(
+                      ),
+                    )
+                  : SingleChildScrollView(
                       child: Container(
-                          padding: EdgeInsets.all(20),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Center(
-                                child: SizedBox(
-                                  width: 120,
-                                  height: 120,
-                                  child: Image.asset('assets/icons/logo_bnw.png',
-                                      color: Colors.white),
-                                ),
+                        padding: EdgeInsets.all(20),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Center(
+                              child: SizedBox(
+                                width: 120,
+                                height: 120,
+                                child: Image.asset('assets/icons/logo_bnw.png',
+                                    color: Colors.white),
                               ),
-                              gaps(20),
-                              Text(
-                                translate("login_screen.login"),
-                                style:
-                                    TextStyle(color: Colors.white, fontSize: 20),
+                            ),
+                            gaps(20),
+                            Text(
+                              translate("login_screen.login"),
+                              style:
+                                  TextStyle(color: Colors.white, fontSize: 20),
+                            ),
+                            gaps(20),
+                            textHeading(translate("login_screen.username")),
+                            gaps(10),
+                            TextFormField(
+                              keyboardType: TextInputType.emailAddress,
+                              keyboardAppearance: Brightness.dark,
+                              style: TextStyle(color: Colors.white),
+                              validator: (value) {
+                                if (!validateField(value!)) {
+                                  return "Empty Field";
+                                }
+
+                                return null;
+                              },
+                              controller: _usernameController,
+                              cursorColor: Colors.white,
+                              decoration: InputDecoration(
+                                prefixIcon:
+                                    Icon(Icons.person, color: Colors.white),
+                                labelStyle: TextStyle(color: Colors.white),
+                                fillColor: Colors.white24,
+                                filled: true,
+                                enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.only(
+                                        topLeft: Radius.circular(10),
+                                        topRight: Radius.circular(0),
+                                        bottomLeft: Radius.circular(0),
+                                        bottomRight: Radius.circular(10))),
+                                focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.only(
+                                        topLeft: Radius.circular(10),
+                                        topRight: Radius.circular(0),
+                                        bottomLeft: Radius.circular(0),
+                                        bottomRight: Radius.circular(10))),
+                                focusedErrorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.only(
+                                        topLeft: Radius.circular(10),
+                                        topRight: Radius.circular(0),
+                                        bottomLeft: Radius.circular(0),
+                                        bottomRight: Radius.circular(10))),
+                                errorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.only(
+                                        topLeft: Radius.circular(10),
+                                        topRight: Radius.circular(0),
+                                        bottomLeft: Radius.circular(0),
+                                        bottomRight: Radius.circular(10))),
                               ),
-                              gaps(20),
-                              textHeading(translate("login_screen.username")),
-                              gaps(10),
-                              TextFormField(
-                                keyboardType: TextInputType.emailAddress,
-                                keyboardAppearance: Brightness.dark,
-                                style: TextStyle(color: Colors.white),
-                                validator: (value) {
-                                  if (!validateField(value!)) {
-                                    return "Empty Field";
-                                  }
-                      
-                                  return null;
-                                },
-                                controller: _usernameController,
-                                cursorColor: Colors.white,
-                                decoration: InputDecoration(
-                                  prefixIcon:
-                                      Icon(Icons.person, color: Colors.white),
-                                  labelStyle: TextStyle(color: Colors.white),
-                                  fillColor: Colors.white24,
-                                  filled: true,
-                                  enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.only(
-                                          topLeft: Radius.circular(10),
-                                          topRight: Radius.circular(0),
-                                          bottomLeft: Radius.circular(0),
-                                          bottomRight: Radius.circular(10))),
-                                  focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.only(
-                                          topLeft: Radius.circular(10),
-                                          topRight: Radius.circular(0),
-                                          bottomLeft: Radius.circular(0),
-                                          bottomRight: Radius.circular(10))),
-                                  focusedErrorBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.only(
-                                          topLeft: Radius.circular(10),
-                                          topRight: Radius.circular(0),
-                                          bottomLeft: Radius.circular(0),
-                                          bottomRight: Radius.circular(10))),
-                                  errorBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.only(
-                                          topLeft: Radius.circular(10),
-                                          topRight: Radius.circular(0),
-                                          bottomLeft: Radius.circular(0),
-                                          bottomRight: Radius.circular(10))),
-                                ),
-                              ),
-                              gaps(10),
-                              textHeading(translate("login_screen.password")),
-                              gaps(10),
-                              TextFormField(
-                                obscureText: _obscureText,
-                                keyboardAppearance: Brightness.dark,
-                                style: TextStyle(color: Colors.white),
-                                validator: (value) {
-                                  if (!validateField(value!)) {
-                                    return "Empty Field";
-                                  }
-                      
-                                  return null;
-                                },
-                                controller: _passwordController,
-                                cursorColor: Colors.white,
-                                decoration: InputDecoration(
-                                  prefixIcon:
-                                      Icon(Icons.lock, color: Colors.white),
-                                  labelStyle: TextStyle(color: Colors.white),
-                                  fillColor: Colors.white24,
-                                  filled: true,
-                                  enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.only(
-                                          topLeft: Radius.circular(10),
-                                          topRight: Radius.circular(0),
-                                          bottomLeft: Radius.circular(0),
-                                          bottomRight: Radius.circular(10))),
-                                  focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.only(
-                                          topLeft: Radius.circular(10),
-                                          topRight: Radius.circular(0),
-                                          bottomLeft: Radius.circular(0),
-                                          bottomRight: Radius.circular(10))),
-                                  focusedErrorBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.only(
-                                          topLeft: Radius.circular(10),
-                                          topRight: Radius.circular(0),
-                                          bottomLeft: Radius.circular(0),
-                                          bottomRight: Radius.circular(10))),
-                                  errorBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.only(
-                                          topLeft: Radius.circular(10),
-                                          topRight: Radius.circular(0),
-                                          bottomLeft: Radius.circular(0),
-                                          bottomRight: Radius.circular(10))),
-                                  suffixIcon: InkWell(
-                                    onTap: _toggle,
-                                    child: Icon(
-                                      _obscureText
-                                          ? FontAwesomeIcons.eye
-                                          : FontAwesomeIcons.eyeSlash,
-                                      size: 15.0,
-                                      color: Colors.white,
-                                    ),
+                            ),
+                            gaps(10),
+                            textHeading(translate("login_screen.password")),
+                            gaps(10),
+                            TextFormField(
+                              obscureText: _obscureText,
+                              keyboardAppearance: Brightness.dark,
+                              style: TextStyle(color: Colors.white),
+                              validator: (value) {
+                                if (!validateField(value!)) {
+                                  return "Empty Field";
+                                }
+
+                                return null;
+                              },
+                              controller: _passwordController,
+                              cursorColor: Colors.white,
+                              decoration: InputDecoration(
+                                prefixIcon:
+                                    Icon(Icons.lock, color: Colors.white),
+                                labelStyle: TextStyle(color: Colors.white),
+                                fillColor: Colors.white24,
+                                filled: true,
+                                enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.only(
+                                        topLeft: Radius.circular(10),
+                                        topRight: Radius.circular(0),
+                                        bottomLeft: Radius.circular(0),
+                                        bottomRight: Radius.circular(10))),
+                                focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.only(
+                                        topLeft: Radius.circular(10),
+                                        topRight: Radius.circular(0),
+                                        bottomLeft: Radius.circular(0),
+                                        bottomRight: Radius.circular(10))),
+                                focusedErrorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.only(
+                                        topLeft: Radius.circular(10),
+                                        topRight: Radius.circular(0),
+                                        bottomLeft: Radius.circular(0),
+                                        bottomRight: Radius.circular(10))),
+                                errorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.only(
+                                        topLeft: Radius.circular(10),
+                                        topRight: Radius.circular(0),
+                                        bottomLeft: Radius.circular(0),
+                                        bottomRight: Radius.circular(10))),
+                                suffixIcon: InkWell(
+                                  onTap: _toggle,
+                                  child: Icon(
+                                    _obscureText
+                                        ? FontAwesomeIcons.eye
+                                        : FontAwesomeIcons.eyeSlash,
+                                    size: 15.0,
+                                    color: Colors.white,
                                   ),
                                 ),
                               ),
-                              gaps(30),
-                              button(),
-                              gaps(20),
-                              Center(
+                            ),
+                            gaps(30),
+                            button(),
+                            gaps(20),
+                            Center(
+                              child: GestureDetector(
+                                onTap: () {
+                                  openBrowserTab(context.read<Auth>().appUrl);
+                                },
+                                child: Text(
+                                    textAlign: TextAlign.left,
+                                    style: TextStyle(color: Colors.white),
+                                    translate("login_screen.forget_password")),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(20.0),
+                              child: Center(
                                 child: GestureDetector(
-                                  onTap: () {
-                                    openBrowserTab(context.read<Auth>().appUrl);
+                                  onTap: () async {
+                                    final confirmed =
+                                        await _confirmResetServer();
+                                    if (confirmed != true || !mounted) return;
+                                    context.read<Auth>().resetAppUrl();
+                                    _usernameController.clear();
+                                    _passwordController.clear();
                                   },
                                   child: Text(
                                       textAlign: TextAlign.left,
                                       style: TextStyle(color: Colors.white),
-                                      translate("login_screen.forget_password")),
+                                      translate("login_screen.go_back")),
                                 ),
                               ),
-                              Padding(
-                                padding: const EdgeInsets.all(20.0),
-                                child: Center(
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      context.read<Auth>().resetAppUrl();
-                                      _usernameController.clear();
-                                      _passwordController.clear();
-                                    },
-                                    child: Text(
-                                        textAlign: TextAlign.left,
-                                        style: TextStyle(color: Colors.white),
-                                        translate("login_screen.go_back")),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-              ),
+                      ),
+                    ),
             ),
           ),
         ),

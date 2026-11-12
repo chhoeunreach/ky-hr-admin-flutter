@@ -14,6 +14,12 @@ class ServerUrlResolver {
   }) : _client = client ?? http.Client();
 
   static final shared = ServerUrlResolver();
+
+  /// Notified when the configured primary server and its backup are both
+  /// unreachable, so the app can show a blocking "need to connect" alert.
+  /// The app wires this in main(); tests leave it null.
+  static void Function(String primary, String? fallback)? onAllServersUnreachable;
+
   final http.Client _client;
   final Duration checkInterval;
   final Duration timeout;
@@ -106,7 +112,13 @@ class ServerUrlResolver {
               : null);
       if (fallback != null && fallback != primary) {
         final backupResponse = await _probe(fallback);
-        if (_isBackend(backupResponse)) selected = fallback;
+        if (_isBackend(backupResponse)) {
+          selected = fallback;
+        } else {
+          onAllServersUnreachable?.call(primary, fallback);
+        }
+      } else {
+        onAllServersUnreachable?.call(primary, null);
       }
     }
     // Recheck a healthy primary before each business request so a recent

@@ -1,3 +1,4 @@
+import 'package:cnattendance/provider/dashboardprovider.dart';
 
 import 'package:cnattendance/provider/profileprovider.dart';
 import 'package:cnattendance/screen/profile/editprofilescreen.dart';
@@ -18,7 +19,8 @@ class HeadingState extends State<Heading> {
 
     final provider = Provider.of<ProfileProvider>(context, listen: false);
     final profile = Provider.of<ProfileProvider>(context).profile;
-    final isProfileLoading = Provider.of<ProfileProvider>(context,listen: true).profile;
+    final isProfileLoading =
+        Provider.of<ProfileProvider>(context, listen: true).profile;
     return WillPopScope(
       onWillPop: () async {
         return !isLoading;
@@ -63,31 +65,35 @@ class HeadingState extends State<Heading> {
                     style: TextStyle(color: Colors.white, fontSize: 15),
                   ),
                 ),
-                IgnorePointer(
-                  ignoring: isProfileLoading.phone == ""?true:false,
-                  child: GestureDetector(
-                    onTap: () {
-                      Navigator.of(context)
-                          .pushNamed(EditProfileScreen.routeName);
-                    },
-                    child: Card(
-                      margin: EdgeInsets.only(top: 10),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(10),
-                            bottomRight: Radius.circular(10)),
-                      ),
-                      color: HexColor("#036eb7"),
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(
-                          translate('edit_profile_screen.edit_profile'),
-                          style: TextStyle(color: Colors.white, fontSize: 15),
+                if (context
+                        .watch<DashboardProvider>()
+                        .features["update_profile"] ==
+                    "1")
+                  IgnorePointer(
+                    ignoring: isProfileLoading.phone == "" ? true : false,
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.of(context)
+                            .pushNamed(EditProfileScreen.routeName);
+                      },
+                      child: Card(
+                        margin: EdgeInsets.only(top: 10),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(10),
+                              bottomRight: Radius.circular(10)),
+                        ),
+                        color: HexColor("#036eb7"),
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            translate('edit_profile_screen.edit_profile'),
+                            style: TextStyle(color: Colors.white, fontSize: 15),
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
               ],
             ),
           ],

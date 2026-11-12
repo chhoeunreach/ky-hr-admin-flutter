@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:cnattendance/models/monthly_attendance_summary.dart';
 
 import 'package:cnattendance/data/source/network/model/dashboard/Feature.dart';
 import 'package:cnattendance/data/source/network/model/dashboard/RecentAward.dart';
@@ -42,11 +43,14 @@ class Dashboard {
     this.recentTraining,
     this.recentEvent,
     this.appVersionInfo,
+    this.monthlyAttendanceSummary,
   });
 
   factory Dashboard.fromJson(dynamic json) {
     return Dashboard(
       user: User.fromJson(json['user']),
+      monthlyAttendanceSummary: MonthlyAttendanceSummary.fromJson(
+          json['monthly_attendance_summary']),
       employeeTodayAttendance:
           EmployeeTodayAttendance.fromJson(json['employee_today_attendance']),
       overview: Overview.fromJson(json['overview']),
@@ -115,6 +119,7 @@ class Dashboard {
   Training? recentTraining;
   EventApi? recentEvent;
   AppVersionInfo? appVersionInfo;
+  MonthlyAttendanceSummary? monthlyAttendanceSummary;
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{};

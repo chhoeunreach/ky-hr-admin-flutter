@@ -25,7 +25,7 @@ class MeetingAttendanceRepository {
           : <MeetingAttendanceItem>[];
     }
 
-    throw responseData['message'] ?? 'Unable to load meeting attendance';
+    throw _errorMessage(responseData, 'Unable to load meeting attendance');
   }
 
   Future<GeneralResponse> scan(String qrPayload) async {
@@ -40,7 +40,16 @@ class MeetingAttendanceRepository {
       return GeneralResponse.fromJson(responseData);
     }
 
-    throw responseData['message'] ?? 'Unable to record meeting attendance';
+    throw _errorMessage(responseData, 'Unable to record meeting attendance');
+  }
+
+  String _errorMessage(Map<String, dynamic> data, String fallback) {
+    final errors = data['errors'];
+    if (errors is Map && errors.isNotEmpty) {
+      final first = errors.values.first;
+      if (first is List && first.isNotEmpty) return first.first.toString();
+    }
+    return data['message']?.toString() ?? fallback;
   }
 
   Future<Map<String, String>> _authorizedHeaders() async {

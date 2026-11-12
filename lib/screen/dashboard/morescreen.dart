@@ -1,3 +1,4 @@
+import 'package:cnattendance/features/community/social_feed_screen.dart';
 import 'package:cnattendance/provider/dashboardprovider.dart';
 import 'package:cnattendance/provider/morescreenprovider.dart';
 import 'package:cnattendance/provider/prefprovider.dart';
@@ -63,7 +64,7 @@ class MoreScreenState extends State<MoreScreen> {
   @override
   Widget build(BuildContext context) {
     final attendanceType = context.watch<PrefProvider>().attendanceType;
-    final features = context.watch<MoreScreenProvider>().features;
+    final features = context.watch<DashboardProvider>().features;
     final showNfc = context.watch<MoreScreenProvider>().showNfc;
     final attendanceMethod =
         context.watch<DashboardProvider>().attendanceMethods;
@@ -190,373 +191,353 @@ class MoreScreenState extends State<MoreScreen> {
           resizeToAvoidBottomInset: true,
           backgroundColor: Colors.transparent,
           body: SafeArea(
-              child: features.isEmpty
-                  ? Center(
+              child: SingleChildScrollView(
+            child: Container(
+              width: double.infinity,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  HeaderProfile(),
+                  if (features['social-feed'] == '1')
+                    Services(translate('community.social_feed'),
+                        Icons.dynamic_feed_outlined, const SocialFeedScreen()),
+                  Padding(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                       child: Text(
-                        "Loading",
-                        style: TextStyle(color: Colors.white, fontSize: 13),
-                      ),
-                    )
-                  : SingleChildScrollView(
-                      child: Container(
-                        width: double.infinity,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            HeaderProfile(),
-                            Padding(
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: 14, vertical: 6),
-                                child: Text(
-                                  translate(
-                                      'more_screen.attendance_default_method'),
-                                  style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.bold),
-                                )),
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 14),
-                              child: Wrap(
-                                spacing: 8,
-                                runSpacing: 7,
-                                children: [
-                                  attendanceMethodChip(
-                                    type: "Default",
-                                    icon: Icons.fingerprint,
-                                    label: translate('more_screen.default'),
-                                    enabled: availableAttendanceMethods
-                                        .contains("default"),
-                                  ),
-                                  attendanceMethodChip(
-                                    type: "NFC",
-                                    icon: Icons.nfc,
-                                    label: translate('more_screen.nfc'),
-                                    enabled: availableAttendanceMethods
-                                        .contains("nfc"),
-                                  ),
-                                  attendanceMethodChip(
-                                    type: "QR",
-                                    icon: Icons.qr_code,
-                                    label: translate('more_screen.qr_code'),
-                                    enabled: availableAttendanceMethods
-                                        .contains("qr"),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Padding(
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: 14, vertical: 6),
-                                child: Text(
-                                  translate('more_screen.account'),
-                                  style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.bold),
-                                )),
-                            Services(translate('more_screen.profile'),
-                                Icons.person, ProfileScreen()),
-                            Services(translate('more_screen.change_password'),
-                                Icons.password, ChangePasswordScreen()),
-                            Padding(
-                                padding: EdgeInsets.only(
-                                    left: 14, right: 14, top: 12, bottom: 6),
-                                child: Text(
-                                  translate('more_screen.office_desk'),
-                                  style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.bold),
-                                )),
-                            Services(translate('more_screen.team_sheet'),
-                                Icons.group, TeamSheetScreen()),
-                            Services(translate('more_screen.groups'),
-                                Icons.forum, GroupListScreen()),
-                            features["project-management"] != "1"
-                                ? SizedBox.shrink()
-                                : Services(
-                                    translate('more_screen.project_management'),
-                                    Icons.work,
-                                    ProjectScreen()),
-                            features["event"] != "1"
-                                ? SizedBox.shrink()
-                                : Services(translate('common.office_events'),
-                                    Icons.event, EventListScreen()),
-                            features["training"] != "1"
-                                ? SizedBox.shrink()
-                                : Services(translate('home_screen.training'),
-                                    Icons.group, TrainingScreen()),
-                            features["award"] != "1"
-                                ? SizedBox.shrink()
-                                : Services(translate('more_screen.awards'),
-                                    Icons.workspace_premium, AwardsScreen()),
-                            features["assets"] != "1"
-                                ? SizedBox.shrink()
-                                : Services(
-                                    translate('common.assets'),
-                                    Icons.production_quantity_limits,
-                                    AssetScreen()),
-                            /*features["training"] != "1"
+                        translate('more_screen.attendance_default_method'),
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold),
+                      )),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 7,
+                      children: [
+                        attendanceMethodChip(
+                          type: "Default",
+                          icon: Icons.fingerprint,
+                          label: translate('more_screen.default'),
+                          enabled:
+                              availableAttendanceMethods.contains("default"),
+                        ),
+                        attendanceMethodChip(
+                          type: "NFC",
+                          icon: Icons.nfc,
+                          label: translate('more_screen.nfc'),
+                          enabled: availableAttendanceMethods.contains("nfc"),
+                        ),
+                        attendanceMethodChip(
+                          type: "QR",
+                          icon: Icons.qr_code,
+                          label: translate('more_screen.qr_code'),
+                          enabled: availableAttendanceMethods.contains("qr"),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                      child: Text(
+                        translate('more_screen.account'),
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold),
+                      )),
+                  if (features["profile"] == "1")
+                    Services(translate('more_screen.profile'), Icons.person,
+                        ProfileScreen()),
+                  if (features["change-password"] == "1")
+                    Services(translate('more_screen.change_password'),
+                        Icons.password, ChangePasswordScreen()),
+                  Padding(
+                      padding: EdgeInsets.only(
+                          left: 14, right: 14, top: 12, bottom: 6),
+                      child: Text(
+                        translate('more_screen.office_desk'),
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold),
+                      )),
+                  if (features["team-sheet"] == "1")
+                    Services(translate('more_screen.team_sheet'), Icons.group,
+                        TeamSheetScreen()),
+                  if (features["groups"] == "1")
+                    Services(translate('more_screen.groups'), Icons.forum,
+                        GroupListScreen()),
+                  features["project-management"] != "1"
+                      ? SizedBox.shrink()
+                      : Services(translate('more_screen.project_management'),
+                          Icons.work, ProjectScreen()),
+                  features["event"] != "1"
+                      ? SizedBox.shrink()
+                      : Services(translate('common.office_events'), Icons.event,
+                          EventListScreen()),
+                  features["training"] != "1"
+                      ? SizedBox.shrink()
+                      : Services(translate('home_screen.training'), Icons.group,
+                          TrainingScreen()),
+                  features["award"] != "1"
+                      ? SizedBox.shrink()
+                      : Services(translate('more_screen.awards'),
+                          Icons.workspace_premium, AwardsScreen()),
+                  features["assets"] != "1"
+                      ? SizedBox.shrink()
+                      : Services(translate('common.assets'),
+                          Icons.production_quantity_limits, AssetScreen()),
+                  /*features["training"] != "1"
                                 ? SizedBox.shrink()
                                 : Services(translate('more_screen.training'),
                                     Icons.model_training, TrainingScreen()),*/
-                            Services(translate('more_screen.holiday'),
-                                Icons.calendar_month, HolidayScreen()),
-                            Services(translate('more_screen.notices'),
-                                Icons.message, NoticeScreen()),
-                            features["meeting"] != "1"
-                                ? SizedBox.shrink()
-                                : Services(translate('more_screen.meeting'),
-                                    Icons.meeting_room, MeetingScreen()),
-                            Services(
-                                translate('more_screen.leave_calendar'),
-                                Icons.calendar_month_outlined,
-                                LeaveCalendarScreen()),
-                            features["warning"] != "1"
-                                ? SizedBox.shrink()
-                                : Services(translate('more_screen.warning'),
-                                    Icons.warning, WarningScreen()),
-                            features["complaint"] != "1"
-                                ? SizedBox.shrink()
-                                : Services(
-                                    translate('more_screen.complain'),
-                                    Icons.perm_device_information_outlined,
-                                    ComplainScreen()),
-                            Padding(
-                                padding: EdgeInsets.only(
-                                    left: 14, right: 14, top: 12, bottom: 6),
-                                child: GestureDetector(
-                                  onLongPress: showFeatureDebug,
-                                  child: Text(
-                                    translate('more_screen.finance'),
-                                    style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.bold),
-                                  ),
-                                )),
-                            features["tada"] != "1"
-                                ? SizedBox.shrink()
-                                : Services(translate('more_screen.tada'),
-                                    Icons.money, TadaScreen()),
-                            features["payroll-management"] != "1"
-                                ? SizedBox.shrink()
-                                : Services(translate('more_screen.payslip'),
-                                    Icons.payments_outlined, PaySlipScreen()),
-                            features["payroll-management"] != "1"
-                                ? SizedBox.shrink()
-                                : Services(translate('more_screen.ssf_history'),
-                                    Icons.payments, SsfHistoryScreen()),
-                            features["advance-salary"] != "1"
-                                ? SizedBox.shrink()
-                                : Services(
-                                    translate('more_screen.advance_salary'),
-                                    Icons.monetization_on,
-                                    AdvanceSalaryScreen()),
-                            features["social-rewards"] != "1"
-                                ? SizedBox.shrink()
-                                : Services(
-                                    translate('more_screen.social_rewards'),
-                                    Icons.campaign,
-                                    SocialSubmissionScreen(
-                                      employeeId: employeeId,
-                                    )),
-                            Services(
-                                translate('more_screen.my_id_card'),
-                                Icons.badge_rounded,
-                                const FrontSidePreviewPage()),
-                            Services(
-                              translate('more_screen.meeting_attendance'),
-                              Icons.qr_code_scanner,
-                              const MeetingAttendanceScreen(),
-                            ),
-                            features["advance-salary-admin"] != "1"
-                                ? SizedBox.shrink()
-                                : Services(
-                                    translate(
-                                        'more_screen.admin_advance_salary'),
-                                    Icons.admin_panel_settings,
-                                    AdminAdvanceSalaryScreen()),
-                            features["social-rewards-admin"] != "1"
-                                ? SizedBox.shrink()
-                                : Services(
-                                    translate('more_screen.social_rewards'),
-                                    Icons.verified,
-                                    const AdminSocialRewardsScreen()),
-                            /*features["loan"] != "1"
+                  if (features["holiday"] == "1")
+                    Services(translate('more_screen.holiday'),
+                        Icons.calendar_month, HolidayScreen()),
+                  if (features["notice"] == "1")
+                    Services(translate('more_screen.notices'), Icons.message,
+                        NoticeScreen()),
+                  features["meeting"] != "1"
+                      ? SizedBox.shrink()
+                      : Services(translate('more_screen.meeting'),
+                          Icons.meeting_room, MeetingScreen()),
+                  if (features["leave-calendar"] == "1")
+                    Services(translate('more_screen.leave_calendar'),
+                        Icons.calendar_month_outlined, LeaveCalendarScreen()),
+                  features["warning"] != "1"
+                      ? SizedBox.shrink()
+                      : Services(translate('more_screen.warning'),
+                          Icons.warning, WarningScreen()),
+                  features["complaint"] != "1"
+                      ? SizedBox.shrink()
+                      : Services(
+                          translate('more_screen.complain'),
+                          Icons.perm_device_information_outlined,
+                          ComplainScreen()),
+                  Padding(
+                      padding: EdgeInsets.only(
+                          left: 14, right: 14, top: 12, bottom: 6),
+                      child: GestureDetector(
+                        onLongPress: showFeatureDebug,
+                        child: Text(
+                          translate('more_screen.finance'),
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      )),
+                  features["tada"] != "1"
+                      ? SizedBox.shrink()
+                      : Services(translate('more_screen.tada'), Icons.money,
+                          TadaScreen()),
+                  features["payroll-management"] != "1"
+                      ? SizedBox.shrink()
+                      : Services(translate('more_screen.payslip'),
+                          Icons.payments_outlined, PaySlipScreen()),
+                  features["payroll-management"] != "1"
+                      ? SizedBox.shrink()
+                      : Services(translate('more_screen.ssf_history'),
+                          Icons.payments, SsfHistoryScreen()),
+                  features["advance-salary"] != "1"
+                      ? SizedBox.shrink()
+                      : Services(translate('more_screen.advance_salary'),
+                          Icons.monetization_on, AdvanceSalaryScreen()),
+                  features["social-rewards"] != "1"
+                      ? SizedBox.shrink()
+                      : Services(
+                          translate('more_screen.social_rewards'),
+                          Icons.campaign,
+                          SocialSubmissionScreen(
+                            employeeId: employeeId,
+                          )),
+                  if (features["id-card"] == "1")
+                    Services(translate('more_screen.my_id_card'),
+                        Icons.badge_rounded, const FrontSidePreviewPage()),
+                  if (features["meeting-attendance"] == "1")
+                    Services(
+                      translate('more_screen.meeting_attendance'),
+                      Icons.qr_code_scanner,
+                      const MeetingAttendanceScreen(),
+                    ),
+                  features["advance-salary-admin"] != "1"
+                      ? SizedBox.shrink()
+                      : Services(
+                          translate('more_screen.admin_advance_salary'),
+                          Icons.admin_panel_settings,
+                          AdminAdvanceSalaryScreen()),
+                  features["social-rewards-admin"] != "1"
+                      ? SizedBox.shrink()
+                      : Services(translate('more_screen.social_rewards'),
+                          Icons.verified, const AdminSocialRewardsScreen()),
+                  /*features["loan"] != "1"
                                 ? SizedBox.shrink()
                                 : Services(translate('more_screen.loans'),
                                     Icons.handshake_outlined, LoanListScreen()),*/
-                            Padding(
-                                padding: EdgeInsets.only(
-                                    left: 14, right: 14, top: 12, bottom: 6),
-                                child: Text(
-                                  translate('more_screen.additional'),
+                  Padding(
+                      padding: EdgeInsets.only(
+                          left: 14, right: 14, top: 12, bottom: 6),
+                      child: Text(
+                        translate('more_screen.additional'),
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold),
+                      )),
+                  //Services('Issue Ticket', Icons.note, ProfileScreen()),
+                  features["support"] != "1"
+                      ? SizedBox.shrink()
+                      : Services(translate('more_screen.support'),
+                          Icons.support_agent, SupportScreen()),
+                  if (features["company-rules"] == "1")
+                    Services(translate('more_screen.company_rules'),
+                        Icons.rule_folder, CompanyRulesScreen()),
+                  if (features["links"] == "1")
+                    Services(translate('more_screen.links'), Icons.link,
+                        const LinkListScreen()),
+                  const ServerStatusTile(),
+                  Services(translate('more_screen.about_us'), Icons.info,
+                      AboutScreen('about-us')),
+                  Services(translate('more_screen.terms_and_conditions'),
+                      Icons.rule, AboutScreen('terms-and-conditions')),
+                  Services(
+                    translate('more_screen.privacy_policy'),
+                    Icons.policy,
+                    ProfileScreen(),
+                    control: 1,
+                  ),
+                  Padding(
+                      padding: EdgeInsets.only(
+                          left: 14, right: 14, top: 12, bottom: 6),
+                      child: Text(
+                        translate('more_screen.others'),
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold),
+                      )),
+                  features["dark-mode"] != "1"
+                      ? SizedBox.shrink()
+                      : Padding(
+                          padding:
+                              EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                          child: Column(
+                            children: [
+                              ListTile(
+                                trailing: Switch(
+                                  activeThumbColor: Colors.blue,
+                                  value: selectedThemeMode == AppThemeMode.dark,
+                                  onChanged: (value) {
+                                    context.read<ThemeProvider>().setMode(value
+                                        ? AppThemeMode.dark
+                                        : AppThemeMode.light);
+                                  },
+                                ),
+                                dense: true,
+                                minLeadingWidth: 5,
+                                leading: Icon(
+                                  Icons.landscape,
+                                  color: Colors.white,
+                                ),
+                                title: Text(
+                                  translate('more_screen.dark_mode'),
                                   style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.bold),
-                                )),
-                            //Services('Issue Ticket', Icons.note, ProfileScreen()),
-                            features["support"] != "1"
-                                ? SizedBox.shrink()
-                                : Services(translate('more_screen.support'),
-                                    Icons.support_agent, SupportScreen()),
-                            Services(translate('more_screen.company_rules'),
-                                Icons.rule_folder, CompanyRulesScreen()),
-                            Services(translate('more_screen.links'), Icons.link,
-                                const LinkListScreen()),
-                            const ServerStatusTile(),
-                            Services(translate('more_screen.about_us'),
-                                Icons.info, AboutScreen('about-us')),
-                            Services(
-                                translate('more_screen.terms_and_conditions'),
-                                Icons.rule,
-                                AboutScreen('terms-and-conditions')),
-                            Services(
-                              translate('more_screen.privacy_policy'),
-                              Icons.policy,
-                              ProfileScreen(),
-                              control: 1,
-                            ),
-                            Padding(
-                                padding: EdgeInsets.only(
-                                    left: 14, right: 14, top: 12, bottom: 6),
-                                child: Text(
-                                  translate('more_screen.others'),
-                                  style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.bold),
-                                )),
-                            features["dark-mode"] != "1"
-                                ? SizedBox.shrink()
-                                : Padding(
-                                    padding: EdgeInsets.symmetric(
-                                        horizontal: 10, vertical: 0),
-                                    child: Column(
-                                      children: [
-                                        ListTile(
-                                          trailing: Switch(
-                                            activeThumbColor: Colors.blue,
-                                            value: selectedThemeMode ==
-                                                AppThemeMode.dark,
-                                            onChanged: (value) {
-                                              context
-                                                  .read<ThemeProvider>()
-                                                  .setMode(value
-                                                      ? AppThemeMode.dark
-                                                      : AppThemeMode.light);
-                                            },
-                                          ),
-                                          dense: true,
-                                          minLeadingWidth: 5,
-                                          leading: Icon(
-                                            Icons.landscape,
-                                            color: Colors.white,
-                                          ),
-                                          title: Text(
-                                            translate('more_screen.dark_mode'),
-                                            style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 13),
-                                          ),
-                                          onTap: () {
-                                            context
-                                                .read<ThemeProvider>()
-                                                .setMode(selectedThemeMode ==
-                                                        AppThemeMode.dark
-                                                    ? AppThemeMode.light
-                                                    : AppThemeMode.dark);
-                                          },
-                                          selected: true,
-                                        ),
-                                        const Divider(
-                                          height: 1,
-                                          color: Colors.white24,
-                                          indent: 15,
-                                          endIndent: 15,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                            const ThemeSelector(),
-                            Padding(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 0),
-                              child: Column(
-                                children: [
-                                  ListTile(
-                                    trailing: Switch(
-                                      activeThumbColor: Colors.blue,
-                                      value: getAnimation(),
-                                      onChanged: (value) {
-                                        final box = GetStorage();
-                                        box.write('animation',
-                                            !(box.read("animation") ?? true));
-                                      },
-                                    ),
-                                    dense: true,
-                                    minLeadingWidth: 5,
-                                    leading: Icon(
-                                      Icons.animation,
-                                      color: Colors.white,
-                                    ),
-                                    title: Text(
-                                      translate('more_screen.animation'),
-                                      style: TextStyle(
-                                          color: Colors.white, fontSize: 13),
-                                    ),
-                                    onTap: () {
-                                      final box = GetStorage();
-                                      box.write('animation',
-                                          !(box.read("animation") ?? true));
-                                    },
-                                    selected: true,
-                                  ),
-                                  const Divider(
-                                    height: 1,
-                                    color: Colors.white24,
-                                    indent: 15,
-                                    endIndent: 15,
-                                  ),
-                                ],
+                                      color: Colors.white, fontSize: 13),
+                                ),
+                                onTap: () {
+                                  context.read<ThemeProvider>().setMode(
+                                      selectedThemeMode == AppThemeMode.dark
+                                          ? AppThemeMode.light
+                                          : AppThemeMode.dark);
+                                },
+                                selected: true,
                               ),
-                            ),
-                            !showNfc
-                                ? SizedBox.shrink()
-                                : Services(
-                                    translate('more_screen.add_nfc'),
-                                    Icons.nfc,
-                                    SupportScreen(),
-                                    control: 3,
-                                  ),
-                            Services(
-                              translate('common.language'),
-                              Icons.language,
-                              ProfileScreen(),
-                              control: 4,
-                            ),
-                            features["resignation"] != "1"
-                                ? SizedBox.shrink()
-                                : Services(
-                                    translate('more_screen.resignation'),
-                                    Icons.group_remove_outlined,
-                                    ProfileScreen(),
-                                    control: 5,
-                                  ),
-                            Services(
-                              translate('more_screen.log_out'),
-                              Icons.logout,
-                              ProfileScreen(),
-                              control: 2,
-                            ),
-                          ],
+                              const Divider(
+                                height: 1,
+                                color: Colors.white24,
+                                indent: 15,
+                                endIndent: 15,
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    )),
+                  const ThemeSelector(),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                    child: Column(
+                      children: [
+                        ListTile(
+                          trailing: Switch(
+                            activeThumbColor: Colors.blue,
+                            value: getAnimation(),
+                            onChanged: (value) {
+                              final box = GetStorage();
+                              box.write('animation',
+                                  !(box.read("animation") ?? true));
+                            },
+                          ),
+                          dense: true,
+                          minLeadingWidth: 5,
+                          leading: Icon(
+                            Icons.animation,
+                            color: Colors.white,
+                          ),
+                          title: Text(
+                            translate('more_screen.animation'),
+                            style: TextStyle(color: Colors.white, fontSize: 13),
+                          ),
+                          onTap: () {
+                            final box = GetStorage();
+                            box.write(
+                                'animation', !(box.read("animation") ?? true));
+                          },
+                          selected: true,
+                        ),
+                        const Divider(
+                          height: 1,
+                          color: Colors.white24,
+                          indent: 15,
+                          endIndent: 15,
+                        ),
+                      ],
+                    ),
+                  ),
+                  (!showNfc || features["nfc-qr"] != "1")
+                      ? SizedBox.shrink()
+                      : Services(
+                          translate('more_screen.add_nfc'),
+                          Icons.nfc,
+                          SupportScreen(),
+                          control: 3,
+                        ),
+                  Services(
+                    translate('common.language'),
+                    Icons.language,
+                    ProfileScreen(),
+                    control: 4,
+                  ),
+                  features["resignation"] != "1"
+                      ? SizedBox.shrink()
+                      : Services(
+                          translate('more_screen.resignation'),
+                          Icons.group_remove_outlined,
+                          ProfileScreen(),
+                          control: 5,
+                        ),
+                  Services(
+                    translate('more_screen.log_out'),
+                    Icons.logout,
+                    ProfileScreen(),
+                    control: 2,
+                  ),
+                ],
+              ),
+            ),
+          )),
         ),
       ),
     );

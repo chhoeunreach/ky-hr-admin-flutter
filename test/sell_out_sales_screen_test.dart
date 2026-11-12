@@ -82,6 +82,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
     expect(find.text('Sales Reports (2)'), findsOneWidget);
+    expect(find.text('Product Name'), findsOneWidget);
+    expect(find.text('iPhone sample'), findsOneWidget);
+    expect(find.text('Sok Chea'), findsNothing);
     expect(find.text('INV-OLD'), findsNothing);
     expect(find.text('INV-MATERIAL'), findsNothing);
     await tester.enterText(find.byType(TextField), 'iPhone');
@@ -268,7 +271,7 @@ void main() {
               serviceType: service,
               customerPhone: '012345678',
               createdAt: today.toIso8601String(),
-              lines: [SellOutReportLine(qty: 1, unitPrice: 10)]),
+              lines: [SellOutReportLine(productName: 'Service product', qty: 1, unitPrice: 10)]),
           SellOutReport(
               invoiceNo: 'SERVICE-NO-PHONE',
               serviceType: service,
@@ -288,6 +291,8 @@ void main() {
           reportLoader: () async => serviceRecords,
         )));
         await tester.pumpAndSettle();
+        expect(find.text(reportLabels['product_name'] as String), findsOneWidget);
+        expect(find.text('Service product'), findsOneWidget);
         expect(
             find.text(
                 '${(reportLabels['service_reports'] as String).replaceAll('{service}', display)} (2)'),

@@ -47,6 +47,9 @@ String posTr(String key, [Map<String, String> args = const {}]) {
 String posMoney(num value, String symbol) =>
     NumberFormat.currency(symbol: symbol, decimalDigits: 2).format(value);
 String posServiceLabel(String type) => translate('home_screen.service_$type');
+// Keep the existing API service value separate from its translated label.
+String posServiceType(String type) =>
+    type == 'icloud_cus' ? 'iCloud Cus' : posServiceLabel(type);
 String posModuleName(String type) => type == 'dashboard'
     ? posTr('dashboard')
     : type == 'sell'
@@ -62,6 +65,7 @@ IconData posModuleIcon(String type) => switch (type) {
       'buy_in' => Icons.add_box_outlined,
       'more' => Icons.more_horiz,
       'icloud_cus' => Icons.cloud_outlined,
+      'sell_sim' => Icons.sim_card_outlined,
       _ => Icons.shopping_cart_outlined,
     };
 Color posModuleColor(String type) => switch (type) {
