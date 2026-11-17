@@ -3,10 +3,8 @@ import 'dart:io';
 
 import 'package:cnattendance/data/source/datastore/preferences.dart';
 import 'package:cnattendance/data/source/network/connect.dart';
-import 'package:cnattendance/data/source/network/model/about/Aboutresponse.dart';
 import 'package:cnattendance/data/source/network/model/complaintresponse/complaintresponse.dart';
 import 'package:cnattendance/data/source/network/model/complaintresponse/departmentresponse.dart';
-import 'package:cnattendance/data/source/network/model/warningresponse/warningresponse.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:flutter/material.dart';
 
@@ -90,7 +88,6 @@ class ComplaintRepository {
       if (response.statusCode == 200) {
         return (true, responseData["message"].toString());
       } else {
-        var errorMessage = responseData['message'];
         return (false, responseData["message"].toString());
       }
     } catch (e) {
@@ -123,7 +120,6 @@ class ComplaintRepository {
       if (response.statusCode == 200) {
         return (true, responseData["message"].toString());
       } else {
-        var errorMessage = responseData['message'];
         return (false, responseData["message"].toString());
       }
     } catch (e) {

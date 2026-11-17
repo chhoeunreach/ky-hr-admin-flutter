@@ -14,16 +14,16 @@ class EmployeeLeavesByDay {
 
   factory EmployeeLeavesByDay.fromJson(dynamic json) {
     return EmployeeLeavesByDay(
-      leaveId: json['leave_id'].toString() ?? "",
-      userId: json['user_id'].toString() ?? "",
-      userName: json['user_name'].toString() ?? "",
-      userAvatar: json['user_avatar'].toString() ?? "",
-      department: json['department'].toString() ?? "",
-      post: json['post'].toString() ?? "",
-      leaveDays: json['leave_days'].toString() ?? "",
-      leaveFrom: json['leave_from'].toString() ?? "",
-      leaveTo: json['leave_to'].toString() ?? "",
-      leaveStatus: json['leave_status'].toString() ?? "",
+      leaveId: json['leave_id']?.toString() ?? "",
+      userId: json['user_id']?.toString() ?? "",
+      userName: json['user_name']?.toString() ?? "",
+      userAvatar: json['user_avatar']?.toString() ?? "",
+      department: json['department']?.toString() ?? "",
+      post: json['post']?.toString() ?? "",
+      leaveDays: json['leave_days']?.toString() ?? "",
+      leaveFrom: json['leave_from']?.toString() ?? "",
+      leaveTo: json['leave_to']?.toString() ?? "",
+      leaveStatus: json['leave_status']?.toString() ?? "",
     );
   }
 

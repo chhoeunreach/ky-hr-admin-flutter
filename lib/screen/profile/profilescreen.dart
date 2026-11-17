@@ -19,6 +19,8 @@ class ProfileScreen extends StatefulWidget {
 
 class ProfileScreenState extends State<ProfileScreen> {
   var initalState = true;
+  Future<String>? _profileFuture;
+  String? _error;
 
   @override
   void didChangeDependencies() {
@@ -31,26 +33,29 @@ class ProfileScreenState extends State<ProfileScreen> {
 
   var isLoading = true;
 
-  Future<String> getProfileDetail() async {
+  Future<String> getProfileDetail() => _profileFuture ??=
+      _loadProfile().whenComplete(() => _profileFuture = null);
+
+  Future<String> _loadProfile() async {
     setState(() {
       isLoading = true;
+      _error = null;
     });
     try {
-      await Provider.of<ProfileProvider>(context, listen: false).getProfile();
-    } catch (e) {
-      return "loaded";
+      await context.read<ProfileProvider>().getProfile();
+    } catch (error) {
+      if (mounted) setState(() => _error = error.toString());
+    } finally {
+      if (mounted) setState(() => isLoading = false);
     }
-
-    setState(() {
-      isLoading = false;
-    });
-    return "loaded";
+    return 'loaded';
   }
 
   @override
   Widget build(BuildContext context) {
-    final userProfile =
-        Provider.of<ProfileProvider>(context, listen: false).profile;
+    final userProfile = context.watch<ProfileProvider>().profile;
+    final showIdCard = context
+        .select<DashboardProvider, bool>((p) => p.features['id-card'] == '1');
     return PremiumBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
@@ -59,7 +64,7 @@ class ProfileScreenState extends State<ProfileScreen> {
           elevation: 0,
           title: Text(translate('profile_screen.profile')),
           actions: [
-            if (context.watch<DashboardProvider>().features["id-card"] == "1")
+            if (showIdCard)
               IconButton(
                 tooltip: translate('dashboard_screen.view_my_card'),
                 onPressed: () {
@@ -79,10 +84,18 @@ class ProfileScreenState extends State<ProfileScreen> {
             physics: const AlwaysScrollableScrollPhysics(),
             child: Column(
               children: [
-                Heading(),
-                if (context.watch<DashboardProvider>().features["id-card"] ==
-                    "1")
-                  _buildMyCardButton(context),
+                if (isLoading) const LinearProgressIndicator(),
+                if (_error != null)
+                  Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(children: [
+                        Text(_error!),
+                        TextButton(
+                            onPressed: getProfileDetail,
+                            child: Text(translate('connection_error.retry'))),
+                      ])),
+                const Heading(),
+                if (showIdCard) _buildMyCardButton(context),
                 userProfile.post != ''
                     ? Container(
                         padding: const EdgeInsets.only(

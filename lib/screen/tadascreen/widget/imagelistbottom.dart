@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:gallery_image_viewer/gallery_image_viewer.dart';
 
 class ItemListBottom extends StatelessWidget{
-  List<Attachment> attachments;
+  final List<Attachment> attachments;
 
   ItemListBottom(this.attachments);
   @override

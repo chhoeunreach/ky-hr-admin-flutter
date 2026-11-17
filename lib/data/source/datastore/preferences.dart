@@ -382,4 +382,87 @@ class Preferences with ChangeNotifier {
     final prefs = await _sharedPrefs;
     return prefs.getBool(HARD_RESET_APP) ?? true;
   }
+
+  Future<String?> getHomeBannerUrl() async {
+    final prefs = await _sharedPrefs;
+    return prefs.getString('home_banner_image_url');
+  }
+
+  Future<void> saveHomeBannerUrl(String? url) async {
+    final prefs = await _sharedPrefs;
+    if (url == null || url.trim().isEmpty) {
+      await prefs.remove('home_banner_image_url');
+    } else {
+      await prefs.setString('home_banner_image_url', url.trim());
+    }
+    notifyListeners();
+  }
+
+  Future<String?> getHomeBannerLinkUrl() async {
+    final prefs = await _sharedPrefs;
+    return prefs.getString('home_banner_link_url');
+  }
+
+  Future<void> saveHomeBannerLinkUrl(String? url) async {
+    final prefs = await _sharedPrefs;
+    if (url == null || url.trim().isEmpty) {
+      await prefs.remove('home_banner_link_url');
+    } else {
+      await prefs.setString('home_banner_link_url', url.trim());
+    }
+    notifyListeners();
+  }
+
+  Future<String?> getHomeBannerTitle() async {
+    final prefs = await _sharedPrefs;
+    return prefs.getString('home_banner_title');
+  }
+
+  Future<void> saveHomeBannerTitle(String? title) async {
+    final prefs = await _sharedPrefs;
+    if (title == null || title.trim().isEmpty) {
+      await prefs.remove('home_banner_title');
+    } else {
+      await prefs.setString('home_banner_title', title.trim());
+    }
+    notifyListeners();
+  }
+
+  Future<void> resetHomeBanner() async {
+    final prefs = await _sharedPrefs;
+    await prefs.remove('home_banner_image_url');
+    await prefs.remove('home_banner_link_url');
+    await prefs.remove('home_banner_title');
+    notifyListeners();
+  }
+
+  Future<String> getHomeQuote() async {
+    final prefs = await _sharedPrefs;
+    return prefs.getString('home_quote_text') ??
+        'ការចូលរួមទាន់ពេលវេលា\nវេលា សេចក្តីទទួលខុសត្រូវ\nនិងកិត្តិយសជោគជ័យ';
+  }
+
+  Future<void> saveHomeQuote(String quote) async {
+    final prefs = await _sharedPrefs;
+    await prefs.setString('home_quote_text', quote.trim());
+    notifyListeners();
+  }
+
+  Future<bool> getHomeQuoteShow() async {
+    final prefs = await _sharedPrefs;
+    return prefs.getBool('home_quote_show') ?? true;
+  }
+
+  Future<void> saveHomeQuoteShow(bool show) async {
+    final prefs = await _sharedPrefs;
+    await prefs.setBool('home_quote_show', show);
+    notifyListeners();
+  }
+
+  Future<void> resetHomeQuote() async {
+    final prefs = await _sharedPrefs;
+    await prefs.remove('home_quote_text');
+    await prefs.setBool('home_quote_show', true);
+    notifyListeners();
+  }
 }

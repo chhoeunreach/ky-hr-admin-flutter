@@ -183,6 +183,13 @@ void main() {
 
     expect(find.text('Highlight'), findsOneWidget);
     expect(find.byType(Html), findsOneWidget);
+    expect(find.byType(BackButton), findsOneWidget);
+
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Highlight'), findsNothing);
+    expect(find.text('Late & Bonus'), findsOneWidget);
   });
 
   test('plain body strips markup for carousel snippets', () {

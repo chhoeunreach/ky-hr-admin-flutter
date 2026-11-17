@@ -5,7 +5,6 @@ import 'package:cnattendance/screen/projectscreen/commentscreen/widget/commentli
 import 'package:cnattendance/screen/projectscreen/commentscreen/widget/mentionbottomsheet.dart';
 import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_textfield_autocomplete/flutter_textfield_autocomplete.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 
 import 'package:get/get.dart';
@@ -13,8 +12,6 @@ import 'package:get/get.dart';
 class CommentScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    GlobalKey<TextFieldAutoCompleteState<String>> _textFieldAutoCompleteKey =
-        new GlobalKey();
     final model = Get.put(CommentScreenController());
     List<Member> value = Get.arguments['members'];
     return Container(

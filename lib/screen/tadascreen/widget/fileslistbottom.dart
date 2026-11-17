@@ -2,7 +2,7 @@ import 'package:cnattendance/model/attachment.dart';
 import 'package:flutter/material.dart';
 
 class FilesListBottom extends StatelessWidget {
-  List<Attachment> attachments;
+  final List<Attachment> attachments;
 
   FilesListBottom(this.attachments);
   @override

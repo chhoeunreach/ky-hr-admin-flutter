@@ -1,4 +1,3 @@
-import 'attachment.dart';
 
 class AdvanceSalary{
   int id;

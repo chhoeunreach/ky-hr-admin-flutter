@@ -109,7 +109,7 @@ class CreateComplainScreen extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                             ),
                             items:
-                                model.departments.value.map((DepartmentApi e) {
+                                model.departments.map((DepartmentApi e) {
                               return DropdownMenuItem(
                                 value: e.name,
                                 child: Padding(

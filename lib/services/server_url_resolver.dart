@@ -11,9 +11,19 @@ class ServerUrlResolver {
     http.Client? client,
     this.checkInterval = const Duration(seconds: 15),
     this.timeout = const Duration(seconds: 5),
+    this.healthyCacheTtl = Duration.zero,
   }) : _client = client ?? http.Client();
 
   static final shared = ServerUrlResolver();
+
+  /// How long a successful primary-server health check may be reused without
+  /// probing again. Zero preserves the strict "probe before every request"
+  /// contract (used by tests and callers that need it). The running app opts
+  /// into a short window to halve the round-trips on every screen, while still
+  /// re-checking often enough to fail over quickly. Writes are never replayed
+  /// against another server: a stale selection only causes that single request
+  /// to fail, and the next call re-resolves.
+  Duration healthyCacheTtl;
 
   /// Notified when the configured primary server and its backup are both
   /// unreachable, so the app can show a blocking "need to connect" alert.
@@ -61,15 +71,18 @@ class ServerUrlResolver {
     if (primary == null) return configuredUrl;
     await seedDefaults(primary, prefs);
     final cached = _cached[primary];
-    if (!forceCheck &&
-        cached != null &&
-        cached.url != primary &&
-        DateTime.now().difference(cached.checkedAt) < checkInterval) {
-      // A cached backup can go offline too. Verify it before using it again.
-      if (_isBackend(await _probe(cached.url))) {
-        return cached.url;
+    if (!forceCheck && cached != null) {
+      final age = DateTime.now().difference(cached.checkedAt);
+      if (cached.url == primary) {
+        // Reuse a recently verified healthy primary without another probe.
+        if (age < healthyCacheTtl) return primary;
+      } else if (age < checkInterval) {
+        // A cached backup can go offline too. Verify it before using it again.
+        if (_isBackend(await _probe(cached.url))) {
+          return cached.url;
+        }
+        _cached.remove(primary);
       }
-      _cached.remove(primary);
     }
     final selected =
         await (_pending[primary] ??= _resolve(primary, prefs).whenComplete(() {
@@ -121,14 +134,11 @@ class ServerUrlResolver {
         onAllServersUnreachable?.call(primary, null);
       }
     }
-    // Recheck a healthy primary before each business request so a recent
-    // successful check cannot hide a newly refused connection. While using
-    // backup, briefly cache the selection to avoid repeatedly probing an outage.
-    if (selected != primary) {
-      _cached[primary] = (url: selected, checkedAt: DateTime.now());
-    } else {
-      _cached.remove(primary);
-    }
+    // Remember the last verified selection. A healthy primary is reused for
+    // [healthyCacheTtl]; a backup is briefly cached to avoid repeatedly probing
+    // an outage. After the window expires the next call probes again, so a
+    // recovered primary is picked up and a dead one is still detected.
+    _cached[primary] = (url: selected, checkedAt: DateTime.now());
     return selected;
   }
 

@@ -73,20 +73,12 @@ class Data {
     data['task_id'] = this.task_id;
     data['task_name'] = this.task_name;
     data['task_progress_percent'] = this.task_progress_percent;
-    if (this.assigned_member != null) {
-      data['assigned_member'] =
-          this.assigned_member.map((v) => v.toJson()).toList();
-    }
-    if (this.attachments != null) {
+    data['assigned_member'] =
+        this.assigned_member.map((v) => v.toJson()).toList();
       data['attachments'] = this.attachments.map((v) => v.toJson()).toList();
-    }
-    if (this.checklists != null) {
       data['checklists'] = this.checklists.map((v) => v.toJson()).toList();
-    }
-    if (this.task_comments != null) {
       data['task_comments'] =
-          this.task_comments.map((v) => v.toJson()).toList();
-    }
-    return data;
+        this.task_comments.map((v) => v.toJson()).toList();
+      return data;
   }
 }

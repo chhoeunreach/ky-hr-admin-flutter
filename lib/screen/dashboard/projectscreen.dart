@@ -75,10 +75,10 @@ class ProjectScreen extends StatelessWidget {
                 animation: true,
                 animationDuration: 1200,
                 lineWidth: 15.0,
-                percent: (model.overview.value['progress']! / 100),
+                percent: (model.overview['progress']! / 100),
                 center: Obx(
                   () => Text(
-                    model.overview.value['progress'].toString() + "%",
+                    model.overview['progress'].toString() + "%",
                     style: new TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 20.0,
@@ -87,11 +87,11 @@ class ProjectScreen extends StatelessWidget {
                 ),
                 circularStrokeCap: CircularStrokeCap.round,
                 backgroundColor: Colors.white12,
-                progressColor: (model.overview.value['progress']! / 100) <= .25
+                progressColor: (model.overview['progress']! / 100) <= .25
                     ? HexColor("#C1E1C1")
-                    : (model.overview.value['progress']! / 100) <= .50
+                    : (model.overview['progress']! / 100) <= .50
                         ? HexColor("#C9CC3F")
-                        : (model.overview.value['progress']! / 100) <= .75
+                        : (model.overview['progress']! / 100) <= .75
                             ? HexColor("#93C572")
                             : HexColor("#3cb116"),
               ),
@@ -115,9 +115,9 @@ class ProjectScreen extends StatelessWidget {
                   ),
                   Obx(
                     () => Text(
-                        model.overview.value['project_completed'].toString() +
+                        model.overview['project_completed'].toString() +
                             " / " +
-                            model.overview.value['total_project'].toString() +
+                            model.overview['total_project'].toString() +
                             " ${translate('project_screen.task_completed')}",
                         style: TextStyle(
                             color: Colors.white,
@@ -553,7 +553,7 @@ class ProjectScreen extends StatelessWidget {
                                   ),
                                   Spacer(),
                                   Text(
-                                    item.status ?? "",
+                                    item.status,
                                     style: TextStyle(
                                         color: Colors.white, fontSize: 15),
                                   ),

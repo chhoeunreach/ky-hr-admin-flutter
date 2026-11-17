@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
+import 'package:cnattendance/utils/recent_chat_activity.dart';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -51,6 +53,9 @@ class _ChatListState extends State<ChatList> {
   _ChatFilter _selectedFilter = _ChatFilter.all;
   String _query = '';
   String _currentUsername = '';
+  Future<void>? _teamFuture;
+  Future<void>? _groupsFuture;
+  int _recentChatsGeneration = 0;
 
   @override
   void didChangeDependencies() {
@@ -64,21 +69,34 @@ class _ChatListState extends State<ChatList> {
 
   @override
   void dispose() {
+    _recentChatsGeneration++;
     for (final subscription in _chatSubscriptions) {
-      subscription.cancel();
+      unawaited(subscription.cancel());
     }
+    _chatSubscriptions.clear();
     _searchController.dispose();
     super.dispose();
   }
 
-  Future<void> _loadTeam() async {
+  Future<void> _loadTeam() =>
+      _teamFuture ??= _refreshTeam().whenComplete(() => _teamFuture = null);
+
+  void _showLoadError(Object error) {
+    if (mounted)
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error.toString())));
+  }
+
+  Future<void> _refreshTeam() async {
     setState(() {
       _isLoading = true;
     });
     try {
       await Provider.of<TeamSheetProvider>(context, listen: false)
           .getChatContacts();
-      await _listenRecentChats();
+      if (mounted) await _listenRecentChats();
+    } catch (error) {
+      _showLoadError(error);
     } finally {
       if (!mounted) {
         return;
@@ -89,7 +107,10 @@ class _ChatListState extends State<ChatList> {
     }
   }
 
-  Future<void> _loadGroups() async {
+  Future<void> _loadGroups() => _groupsFuture ??=
+      _refreshGroups().whenComplete(() => _groupsFuture = null);
+
+  Future<void> _refreshGroups() async {
     await _groupController.loadGroups();
     if (mounted) {
       setState(() {});
@@ -97,19 +118,27 @@ class _ChatListState extends State<ChatList> {
   }
 
   Future<void> _listenRecentChats() async {
+    final requestGeneration = _recentChatsGeneration;
     final username = (await _preferences.getUsername()).trim();
-    if (username.isEmpty || username == _currentUsername) {
+    if (!mounted ||
+        requestGeneration != _recentChatsGeneration ||
+        username == _currentUsername) {
       return;
     }
 
-    for (final subscription in _chatSubscriptions) {
-      await subscription.cancel();
-    }
+    final generation = ++_recentChatsGeneration;
+    final previousSubscriptions = List.of(_chatSubscriptions);
     _chatSubscriptions.clear();
+    await Future.wait(
+        previousSubscriptions.map((subscription) => subscription.cancel()));
+    if (!mounted || generation != _recentChatsGeneration) return;
     _sentChatAt.clear();
     _receivedChatAt.clear();
-    _latestChatAt.clear();
-    _currentUsername = username;
+    _currentUsername = '';
+    if (username.isEmpty) {
+      _mergeRecentChats();
+      return;
+    }
 
     final messages = FirebaseFirestore.instance
         .collection('messages')
@@ -119,17 +148,25 @@ class _ChatListState extends State<ChatList> {
         );
 
     _chatSubscriptions.add(
-      messages
-          .where('sender', isEqualTo: username)
-          .snapshots()
-          .listen((snapshot) => _updateRecentChats(snapshot, isSent: true)),
+      messages.where('sender', isEqualTo: username).snapshots().listen(
+          (snapshot) {
+        if (mounted && generation == _recentChatsGeneration)
+          _updateRecentChats(snapshot, isSent: true);
+      }, onError: (Object error) {
+        if (generation == _recentChatsGeneration) _showLoadError(error);
+      }),
     );
     _chatSubscriptions.add(
-      messages
-          .where('reciever', isEqualTo: username)
-          .snapshots()
-          .listen((snapshot) => _updateRecentChats(snapshot, isSent: false)),
+      messages.where('reciever', isEqualTo: username).snapshots().listen(
+          (snapshot) {
+        if (mounted && generation == _recentChatsGeneration)
+          _updateRecentChats(snapshot, isSent: false);
+      }, onError: (Object error) {
+        if (generation == _recentChatsGeneration) _showLoadError(error);
+      }),
     );
+    _currentUsername = username;
+    _mergeRecentChats();
   }
 
   void _updateRecentChats(
@@ -137,24 +174,7 @@ class _ChatListState extends State<ChatList> {
     required bool isSent,
   }) {
     final target = isSent ? _sentChatAt : _receivedChatAt;
-    target.clear();
-
-    for (final doc in snapshot.docs) {
-      final data = doc.data();
-      final otherUsername =
-          (data[isSent ? 'reciever' : 'sender'] ?? '').toString().trim();
-      final timestamp = data['date'];
-
-      if (otherUsername.isEmpty || timestamp is! Timestamp) {
-        continue;
-      }
-
-      final messageDate = timestamp.toDate();
-      final existing = target[otherUsername];
-      if (existing == null || messageDate.isAfter(existing)) {
-        target[otherUsername] = messageDate;
-      }
-    }
+    applyRecentChatSnapshot(target, snapshot, isSent: isSent);
 
     _mergeRecentChats();
   }
@@ -171,9 +191,7 @@ class _ChatListState extends State<ChatList> {
       });
     }
 
-    if (!mounted) {
-      return;
-    }
+    if (!mounted || mapEquals(_latestChatAt, merged)) return;
 
     setState(() {
       _latestChatAt

@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 472 1024" width="100%" height="100%" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <!-- Dark Mode Main Background Vertical Gradient -->
+    <linearGradient id="darkBgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#050B1A" />
+      <stop offset="12%" stop-color="#091636" />
+      <stop offset="26%" stop-color="#0E2150" />
+      <stop offset="42%" stop-color="#0B193D" />
+      <stop offset="56%" stop-color="#07112B" />
+      <stop offset="72%" stop-color="#050C1F" />
+      <stop offset="88%" stop-color="#030714" />
+      <stop offset="100%" stop-color="#02040A" />
+    </linearGradient>
+
+    <!-- Top Graceful Wave Ribbon Gradients (Dark Neon) -->
+    <linearGradient id="darkTopWaveGrad1" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.35" />
+      <stop offset="40%" stop-color="#2563EB" stop-opacity="0.20" />
+      <stop offset="100%" stop-color="#050B1A" stop-opacity="0.0" />
+    </linearGradient>
+
+    <linearGradient id="darkTopWaveGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00E5FF" stop-opacity="0.40" />
+      <stop offset="60%" stop-color="#6366F1" stop-opacity="0.20" />
+      <stop offset="100%" stop-color="#050B1A" stop-opacity="0.0" />
+    </linearGradient>
+
+    <!-- Central U-Curve Dip Ribbon Gradients (Dark Neon Glow) -->
+    <linearGradient id="darkMidWaveAura" x1="0%" y1="50%" x2="100%" y2="50%">
+      <stop offset="0%" stop-color="#6366F1" stop-opacity="0.30" />
+      <stop offset="35%" stop-color="#0066FF" stop-opacity="0.35" />
+      <stop offset="70%" stop-color="#00E5FF" stop-opacity="0.40" />
+      <stop offset="100%" stop-color="#38BDF8" stop-opacity="0.35" />
+    </linearGradient>
+
+    <linearGradient id="darkMidWaveFill" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1E3A8A" stop-opacity="0.45" />
+      <stop offset="35%" stop-color="#0F172A" stop-opacity="0.55" />
+      <stop offset="75%" stop-color="#020617" stop-opacity="0.65" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.0" />
+    </linearGradient>
+
+    <linearGradient id="darkMidWaveCrest" x1="0%" y1="50%" x2="100%" y2="50%">
+      <stop offset="0%" stop-color="#818CF8" stop-opacity="0.60" />
+      <stop offset="30%" stop-color="#38BDF8" stop-opacity="0.85" />
+      <stop offset="50%" stop-color="#00F5FF" stop-opacity="0.95" />
+      <stop offset="80%" stop-color="#38BDF8" stop-opacity="0.85" />
+      <stop offset="100%" stop-color="#00D4FF" stop-opacity="0.70" />
+    </linearGradient>
+
+    <linearGradient id="darkSoftGlowRadial" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#0077F4" stop-opacity="0.22" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.0" />
+    </linearGradient>
+  </defs>
+
+  <!-- 1. Base Gradient Canvas -->
+  <rect width="472" height="1024" fill="url(#darkBgGrad)" />
+
+  <!-- 2. Top Decorative Wave Ribbon -->
+  <path d="M 472 80 C 400 95, 320 145, 230 140 C 140 135, 60 175, 0 195 L 0 80 C 60 70, 150 75, 240 85 C 330 95, 410 75, 472 65 Z" fill="url(#darkTopWaveGrad1)" />
+  <path d="M 472 80 C 400 95, 320 145, 230 140 C 140 135, 60 175, 0 195" fill="none" stroke="#38BDF8" stroke-width="1.2" stroke-opacity="0.45" />
+  <path d="M 472 105 C 390 125, 300 160, 200 155 C 100 150, 40 185, 0 205" fill="none" stroke="url(#darkTopWaveGrad2)" stroke-width="1.8" />
+
+  <!-- 3. Central Ambient Wave Aura -->
+  <ellipse cx="236" cy="540" rx="240" ry="160" fill="url(#darkSoftGlowRadial)" />
+
+  <!-- 4. Lower Sweeping Wave (Translucent under-ribbon) -->
+  <path d="M -20 520 C 80 545, 170 610, 250 610 C 330 610, 400 560, 492 485 L 492 560 C 410 630, 320 670, 240 665 C 160 660, 70 600, -20 575 Z" fill="url(#darkMidWaveAura)" opacity="0.55" />
+
+  <!-- 5. Main U-Curve Ribbon Body -->
+  <path d="M -10 500 C 70 525, 150 598, 240 599 C 330 600, 410 545, 482 485 L 482 660 C 390 710, 290 720, 200 700 C 110 680, 40 640, -10 620 Z" fill="url(#darkMidWaveFill)" />
+
+  <!-- 6. Secondary Violet Glow on left flank -->
+  <path d="M -10 505 C 50 525, 110 575, 170 590 C 130 595, 60 575, -10 540 Z" fill="#6366F1" opacity="0.25" />
+
+  <!-- 7. Crisp High-Precision Wave Crest Highlight Lines -->
+  <!-- Main neon reflection line -->
+  <path d="M -10 500 C 70 526, 150 598, 240 599 C 330 600, 410 545, 482 485" fill="none" stroke="url(#darkMidWaveCrest)" stroke-width="2.2" stroke-linecap="round" />
+  <!-- Delicate luminous echo line just above crest -->
+  <path d="M -10 496 C 70 522, 150 594, 240 595 C 330 596, 410 541, 482 481" fill="none" stroke="#FFFFFF" stroke-width="0.8" stroke-opacity="0.55" stroke-linecap="round" />
+  <!-- Underglow cyan edge -->
+  <path d="M 40 540 C 120 590, 190 616, 260 615 C 330 614, 390 580, 482 505" fill="none" stroke="#00E5FF" stroke-width="1.4" stroke-opacity="0.40" />
+</svg>

@@ -166,7 +166,7 @@ class _HomeHighlightCarouselState extends State<HomeHighlightCarousel>
   Widget _buildBody(EnterpriseTheme theme) {
     if (widget.loading) {
       return SizedBox(
-        height: 132,
+        height: 110,
         child: Center(
           child: SizedBox(
             width: 20,
@@ -179,7 +179,7 @@ class _HomeHighlightCarouselState extends State<HomeHighlightCarousel>
     }
     if (widget.error != null) {
       return SizedBox(
-        height: 132,
+        height: 110,
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -214,7 +214,7 @@ class _HomeHighlightCarouselState extends State<HomeHighlightCarousel>
     }
     if (widget.items.isEmpty) {
       return SizedBox(
-        height: 120,
+        height: 110,
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -239,7 +239,7 @@ class _HomeHighlightCarouselState extends State<HomeHighlightCarousel>
       mainAxisSize: MainAxisSize.min,
       children: [
         SizedBox(
-          height: 142,
+          height: 124,
           child: PageView.builder(
             controller: _pageController,
             itemCount: widget.items.length,
@@ -294,34 +294,40 @@ class _HighlightSlide extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final date = item.startsAt ?? item.createdAt;
+    final hasImage = item.imageUrl != null;
+    final text = hasImage ? item.snippet : item.plainBody;
     return Material(
       color: theme.text.withValues(alpha: .035),
-      borderRadius: BorderRadius.circular(11),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: theme.text.withValues(alpha: .06)),
+      ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(11),
+        borderRadius: BorderRadius.circular(12),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(9),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(9),
-                child: item.imageUrl != null
-                    ? CachedNetworkImage(
-                        imageUrl: item.imageUrl!,
-                        width: 92,
-                        height: double.infinity,
-                        fit: BoxFit.cover,
-                        placeholder: (_, __) => Container(
-                          width: 92,
-                          color: theme.text.withValues(alpha: .06),
-                        ),
-                        errorWidget: (_, __, ___) => _fallbackImage(),
-                      )
-                    : _fallbackImage(),
-              ),
-              const SizedBox(width: 10),
+              if (hasImage) ...[
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: CachedNetworkImage(
+                    imageUrl: item.imageUrl!,
+                    width: 70,
+                    height: 70,
+                    fit: BoxFit.cover,
+                    placeholder: (_, __) => Container(
+                      width: 70,
+                      height: 70,
+                      color: theme.text.withValues(alpha: .06),
+                    ),
+                    errorWidget: (_, __, ___) => _fallbackImage(),
+                  ),
+                ),
+                const SizedBox(width: 10),
+              ],
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -333,16 +339,16 @@ class _HighlightSlide extends StatelessWidget {
                       style: TextStyle(
                         color: theme.text,
                         fontSize: 12.5,
-                        height: 1.3,
+                        height: 1.25,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-                    if (item.snippet.isNotEmpty) ...[
-                      const SizedBox(height: 4),
+                    if (text.isNotEmpty) ...[
+                      const SizedBox(height: 3),
                       Expanded(
                         child: Text(
-                          item.snippet,
-                          maxLines: 2,
+                          text,
+                          maxLines: hasImage ? 2 : 3,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             color: theme.mutedText,
@@ -353,7 +359,8 @@ class _HighlightSlide extends StatelessWidget {
                       ),
                     ] else
                       const Spacer(),
-                    if (date != null)
+                    if (date != null) ...[
+                      const SizedBox(height: 2),
                       Text(
                         DateFormat('MMM d').format(date.toLocal()),
                         style: TextStyle(
@@ -362,11 +369,13 @@ class _HighlightSlide extends StatelessWidget {
                           fontWeight: FontWeight.w700,
                         ),
                       ),
+                    ],
                   ],
                 ),
               ),
+              const SizedBox(width: 2),
               Icon(Icons.chevron_right_rounded,
-                  color: theme.mutedText, size: 18),
+                  color: theme.mutedText, size: 16),
             ],
           ),
         ),
@@ -376,9 +385,10 @@ class _HighlightSlide extends StatelessWidget {
 
   Widget _fallbackImage() {
     return Container(
-      width: 92,
-      height: double.infinity,
+      width: 70,
+      height: 70,
       decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10),
         gradient: LinearGradient(
           colors: [
             theme.secondary.withValues(alpha: .22),
@@ -388,7 +398,7 @@ class _HighlightSlide extends StatelessWidget {
           end: Alignment.bottomRight,
         ),
       ),
-      child: Icon(Icons.auto_awesome_rounded, color: theme.secondary, size: 24),
+      child: Icon(Icons.auto_awesome_rounded, color: theme.secondary, size: 22),
     );
   }
 }

@@ -17,11 +17,20 @@ import 'package:video_player/video_player.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:cnattendance/provider/dashboardprovider.dart';
 import 'community_api.dart';
+import 'community_media_picker.dart';
 import 'community_media.dart';
+import 'feed_cache.dart';
+import 'feed_performance.dart';
 
 class SocialFeedScreen extends StatefulWidget {
-  const SocialFeedScreen({super.key, this.api});
+  const SocialFeedScreen(
+      {super.key,
+      this.api,
+      this.onImmersiveChanged,
+      this.showBackButton = true});
+  final bool showBackButton;
   final CommunityApi? api;
+  final ValueChanged<bool>? onImmersiveChanged;
   @override
   State<SocialFeedScreen> createState() => _SocialFeedScreenState();
 }
@@ -31,28 +40,164 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
   final List<Map<String, dynamic>> _posts = [];
   final List<Map<String, dynamic>> _storyGroups = [];
   final Set<int> _busyPosts = {};
+  final ScrollController _scrollController = ScrollController();
+  Timer? _scrollSaveTimer;
   bool _loading = false;
   bool _storiesLoading = false;
+  bool _immersive = false;
+  double _lastScrollOffset = 0;
   String? _error;
   int _page = 0;
   bool _hasMore = true;
+  String? _nextCursor;
   int _generation = 0;
   int _storiesGeneration = 0;
+  String _filter = 'All Posts';
+  String _profileAvatar = '';
+  int _userId = 0;
+  bool _cacheRestored = false;
+  bool _scrollRestored = false;
+
+  List<Map<String, dynamic>> get _visiblePosts => _posts.where((post) {
+        final category =
+            '${post['category'] ?? post['post_type'] ?? ''}'.toLowerCase();
+        return switch (_filter) {
+          'Team' => post['visibility'] == 'department' ||
+              post['visibility'] == 'users' ||
+              post['visibility'] == 'employees' ||
+              category == 'team',
+          'Announcement' =>
+            post['is_announcement'] == true || category == 'announcement',
+          'Event' => post['event'] != null ||
+              post['event_id'] != null ||
+              category == 'event',
+          _ => true,
+        };
+      }).toList();
+
+  Future<void> _loadProfile() async {
+    final user = await Preferences().getUser();
+    if (!mounted) return;
+    setState(() {
+      _profileAvatar = user.avatar;
+      _userId = user.id;
+    });
+    await _restoreCachedFeed();
+    await _restoreScrollOffset();
+  }
+
+  String get _scrollKey => 'social_feed_scroll_v1_$_userId';
+
+  Future<void> _restoreCachedFeed() async {
+    if (_cacheRestored || _posts.isNotEmpty || _userId <= 0) return;
+    _cacheRestored = true;
+    final cached = await FeedCache.read(_userId);
+    if (!mounted || cached == null || _posts.isNotEmpty) return;
+    setState(() {
+      _posts.addAll(cached['data'] as List<Map<String, dynamic>>);
+      _nextCursor = cached['next_cursor'] as String?;
+      _hasMore = cached['has_more'] == true;
+    });
+    await _restoreScrollOffset();
+  }
+
+  Future<void> _restoreScrollOffset() async {
+    if (_scrollRestored || _userId <= 0) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final offset = prefs.getDouble(_scrollKey) ?? 0;
+      if (!mounted) return;
+      if (offset <= 0) {
+        _scrollRestored = true;
+        return;
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || _scrollRestored || !_scrollController.hasClients) {
+          return;
+        }
+        final position = _scrollController.position;
+        if (position.maxScrollExtent <= 0) return;
+        _scrollRestored = true;
+        _scrollController
+            .jumpTo(offset.clamp(0, position.maxScrollExtent).toDouble());
+      });
+    } catch (_) {
+      _scrollRestored = true;
+    }
+  }
+
+  void _scheduleScrollSave() {
+    if (_userId <= 0) return;
+    _scrollSaveTimer?.cancel();
+    _scrollSaveTimer = Timer(const Duration(milliseconds: 700), () {
+      unawaited(_saveScrollOffset());
+    });
+  }
+
+  Future<void> _saveScrollOffset() async {
+    if (_userId <= 0) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setDouble(_scrollKey, _lastScrollOffset);
+    } catch (_) {}
+  }
 
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_handleScroll);
+    FeedPerformanceTracker.instance.startScrollTrace();
     _load(reset: true);
     _loadStories();
+    _loadProfile();
   }
 
   @override
   void dispose() {
     _generation++;
     _storiesGeneration++;
+    _scrollSaveTimer?.cancel();
+    unawaited(_saveScrollOffset());
+    _scrollController
+      ..removeListener(_handleScroll)
+      ..dispose();
+    if (_immersive) {
+      WidgetsBinding.instance
+          .addPostFrameCallback((_) => widget.onImmersiveChanged?.call(false));
+    }
     FeedVideoAutoplayManager.instance.pauseAll();
+    FeedPerformanceTracker.instance.stopScrollTrace();
     _api.dispose();
     super.dispose();
+  }
+
+  void _handleScroll() {
+    if (!_scrollController.hasClients) return;
+    final offset = _scrollController.offset;
+    final delta = offset - _lastScrollOffset;
+    _lastScrollOffset = offset;
+    _scheduleScrollSave();
+    if (offset <= 0) {
+      _setImmersive(false);
+    } else if (delta > 8 && offset > 48) {
+      _setImmersive(true);
+    } else if (delta < -8) {
+      _setImmersive(false);
+    }
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - 900 &&
+        _hasMore &&
+        !_loading &&
+        _posts.isNotEmpty &&
+        _error == null) {
+      _load();
+    }
+  }
+
+  void _setImmersive(bool value) {
+    if (_immersive == value) return;
+    setState(() => _immersive = value);
+    widget.onImmersiveChanged?.call(value);
   }
 
   bool _allows(String ability) =>
@@ -92,21 +237,32 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
 
   Future<void> _composeStory() async {
     FeedVideoAutoplayManager.instance.pauseAll();
-    final changed = await Navigator.push<bool>(context,
-        MaterialPageRoute(builder: (_) => const SocialStoryComposer()));
+    final changed = await Navigator.of(context, rootNavigator: true).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => const SocialStoryComposer(autofocusCaption: true),
+      ),
+    );
     if (changed == true && mounted) await _loadStories();
   }
 
   Future<void> _load({bool reset = false}) async {
     if (_loading && !reset) return;
     final generation = ++_generation;
+    if (reset) {
+      _nextCursor = null;
+      FeedPerformanceTracker.instance.startFeedLoad();
+    }
     setState(() {
       _loading = true;
       _error = null;
     });
     try {
       final page = reset ? 1 : _page + 1;
-      final response = await _api.request('GET', 'social-feed?page=$page');
+      final cursor = reset ? null : _nextCursor;
+      final path = cursor == null
+          ? 'social-feed?page=$page'
+          : 'social-feed?cursor=${Uri.encodeQueryComponent(cursor)}&per_page=12';
+      final response = await _api.request('GET', path);
       if (!mounted || generation != _generation) return;
       setState(() {
         if (reset) _posts.clear();
@@ -115,21 +271,59 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
             .map((item) => Map<String, dynamic>.from(item as Map))
             .where((post) => existing.add(post['id'])));
         _page = page;
-        _hasMore = response['next_page_url'] != null;
+        _nextCursor = response['next_cursor'] as String?;
+        _hasMore = _nextCursor != null ||
+            response['has_more'] == true ||
+            response['next_page_url'] != null;
       });
+      if (reset) {
+        FeedPerformanceTracker.instance.markFeedLoaded();
+        if (_posts.isNotEmpty) {
+          FeedPerformanceTracker.instance.markFeedFirstPost();
+        }
+        if (_userId > 0) unawaited(FeedCache.write(_userId, response));
+        await _restoreScrollOffset();
+      }
     } catch (error) {
-      if (mounted && generation == _generation)
-        setState(() => _error = communityError(error));
+      if (mounted && generation == _generation) {
+        if (reset && _posts.isEmpty) {
+          await _restoreCachedFeed();
+        }
+        if (_posts.isEmpty) {
+          setState(() => _error = communityError(error));
+        }
+      }
     } finally {
       if (mounted && generation == _generation)
         setState(() => _loading = false);
     }
   }
 
-  Future<void> _compose({Map<String, dynamic>? post}) async {
+  Future<void> _compose(
+      {Map<String, dynamic>? post, String initialType = 'text'}) async {
     FeedVideoAutoplayManager.instance.pauseAll();
-    final changed = await Navigator.push<bool>(context,
-        MaterialPageRoute(builder: (_) => SocialPostComposer(post: post)));
+    var initialFiles = <PlatformFile>[];
+    if (post == null && (initialType == 'image' || initialType == 'video')) {
+      try {
+        initialFiles = await pickCommunityMedia(context, initialType,
+            multiple: initialType == 'image');
+        if (!mounted || initialFiles.isEmpty) return;
+      } catch (error) {
+        if (mounted)
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text(communityError(error))));
+        return;
+      }
+    }
+    final changed = await Navigator.of(context, rootNavigator: true).push<bool>(
+        MaterialPageRoute(
+            builder: (_) => SocialPostComposer(
+                post: post,
+                initialType: initialType,
+                initialFiles: initialFiles,
+                autofocusBody: post == null &&
+                    initialType == 'text' &&
+                    initialFiles.isEmpty)));
     if (changed == true && mounted) await _load(reset: true);
   }
 
@@ -137,6 +331,17 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
       {Map<String, dynamic>? data}) async {
     final id = post['id'] as int;
     if (_busyPosts.contains(id)) return;
+    Map<String, dynamic>? rollback;
+    if (action == 'reaction') {
+      final index = _posts.indexWhere((item) => item['id'] == id);
+      if (index >= 0) {
+        rollback = _posts[index];
+        setState(() {
+          _posts[index] = communityOptimisticReaction(
+              rollback!, data?['reaction'] as String?);
+        });
+      }
+    }
     setState(() => _busyPosts.add(id));
     try {
       final response = await _api.request(
@@ -164,6 +369,12 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
         await _load(reset: true);
       }
     } catch (error) {
+      if (mounted && rollback != null) {
+        setState(() {
+          final index = _posts.indexWhere((item) => item['id'] == id);
+          if (index >= 0) _posts[index] = rollback!;
+        });
+      }
       if (mounted)
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(communityError(error))));
@@ -343,23 +554,126 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
 
   Future<void> _comments(Map<String, dynamic> post) async {
     FeedVideoAutoplayManager.instance.pauseAll();
-    await Navigator.push(
-        context,
-        MaterialPageRoute(
-            builder: (_) => SocialCommentsScreen(
-                postId: post['id'] as int,
-                reactionsCount: (post['reactions_count'] as num?)?.toInt() ?? 0,
-                commentsCount: (post['comments_count'] as num?)?.toInt() ?? 0,
-                sharesCount: (post['shares_count'] as num?)?.toInt() ?? 0)));
+    await Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
+        builder: (_) => SocialCommentsScreen(
+            postId: post['id'] as int,
+            reactionsCount: (post['reactions_count'] as num?)?.toInt() ?? 0,
+            commentsCount: (post['comments_count'] as num?)?.toInt() ?? 0,
+            sharesCount: (post['shares_count'] as num?)?.toInt() ?? 0)));
     if (mounted) await _load(reset: true);
   }
 
-  Widget _postCard(Map<String, dynamic> post) {
+  Future<void> _sendPost(Map<String, dynamic> post) async {
+    final text = [
+      '${post['body'] ?? ''}'.trim(),
+      if (post['media_url'] != null) '${post['media_url']}',
+      for (final media in post['media'] is List ? post['media'] as List : [])
+        if (media is Map && media['media_url'] != null) '${media['media_url']}',
+    ].where((part) => part.isNotEmpty).join('\n');
+    final box = context.findRenderObject() as RenderBox?;
+    try {
+      await Share.share(text.isEmpty ? communityText('Social Feed') : text,
+          sharePositionOrigin:
+              box == null ? null : box.localToGlobal(Offset.zero) & box.size);
+    } catch (error) {
+      if (mounted)
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(communityError(error))));
+    }
+  }
+
+  Widget _composerCard() => Card(
+      elevation: 0,
+      margin: const EdgeInsets.fromLTRB(12, 14, 12, 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(children: [
+            CircleAvatar(
+                radius: 23,
+                backgroundImage: _profileAvatar.isEmpty
+                    ? null
+                    : communityAvatarImage(_profileAvatar),
+                child: _profileAvatar.isEmpty
+                    ? const Icon(Icons.person_outline)
+                    : null),
+            const SizedBox(width: 10),
+            Expanded(
+                child: Material(
+                    color: Theme.of(context).colorScheme.surfaceContainerLow,
+                    borderRadius: BorderRadius.circular(28),
+                    child: InkWell(
+                        borderRadius: BorderRadius.circular(28),
+                        onTap: () => _compose(),
+                        child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 15),
+                            child: Text(communityText("What's on your mind?"),
+                                style: TextStyle(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant)))))),
+            IconButton(
+                tooltip: communityText('Photo'),
+                onPressed: () => _compose(initialType: 'image'),
+                icon:
+                    const Icon(Icons.image_outlined, color: Color(0xff087bff))),
+            IconButton(
+                tooltip: communityText('Video'),
+                onPressed: () => _compose(initialType: 'video'),
+                icon: const Icon(Icons.videocam_outlined,
+                    color: Color(0xff087bff))),
+          ])));
+
+  Widget _filters() => SizedBox(
+      height: 58,
+      child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.fromLTRB(12, 2, 12, 10),
+          itemCount: 4,
+          separatorBuilder: (_, __) => const SizedBox(width: 8),
+          itemBuilder: (context, index) {
+            const labels = ['All Posts', 'Team', 'Announcement', 'Event'];
+            const icons = [
+              Icons.layers_outlined,
+              Icons.groups_outlined,
+              Icons.campaign_outlined,
+              Icons.calendar_today_outlined
+            ];
+            final selected = _filter == labels[index];
+            return ChoiceChip(
+                selected: selected,
+                showCheckmark: false,
+                avatar: Icon(icons[index],
+                    size: 20,
+                    color: selected
+                        ? Colors.white
+                        : Theme.of(context).colorScheme.onSurfaceVariant),
+                label: Text(communityText(labels[index])),
+                labelStyle: TextStyle(
+                    color: selected
+                        ? Colors.white
+                        : Theme.of(context).colorScheme.onSurface,
+                    fontWeight: FontWeight.w600),
+                selectedColor: const Color(0xff087bff),
+                backgroundColor: Theme.of(context).colorScheme.surface,
+                side: BorderSide.none,
+                shape: const StadiumBorder(),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                onSelected: (_) => setState(() => _filter = labels[index]));
+          }));
+
+  Widget _postCard(Map<String, dynamic> post, {int? feedPosition}) {
     final busy = _busyPosts.contains(post['id']);
     final author = post['author'] as Map?;
     final avatar = '${author?['avatar'] ?? ''}';
     return Card(
-        margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        elevation: 0,
+        color: Theme.of(context).colorScheme.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        clipBehavior: Clip.antiAlias,
         child: Padding(
           padding: const EdgeInsets.all(14),
           child:
@@ -367,7 +681,7 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
             Row(children: [
               CircleAvatar(
                   backgroundImage:
-                      avatar.isNotEmpty ? NetworkImage(avatar) : null,
+                      avatar.isNotEmpty ? communityAvatarImage(avatar) : null,
                   child:
                       avatar.isEmpty ? const Icon(Icons.person_outline) : null),
               SizedBox(width: 10),
@@ -380,7 +694,7 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
                           child: Text(
                               '${author?['name'] ?? communityText('Employee')}',
                               style: const TextStyle(
-                                  fontWeight: FontWeight.bold))),
+                                  fontSize: 16, fontWeight: FontWeight.w800))),
                       if (post['is_announcement'] == true)
                         const Padding(
                             padding: EdgeInsets.only(left: 6),
@@ -472,48 +786,84 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
                         ]),
             ]),
             SizedBox(height: 12),
-            _PostContent(post: post),
+            _PostContent(post: post, feedPosition: feedPosition),
             if (post['poll'] is Map) _PollWidget(post: post, api: _api),
             SizedBox(height: 12),
-            Wrap(spacing: 12, runSpacing: 4, children: [
+            Row(children: [
+              Expanded(
+                  child: InkWell(
+                      onTap: (post['reactions_count'] ?? 0) > 0
+                          ? () => _showReactions(post)
+                          : null,
+                      child: Row(children: [
+                        for (final reaction in communityReactions.keys
+                            .where((key) =>
+                                ((post['reactions'] as Map?)?[key] as num? ??
+                                    0) >
+                                0)
+                            .take(3))
+                          Padding(
+                              padding: const EdgeInsets.only(right: 2),
+                              child: Text(communityReactions[reaction]!,
+                                  style: const TextStyle(fontSize: 18))),
+                        Flexible(
+                            child: Text(
+                                '${post['reactions_count'] ?? 0} ${communityText('reactions')}',
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context).textTheme.bodySmall)),
+                      ]))),
               InkWell(
-                  onTap: (post['reactions_count'] ?? 0) > 0
-                      ? () => _showReactions(post)
-                      : null,
+                  onTap: () => _comments(post),
                   child: Text(
-                      '${post['reactions_count'] ?? 0} ${communityText('reactions')}')),
-              Text(
-                  '${post['comments_count'] ?? 0} ${communityText('comments')}'),
-              Text('${post['shares_count'] ?? 0} ${communityText('shares')}'),
+                      '${post['comments_count'] ?? 0} ${communityText('comments')}',
+                      style: Theme.of(context).textTheme.bodySmall)),
+              const SizedBox(width: 8),
+              Text('${post['shares_count'] ?? 0} ${communityText('shares')}',
+                  style: Theme.of(context).textTheme.bodySmall),
             ]),
-            if (post['reactions'] is Map &&
-                (post['reactions'] as Map).isNotEmpty)
-              Padding(
-                  padding: EdgeInsets.only(top: 8),
-                  child: Wrap(spacing: 8, children: [
-                    for (final entry in (post['reactions'] as Map).entries)
-                      Text(
-                          '${communityReactions[entry.key] ?? entry.key} ${entry.value}'),
-                  ])),
-            Divider(),
-            Wrap(spacing: 8, runSpacing: 4, children: [
-              if (_allows('social_feed.react'))
-                CommunityReactionButton(
-                  reaction: post['my_reaction'] as String?,
-                  enabled: !busy,
-                  onChanged: (reaction) =>
-                      _action(post, 'reaction', data: {'reaction': reaction}),
-                ),
-              TextButton.icon(
-                  onPressed: busy ? null : () => _comments(post),
-                  icon: Icon(Icons.chat_bubble_outline, size: 18),
-                  label: Text(communityText('Comments'))),
-              if (_allows('social_feed.share'))
+            const Divider(height: 24),
+            LayoutBuilder(builder: (context, constraints) {
+              final actions = <Widget>[
+                if (_allows('social_feed.react'))
+                  CommunityReactionButton(
+                    reaction: post['my_reaction'] as String?,
+                    enabled: !busy,
+                    onChanged: (reaction) =>
+                        _action(post, 'reaction', data: {'reaction': reaction}),
+                  ),
                 TextButton.icon(
-                    onPressed: busy ? null : () => _share(post),
-                    icon: Icon(Icons.share_outlined, size: 18),
-                    label: Text(communityText('Share'))),
-            ]),
+                    onPressed: busy ? null : () => _comments(post),
+                    icon:
+                        const Icon(Icons.chat_bubble_outline_rounded, size: 20),
+                    label: Text(communityText('Comment'))),
+                if (_allows('social_feed.share')) ...[
+                  TextButton.icon(
+                      onPressed: busy ? null : () => _share(post),
+                      icon: const Icon(Icons.reply_rounded, size: 22),
+                      label: Text(communityText('Share'))),
+                  TextButton.icon(
+                      onPressed: busy ? null : () => _sendPost(post),
+                      icon: const Icon(Icons.send_outlined, size: 20),
+                      label: Text(communityText('Send'))),
+                ],
+              ];
+              return Theme(
+                  data: Theme.of(context).copyWith(
+                      textButtonTheme: TextButtonThemeData(
+                          style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 4, vertical: 10),
+                              foregroundColor: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                              textStyle: const TextStyle(
+                                  fontSize: 12, fontWeight: FontWeight.w600)))),
+                  child: constraints.maxWidth < 340
+                      ? Wrap(spacing: 4, children: actions)
+                      : Row(children: [
+                          for (final action in actions) Expanded(child: action)
+                        ]));
+            }),
             if (busy) LinearProgressIndicator(),
           ]),
         ));
@@ -526,124 +876,149 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
         _allowsStory('social_feed.stories.view', 'social_feed.view');
     final canCreateStories =
         _allowsStory('social_feed.stories.create', 'social_feed.create');
+    final visiblePosts = _visiblePosts;
     return Scaffold(
-      appBar: AppBar(title: Text(communityText('Social Feed')), actions: [
-        if (features['social_feed.search'] == '1')
-          IconButton(
-              tooltip: communityText('Search'),
-              onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) => const SocialSearchScreen())),
-              icon: const Icon(Icons.search)),
-        if (features['social_feed.notifications'] == '1')
-          IconButton(
-              tooltip: communityText('Notifications'),
-              onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) => const SocialNotificationsScreen())),
-              icon: const Icon(Icons.notifications_none)),
-        if (features['social_feed.save'] == '1')
-          IconButton(
-              tooltip: communityText('Saved posts'),
-              onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) => const SocialSavedPostsScreen())),
-              icon: const Icon(Icons.bookmark_outline)),
-        IconButton(
-            onPressed: _loading ? null : () => _load(reset: true),
-            icon: const Icon(Icons.refresh)),
-      ]),
+      backgroundColor: Theme.of(context).brightness == Brightness.dark
+          ? const Color(0xff111827)
+          : const Color(0xffeef4ff),
+      appBar: _immersive
+          ? null
+          : AppBar(
+              automaticallyImplyLeading: widget.showBackButton,
+              foregroundColor: Colors.white,
+              backgroundColor: const Color(0xff0869ed),
+              elevation: 0,
+              flexibleSpace: const DecoratedBox(
+                  decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                          colors: [Color(0xff078aff), Color(0xff034acb)]))),
+              title: Text(communityText('Social Feed'),
+                  style: const TextStyle(fontWeight: FontWeight.w800)),
+              actions: [
+                if (features['social_feed.search'] == '1')
+                  IconButton(
+                      tooltip: communityText('Search'),
+                      onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const SocialSearchScreen())),
+                      icon: const Icon(Icons.search)),
+                if (features['social_feed.notifications'] == '1')
+                  IconButton(
+                      tooltip: communityText('Notifications'),
+                      onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) =>
+                                  const SocialNotificationsScreen())),
+                      icon: const Icon(Icons.notifications_none)),
+                if (features['social_feed.save'] == '1')
+                  IconButton(
+                      tooltip: communityText('Saved posts'),
+                      onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const SocialSavedPostsScreen())),
+                      icon: const Icon(Icons.bookmark_outline)),
+                IconButton(
+                    onPressed: _loading ? null : () => _load(reset: true),
+                    icon: const Icon(Icons.refresh)),
+              ],
+            ),
       floatingActionButton: null,
-      body: features['social_feed.view'] != '1'
-          ? Center(
-              child: Text(communityText(
-                  'You do not have permission to view the feed.')))
-          : RefreshIndicator(
-              onRefresh: () => _load(reset: true),
-              child: ListView(
-                physics: AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.only(top: 2, bottom: 100),
-                children: [
-                  if (features['social_feed.create'] == '1')
-                    Card(
-                        margin: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8),
-                        child: InkWell(
-                            borderRadius: BorderRadius.circular(14),
-                            onTap: () => _compose(),
-                            child: Padding(
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 12),
-                                child: Row(children: [
-                                  const CircleAvatar(
-                                      child: Icon(Icons.person_outline)),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                      child: Text(
-                                          communityText("What's on your mind?"),
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodyLarge)),
-                                  IconButton(
-                                      onPressed: () => _compose(),
-                                      icon: const Icon(Icons.image_outlined,
-                                          color: Colors.blue)),
-                                  IconButton(
-                                      onPressed: () => _compose(),
-                                      icon: const Icon(Icons.videocam_outlined,
-                                          color: Colors.blue)),
-                                ])))),
-                  if (canViewStories)
-                    SocialStoriesStrip(
-                        groups: _storyGroups,
-                        loading: _storiesLoading,
-                        error: null,
-                        canCreate: canCreateStories,
-                        onCreate: _composeStory,
-                        onRetry: _loadStories,
-                        onOpen: (index) {
-                          FeedVideoAutoplayManager.instance.pauseAll();
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (_) => SocialStoryViewer(
-                                      groups: _storyGroups,
-                                      initialGroup: index)));
-                        }),
-                  Padding(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      child: Text(communityText('Connect with your team'),
-                          style: Theme.of(context).textTheme.titleLarge)),
-                  if (_error != null)
-                    Padding(
-                        padding: EdgeInsets.all(16),
-                        child: Column(children: [
-                          Text(_error!),
+      body: SafeArea(
+        top: _immersive,
+        bottom: false,
+        child: features['social_feed.view'] != '1'
+            ? Center(
+                child: Text(communityText(
+                    'You do not have permission to view the feed.')))
+            : RefreshIndicator(
+                onRefresh: () => _load(reset: true),
+                child: CustomScrollView(
+                  key: const PageStorageKey('social-feed-scroll'),
+                  controller: _scrollController,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  cacheExtent: 600,
+                  slivers: [
+                    SliverPadding(
+                      padding: const EdgeInsets.only(top: 2),
+                      sliver: SliverList.list(children: [
+                        if (features['social_feed.create'] == '1')
+                          _composerCard(),
+                        if (canViewStories)
+                          SocialStoriesStrip(
+                              groups: _storyGroups,
+                              loading: _storiesLoading,
+                              error: null,
+                              canCreate: canCreateStories,
+                              onCreate: _composeStory,
+                              onRetry: _loadStories,
+                              onOpen: (index) async {
+                                FeedVideoAutoplayManager.instance.pauseAll();
+                                await Navigator.of(context, rootNavigator: true)
+                                    .push(MaterialPageRoute(
+                                        builder: (_) => SocialStoryViewer(
+                                            groups: _storyGroups,
+                                            initialGroup: index)));
+                                if (mounted) await _loadStories();
+                              }),
+                        Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 8),
+                            child: Text(communityText('Connect with your team'),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleLarge
+                                    ?.copyWith(fontWeight: FontWeight.w800))),
+                        _filters(),
+                        if (_error != null)
+                          Padding(
+                              padding: EdgeInsets.all(16),
+                              child: Column(children: [
+                                Text(_error!),
+                                TextButton(
+                                    onPressed: () =>
+                                        _load(reset: _posts.isEmpty),
+                                    child: Text(communityText('Try again')))
+                              ])),
+                        if (visiblePosts.isEmpty && !_loading && _error == null)
+                          Padding(
+                              padding: EdgeInsets.all(40),
+                              child: Text(
+                                  communityText(_filter == 'All Posts'
+                                      ? 'No posts yet. Start a conversation with your team.'
+                                      : 'No posts in this category yet.'),
+                                  textAlign: TextAlign.center)),
+                      ]),
+                    ),
+                    SliverList.builder(
+                      itemCount: visiblePosts.length,
+                      itemBuilder: (context, index) {
+                        final post = visiblePosts[index];
+                        return KeyedSubtree(
+                          key: ValueKey('post-${post['id']}'),
+                          child: _postCard(post, feedPosition: index),
+                        );
+                      },
+                    ),
+                    SliverToBoxAdapter(
+                      child: Column(children: [
+                        if (_loading)
+                          Padding(
+                              padding: EdgeInsets.all(24),
+                              child:
+                                  Center(child: CircularProgressIndicator())),
+                        if (_hasMore && !_loading && _posts.isNotEmpty)
                           TextButton(
-                              onPressed: () => _load(reset: _posts.isEmpty),
-                              child: Text(communityText('Try again')))
-                        ])),
-                  if (_posts.isEmpty && !_loading && _error == null)
-                    Padding(
-                        padding: EdgeInsets.all(40),
-                        child: Text(
-                            'No posts yet. Start a conversation with your team.',
-                            textAlign: TextAlign.center)),
-                  ..._posts.map(_postCard),
-                  if (_loading)
-                    Padding(
-                        padding: EdgeInsets.all(24),
-                        child: Center(child: CircularProgressIndicator())),
-                  if (_hasMore && !_loading && _posts.isNotEmpty)
-                    TextButton(
-                        onPressed: _load,
-                        child: Text(communityText('Load more posts'))),
-                ],
-              )),
+                              onPressed: _load,
+                              child: Text(communityText('Load more posts'))),
+                      ]),
+                    ),
+                    const SliverToBoxAdapter(child: SizedBox(height: 100)),
+                  ],
+                )),
+      ),
     );
   }
 }
@@ -672,7 +1047,7 @@ class SocialStoriesStrip extends StatelessWidget {
   Widget build(BuildContext context) {
     if (loading && groups.isEmpty) {
       return const SizedBox(
-          height: 164, child: Center(child: CircularProgressIndicator()));
+          height: 148, child: Center(child: CircularProgressIndicator()));
     }
     if (error != null && groups.isEmpty) {
       return Padding(
@@ -684,12 +1059,12 @@ class SocialStoriesStrip extends StatelessWidget {
     }
     if (!canCreate && groups.isEmpty) return const SizedBox.shrink();
     return SizedBox(
-        height: 164,
+        height: 148,
         child: ListView.separated(
-            padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
+            padding: const EdgeInsets.fromLTRB(12, 2, 12, 4),
             scrollDirection: Axis.horizontal,
             itemCount: groups.length + (canCreate ? 1 : 0),
-            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            separatorBuilder: (_, __) => const SizedBox(width: 7),
             itemBuilder: (context, index) {
               if (canCreate && index == 0) {
                 return _CreateStoryCard(onTap: onCreate);
@@ -709,11 +1084,13 @@ class _CreateStoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-        width: 92,
+        width: 100,
         child: Card(
             clipBehavior: Clip.antiAlias,
             margin: EdgeInsets.zero,
-            elevation: 1,
+            elevation: 0,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             child: InkWell(
                 onTap: onTap,
                 child: Column(children: [
@@ -734,17 +1111,18 @@ class _CreateStoryCard extends StatelessWidget {
                                     color: Color(0xff1769e8),
                                     shape: BoxShape.circle),
                                 child: const Padding(
-                                    padding: EdgeInsets.all(8),
+                                    padding: EdgeInsets.all(7),
                                     child: Icon(Icons.add_rounded,
-                                        color: Colors.white, size: 23))))),
+                                        color: Colors.white, size: 20))))),
                   ),
                   Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 7),
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 6, horizontal: 4),
                       child: Text(communityText('Create story'),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                              fontWeight: FontWeight.w800, fontSize: 12)))
+                              fontWeight: FontWeight.w800, fontSize: 10.5)))
                 ]))));
   }
 }
@@ -796,13 +1174,13 @@ class _StoryCard extends StatelessWidget {
     final avatar = '${author['avatar'] ?? ''}';
     final seen = group['has_unseen'] != true;
     return SizedBox(
-        width: 92,
+        width: 100,
         child: Card(
             clipBehavior: Clip.antiAlias,
             margin: EdgeInsets.zero,
             elevation: 1,
             shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
                 side: BorderSide(
                     color: seen ? Colors.transparent : const Color(0xff1769e8),
                     width: seen ? 0 : 2)),
@@ -813,6 +1191,9 @@ class _StoryCard extends StatelessWidget {
                     CachedNetworkImage(
                         imageUrl: uri.toString(),
                         fit: BoxFit.cover,
+                        memCacheWidth: 300,
+                        maxWidthDiskCache: 600,
+                        fadeInDuration: const Duration(milliseconds: 120),
                         errorWidget: (_, __, ___) => const ColoredBox(
                             color: Color(0xffdbe7fa),
                             child: Icon(Icons.image_not_supported_outlined)))
@@ -835,14 +1216,14 @@ class _StoryCard extends StatelessWidget {
                             child: type == 'text' && caption.isNotEmpty
                                 ? Padding(
                                     padding:
-                                        const EdgeInsets.fromLTRB(8, 42, 8, 30),
+                                        const EdgeInsets.fromLTRB(7, 32, 7, 24),
                                     child: Text(caption,
-                                        maxLines: 7,
+                                        maxLines: 5,
                                         overflow: TextOverflow.ellipsis,
                                         textAlign: TextAlign.center,
                                         style: const TextStyle(
                                             color: Colors.white,
-                                            fontSize: 13,
+                                            fontSize: 11.5,
                                             height: 1.2,
                                             fontWeight: FontWeight.w800,
                                             shadows: [
@@ -850,31 +1231,26 @@ class _StoryCard extends StatelessWidget {
                                                   blurRadius: 4,
                                                   color: Colors.black54)
                                             ])))
-                                : Icon(
-                                    type == 'video'
-                                        ? Icons.play_circle_fill_rounded
-                                        : Icons.auto_awesome_rounded,
-                                    color: Colors.white,
-                                    size: 38))),
+                                : const SizedBox.shrink())),
                   if (type == 'video') ...[
                     const Center(
                         child: Icon(Icons.play_circle_fill_rounded,
-                            color: Colors.white, size: 38)),
+                            color: Colors.white, size: 30)),
                     if (duration != null)
                       Positioned(
-                          top: 8,
-                          right: 7,
+                          top: 40,
+                          right: 6,
                           child: DecoratedBox(
                               decoration: BoxDecoration(
                                   color: Colors.black.withValues(alpha: .7),
-                                  borderRadius: BorderRadius.circular(9)),
+                                  borderRadius: BorderRadius.circular(8)),
                               child: Padding(
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 6, vertical: 3),
+                                      horizontal: 5, vertical: 2),
                                   child: Text(duration,
                                       style: const TextStyle(
                                           color: Colors.white,
-                                          fontSize: 10,
+                                          fontSize: 9,
                                           fontWeight: FontWeight.w800)))))
                   ],
                   const DecoratedBox(
@@ -887,8 +1263,8 @@ class _StoryCard extends StatelessWidget {
                         Color(0xaa000000)
                       ]))),
                   Positioned(
-                      top: 8,
-                      left: 8,
+                      top: 7,
+                      left: 7,
                       child: Container(
                           padding: const EdgeInsets.all(2),
                           decoration: BoxDecoration(
@@ -898,26 +1274,25 @@ class _StoryCard extends StatelessWidget {
                               shape: BoxShape.circle),
                           child: CircleAvatar(
                               radius: 14,
-                              backgroundImage: avatar.isNotEmpty
-                                  ? NetworkImage(avatar)
-                                  : null,
+                              backgroundImage:
+                                  communityAvatarImage(avatar, pixels: 84),
                               child: avatar.isEmpty
-                                  ? const Icon(Icons.person, size: 18)
+                                  ? const Icon(Icons.person, size: 15)
                                   : null))),
                   Positioned(
-                      left: 8,
-                      right: 8,
-                      bottom: 7,
+                      left: 7,
+                      right: 7,
+                      bottom: 6,
                       child: Text(
                           group['is_mine'] == true
                               ? communityText('Your story')
                               : '${author['name'] ?? communityText('Employee')}',
-                          maxLines: 2,
+                          maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.w800,
-                              fontSize: 12,
+                              fontSize: 11,
                               shadows: [
                                 Shadow(blurRadius: 3, color: Colors.black)
                               ])))
@@ -927,9 +1302,10 @@ class _StoryCard extends StatelessWidget {
 
 class SocialStoryViewer extends StatefulWidget {
   const SocialStoryViewer(
-      {super.key, required this.groups, this.initialGroup = 0});
+      {super.key, required this.groups, this.initialGroup = 0, this.api});
   final List<Map<String, dynamic>> groups;
   final int initialGroup;
+  final CommunityApi? api;
 
   @override
   State<SocialStoryViewer> createState() => _SocialStoryViewerState();
@@ -937,16 +1313,25 @@ class SocialStoryViewer extends StatefulWidget {
 
 class _SocialStoryViewerState extends State<SocialStoryViewer> {
   late final CommunityApi _api;
+  late final bool _ownsApi;
   late final PageController _pages;
   final List<Map<String, dynamic>> _items = [];
+  final Set<String> _viewedStories = {};
+  final Map<int, Duration> _videoDurations = {};
+  final ValueNotifier<double> _progress = ValueNotifier(0);
   int _index = 0;
   Timer? _progressTimer;
-  double _progress = 0;
+  bool _paused = false;
+  bool _awaitingVideo = false;
+  String? _burstEmoji;
+  int _burstSerial = 0;
+  final CommunityVideoMuteController _mute = CommunityVideoMuteController();
 
   @override
   void initState() {
     super.initState();
-    _api = CommunityApi();
+    _ownsApi = widget.api == null;
+    _api = widget.api ?? CommunityApi();
     for (var groupIndex = 0; groupIndex < widget.groups.length; groupIndex++) {
       final group = widget.groups[groupIndex];
       final author = Map<String, dynamic>.from(group['author'] as Map? ?? {});
@@ -978,6 +1363,7 @@ class _SocialStoryViewerState extends State<SocialStoryViewer> {
   Future<void> _markViewed(Map<String, dynamic> item) async {
     final id = (item['story'] as Map)['id'];
     if (id == null) return;
+    if (!_viewedStories.add('$id')) return;
     try {
       await _api.request('POST', 'social-stories/$id/view');
     } catch (_) {}
@@ -992,32 +1378,163 @@ class _SocialStoryViewerState extends State<SocialStoryViewer> {
     return const Duration(seconds: 6);
   }
 
-  void _startProgress() {
+  void _startProgress({bool reset = true, bool? awaitVideo}) {
     _progressTimer?.cancel();
-    _progress = 0;
+    if (reset) _progress.value = 0;
+    _paused = false;
+    FeedVideoAutoplayManager.instance.resumeActive();
     if (_items.isEmpty) return;
     final story = _items[_index]['story'] as Map<String, dynamic>;
-    final totalMs = _storyDuration(story).inMilliseconds;
+    _awaitingVideo =
+        awaitVideo ?? (reset && '${story['media_type']}' == 'video');
+    final duration = _videoDurations[_index] ?? _storyDuration(story);
+    final totalMs = duration.inMilliseconds.clamp(1000, 300000).toInt();
     _progressTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
-      if (!mounted) return;
-      final next = _progress + 100 / totalMs;
+      if (!mounted || _paused || _awaitingVideo) return;
+      final next = _progress.value + 100 / totalMs;
       if (next < 1) {
-        setState(() => _progress = next);
+        _progress.value = next;
         return;
       }
       timer.cancel();
-      if (_index < _items.length - 1) {
-        _pages.nextPage(
-            duration: const Duration(milliseconds: 260),
-            curve: Curves.easeOutCubic);
-      } else {
-        Navigator.maybePop(context);
+      _nextStory();
+    });
+  }
+
+  void _pauseProgress() {
+    if (_paused || _items.isEmpty) return;
+    _progressTimer?.cancel();
+    FeedVideoAutoplayManager.instance.pauseActive();
+    setState(() => _paused = true);
+  }
+
+  void _resumeProgress() {
+    if (!_paused || _items.isEmpty) return;
+    FeedVideoAutoplayManager.instance.resumeActive();
+    _startProgress(reset: false);
+  }
+
+  /// Uses the real video length instead of the server hint so video stories
+  /// end exactly when the video does.
+  void _onStoryVideoDuration(int index, Duration duration) {
+    if (!mounted || duration <= Duration.zero) return;
+    if (_videoDurations[index] == duration) return;
+    _videoDurations[index] = duration;
+    if (index != _index || _paused) return;
+    _startProgress(reset: false, awaitVideo: _awaitingVideo);
+  }
+
+  /// Keeps the story progress bar in sync when the native video is paused or
+  /// resumed by its own play control.
+  void _onStoryPlaybackChanged(int index, bool playing) {
+    if (!mounted || index != _index) return;
+    if (playing) {
+      _awaitingVideo = false;
+      _resumeProgress();
+    } else if (!_paused && !_awaitingVideo) {
+      _pauseProgress();
+    }
+  }
+
+  void _nextStory() {
+    if (_index >= _items.length - 1) {
+      _progressTimer?.cancel();
+      Navigator.maybePop(context);
+      return;
+    }
+    _pages.nextPage(
+        duration: const Duration(milliseconds: 260),
+        curve: Curves.easeOutCubic);
+  }
+
+  void _previousStory() {
+    if (_index <= 0) {
+      _progress.value = 0;
+      _startProgress();
+      return;
+    }
+    _pages.previousPage(
+        duration: const Duration(milliseconds: 260),
+        curve: Curves.easeOutCubic);
+  }
+
+  Future<void> _react(String reaction) async {
+    if (_items.isEmpty) return;
+    final story = _items[_index]['story'] as Map<String, dynamic>;
+    if (story['can_react'] != true || story['id'] == null) return;
+    final previous = story['my_reaction'] as String?;
+    final next = previous == reaction ? null : reaction;
+    final oldReactions = Map<String, dynamic>.from(
+        story['reactions'] is Map ? story['reactions'] as Map : {});
+    final oldCount = (story['reactions_count'] as num?)?.toInt() ?? 0;
+    HapticFeedback.mediumImpact();
+    setState(() {
+      final reactions = Map<String, dynamic>.from(oldReactions);
+      if (previous != null) {
+        final remaining = ((reactions[previous] as num?)?.toInt() ?? 1) - 1;
+        if (remaining <= 0)
+          reactions.remove(previous);
+        else
+          reactions[previous] = remaining;
+      }
+      if (next != null)
+        reactions[next] = ((reactions[next] as num?)?.toInt() ?? 0) + 1;
+      story['reactions'] = reactions;
+      story['my_reaction'] = next;
+      story['reactions_count'] =
+          oldCount + (next != null ? 1 : 0) - (previous != null ? 1 : 0);
+      if (next != null) {
+        _burstEmoji = communityReactions[next];
+        _burstSerial++;
       }
     });
+    try {
+      final response = await _api.request(
+          'PUT', 'social-stories/${story['id']}/reaction',
+          data: {'reaction': next});
+      if (!mounted) return;
+      final data = response['data'];
+      if (data is Map) {
+        final updated = Map<String, dynamic>.from(data);
+        setState(() {
+          if (updated.containsKey('my_reaction'))
+            story['my_reaction'] = updated['my_reaction'];
+          if (updated.containsKey('reactions'))
+            story['reactions'] = updated['reactions'];
+          if (updated.containsKey('reactions_count'))
+            story['reactions_count'] = updated['reactions_count'];
+        });
+      }
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        story['reactions'] = oldReactions;
+        story['reactions_count'] = oldCount;
+        story['my_reaction'] = previous;
+      });
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(communityError(error))));
+    }
+  }
+
+  Future<void> _showReactions() async {
+    if (_items.isEmpty) return;
+    final story = _items[_index]['story'] as Map<String, dynamic>;
+    final id = story['id'];
+    if (id == null) return;
+    final wasPaused = _paused;
+    _pauseProgress();
+    await showModalBottomSheet<void>(
+        context: context,
+        showDragHandle: true,
+        builder: (_) => _StoryReactionsSheet(api: _api, storyId: id));
+    if (mounted && !wasPaused) _resumeProgress();
   }
 
   Future<void> _deleteCurrent() async {
     final story = _items[_index]['story'] as Map<String, dynamic>;
+    final wasPaused = _paused;
+    _pauseProgress();
     final confirmed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
@@ -1031,12 +1548,17 @@ class _SocialStoryViewerState extends State<SocialStoryViewer> {
                       onPressed: () => Navigator.pop(context, true),
                       child: Text(communityText('Delete')))
                 ]));
-    if (confirmed != true || !mounted) return;
+    if (!mounted) return;
+    if (confirmed != true) {
+      if (!wasPaused) _resumeProgress();
+      return;
+    }
     try {
       await _api.request('DELETE', 'social-stories/${story['id']}');
       if (mounted) Navigator.pop(context, true);
     } catch (error) {
       if (mounted) {
+        if (!wasPaused) _resumeProgress();
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(communityError(error))));
       }
@@ -1046,12 +1568,14 @@ class _SocialStoryViewerState extends State<SocialStoryViewer> {
   @override
   void dispose() {
     _progressTimer?.cancel();
+    _progress.dispose();
+    _mute.dispose();
     _pages.dispose();
-    _api.dispose();
+    if (_ownsApi) _api.dispose();
     super.dispose();
   }
 
-  Widget _storyMedia(Map<String, dynamic> story) {
+  Widget _storyMedia(Map<String, dynamic> story, int index) {
     final type = '${story['media_type'] ?? 'text'}';
     final url = '${story['media_url'] ?? ''}';
     if (type == 'text') {
@@ -1075,6 +1599,11 @@ class _SocialStoryViewerState extends State<SocialStoryViewer> {
     }
     if (type == 'image') {
       final uri = communityMediaUri(type, url);
+      final cacheWidth = ((MediaQuery.maybeSizeOf(context)?.width ?? 720) *
+              (MediaQuery.maybeDevicePixelRatioOf(context) ?? 2))
+          .round()
+          .clamp(720, 1600)
+          .toInt();
       return uri == null
           ? Center(
               child: Text(communityText('This media link is unavailable.'),
@@ -1082,6 +1611,9 @@ class _SocialStoryViewerState extends State<SocialStoryViewer> {
           : CachedNetworkImage(
               imageUrl: uri.toString(),
               fit: BoxFit.contain,
+              memCacheWidth: cacheWidth,
+              maxWidthDiskCache: 1600,
+              fadeInDuration: const Duration(milliseconds: 150),
               placeholder: (_, __) => const Center(
                   child: CircularProgressIndicator(color: Colors.white)),
               errorWidget: (_, __, ___) => const Center(
@@ -1095,7 +1627,192 @@ class _SocialStoryViewerState extends State<SocialStoryViewer> {
             playbackUrl: story['playback_url'] as String?,
             thumbnailUrl: '${story['thumbnail_url'] ?? ''}',
             durationSeconds: story['duration_seconds'],
-            aspectRatio: story['aspect_ratio']));
+            aspectRatio: story['aspect_ratio'],
+            autoPlay: true,
+            useVideoCache: false,
+            feedPosition: index,
+            muteController: _mute,
+            showMuteControl: false,
+            loopVideo: false,
+            rememberPlayback: false,
+            videoTapEnabled: false,
+            onVideoDuration: (duration) =>
+                _onStoryVideoDuration(index, duration),
+            onPlayStateChanged: (playing) =>
+                _onStoryPlaybackChanged(index, playing)));
+  }
+
+  Widget _progressBars() => ValueListenableBuilder<double>(
+      valueListenable: _progress,
+      builder: (context, progress, _) => Row(
+          children: List.generate(
+              _items.length,
+              (index) => Expanded(
+                  child: Container(
+                      height: 3,
+                      margin: const EdgeInsets.symmetric(horizontal: 2),
+                      clipBehavior: Clip.antiAlias,
+                      decoration: BoxDecoration(
+                          color: Colors.white24,
+                          borderRadius: BorderRadius.circular(4)),
+                      child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: FractionallySizedBox(
+                              widthFactor: index < _index
+                                  ? 1
+                                  : index == _index
+                                      ? progress.clamp(0, 1).toDouble()
+                                      : 0,
+                              child:
+                                  const ColoredBox(color: Colors.white))))))));
+
+  Widget _topOverlay(Map author, Map<String, dynamic> story) => GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {},
+      child: DecoratedBox(
+          decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.black54, Colors.transparent])),
+          child: SafeArea(
+              bottom: false,
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+                    child: _progressBars()),
+                Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 0, 6, 10),
+                    child: Row(children: [
+                      CircleAvatar(
+                          radius: 18,
+                          backgroundColor: Colors.white24,
+                          backgroundImage:
+                              '${author['avatar'] ?? ''}'.isNotEmpty
+                                  ? communityAvatarImage('${author['avatar']}')
+                                  : null,
+                          child: '${author['avatar'] ?? ''}'.isEmpty
+                              ? const Icon(Icons.person,
+                                  size: 20, color: Colors.white)
+                              : null),
+                      const SizedBox(width: 9),
+                      Expanded(
+                          child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                            Text(
+                                story['is_mine'] == true
+                                    ? communityText('Your story')
+                                    : '${author['name'] ?? communityText('Employee')}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700)),
+                            if (_paused)
+                              Text(communityText('Paused'),
+                                  style: const TextStyle(
+                                      color: Colors.white70, fontSize: 11))
+                          ])),
+                      if (story['media_type'] == 'video')
+                        ListenableBuilder(
+                            listenable: _mute,
+                            builder: (context, _) => IconButton(
+                                key: const ValueKey('story-sound'),
+                                tooltip: _mute.muted
+                                    ? communityText('Unmute')
+                                    : communityText('Mute'),
+                                onPressed: _mute.toggle,
+                                icon: Icon(
+                                    _mute.muted
+                                        ? Icons.volume_off_rounded
+                                        : Icons.volume_up_rounded,
+                                    color: Colors.white))),
+                      if (story['can_delete'] == true)
+                        IconButton(
+                            tooltip: communityText('Delete story'),
+                            onPressed: _deleteCurrent,
+                            icon: const Icon(Icons.delete_outline_rounded,
+                                color: Colors.white)),
+                      IconButton(
+                          tooltip: communityText('Close'),
+                          onPressed: () => Navigator.maybePop(context),
+                          icon: const Icon(Icons.close_rounded,
+                              color: Colors.white))
+                    ]))
+              ]))));
+
+  Widget _reactionBar(Map<String, dynamic> story) {
+    final selected = story['my_reaction'] as String?;
+    return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+        decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: .45),
+            borderRadius: BorderRadius.circular(34),
+            border: Border.all(color: Colors.white24)),
+        child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+          for (final entry in communityReactions.entries)
+            Semantics(
+                label: entry.key,
+                button: true,
+                selected: selected == entry.key,
+                child: InkWell(
+                    key: ValueKey('story-reaction-${entry.key}'),
+                    borderRadius: BorderRadius.circular(26),
+                    onTap: () => _react(entry.key),
+                    child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 160),
+                        padding: EdgeInsets.all(selected == entry.key ? 7 : 5),
+                        decoration: BoxDecoration(
+                            color: selected == entry.key
+                                ? Colors.white24
+                                : Colors.transparent,
+                            shape: BoxShape.circle),
+                        child: Text(entry.value,
+                            style: TextStyle(
+                                fontSize: selected == entry.key ? 28 : 24)))))
+        ]));
+  }
+
+  Widget _ownerReactionsButton(Map<String, dynamic> story) {
+    final reactions =
+        story['reactions'] is Map ? story['reactions'] as Map : const {};
+    final emoji = reactions.isEmpty
+        ? '❤️'
+        : communityReactions['${reactions.keys.first}'] ?? '❤️';
+    final count = (story['reactions_count'] as num?)?.toInt() ?? 0;
+    return Align(
+        alignment: Alignment.centerLeft,
+        child: TextButton.icon(
+            onPressed: _showReactions,
+            style: TextButton.styleFrom(
+                backgroundColor: Colors.black.withValues(alpha: .45),
+                foregroundColor: Colors.white,
+                shape: const StadiumBorder()),
+            icon: Text(emoji, style: const TextStyle(fontSize: 18)),
+            label: Text('$count')));
+  }
+
+  Widget _bottomOverlay(Map<String, dynamic> story) {
+    final canReact = story['can_react'] == true;
+    final count = (story['reactions_count'] as num?)?.toInt() ?? 0;
+    if (!canReact && count <= 0) return const SizedBox.shrink();
+    return GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {},
+        child: DecoratedBox(
+            decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [Colors.black87, Colors.transparent])),
+            child: SafeArea(
+                top: false,
+                child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 28, 16, 12),
+                    child: canReact
+                        ? _reactionBar(story)
+                        : _ownerReactionsButton(story)))));
   }
 
   @override
@@ -1118,62 +1835,28 @@ class _SocialStoryViewerState extends State<SocialStoryViewer> {
     final story = current['story'] as Map<String, dynamic>;
     return Scaffold(
         backgroundColor: Colors.black,
-        appBar: AppBar(
-            backgroundColor: Colors.black,
-            foregroundColor: Colors.white,
-            leading: IconButton(
-                tooltip: communityText('Close'),
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.close_rounded)),
-            titleSpacing: 0,
-            title: Row(children: [
-              CircleAvatar(
-                  radius: 16,
-                  backgroundImage: '${author['avatar'] ?? ''}'.isNotEmpty
-                      ? NetworkImage('${author['avatar']}')
-                      : null,
-                  child: '${author['avatar'] ?? ''}'.isEmpty
-                      ? const Icon(Icons.person, size: 18)
-                      : null),
-              const SizedBox(width: 9),
-              Expanded(
-                  child: Text('${author['name'] ?? communityText('Employee')}',
-                      maxLines: 1, overflow: TextOverflow.ellipsis))
-            ]),
-            actions: [
-              if ((story['can_delete'] ?? false) == true)
-                IconButton(
-                    tooltip: communityText('Delete story'),
-                    onPressed: _deleteCurrent,
-                    icon: const Icon(Icons.delete_outline_rounded))
-            ]),
-        body: Column(children: [
-          Padding(
-              padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
-              child: Row(
-                  children: List.generate(
-                      _items.length,
-                      (index) => Expanded(
-                          child: Container(
-                              height: 3,
-                              margin: const EdgeInsets.symmetric(horizontal: 2),
-                              clipBehavior: Clip.antiAlias,
-                              decoration: BoxDecoration(
-                                  color: Colors.white24,
-                                  borderRadius: BorderRadius.circular(4)),
-                              child: Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: FractionallySizedBox(
-                                      widthFactor: index < _index
-                                          ? 1
-                                          : index == _index
-                                              ? _progress.clamp(0, 1).toDouble()
-                                              : 0,
-                                      child: const ColoredBox(
-                                          color: Colors.white)))))))),
-          Expanded(
+        body: Stack(fit: StackFit.expand, children: [
+          GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTapUp: (details) {
+                final width = MediaQuery.sizeOf(context).width;
+                if (details.localPosition.dx < width / 3) {
+                  _previousStory();
+                } else if (details.localPosition.dx > width * 2 / 3) {
+                  _nextStory();
+                } else {
+                  _paused ? _resumeProgress() : _pauseProgress();
+                }
+              },
+              onLongPressStart: (_) => _pauseProgress(),
+              onLongPressEnd: (_) => _resumeProgress(),
+              onVerticalDragEnd: (details) {
+                if ((details.primaryVelocity ?? 0) > 250)
+                  Navigator.maybePop(context);
+              },
               child: PageView.builder(
                   controller: _pages,
+                  allowImplicitScrolling: true,
                   itemCount: _items.length,
                   onPageChanged: (value) {
                     setState(() => _index = value);
@@ -1184,15 +1867,13 @@ class _SocialStoryViewerState extends State<SocialStoryViewer> {
                     final item = _items[index];
                     final story = item['story'] as Map<String, dynamic>;
                     return Stack(fit: StackFit.expand, children: [
-                      Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          child: _storyMedia(story)),
+                      _storyMedia(story, index),
                       if ('${story['caption'] ?? ''}'.trim().isNotEmpty &&
                           story['media_type'] != 'text')
                         Positioned(
                             left: 22,
                             right: 22,
-                            bottom: 18,
+                            bottom: story['can_react'] == true ? 108 : 28,
                             child: Text('${story['caption']}',
                                 textAlign: TextAlign.center,
                                 style: const TextStyle(
@@ -1203,14 +1884,168 @@ class _SocialStoryViewerState extends State<SocialStoryViewer> {
                                       Shadow(blurRadius: 5, color: Colors.black)
                                     ])))
                     ]);
-                  }))
+                  })),
+          Positioned(
+              top: 0, left: 0, right: 0, child: _topOverlay(author, story)),
+          Positioned(
+              left: 0, right: 0, bottom: 0, child: _bottomOverlay(story)),
+          if (_burstEmoji != null)
+            Positioned.fill(
+                child: IgnorePointer(
+                    child: _StoryReactionBurst(
+                        key: ValueKey('story-burst-$_burstSerial'),
+                        emoji: _burstEmoji!)))
         ]));
   }
 }
 
+class _StoryReactionBurst extends StatefulWidget {
+  const _StoryReactionBurst({super.key, required this.emoji});
+  final String emoji;
+
+  @override
+  State<_StoryReactionBurst> createState() => _StoryReactionBurstState();
+}
+
+class _StoryReactionBurstState extends State<_StoryReactionBurst>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+      vsync: this, duration: const Duration(milliseconds: 900))
+    ..forward();
+  late final Animation<double> _animation =
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+      animation: _animation,
+      builder: (context, _) {
+        final t = _animation.value;
+        return Align(
+            alignment: Alignment(0, .72 - t * 1.15),
+            child: Opacity(
+                opacity: (1 - t).clamp(0, 1),
+                child: Transform.scale(
+                    scale: .6 + t * .9,
+                    child: Text(widget.emoji,
+                        style: const TextStyle(fontSize: 64)))));
+      });
+}
+
+class _StoryReactionsSheet extends StatefulWidget {
+  const _StoryReactionsSheet({required this.api, required this.storyId});
+  final CommunityApi api;
+  final int storyId;
+
+  @override
+  State<_StoryReactionsSheet> createState() => _StoryReactionsSheetState();
+}
+
+class _StoryReactionsSheetState extends State<_StoryReactionsSheet> {
+  List<Map<String, dynamic>> _items = [];
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final response = await widget.api
+          .request('GET', 'social-stories/${widget.storyId}/reactions');
+      if (!mounted) return;
+      setState(() {
+        _items = (response['data'] as List? ?? [])
+            .map((item) => Map<String, dynamic>.from(item as Map))
+            .toList();
+        _loading = false;
+      });
+    } catch (error) {
+      if (mounted)
+        setState(() {
+          _error = communityError(error);
+          _loading = false;
+        });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => SafeArea(
+      child: SizedBox(
+          height: math.min(420, MediaQuery.sizeOf(context).height * .5),
+          child: _loading
+              ? const Center(child: CircularProgressIndicator())
+              : _error != null
+                  ? Center(child: Text(_error!))
+                  : _items.isEmpty
+                      ? Center(child: Text(communityText('No reactions yet.')))
+                      : ListView.separated(
+                          padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
+                          itemCount: _items.length,
+                          separatorBuilder: (_, __) => const Divider(height: 1),
+                          itemBuilder: (context, index) {
+                            final item = _items[index];
+                            final user = Map<String, dynamic>.from(
+                                item['user'] as Map? ?? {});
+                            final avatar = '${user['avatar'] ?? ''}';
+                            final emoji =
+                                communityReactions['${item['reaction']}'] ??
+                                    '👍';
+                            return ListTile(
+                                leading: CircleAvatar(
+                                    backgroundColor: const Color(0xffdbe7fa),
+                                    backgroundImage: avatar.isNotEmpty
+                                        ? communityAvatarImage(avatar)
+                                        : null,
+                                    child: avatar.isEmpty
+                                        ? const Icon(Icons.person_outline,
+                                            color: Color(0xff5068a0))
+                                        : null),
+                                title: Text(
+                                    '${user['name'] ?? communityText('Employee')}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis),
+                                subtitle:
+                                    '${user['department'] ?? ''}'.trim().isEmpty
+                                        ? null
+                                        : Text('${user['department']}'),
+                                trailing: Text(emoji,
+                                    style: const TextStyle(fontSize: 24)));
+                          })));
+}
+
+const _storyInk = Color(0xff0b0f14);
+const _storySurface = Color(0xff161d27);
+
+void _requestTextKeyboard(BuildContext context, FocusNode focusNode,
+    TextEditingController controller) {
+  if (!controller.selection.isValid) {
+    controller.selection =
+        TextSelection.collapsed(offset: controller.text.length);
+  }
+  focusNode.requestFocus();
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (!context.mounted || !focusNode.hasFocus) return;
+    unawaited(SystemChannels.textInput.invokeMethod<void>('TextInput.show'));
+  });
+}
+
 class SocialStoryComposer extends StatefulWidget {
-  const SocialStoryComposer({super.key, this.api});
+  const SocialStoryComposer({
+    super.key,
+    this.api,
+    this.autofocusCaption = false,
+  });
   final CommunityApi? api;
+  final bool autofocusCaption;
 
   @override
   State<SocialStoryComposer> createState() => _SocialStoryComposerState();
@@ -1220,14 +2055,25 @@ class _SocialStoryComposerState extends State<SocialStoryComposer> {
   late final CommunityApi _api;
   late final bool _ownsApi;
   final _caption = TextEditingController();
+  final _captionFocusNode = FocusNode();
   PlatformFile? _file;
   Uint8List? _thumbnailBytes;
   int? _durationSeconds;
   double? _aspectRatio;
   String _type = 'text';
+  int _gradient = 0;
+  static const _storyGradients = [
+    [Color(0xff1877f2), Color(0xff0a2f6b)],
+    [Color(0xff7b2ff7), Color(0xfff107a3)],
+    [Color(0xffff7a18), Color(0xffc81d77)],
+    [Color(0xff00c6ff), Color(0xff005bea)],
+    [Color(0xff0f2027), Color(0xff2c5364)],
+    [Color(0xfff953c6), Color(0xff8a0e68)],
+  ];
   bool _saving = false;
   bool _metadataLoading = false;
   String? _error;
+  Animation<double>? _routeAnimation;
 
   @override
   void initState() {
@@ -1237,21 +2083,48 @@ class _SocialStoryComposerState extends State<SocialStoryComposer> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final animation = ModalRoute.of(context)?.animation;
+    if (identical(animation, _routeAnimation)) return;
+    _routeAnimation?.removeStatusListener(_handleRouteAnimation);
+    _routeAnimation = animation;
+    _routeAnimation?.addStatusListener(_handleRouteAnimation);
+    if (animation?.status == AnimationStatus.completed) {
+      _focusCaptionWhenReady();
+    }
+  }
+
+  void _handleRouteAnimation(AnimationStatus status) {
+    if (status == AnimationStatus.completed) _focusCaptionWhenReady();
+  }
+
+  void _focusCaptionWhenReady() {
+    if (mounted && widget.autofocusCaption) {
+      _requestTextKeyboard(context, _captionFocusNode, _caption);
+    }
+  }
+
+  @override
   void dispose() {
+    _routeAnimation?.removeStatusListener(_handleRouteAnimation);
+    _captionFocusNode.dispose();
     _caption.dispose();
     if (_ownsApi) _api.dispose();
     super.dispose();
   }
 
   Future<void> _pick(String type) async {
-    final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowMultiple: false,
-        allowedExtensions: type == 'image'
-            ? ['jpg', 'jpeg', 'png', 'gif', 'webp']
-            : ['mp4', 'mov', 'webm']);
-    if (!mounted || result == null || result.files.isEmpty) return;
-    final file = result.files.single;
+    _captionFocusNode.unfocus();
+    List<PlatformFile> files;
+    try {
+      files = await pickCommunityMedia(context, type, multiple: false);
+    } catch (error) {
+      if (mounted) setState(() => _error = communityError(error));
+      return;
+    }
+    if (!mounted || files.isEmpty) return;
+    final file = files.single;
     final max = type == 'image' ? 10 * 1024 * 1024 : 100 * 1024 * 1024;
     if (file.path == null || file.size > max) {
       if (!mounted) return;
@@ -1307,6 +2180,8 @@ class _SocialStoryComposerState extends State<SocialStoryComposer> {
         'png': 'image/png',
         'gif': 'image/gif',
         'webp': 'image/webp',
+        'heic': 'image/heic',
+        'heif': 'image/heif',
         'mp4': 'video/mp4',
         'mov': 'video/quicktime',
         'webm': 'video/webm',
@@ -1341,7 +2216,7 @@ class _SocialStoryComposerState extends State<SocialStoryComposer> {
       if (_thumbnailBytes != null) {
         await _api.requestWithThumbnail('POST', 'social-stories',
             data: storyData,
-            filePath: _file?.path,
+            filePath: _type == 'text' ? null : _file?.path,
             fileMime: _mime(_file?.extension),
             thumbnailBytes: _thumbnailBytes,
             thumbnailFileName: 'story-thumbnail.jpg',
@@ -1349,8 +2224,8 @@ class _SocialStoryComposerState extends State<SocialStoryComposer> {
       } else {
         await _api.request('POST', 'social-stories',
             data: storyData,
-            filePath: _file?.path,
-            fileMime: _mime(_file?.extension));
+            filePath: _type == 'text' ? null : _file?.path,
+            fileMime: _type == 'text' ? null : _mime(_file?.extension));
       }
       if (mounted) Navigator.pop(context, true);
     } catch (error) {
@@ -1360,129 +2235,338 @@ class _SocialStoryComposerState extends State<SocialStoryComposer> {
     }
   }
 
-  Widget _preview() {
+  Widget _storyEditor(
+      {required String hint, required TextStyle style, int? maxLines = 3}) {
+    return TextField(
+        key: const ValueKey('story-editor'),
+        controller: _caption,
+        focusNode: _captionFocusNode,
+        enabled: !_saving,
+        maxLength: 1000,
+        maxLines: maxLines,
+        minLines: 1,
+        autofocus: false,
+        onTap: () => _requestTextKeyboard(context, _captionFocusNode, _caption),
+        textAlign: TextAlign.center,
+        textCapitalization: TextCapitalization.sentences,
+        cursorColor: Colors.white,
+        style: style,
+        decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: style.copyWith(color: Colors.white60),
+            counterText: '',
+            border: InputBorder.none,
+            isCollapsed: true,
+            contentPadding: EdgeInsets.zero));
+  }
+
+  Widget _mediaPreview(BoxFit fit, {double radius = 24}) {
     if (_file?.path != null && _type == 'image') {
       return ClipRRect(
-          borderRadius: BorderRadius.circular(22),
-          child: Image.file(File(_file!.path!), fit: BoxFit.cover));
+          borderRadius: BorderRadius.circular(radius),
+          child: Image.file(File(_file!.path!), fit: fit));
     }
     if (_file?.path != null && _type == 'video') {
       if (_metadataLoading) {
-        return const DecoratedBox(
-            decoration: BoxDecoration(color: Color(0xff101826)),
-            child:
-                Center(child: CircularProgressIndicator(color: Colors.white)));
+        return ClipRRect(
+            borderRadius: BorderRadius.circular(radius),
+            child: const ColoredBox(
+                color: _storySurface,
+                child: Center(
+                    child: CircularProgressIndicator(color: Colors.white))));
       }
-      return DecoratedBox(
-          decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                  colors: [Color(0xff172a46), Color(0xff07111f)])),
-          child: Stack(fit: StackFit.expand, children: [
-            if (_thumbnailBytes != null)
-              Image.memory(_thumbnailBytes!, fit: BoxFit.cover),
-            ColoredBox(color: Colors.black26),
-            const Center(
-                child: Icon(Icons.play_circle_fill_rounded,
-                    color: Colors.white, size: 70)),
-            if (_durationSeconds != null)
-              Positioned(
-                  right: 12,
-                  bottom: 12,
-                  child: _StoryDurationBadge(seconds: _durationSeconds!))
-          ]));
+      return ClipRRect(
+          borderRadius: BorderRadius.circular(radius),
+          child: DecoratedBox(
+              decoration: const BoxDecoration(color: _storySurface),
+              child: Stack(fit: StackFit.expand, children: [
+                if (_thumbnailBytes != null)
+                  Image.memory(_thumbnailBytes!, fit: fit, cacheWidth: 1080),
+                const ColoredBox(color: Colors.black26),
+                const Center(
+                    child: Icon(Icons.play_circle_fill_rounded,
+                        color: Colors.white, size: 66)),
+                if (_durationSeconds != null)
+                  Positioned(
+                      right: 12,
+                      bottom: 12,
+                      child: _StoryDurationBadge(seconds: _durationSeconds!))
+              ])));
     }
-    return DecoratedBox(
-        decoration: const BoxDecoration(
-            gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xff6246d9), Color(0xffa66cff)])),
-        child: Center(
-            child: Padding(
-                padding: const EdgeInsets.all(28),
-                child: Text(
-                    _caption.text.isEmpty
-                        ? communityText('Your story preview')
-                        : _caption.text,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 23,
-                        fontWeight: FontWeight.w800)))));
+    final gradient = _storyGradients[_gradient];
+    final text = _caption.text.trim();
+    return ClipRRect(
+        borderRadius: BorderRadius.circular(radius),
+        child: DecoratedBox(
+            decoration: BoxDecoration(
+                gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: gradient)),
+            child: Stack(fit: StackFit.expand, children: [
+              Positioned(
+                  top: -40,
+                  right: -40,
+                  child: Container(
+                      width: 180,
+                      height: 180,
+                      decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withValues(alpha: .08)))),
+              Positioned(
+                  bottom: -60,
+                  left: -30,
+                  child: Container(
+                      width: 220,
+                      height: 220,
+                      decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.black.withValues(alpha: .12)))),
+              Positioned.fill(
+                  child: LayoutBuilder(
+                      builder: (context, constraints) => SingleChildScrollView(
+                          padding: const EdgeInsets.all(28),
+                          child: ConstrainedBox(
+                              constraints: BoxConstraints(
+                                  minHeight:
+                                      math.max(0, constraints.maxHeight - 56)),
+                              child: Center(
+                                  child: _storyEditor(
+                                      hint: communityText('Your story preview'),
+                                      maxLines: null,
+                                      style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: text.length > 80 ? 22 : 27,
+                                          height: 1.25,
+                                          fontWeight: FontWeight.w800,
+                                          shadows: const [
+                                            Shadow(
+                                                blurRadius: 12,
+                                                color: Colors.black38)
+                                          ])))))))
+            ])));
+  }
+
+  Widget _preview() {
+    return ValueListenableBuilder<TextEditingValue>(
+        valueListenable: _caption, builder: (_, __, ___) => _buildPreview());
+  }
+
+  Widget _buildPreview() {
+    return Stack(fit: StackFit.expand, children: [
+      DecoratedBox(
+          decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(26),
+              border: Border.all(color: Colors.white.withValues(alpha: .08))),
+          child: _mediaPreview(BoxFit.cover)),
+      if (_type != 'text')
+        Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: ClipRRect(
+                borderRadius:
+                    const BorderRadius.vertical(bottom: Radius.circular(26)),
+                child: Container(
+                    padding: const EdgeInsets.fromLTRB(18, 40, 18, 18),
+                    decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                            begin: Alignment.bottomCenter,
+                            end: Alignment.topCenter,
+                            colors: [
+                          Colors.black.withValues(
+                              alpha: _caption.text.trim().isEmpty ? .35 : .87),
+                          Colors.transparent
+                        ])),
+                    child: _storyEditor(
+                        hint: communityText('Add a caption…'),
+                        maxLines: 3,
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 17,
+                            height: 1.3,
+                            fontWeight: FontWeight.w700,
+                            shadows: [
+                              Shadow(blurRadius: 6, color: Colors.black54)
+                            ])))))
+    ]);
+  }
+
+  Widget _typeChip(String type, IconData icon, String label) {
+    final selected = _type == type;
+    return Expanded(
+        child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Material(
+                color: selected
+                    ? Colors.white
+                    : Colors.white.withValues(alpha: .08),
+                borderRadius: BorderRadius.circular(14),
+                child: InkWell(
+                    borderRadius: BorderRadius.circular(14),
+                    onTap: _saving
+                        ? null
+                        : () {
+                            if (type == 'text') {
+                              setState(() {
+                                _type = 'text';
+                                _file = null;
+                                _thumbnailBytes = null;
+                                _durationSeconds = null;
+                                _aspectRatio = null;
+                                _error = null;
+                              });
+                              _requestTextKeyboard(
+                                  context, _captionFocusNode, _caption);
+                            } else {
+                              _pick(type);
+                            }
+                          },
+                    child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 11),
+                        child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(icon,
+                                  size: 19,
+                                  color:
+                                      selected ? Colors.black : Colors.white70),
+                              const SizedBox(width: 6),
+                              Text(label,
+                                  style: TextStyle(
+                                      color: selected
+                                          ? Colors.black
+                                          : Colors.white70,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 13))
+                            ]))))));
+  }
+
+  Widget _controls() {
+    return Padding(
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Row(children: [
+            _typeChip('text', Icons.text_fields_rounded, communityText('Text')),
+            _typeChip(
+                'image', Icons.photo_library_rounded, communityText('Photo')),
+            _typeChip('video', Icons.videocam_rounded, communityText('Video')),
+          ]),
+          if (_type == 'text')
+            Padding(
+                padding: const EdgeInsets.only(top: 10),
+                child: SizedBox(
+                    height: 34,
+                    child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: _storyGradients.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 10),
+                        itemBuilder: (context, index) => GestureDetector(
+                            key: ValueKey('story-gradient-$index'),
+                            onTap: _saving
+                                ? null
+                                : () => setState(() => _gradient = index),
+                            child: Container(
+                                width: 34,
+                                height: 34,
+                                decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    gradient: LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: _storyGradients[index]),
+                                    border: Border.all(
+                                        color: _gradient == index
+                                            ? Colors.white
+                                            : Colors.transparent,
+                                        width: 2))))))),
+        ]));
+  }
+
+  Widget? _errorBanner() {
+    final error = _error;
+    if (error == null) return null;
+    return Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Row(children: [
+          const Icon(Icons.error_outline_rounded,
+              color: Color(0xffff6b6b), size: 17),
+          const SizedBox(width: 6),
+          Expanded(
+              child: Text(error,
+                  style: const TextStyle(
+                      color: Color(0xffff9b9b),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13)))
+        ]));
   }
 
   @override
   Widget build(BuildContext context) => PopScope(
       canPop: !_saving,
       child: Scaffold(
-          backgroundColor: const Color(0xfff5f8fd),
+          backgroundColor: _storyInk,
           appBar: AppBar(
-              backgroundColor: Theme.of(context).colorScheme.primary,
+              backgroundColor: _storyInk,
               foregroundColor: Colors.white,
+              elevation: 0,
+              scrolledUnderElevation: 0,
+              centerTitle: true,
+              leading: IconButton(
+                  tooltip: communityText('Close'),
+                  onPressed: _saving ? null : () => Navigator.maybePop(context),
+                  icon: const Icon(Icons.close_rounded)),
               title: Text(communityText('Create story'),
-                  style: const TextStyle(fontWeight: FontWeight.w800)),
-              actions: [
-                IconButton(
-                    onPressed:
-                        _saving ? null : () => Navigator.maybePop(context),
-                    icon: const Icon(Icons.close_rounded))
-              ]),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w800, fontSize: 17))),
           bottomNavigationBar: SafeArea(
-              minimum: const EdgeInsets.fromLTRB(16, 4, 16, 10),
-              child: FilledButton.icon(
-                  onPressed: _saving ? null : _save,
-                  icon: _saving
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white))
-                      : const Icon(Icons.publish_rounded),
-                  label: Text(_saving
-                      ? communityText('Publishing…')
-                      : communityText('Share story')),
-                  style: FilledButton.styleFrom(
-                      minimumSize: const Size.fromHeight(54),
-                      shape: const StadiumBorder()))),
-          body: ListView(padding: const EdgeInsets.all(16), children: [
-            SizedBox(height: 360, child: _preview()),
-            const SizedBox(height: 14),
-            TextField(
-                controller: _caption,
-                maxLength: 1000,
-                maxLines: 3,
-                onChanged: (_) => setState(() {}),
-                decoration: InputDecoration(
-                    labelText: communityText('Add a caption'),
-                    hintText: communityText('Share a moment with your team'),
-                    border: const OutlineInputBorder())),
-            const SizedBox(height: 8),
-            Row(children: [
-              Expanded(
-                  child: OutlinedButton.icon(
-                      onPressed: _saving ? null : () => _pick('image'),
-                      icon: const Icon(Icons.image_outlined),
-                      label: Text(communityText('Photo')))),
-              const SizedBox(width: 10),
-              Expanded(
-                  child: OutlinedButton.icon(
-                      onPressed: _saving ? null : () => _pick('video'),
-                      icon: const Icon(Icons.videocam_outlined),
-                      label: Text(communityText('Video'))))
-            ]),
-            if (_file != null)
-              Padding(
-                  padding: const EdgeInsets.only(top: 10),
-                  child: Text(_file!.name,
-                      maxLines: 1, overflow: TextOverflow.ellipsis)),
-            if (_error != null)
-              Padding(
-                  padding: const EdgeInsets.only(top: 12),
-                  child: Text(_error!,
-                      style: TextStyle(
-                          color: Theme.of(context).colorScheme.error,
-                          fontWeight: FontWeight.w600)))
-          ])));
+              minimum: const EdgeInsets.fromLTRB(16, 8, 16, 10),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                if (_error != null) _errorBanner()!,
+                const SizedBox(height: 4),
+                FilledButton(
+                    onPressed: _saving ? null : _save,
+                    style: FilledButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.black,
+                        disabledBackgroundColor: Colors.white24,
+                        minimumSize: const Size.fromHeight(52),
+                        shape: const StadiumBorder(),
+                        textStyle: const TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w800)),
+                    child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (_saving)
+                            const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: Colors.black54))
+                          else
+                            const Icon(Icons.arrow_forward_rounded, size: 20),
+                          const SizedBox(width: 8),
+                          Text(_saving
+                              ? communityText('Publishing…')
+                              : communityText('Share story'))
+                        ]))
+              ])),
+          body: SafeArea(
+              top: false,
+              child: LayoutBuilder(builder: (context, constraints) {
+                final previewHeight =
+                    (constraints.maxHeight * .66).clamp(220.0, 560.0);
+                return SingleChildScrollView(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Column(children: [
+                      Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 4, 16, 10),
+                          child: SizedBox(
+                              height: previewHeight, child: _preview())),
+                      _controls()
+                    ]));
+              }))));
 }
 
 class _ShareCaptionDialog extends StatefulWidget {
@@ -1968,14 +3052,12 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
     final post = _post;
     if (post == null) return;
     FeedVideoAutoplayManager.instance.pauseAll();
-    Navigator.push(
-        context,
-        MaterialPageRoute(
-            builder: (_) => SocialCommentsScreen(
-                postId: widget.postId,
-                reactionsCount: (post['reactions_count'] as num?)?.toInt() ?? 0,
-                commentsCount: (post['comments_count'] as num?)?.toInt() ?? 0,
-                sharesCount: (post['shares_count'] as num?)?.toInt() ?? 0)));
+    Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
+        builder: (_) => SocialCommentsScreen(
+            postId: widget.postId,
+            reactionsCount: (post['reactions_count'] as num?)?.toInt() ?? 0,
+            commentsCount: (post['comments_count'] as num?)?.toInt() ?? 0,
+            sharesCount: (post['shares_count'] as num?)?.toInt() ?? 0)));
   }
 
   @override
@@ -2008,7 +3090,7 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
                                         Row(children: [
                                           CircleAvatar(
                                               backgroundImage: avatar.isNotEmpty
-                                                  ? NetworkImage(avatar)
+                                                  ? communityAvatarImage(avatar)
                                                   : null,
                                               child: avatar.isEmpty
                                                   ? const Icon(
@@ -2260,9 +3342,10 @@ class _PollWidgetState extends State<_PollWidget> {
 }
 
 class _PostContent extends StatelessWidget {
-  _PostContent({required this.post, this.nested = false});
+  _PostContent({required this.post, this.nested = false, this.feedPosition});
   final Map<String, dynamic> post;
   final bool nested;
+  final int? feedPosition;
   List<Map<String, dynamic>> _mediaItems() {
     final items = <Map<String, dynamic>>[];
     final primaryType = '${post['media_type'] ?? 'text'}';
@@ -2307,11 +3390,46 @@ class _PostContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final media = _mediaItems();
+    final body = '${post['body'] ?? ''}';
+    final background = communityPostBackground('${post['background'] ?? ''}');
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      if ('${post['body'] ?? ''}'.isNotEmpty)
-        Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: SelectableText('${post['body']}')),
+      if (body.isNotEmpty)
+        if (background != null && media.isEmpty)
+          Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 34),
+              decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                      colors: background.colors,
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight),
+                  borderRadius: BorderRadius.circular(16)),
+              child: _communityFormatPattern.hasMatch(body)
+                  ? SelectableText.rich(
+                      communityFormattedSpan(
+                          body,
+                          TextStyle(
+                              color: background.foreground,
+                              fontSize: 22,
+                              height: 1.35,
+                              fontWeight: FontWeight.w600)),
+                      textAlign: TextAlign.center)
+                  : SelectableText(body,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                          color: background.foreground,
+                          fontSize: 22,
+                          height: 1.35,
+                          fontWeight: FontWeight.w600)))
+        else
+          Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _communityFormatPattern.hasMatch(body)
+                  ? SelectableText.rich(communityFormattedSpan(
+                      body,
+                      Theme.of(context).textTheme.bodyLarge ??
+                          const TextStyle()))
+                  : SelectableText(body)),
       if (media.length == 1)
         CommunityMedia(
             type: media.first['media_type'] as String,
@@ -2320,6 +3438,7 @@ class _PostContent extends StatelessWidget {
             thumbnailUrl: '${media.first['thumbnail_url'] ?? ''}',
             durationSeconds: media.first['duration_seconds'],
             aspectRatio: media.first['aspect_ratio'],
+            feedPosition: feedPosition,
             autoPlay: media.first['media_type'] == 'video',
             onImageTap: media.first['media_type'] == 'image'
                 ? () => _openViewer(context, media, 0)
@@ -2327,6 +3446,7 @@ class _PostContent extends StatelessWidget {
       else if (media.length > 1)
         _PostMediaGallery(
             items: media,
+            feedPosition: feedPosition,
             onImageTap: (index) => _openViewer(context, media, index)),
       if (!nested && post['original_post_id'] != null)
         Container(
@@ -2356,9 +3476,11 @@ class _PostContent extends StatelessWidget {
 }
 
 class _PostMediaGallery extends StatelessWidget {
-  const _PostMediaGallery({required this.items, required this.onImageTap});
+  const _PostMediaGallery(
+      {required this.items, required this.onImageTap, this.feedPosition});
   final List<Map<String, dynamic>> items;
   final ValueChanged<int> onImageTap;
+  final int? feedPosition;
 
   Widget _tile(Map<String, dynamic> item, int index) {
     return Stack(fit: StackFit.expand, children: [
@@ -2370,6 +3492,8 @@ class _PostMediaGallery extends StatelessWidget {
           durationSeconds: item['duration_seconds'],
           aspectRatio: item['aspect_ratio'],
           compact: true,
+          autoPlay: item['media_type'] == 'video',
+          feedPosition: feedPosition == null ? null : feedPosition! * 4 + index,
           onImageTap:
               item['media_type'] == 'image' ? () => onImageTap(index) : null),
       if (index == 3 && items.length > 4)
@@ -2557,8 +3681,94 @@ class _ZoomableFeedImageState extends State<_ZoomableFeedImage> {
                       size: 52)))));
 }
 
+class CommunityPostBackground {
+  const CommunityPostBackground(this.colors);
+  final List<Color> colors;
+  Color get foreground => Colors.white;
+}
+
+const communityPostBackgrounds = <String, CommunityPostBackground>{
+  'ocean': CommunityPostBackground([Color(0xff1877f2), Color(0xff0a3d91)]),
+  'midnight': CommunityPostBackground([Color(0xff1d2939), Color(0xff344054)]),
+  'forest': CommunityPostBackground([Color(0xff1d7a46), Color(0xff0b4f2c)]),
+  'sunset': CommunityPostBackground([Color(0xfff5533d), Color(0xffb4235a)]),
+  'plum': CommunityPostBackground([Color(0xff7b2d8e), Color(0xff4a148c)]),
+  'rose': CommunityPostBackground([Color(0xffe83e8c), Color(0xff9d174d)]),
+};
+
+CommunityPostBackground? communityPostBackground(String? value) =>
+    value == null ? null : communityPostBackgrounds[value];
+
+final _communityFormatPattern =
+    RegExp(r'(\*\*|__)(.+?)\1|(?<!\w)_([^_\n]+?)_(?!\w)');
+
+TextSpan communityFormattedSpan(String body, TextStyle style) {
+  final spans = <InlineSpan>[];
+  var cursor = 0;
+  for (final match in _communityFormatPattern.allMatches(body)) {
+    if (match.start > cursor) {
+      spans.add(TextSpan(text: body.substring(cursor, match.start)));
+    }
+    if (match.group(1) != null) {
+      spans.add(TextSpan(
+          text: match.group(2),
+          style: const TextStyle(fontWeight: FontWeight.w800)));
+    } else {
+      spans.add(TextSpan(
+          text: match.group(3),
+          style: const TextStyle(fontStyle: FontStyle.italic)));
+    }
+    cursor = match.end;
+  }
+  if (cursor < body.length) {
+    spans.add(TextSpan(text: body.substring(cursor)));
+  }
+  return TextSpan(style: style, children: spans);
+}
+
+/// Applies a reaction locally so the button and count respond immediately.
+/// Callers roll back to the previous map if the server rejects the change.
+Map<String, dynamic> communityOptimisticReaction(
+    Map<String, dynamic> post, String? next) {
+  final previous = post['my_reaction'] as String?;
+  if (previous == next) return post;
+  final reactions = Map<String, dynamic>.from(
+      post['reactions'] is Map ? post['reactions'] as Map : const {});
+  void decrement(String? key) {
+    if (key == null) return;
+    final remaining = ((reactions[key] as num?)?.toInt() ?? 1) - 1;
+    if (remaining <= 0) {
+      reactions.remove(key);
+    } else {
+      reactions[key] = remaining;
+    }
+  }
+
+  if (previous != null) decrement(previous);
+  if (next != null) {
+    reactions[next] = ((reactions[next] as num?)?.toInt() ?? 0) + 1;
+  }
+  final count = (post['reactions_count'] as num?)?.toInt() ?? 0;
+  final delta = (next == null ? 0 : 1) - (previous == null ? 0 : 1);
+  return {
+    ...post,
+    'my_reaction': next,
+    'reactions': reactions,
+    'reactions_count': (count + delta).clamp(0, 1 << 31),
+  };
+}
+
 class SocialPostComposer extends StatefulWidget {
-  SocialPostComposer({super.key, this.post, this.api});
+  SocialPostComposer(
+      {super.key,
+      this.post,
+      this.api,
+      this.initialType = 'text',
+      this.initialFiles = const [],
+      this.autofocusBody = false});
+  final List<PlatformFile> initialFiles;
+  final String initialType;
+  final bool autofocusBody;
   final CommunityApi? api;
   final Map<String, dynamic>? post;
   @override
@@ -2567,6 +3777,7 @@ class SocialPostComposer extends StatefulWidget {
 
 class _SocialPostComposerState extends State<SocialPostComposer> {
   final _body = TextEditingController();
+  final _bodyFocusNode = FocusNode();
   final _url = TextEditingController();
   final _audienceIds = TextEditingController();
   final _location = TextEditingController();
@@ -2577,6 +3788,7 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
     TextEditingController(),
     TextEditingController(),
   ];
+  Animation<double>? _routeAnimation;
   late final _api = widget.api ?? CommunityApi();
   String _type = 'text';
   String _visibility = 'company';
@@ -2592,6 +3804,9 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
   double? _aspectRatio;
   bool _metadataLoading = false;
   bool _saving = false;
+  bool _bodyEdited = false;
+  String? _background;
+  Timer? _draftTimer;
   String? _error;
   bool get _isShare => widget.post?['original_post_id'] != null;
 
@@ -2600,14 +3815,44 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
     super.initState();
     _body.text = '${widget.post?['body'] ?? ''}';
     _url.text = '${widget.post?['media_url'] ?? ''}';
-    _type = '${widget.post?['media_type'] ?? 'text'}';
+    _type = '${widget.post?['media_type'] ?? widget.initialType}';
     _visibility = '${widget.post?['visibility'] ?? 'company'}';
     _location.text = '${widget.post?['location_name'] ?? ''}';
+    final background = '${widget.post?['background'] ?? ''}';
+    _background = background.isEmpty ? null : background;
+    if (widget.initialFiles.isNotEmpty) {
+      unawaited(_applyPickedFiles(widget.initialFiles, _type));
+    }
     _loadComposerProfile();
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final animation = ModalRoute.of(context)?.animation;
+    if (identical(animation, _routeAnimation)) return;
+    _routeAnimation?.removeStatusListener(_handleRouteAnimation);
+    _routeAnimation = animation;
+    _routeAnimation?.addStatusListener(_handleRouteAnimation);
+    if (animation?.status == AnimationStatus.completed) {
+      _focusBodyWhenReady();
+    }
+  }
+
+  void _handleRouteAnimation(AnimationStatus status) {
+    if (status == AnimationStatus.completed) _focusBodyWhenReady();
+  }
+
+  void _focusBodyWhenReady() {
+    if (mounted && widget.autofocusBody) {
+      _requestTextKeyboard(context, _bodyFocusNode, _body);
+    }
+  }
+
+  @override
   void dispose() {
+    _routeAnimation?.removeStatusListener(_handleRouteAnimation);
+    _bodyFocusNode.dispose();
     _body.dispose();
     _url.dispose();
     _audienceIds.dispose();
@@ -2615,6 +3860,7 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
     _pollQuestion.dispose();
     _pollClosesAt.dispose();
     for (final option in _pollOptions) option.dispose();
+    _draftTimer?.cancel();
     _api.dispose();
     super.dispose();
   }
@@ -2640,21 +3886,36 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
   String get _draftKey => 'social_feed_draft_${widget.post?['id'] ?? 'new'}';
 
   Future<void> _restoreDraft() async {
-    if (widget.post != null) return;
+    if (widget.post != null || _bodyEdited) return;
     final prefs = await SharedPreferences.getInstance();
+    // The composer is already editable while preferences are loading. Keep a
+    // draft restore from replacing text the user entered in that interval.
+    if (!mounted || _bodyEdited) return;
     final raw = prefs.getString(_draftKey);
     if (raw == null || raw.isEmpty || !mounted) return;
     try {
       final draft = jsonDecode(raw) as Map;
       setState(() {
-        _body.text = '${draft['body'] ?? _body.text}';
-        _url.text = '${draft['media_url'] ?? _url.text}';
+        final restoredBody = '${draft['body'] ?? _body.text}';
+        _body.value = TextEditingValue(
+            text: restoredBody,
+            selection: TextSelection.collapsed(offset: restoredBody.length));
+        if (_files.isEmpty) _url.text = '${draft['media_url'] ?? _url.text}';
         _location.text = '${draft['location_name'] ?? _location.text}';
         _visibility = '${draft['visibility'] ?? _visibility}';
+        if (draft.containsKey('background')) {
+          final background = '${draft['background'] ?? ''}';
+          _background = background.isEmpty ? null : background;
+        }
         _pollEnabled = draft['poll_enabled'] == true;
         _pollMultiple = draft['poll_multiple'] == true;
         _pollQuestion.text = '${draft['poll_question'] ?? ''}';
+        _pollClosesAt.text = '${draft['poll_closes_at'] ?? ''}';
         final options = (draft['poll_options'] as List? ?? []);
+        while (
+            _pollOptions.length < options.length && _pollOptions.length < 6) {
+          _pollOptions.add(TextEditingController());
+        }
         for (var i = 0; i < options.length && i < _pollOptions.length; i++) {
           _pollOptions[i].text = '${options[i]}';
         }
@@ -2662,7 +3923,7 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
     } catch (_) {}
   }
 
-  Future<void> _saveDraft() async {
+  Future<void> _writeDraft() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
         _draftKey,
@@ -2671,11 +3932,24 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
           'media_url': _url.text,
           'location_name': _location.text,
           'visibility': _visibility,
+          'background': _background,
           'poll_enabled': _pollEnabled,
           'poll_multiple': _pollMultiple,
           'poll_question': _pollQuestion.text,
+          'poll_closes_at': _pollClosesAt.text,
           'poll_options': _pollOptions.map((item) => item.text).toList(),
         }));
+  }
+
+  void _scheduleDraftSave() {
+    if (widget.post != null) return;
+    _draftTimer?.cancel();
+    _draftTimer = Timer(const Duration(milliseconds: 700), _writeDraft);
+  }
+
+  Future<void> _saveDraft() async {
+    _draftTimer?.cancel();
+    await _writeDraft();
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(communityText('Draft saved on this device.'))));
@@ -2683,6 +3957,7 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
   }
 
   Future<void> _clearDraft() async {
+    _draftTimer?.cancel();
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_draftKey);
   }
@@ -2720,13 +3995,7 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
                 ],
               ),
             ));
-    if (emoji != null && mounted) {
-      final value = _body.selection.isValid
-          ? _body.selection.baseOffset.clamp(0, _body.text.length).toInt()
-          : _body.text.length;
-      setState(() => _body.text =
-          '${_body.text.substring(0, value)}$emoji${_body.text.substring(value)}');
-    }
+    if (emoji != null && mounted) _insertAtCursor(emoji);
   }
 
   Future<void> _chooseLocation() async {
@@ -2752,50 +4021,69 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
                     child: Text(communityText('Add'))),
               ]);
         });
-    if (value != null && mounted) setState(() => _location.text = value);
+    if (value != null && mounted) {
+      setState(() => _location.text = value);
+      _scheduleDraftSave();
+    }
   }
 
-  Future<void> _pick() async {
-    final extensions = _type == 'image'
-        ? ['jpg', 'jpeg', 'png', 'gif', 'webp']
-        : _type == 'document'
-            ? ['pdf', 'doc', 'docx', 'xls', 'xlsx']
-            : ['mp4', 'mov', 'webm'];
-    final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowMultiple: _type == 'image',
-        allowedExtensions: extensions);
-    if (result == null || !mounted) return;
-    final max = (_type == 'image'
+  Future<void> _pick([String? overrideType]) async {
+    final type = overrideType ?? (_type == 'text' ? 'image' : _type);
+    _bodyFocusNode.unfocus();
+    try {
+      final files = type == 'image' || type == 'video'
+          ? await pickCommunityMedia(context, type, multiple: type == 'image')
+          : (await FilePicker.platform.pickFiles(
+                      type: FileType.custom,
+                      allowedExtensions: ['pdf', 'doc', 'docx', 'xls', 'xlsx']))
+                  ?.files ??
+              [];
+      if (!mounted || files.isEmpty) return;
+      await _applyPickedFiles(files, type);
+    } catch (error) {
+      if (mounted) setState(() => _error = communityError(error));
+    }
+  }
+
+  Future<void> _applyPickedFiles(List<PlatformFile> files, String type,
+      {bool append = false}) async {
+    final max = (type == 'image'
             ? 10
-            : _type == 'document'
+            : type == 'document'
                 ? 25
                 : 100) *
         1024 *
         1024;
-    final files = result.files;
-    setState(() {
-      if (files.isEmpty ||
-          files.any((file) => file.size > max || file.path == null)) {
-        _error = communityText(_type == 'image'
-            ? 'Select a 10 MB or smaller file.'
-            : _type == 'document'
-                ? 'Select a 25 MB or smaller file.'
-                : 'Select a 100 MB or smaller file.');
-      } else {
-        _files = files;
-        _file = files.length == 1 ? files.first : null;
-        _thumbnailBytes = null;
-        _durationSeconds = null;
-        _aspectRatio = null;
-        _metadataLoading = _type == 'video' && files.length == 1;
-        _url.clear();
-        _error = null;
-      }
-    });
-    if (_type == 'video' && files.length == 1 && files.first.path != null) {
-      await _prepareVideoMetadata(files.first);
+    if (files.any((file) => file.size > max || file.path == null)) {
+      setState(() => _error = communityText(type == 'image'
+          ? 'Select a 10 MB or smaller file.'
+          : type == 'document'
+              ? 'Select a 25 MB or smaller file.'
+              : 'Select a 100 MB or smaller file.'));
+      return;
     }
+    final next =
+        append && _type == type ? <PlatformFile>[..._files, ...files] : files;
+    final unique = <String, PlatformFile>{};
+    for (final file in next) {
+      unique[file.path ?? file.name] = file;
+    }
+    final selected = unique.values.take(10).toList();
+    final tooMany = type == 'image' && unique.length > 10;
+    setState(() {
+      _type = type;
+      if (type != 'text') _background = null;
+      _files = selected;
+      _file = selected.length == 1 ? selected.first : null;
+      _thumbnailBytes = null;
+      _durationSeconds = null;
+      _aspectRatio = null;
+      _metadataLoading = type == 'video' && selected.length == 1;
+      if (!append) _url.clear();
+      _error = tooMany ? communityText('You can add up to 10 photos.') : null;
+    });
+    _scheduleDraftSave();
+    if (_metadataLoading) await _prepareVideoMetadata(selected.first);
   }
 
   Future<void> _prepareVideoMetadata(PlatformFile file) async {
@@ -2816,7 +4104,7 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
       } finally {
         await controller.dispose();
       }
-      if (!mounted) return;
+      if (!mounted || _type != 'video' || _file?.path != file.path) return;
       setState(() {
         _thumbnailBytes = bytes;
         _durationSeconds = duration;
@@ -2824,7 +4112,8 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
         _metadataLoading = false;
       });
     } catch (_) {
-      if (mounted) setState(() => _metadataLoading = false);
+      if (mounted && _type == 'video' && _file?.path == file.path)
+        setState(() => _metadataLoading = false);
     }
   }
 
@@ -2839,6 +4128,8 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
       'png': 'image/png',
       'gif': 'image/gif',
       'webp': 'image/webp',
+      'heic': 'image/heic',
+      'heif': 'image/heif',
       'mp4': 'video/mp4',
       'mov': 'video/quicktime',
       'webm': 'video/webm',
@@ -2854,7 +4145,11 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
 
   Future<void> _save() async {
     if (_saving) return;
-    if (!_isShare && _type == 'text' && _body.text.trim().isEmpty) {
+    final pollReady = _pollEnabled && _pollQuestion.text.trim().isNotEmpty;
+    if (!_isShare &&
+        _type == 'text' &&
+        _body.text.trim().isEmpty &&
+        !pollReady) {
       setState(() => _error = communityText('Write a message.'));
       return;
     }
@@ -2882,6 +4177,7 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
       final payload = <String, dynamic>{
         'body': _body.text.trim(),
         'media_type': _type,
+        if (_type == 'text' && _background != null) 'background': _background,
         'media_url': _url.text.trim(),
         'location_name': _location.text.trim(),
         if (_type == 'video' && _durationSeconds != null)
@@ -2915,8 +4211,11 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
         payload['poll_question'] = _pollQuestion.text.trim();
         payload['poll_options'] = options;
         payload['poll_allow_multiple'] = _pollMultiple;
-        if (_pollClosesAt.text.trim().isNotEmpty)
-          payload['poll_closes_at'] = _pollClosesAt.text.trim();
+        if (_pollClosesAt.text.trim().isNotEmpty) {
+          final closesAt = DateTime.tryParse(_pollClosesAt.text.trim());
+          payload['poll_closes_at'] =
+              closesAt?.toUtc().toIso8601String() ?? _pollClosesAt.text.trim();
+        }
       }
       final endpoint = widget.post == null
           ? 'social-feed'
@@ -2949,6 +4248,7 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
             filePaths: filePaths,
             fileMimes: fileMimes);
       }
+      _draftTimer?.cancel();
       await _clearDraft();
       if (mounted) Navigator.pop(context, true);
     } catch (error) {
@@ -2973,494 +4273,1037 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
     }
   }
 
+  static const _composerInk = Color(0xff101828);
+  static const _composerMuted = Color(0xff65676b);
+  static const _composerLine = Color(0xffe4e6eb);
+  static const _composerWash = Color(0xfff0f2f5);
+
+  bool get _hasContent =>
+      _body.text.trim().isNotEmpty ||
+      _files.isNotEmpty ||
+      _url.text.trim().isNotEmpty ||
+      _location.text.isNotEmpty ||
+      _background != null ||
+      _pollEnabled;
+
+  Future<void> _closeComposer() async {
+    if (_saving) return;
+    if (!_hasContent) {
+      _draftTimer?.cancel();
+      await _clearDraft();
+      if (mounted) Navigator.maybePop(context);
+      return;
+    }
+    final discard = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+                title: Text(communityText('Discard post?')),
+                content: Text(communityText(
+                    'If you leave now, your changes will be lost.')),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: Text(communityText('Keep editing'))),
+                  FilledButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: Text(communityText('Discard')))
+                ]));
+    if (discard == true && mounted) {
+      _draftTimer?.cancel();
+      await _clearDraft();
+      if (mounted) Navigator.maybePop(context);
+    }
+  }
+
+  Future<void> _choosePollClose() async {
+    final now = DateTime.now();
+    final parsed = DateTime.tryParse(_pollClosesAt.text.trim())?.toLocal();
+    final initial = parsed != null && parsed.isAfter(now)
+        ? parsed
+        : now.add(const Duration(days: 1));
+    final date = await showDatePicker(
+        context: context,
+        initialDate: DateUtils.dateOnly(initial),
+        firstDate: DateUtils.dateOnly(now),
+        lastDate: DateTime(now.year + 1, now.month, now.day),
+        helpText: communityText('Poll ends'));
+    if (date == null || !mounted) return;
+    final time = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(initial),
+        helpText: communityText('Poll ends'));
+    if (!mounted) return;
+    final chosen = DateTime(
+        date.year, date.month, date.day, time?.hour ?? 23, time?.minute ?? 59);
+    if (!chosen.isAfter(DateTime.now())) {
+      setState(() =>
+          _error = communityText('Choose an end date and time in the future.'));
+      return;
+    }
+    String two(int value) => value.toString().padLeft(2, '0');
+    setState(() {
+      _error = null;
+      _pollClosesAt.text =
+          '${chosen.year}-${two(chosen.month)}-${two(chosen.day)} ${two(chosen.hour)}:${two(chosen.minute)}';
+    });
+    _scheduleDraftSave();
+  }
+
+  void _wrapSelection(String before, String after) {
+    final value = _body.value;
+    final text = value.text;
+    final start = value.selection.start;
+    final end = value.selection.end;
+    if (start < 0 || end < 0) {
+      _insertAtCursor('$before$after');
+      return;
+    }
+    if (start == end) {
+      _body.value = value.copyWith(
+          text: text.replaceRange(start, end, '$before$after'),
+          selection: TextSelection.collapsed(offset: start + before.length));
+    } else {
+      final selected = text.substring(start, end);
+      _body.value = value.copyWith(
+          text: text.replaceRange(start, end, '$before$selected$after'),
+          selection: TextSelection.collapsed(
+              offset: start + before.length + selected.length + after.length));
+    }
+    _bodyEdited = true;
+    setState(() {});
+    _scheduleDraftSave();
+  }
+
+  void _insertAtCursor(String value) {
+    final selection = _body.selection;
+    final offset = selection.isValid
+        ? selection.baseOffset.clamp(0, _body.text.length).toInt()
+        : _body.text.length;
+    _body.value = _body.value.copyWith(
+        text: _body.text.replaceRange(offset, offset, value),
+        selection: TextSelection.collapsed(offset: offset + value.length));
+    _bodyEdited = true;
+    setState(() {});
+    _scheduleDraftSave();
+  }
+
+  void _setVisibility(String value) {
+    setState(() => _visibility = value);
+    _scheduleDraftSave();
+  }
+
+  void _addPollOption() {
+    if (_pollOptions.length >= 6) return;
+    setState(() => _pollOptions.add(TextEditingController()));
+    _scheduleDraftSave();
+  }
+
+  void _removePollOption(int index) {
+    if (_pollOptions.length <= 2) return;
+    final controller = _pollOptions[index];
+    setState(() => _pollOptions.removeAt(index));
+    WidgetsBinding.instance.addPostFrameCallback((_) => controller.dispose());
+    _scheduleDraftSave();
+  }
+
+  void _removeFile(int index) {
+    final files = List<PlatformFile>.of(_files)..removeAt(index);
+    setState(() {
+      _files = files;
+      _file = files.length == 1 ? files.first : null;
+      _thumbnailBytes = null;
+      _durationSeconds = null;
+      _aspectRatio = null;
+      _metadataLoading = false;
+      if (files.isEmpty) {
+        _type = 'text';
+        _url.clear();
+      }
+    });
+    _scheduleDraftSave();
+  }
+
+  Future<void> _addMoreImages() async {
+    _bodyFocusNode.unfocus();
+    try {
+      final files = await pickCommunityMedia(context, 'image',
+          multiple: true, maxSelection: 10);
+      if (!mounted || files.isEmpty) return;
+      await _applyPickedFiles(files, 'image', append: true);
+    } catch (error) {
+      if (mounted) setState(() => _error = communityError(error));
+    }
+  }
+
+  IconData _audienceIcon() {
+    switch (_visibility) {
+      case 'department':
+        return Icons.apartment_rounded;
+      case 'employees':
+        return Icons.group_rounded;
+      case 'management':
+        return Icons.verified_user_outlined;
+      case 'hr':
+        return Icons.badge_outlined;
+      default:
+        return Icons.public;
+    }
+  }
+
+  Widget _errorCard() {
+    final error = _error;
+    if (error == null) return const SizedBox.shrink();
+    return Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+            color: const Color(0xfffdecea),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xfff5c2c0))),
+        child: Row(children: [
+          const Icon(Icons.error_outline_rounded,
+              color: Color(0xffb42318), size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+              child: Text(error,
+                  style: const TextStyle(
+                      color: Color(0xffb42318),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13)))
+        ]));
+  }
+
+  Widget _headerCard(String name, String avatar, Color primary) {
+    return Card(
+        elevation: 0,
+        color: Colors.white,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: const BorderSide(color: _composerLine)),
+        child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+            child: Row(children: [
+              CircleAvatar(
+                  radius: 25,
+                  backgroundColor: primary.withValues(alpha: .12),
+                  backgroundImage:
+                      avatar.isNotEmpty ? communityAvatarImage(avatar) : null,
+                  child: avatar.isEmpty
+                      ? Icon(Icons.person, color: primary, size: 26)
+                      : null),
+              const SizedBox(width: 12),
+              Expanded(
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                    Text(name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                            color: _composerInk)),
+                    const SizedBox(height: 4),
+                    Material(
+                        color: _composerWash,
+                        borderRadius: BorderRadius.circular(20),
+                        child: InkWell(
+                            borderRadius: BorderRadius.circular(20),
+                            onTap: _saving
+                                ? null
+                                : () => setState(
+                                    () => _showAudience = !_showAudience),
+                            child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 5),
+                                child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(_audienceIcon(),
+                                          size: 15, color: _composerInk),
+                                      const SizedBox(width: 5),
+                                      Flexible(
+                                          child: Text(_visibilityLabel(),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: _composerInk))),
+                                      const Icon(Icons.arrow_drop_down,
+                                          size: 18, color: _composerInk)
+                                    ]))))
+                  ])),
+              if (_isShare)
+                Chip(
+                    label: Text(communityText('Share'),
+                        style: const TextStyle(fontSize: 11)),
+                    visualDensity: VisualDensity.compact)
+            ])));
+  }
+
+  Widget _textCard(Color primary) {
+    final background = communityPostBackground(_background);
+    final foreground = background?.foreground ?? _composerInk;
+    final muted = background == null ? _composerMuted : Colors.white70;
+    final canSetBackground = _type == 'text' && _files.isEmpty;
+    return Container(
+        decoration: BoxDecoration(
+            color: background == null ? Colors.white : null,
+            gradient: background == null
+                ? null
+                : LinearGradient(
+                    colors: background.colors,
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+                color:
+                    background == null ? _composerLine : Colors.transparent)),
+        child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 6, 10, 6),
+            child: Column(children: [
+              TextField(
+                  controller: _body,
+                  focusNode: _bodyFocusNode,
+                  enabled: !_saving,
+                  minLines: 5,
+                  maxLines: 12,
+                  maxLength: 10000,
+                  autofocus: false,
+                  onTap: () =>
+                      _requestTextKeyboard(context, _bodyFocusNode, _body),
+                  keyboardType: TextInputType.multiline,
+                  textInputAction: TextInputAction.newline,
+                  textCapitalization: TextCapitalization.sentences,
+                  cursorColor: background == null ? primary : Colors.white,
+                  style:
+                      TextStyle(color: foreground, fontSize: 20, height: 1.34),
+                  onChanged: (_) {
+                    _bodyEdited = true;
+                    _scheduleDraftSave();
+                  },
+                  decoration: InputDecoration(
+                      hintText: communityText("What's on your mind?"),
+                      hintStyle: TextStyle(color: muted, fontSize: 20),
+                      border: InputBorder.none,
+                      counterText: '')),
+              if (canSetBackground) _backgroundPicker(foreground),
+              Row(children: [
+                IconButton(
+                    tooltip: communityText('Emoji'),
+                    onPressed: _saving ? null : _pickEmoji,
+                    icon: Icon(Icons.emoji_emotions_outlined,
+                        color: background == null ? primary : Colors.white)),
+                IconButton(
+                    tooltip: communityText('Bold'),
+                    onPressed:
+                        _saving ? null : () => _wrapSelection('**', '**'),
+                    icon: Icon(Icons.format_bold_rounded, color: foreground)),
+                IconButton(
+                    tooltip: communityText('Italic'),
+                    onPressed: _saving ? null : () => _wrapSelection('_', '_'),
+                    icon: Icon(Icons.format_italic_rounded, color: foreground)),
+                const Spacer(),
+                Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: ValueListenableBuilder<TextEditingValue>(
+                        valueListenable: _body,
+                        builder: (_, value, __) => Text(
+                            '${value.text.length}/10000',
+                            style: TextStyle(color: muted, fontSize: 12))))
+              ])
+            ])));
+  }
+
+  Widget _backgroundPicker(Color foreground) {
+    return SizedBox(
+        height: 48,
+        child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(children: [
+              _backgroundSwatch(null, foreground),
+              for (final entry in communityPostBackgrounds.entries)
+                _backgroundSwatch(entry.key, foreground),
+            ])));
+  }
+
+  Widget _backgroundSwatch(String? value, Color foreground) {
+    final selected = _background == value;
+    final background = communityPostBackground(value);
+    return Padding(
+        padding: const EdgeInsets.only(right: 8, bottom: 6),
+        child: Semantics(
+            button: true,
+            selected: selected,
+            label: value == null
+                ? communityText('No background')
+                : '${communityText('Background')} $value',
+            child: Tooltip(
+                message: value == null
+                    ? communityText('No background')
+                    : '${communityText('Background')} $value',
+                child: InkWell(
+                    key: ValueKey('post-background-${value ?? 'none'}'),
+                    borderRadius: BorderRadius.circular(22),
+                    onTap: _saving
+                        ? null
+                        : () {
+                            setState(() => _background = value);
+                            _scheduleDraftSave();
+                          },
+                    child: Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: background == null ? Colors.white : null,
+                            gradient: background == null
+                                ? null
+                                : LinearGradient(
+                                    colors: background.colors,
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight),
+                            border: Border.all(
+                                color: selected
+                                    ? (background == null
+                                        ? _composerInk
+                                        : foreground)
+                                    : _composerLine,
+                                width: selected ? 3 : 1)),
+                        child: Center(
+                            child: background == null
+                                ? const Icon(Icons.format_color_reset_outlined,
+                                    size: 15, color: _composerMuted)
+                                : selected
+                                    ? Icon(Icons.check_rounded,
+                                        size: 16, color: background.foreground)
+                                    : Text('Aa',
+                                        style: TextStyle(
+                                            color: background.foreground,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w800))))))));
+  }
+
+  Widget _singleMedia(PlatformFile file, Color primary) {
+    final isImage = _type == 'image';
+    final isVideo = _type == 'video';
+    final media = isVideo && _thumbnailBytes != null
+        ? Image.memory(_thumbnailBytes!,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => const ColoredBox(
+                color: _composerWash,
+                child: Icon(Icons.videocam_outlined,
+                    color: _composerMuted, size: 42)))
+        : isImage
+            ? Image.file(File(file.path!),
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const ColoredBox(
+                    color: _composerWash,
+                    child: Icon(Icons.image_outlined,
+                        color: _composerMuted, size: 42)))
+            : const ColoredBox(
+                color: _composerWash,
+                child: Icon(Icons.description_outlined,
+                    color: _composerMuted, size: 42));
+    return Stack(children: [
+      ClipRRect(
+          borderRadius: BorderRadius.circular(14),
+          child: SizedBox(
+              height: 210,
+              width: double.infinity,
+              child: Stack(fit: StackFit.expand, children: [
+                media,
+                if (isVideo) const ColoredBox(color: Colors.black26),
+                if (isVideo)
+                  const Center(
+                      child: Icon(Icons.play_circle_fill_rounded,
+                          color: Colors.white, size: 56)),
+                if (isVideo && _durationSeconds != null)
+                  Positioned(
+                      right: 10,
+                      bottom: 10,
+                      child: _StoryDurationBadge(seconds: _durationSeconds!)),
+                Positioned(
+                    left: 10,
+                    right: 44,
+                    bottom: 10,
+                    child: Text(file.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12,
+                            shadows: [
+                              Shadow(blurRadius: 4, color: Colors.black54)
+                            ])))
+              ]))),
+      Positioned(
+          right: 6,
+          top: 6,
+          child: Material(
+              color: Colors.black54,
+              shape: const CircleBorder(),
+              child: IconButton(
+                  tooltip: communityText('Remove'),
+                  onPressed: _saving ? null : () => _removeFile(0),
+                  icon: const Icon(Icons.close_rounded,
+                      color: Colors.white, size: 18))))
+    ]);
+  }
+
+  Widget _mediaGrid(Color primary) {
+    return GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: _files.length,
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3, crossAxisSpacing: 6, mainAxisSpacing: 6),
+        itemBuilder: (context, index) {
+          final file = _files[index];
+          return ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Stack(fit: StackFit.expand, children: [
+                Image.file(File(file.path!),
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => const ColoredBox(
+                        color: _composerWash,
+                        child:
+                            Icon(Icons.image_outlined, color: _composerMuted))),
+                Positioned(
+                    left: 3,
+                    right: 3,
+                    bottom: 3,
+                    child: Text(file.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700,
+                            shadows: [
+                              Shadow(blurRadius: 3, color: Colors.black87)
+                            ]))),
+                Positioned(
+                    right: 2,
+                    top: 2,
+                    child: Material(
+                        color: Colors.black54,
+                        shape: const CircleBorder(),
+                        child: InkWell(
+                            customBorder: const CircleBorder(),
+                            onTap: _saving ? null : () => _removeFile(index),
+                            child: const Padding(
+                                padding: EdgeInsets.all(3),
+                                child: Icon(Icons.close_rounded,
+                                    color: Colors.white, size: 15)))))
+              ]));
+        });
+  }
+
+  Widget _mediaCard(Color primary) {
+    return Card(
+        elevation: 0,
+        color: Colors.white,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: const BorderSide(color: _composerLine)),
+        child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(children: [
+              if (_files.isEmpty)
+                TextField(
+                    controller: _url,
+                    enabled: !_saving,
+                    style: const TextStyle(color: _composerInk, fontSize: 14),
+                    onChanged: (_) {
+                      setState(() {});
+                      _scheduleDraftSave();
+                    },
+                    decoration: InputDecoration(
+                        labelText: communityText('Paste a link or video URL'),
+                        labelStyle: const TextStyle(color: _composerMuted),
+                        prefixIcon: const Icon(Icons.link_rounded),
+                        border: const OutlineInputBorder()))
+              else if (_files.length == 1)
+                _singleMedia(_files.first, primary)
+              else
+                _mediaGrid(primary),
+              if (_type == 'image' && _files.isNotEmpty)
+                Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                        onPressed: _saving ? null : _addMoreImages,
+                        icon: const Icon(Icons.add_photo_alternate_outlined),
+                        label: Text(communityText('Add more photos')))),
+              if (_type == 'video' && _metadataLoading)
+                const Padding(
+                    padding: EdgeInsets.only(top: 8),
+                    child: LinearProgressIndicator())
+            ])));
+  }
+
+  Widget _composeActionsCard(Color primary) {
+    return Card(
+        elevation: 0,
+        color: Colors.white,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: const BorderSide(color: _composerLine)),
+        child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(communityText('Add to your post'),
+                  style: const TextStyle(
+                      color: _composerInk,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 14)),
+              const SizedBox(height: 8),
+              SizedBox(
+                  height: 78,
+                  child: ListView(scrollDirection: Axis.horizontal, children: [
+                    _actionTile(
+                        icon: Icons.photo_library_rounded,
+                        color: const Color(0xff45bd62),
+                        label: communityText('Photo'),
+                        onTap: _saving ? null : () => _pick('image')),
+                    const SizedBox(width: 6),
+                    _actionTile(
+                        icon: Icons.videocam_rounded,
+                        color: const Color(0xfff3425f),
+                        label: communityText('Video'),
+                        onTap: _saving ? null : () => _pick('video')),
+                    const SizedBox(width: 6),
+                    _actionTile(
+                        icon: Icons.emoji_emotions_outlined,
+                        color: const Color(0xfff7b928),
+                        label: communityText('Emoji'),
+                        onTap: _saving ? null : _pickEmoji),
+                    const SizedBox(width: 6),
+                    _actionTile(
+                        icon: Icons.location_on_rounded,
+                        color: const Color(0xfff5533d),
+                        label: communityText('Location'),
+                        onTap: _saving ? null : _chooseLocation),
+                    const SizedBox(width: 6),
+                    _actionTile(
+                        icon: Icons.poll_rounded,
+                        color: primary,
+                        label: communityText('Poll'),
+                        onTap: _saving
+                            ? null
+                            : () =>
+                                setState(() => _pollEnabled = !_pollEnabled)),
+                    const SizedBox(width: 6),
+                    _actionTile(
+                        icon: Icons.more_horiz_rounded,
+                        color: _composerMuted,
+                        label: communityText('More'),
+                        onTap: _saving
+                            ? null
+                            : () => setState(() => _showMore = !_showMore))
+                  ]))
+            ])));
+  }
+
+  Widget _moreCard(Color primary) {
+    return Card(
+        elevation: 0,
+        color: Colors.white,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: const BorderSide(color: _composerLine)),
+        child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Column(children: [
+              ListTile(
+                  leading: Icon(Icons.attach_file_rounded, color: primary),
+                  title: Text(communityText('Add a document'),
+                      style: const TextStyle(
+                          color: _composerInk, fontWeight: FontWeight.w700)),
+                  subtitle: Text(
+                      communityText('PDF, Word or Excel up to 25 MB'),
+                      style:
+                          const TextStyle(color: _composerMuted, fontSize: 12)),
+                  trailing: const Icon(Icons.chevron_right_rounded,
+                      color: _composerMuted),
+                  onTap: _saving ? null : () => _pick('document')),
+              if (_location.text.isNotEmpty)
+                ListTile(
+                    leading: const Icon(Icons.location_on_outlined,
+                        color: Color(0xfff5533d)),
+                    title: Text(_location.text,
+                        style: const TextStyle(
+                            color: _composerInk, fontWeight: FontWeight.w600)),
+                    trailing: IconButton(
+                        tooltip: communityText('Remove'),
+                        onPressed: _saving
+                            ? null
+                            : () {
+                                setState(() => _location.clear());
+                                _scheduleDraftSave();
+                              },
+                        icon: const Icon(Icons.close_rounded)))
+            ])));
+  }
+
+  Widget _pollCard(Color primary) {
+    return Card(
+        elevation: 0,
+        color: Colors.white,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: const BorderSide(color: _composerLine)),
+        child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(children: [
+              Row(children: [
+                Icon(Icons.poll_rounded, color: primary),
+                const SizedBox(width: 8),
+                Expanded(
+                    child: Text(communityText('Create a poll'),
+                        style: const TextStyle(
+                            color: _composerInk, fontWeight: FontWeight.w800))),
+                IconButton(
+                    tooltip: communityText('Remove'),
+                    onPressed: _saving
+                        ? null
+                        : () => setState(() => _pollEnabled = false),
+                    icon:
+                        const Icon(Icons.close_rounded, color: _composerMuted))
+              ]),
+              TextField(
+                  controller: _pollQuestion,
+                  enabled: !_saving,
+                  maxLength: 500,
+                  style: const TextStyle(color: _composerInk),
+                  onChanged: (_) {
+                    setState(() {});
+                    _scheduleDraftSave();
+                  },
+                  decoration: InputDecoration(
+                      labelText: communityText('Poll question'),
+                      labelStyle: const TextStyle(color: _composerMuted),
+                      counterText: '',
+                      border: const OutlineInputBorder())),
+              for (var index = 0; index < _pollOptions.length; index++)
+                Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Row(children: [
+                      Expanded(
+                          child: TextField(
+                              controller: _pollOptions[index],
+                              enabled: !_saving,
+                              maxLength: 160,
+                              style: const TextStyle(color: _composerInk),
+                              onChanged: (_) => _scheduleDraftSave(),
+                              decoration: InputDecoration(
+                                  labelText:
+                                      '${communityText('Option')} ${index + 1}',
+                                  labelStyle:
+                                      const TextStyle(color: _composerMuted),
+                                  counterText: '',
+                                  border: const OutlineInputBorder()))),
+                      if (_pollOptions.length > 2)
+                        IconButton(
+                            tooltip: communityText('Remove'),
+                            onPressed:
+                                _saving ? null : () => _removePollOption(index),
+                            icon: const Icon(Icons.remove_circle_outline,
+                                color: _composerMuted))
+                    ])),
+              if (_pollOptions.length < 6)
+                Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                        onPressed: _saving ? null : _addPollOption,
+                        icon: const Icon(Icons.add_rounded),
+                        label: Text(communityText('Add option')))),
+              SwitchListTile.adaptive(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(communityText('Allow multiple answers'),
+                      style: const TextStyle(
+                          color: _composerInk, fontWeight: FontWeight.w600)),
+                  value: _pollMultiple,
+                  onChanged: _saving
+                      ? null
+                      : (value) => setState(() => _pollMultiple = value)),
+              TextField(
+                  controller: _pollClosesAt,
+                  enabled: !_saving,
+                  readOnly: true,
+                  onTap: _saving ? null : _choosePollClose,
+                  style: const TextStyle(color: _composerInk, fontSize: 13),
+                  decoration: InputDecoration(
+                      labelText: communityText('Poll ends'),
+                      hintText: communityText('Choose an end date and time'),
+                      labelStyle: const TextStyle(color: _composerMuted),
+                      helperText: communityText('Optional'),
+                      helperStyle: const TextStyle(color: _composerMuted),
+                      suffixIcon: _pollClosesAt.text.isEmpty
+                          ? const Icon(Icons.event_outlined,
+                              color: _composerMuted)
+                          : IconButton(
+                              tooltip: communityText('Clear'),
+                              onPressed: _saving
+                                  ? null
+                                  : () {
+                                      setState(() => _pollClosesAt.clear());
+                                      _scheduleDraftSave();
+                                    },
+                              icon: const Icon(Icons.close_rounded,
+                                  color: _composerMuted)),
+                      border: const OutlineInputBorder()))
+            ])));
+  }
+
+  Widget _visibilityOption(String value, IconData icon, String title,
+      String subtitle, Color primary) {
+    final selected = _visibility == value;
+    return ListTile(
+        dense: true,
+        contentPadding: EdgeInsets.zero,
+        leading: Icon(icon, color: selected ? primary : _composerMuted),
+        title: Text(title,
+            style: TextStyle(
+                color: _composerInk,
+                fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                fontSize: 14)),
+        subtitle: Text(subtitle,
+            style: const TextStyle(color: _composerMuted, fontSize: 12)),
+        trailing: selected
+            ? Icon(Icons.check_circle_rounded, color: primary, size: 20)
+            : null,
+        onTap: _saving ? null : () => _setVisibility(value));
+  }
+
+  Widget _audienceCard(Color primary) {
+    if (!_showAudience) return const SizedBox.shrink();
+    return Card(
+        elevation: 0,
+        color: Colors.white,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: const BorderSide(color: _composerLine)),
+        child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(communityText('Who can see your post?'),
+                  style: const TextStyle(
+                      color: _composerInk,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 15)),
+              const SizedBox(height: 4),
+              _visibilityOption(
+                  'company',
+                  Icons.public,
+                  communityText('All company employees'),
+                  communityText('Anyone in your company can see this post'),
+                  primary),
+              _visibilityOption(
+                  'department',
+                  Icons.apartment_rounded,
+                  communityText('Specific departments'),
+                  communityText('Only people in selected departments'),
+                  primary),
+              _visibilityOption(
+                  'employees',
+                  Icons.group_rounded,
+                  communityText('Selected employees'),
+                  communityText('Only the people you choose'),
+                  primary),
+              _visibilityOption(
+                  'management',
+                  Icons.verified_user_outlined,
+                  communityText('Management only'),
+                  communityText('Managers and company leadership'),
+                  primary),
+              _visibilityOption(
+                  'hr',
+                  Icons.badge_outlined,
+                  communityText('HR only'),
+                  communityText('HR team members only'),
+                  primary),
+              if (_visibility == 'department' || _visibility == 'employees')
+                Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: TextField(
+                        controller: _audienceIds,
+                        enabled: !_saving,
+                        keyboardType: TextInputType.number,
+                        style: const TextStyle(color: _composerInk),
+                        onChanged: (_) => _scheduleDraftSave(),
+                        decoration: InputDecoration(
+                            labelText:
+                                communityText('Audience IDs (comma separated)'),
+                            labelStyle: const TextStyle(color: _composerMuted),
+                            border: const OutlineInputBorder())))
+            ])));
+  }
+
   Widget _actionTile(
       {required IconData icon,
       required Color color,
       required String label,
       required VoidCallback? onTap}) {
     return SizedBox(
-        width: 92,
+        width: 84,
         child: Material(
-            color: const Color(0xfff5f8ff),
-            borderRadius: BorderRadius.circular(18),
+            color: _composerWash,
+            borderRadius: BorderRadius.circular(14),
             child: InkWell(
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(14),
                 onTap: onTap,
                 child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 10),
                     child: Column(mainAxisSize: MainAxisSize.min, children: [
-                      Icon(icon, color: color, size: 28),
+                      Icon(icon, color: color, size: 26),
                       const SizedBox(height: 5),
                       Text(label,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontWeight: FontWeight.w600))
+                          style: const TextStyle(
+                              color: _composerInk,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 12))
                     ])))));
+  }
+
+  ThemeData _composerTheme(BuildContext context) {
+    final base = Theme.of(context);
+    const ink = Color(0xff101828);
+    const muted = Color(0xff60708f);
+    final primary = base.colorScheme.primary;
+    return base.copyWith(
+        brightness: Brightness.light,
+        colorScheme: base.colorScheme.copyWith(
+            brightness: Brightness.light,
+            surface: Colors.white,
+            onSurface: ink,
+            onSurfaceVariant: muted),
+        textTheme: base.textTheme.apply(bodyColor: ink, displayColor: ink),
+        iconTheme: base.iconTheme.copyWith(color: ink),
+        inputDecorationTheme: const InputDecorationTheme(
+            labelStyle: TextStyle(color: muted),
+            hintStyle: TextStyle(color: muted),
+            helperStyle: TextStyle(color: muted),
+            counterStyle: TextStyle(color: muted),
+            prefixIconColor: muted,
+            suffixIconColor: muted),
+        textSelectionTheme: TextSelectionThemeData(
+            cursorColor: primary,
+            selectionColor: primary.withValues(alpha: .22),
+            selectionHandleColor: primary));
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final primary = theme.colorScheme.primary;
-    final name = '${_profile?['name'] ?? 'Your name'}';
+    final name = '${_profile?['name'] ?? communityText('Your name')}';
     final avatar = '${_profile?['avatar'] ?? ''}';
     return PopScope(
         canPop: !_saving,
         child: Scaffold(
-            backgroundColor: const Color(0xfff5f8fd),
+            backgroundColor: _composerWash,
             appBar: AppBar(
                 backgroundColor: primary,
                 foregroundColor: Colors.white,
                 elevation: 0,
+                scrolledUnderElevation: 0,
                 leading: IconButton(
                     tooltip: communityText('Back'),
-                    onPressed:
-                        _saving ? null : () => Navigator.maybePop(context),
-                    icon: const Icon(Icons.arrow_back_rounded)),
+                    onPressed: _saving ? null : _closeComposer,
+                    icon: const Icon(Icons.close_rounded)),
                 centerTitle: true,
                 title: Text(
                     widget.post == null
                         ? communityText('Create post')
                         : communityText('Edit post'),
-                    style: const TextStyle(fontWeight: FontWeight.w800)),
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w800, fontSize: 17)),
                 actions: [
-                  IconButton(
-                      tooltip: communityText('Close'),
-                      onPressed:
-                          _saving ? null : () => Navigator.maybePop(context),
-                      icon: const Icon(Icons.close_rounded))
+                  Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 8),
+                      child: TextButton(
+                          onPressed: _saving ? null : _save,
+                          style: TextButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              disabledForegroundColor: Colors.white60,
+                              backgroundColor:
+                                  Colors.white.withValues(alpha: .16),
+                              shape: const StadiumBorder(),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16)),
+                          child: _saving
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2, color: Colors.white))
+                              : Text(
+                                  widget.post == null
+                                      ? communityText('Publish post')
+                                      : communityText('Save changes'),
+                                  style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w800))))
                 ]),
-            bottomNavigationBar: SafeArea(
-                minimum: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-                child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  if (_error != null)
-                    Align(
-                        alignment: Alignment.centerLeft,
-                        child: Padding(
-                            padding: const EdgeInsets.only(bottom: 6),
-                            child: Text(_error!,
-                                style: TextStyle(
-                                    color: Theme.of(context).colorScheme.error,
-                                    fontWeight: FontWeight.w600)))),
-                  FilledButton.icon(
-                      onPressed: _saving ? null : _save,
-                      icon: _saving
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(
-                                  strokeWidth: 2, color: Colors.white))
-                          : const Icon(Icons.send_rounded),
-                      label: Text(_saving
-                          ? communityText('Publishing…')
-                          : widget.post == null
-                              ? communityText('Publish post')
-                              : communityText('Save changes')),
-                      style: FilledButton.styleFrom(
-                          minimumSize: const Size.fromHeight(54),
-                          shape: const StadiumBorder(),
-                          textStyle: const TextStyle(
-                              fontSize: 17, fontWeight: FontWeight.w800)))
-                ])),
-            body: ListView(
-                cacheExtent: 1600,
-                padding: const EdgeInsets.fromLTRB(16, 14, 16, 28),
-                children: [
-                  Card(
-                      elevation: 0,
-                      color: Colors.white,
-                      margin: EdgeInsets.zero,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20)),
-                      child: Padding(
-                          padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
-                          child: Row(children: [
-                            CircleAvatar(
-                                radius: 29,
-                                backgroundColor: primary.withValues(alpha: .12),
-                                backgroundImage: avatar.isNotEmpty
-                                    ? NetworkImage(avatar)
-                                    : null,
-                                child: avatar.isEmpty
-                                    ? Icon(Icons.person,
-                                        color: primary, size: 28)
-                                    : null),
-                            const SizedBox(width: 12),
-                            Expanded(
-                                child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                  Text(name,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                          fontSize: 17,
-                                          fontWeight: FontWeight.w800)),
-                                  const SizedBox(height: 3),
-                                  Row(children: [
-                                    Icon(Icons.badge_outlined,
-                                        size: 16, color: Colors.blueGrey),
-                                    const SizedBox(width: 5),
-                                    Flexible(
-                                        child: Text(
-                                            '${_profile?['department'] ?? communityText('Employee')}',
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(
-                                                color: Colors.blueGrey,
-                                                fontWeight: FontWeight.w600)))
-                                  ])
-                                ])),
-                            if (!_isShare)
-                              OutlinedButton.icon(
-                                  onPressed: _saving
-                                      ? null
-                                      : () =>
-                                          setState(() => _showAudience = true),
-                                  icon: Icon(_visibility == 'company'
-                                      ? Icons.public
-                                      : Icons.groups_outlined),
-                                  label: Text(_visibility == 'company'
-                                      ? communityText('Public')
-                                      : _visibilityLabel()),
-                                  style: OutlinedButton.styleFrom(
-                                      foregroundColor: primary,
-                                      shape: const StadiumBorder()))
-                          ]))),
-                  const SizedBox(height: 12),
-                  Card(
-                      elevation: 0,
-                      color: Colors.white,
-                      margin: EdgeInsets.zero,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                          side: BorderSide(
-                              color: Colors.blueGrey.withValues(alpha: .12))),
-                      child: Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-                          child: Column(children: [
-                            TextField(
-                                controller: _body,
-                                enabled: !_saving,
-                                maxLines: 5,
-                                maxLength: 10000,
-                                textCapitalization:
-                                    TextCapitalization.sentences,
-                                decoration: InputDecoration(
-                                    hintText: communityText(
-                                        'What would you like to share?'),
-                                    hintStyle: const TextStyle(
-                                        color: Color(0xff60708f), fontSize: 20),
-                                    border: InputBorder.none,
-                                    counterText: '')),
-                            Row(children: [
-                              IconButton(
-                                  tooltip: communityText('Add emoji'),
-                                  onPressed: _saving ? null : _pickEmoji,
-                                  icon: Icon(Icons.emoji_emotions_outlined,
-                                      color: primary)),
-                              const Spacer(),
-                              Text('${_body.text.length}/10000',
-                                  style: theme.textTheme.bodySmall),
-                              IconButton(
-                                  tooltip: communityText('Text style'),
-                                  onPressed: _saving
-                                      ? null
-                                      : () => setState(() =>
-                                          _body.text = '**${_body.text}**'),
-                                  icon: Icon(Icons.format_bold_rounded,
-                                      color: primary))
-                            ])
-                          ]))),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                      height: 86,
-                      child:
-                          ListView(scrollDirection: Axis.horizontal, children: [
-                        _actionTile(
-                            icon: Icons.photo_library_rounded,
-                            color: const Color(0xff1769e8),
-                            label: communityText('Photo'),
-                            onTap: _saving
-                                ? null
-                                : () => setState(() {
-                                      _type = 'image';
-                                      _pick();
-                                    })),
-                        const SizedBox(width: 8),
-                        _actionTile(
-                            icon: Icons.videocam_rounded,
-                            color: const Color(0xffef3340),
-                            label: communityText('Video'),
-                            onTap: _saving
-                                ? null
-                                : () => setState(() {
-                                      _type = 'video';
-                                      _pick();
-                                    })),
-                        const SizedBox(width: 8),
-                        _actionTile(
-                            icon: Icons.insert_drive_file_rounded,
-                            color: const Color(0xff6644e8),
-                            label: communityText('File'),
-                            onTap: _saving
-                                ? null
-                                : () => setState(() {
-                                      _type = 'document';
-                                      _pick();
-                                    })),
-                        const SizedBox(width: 8),
-                        _actionTile(
-                            icon: Icons.emoji_emotions_rounded,
-                            color: const Color(0xffffa600),
-                            label: communityText('Emoji'),
-                            onTap: _saving ? null : _pickEmoji),
-                        const SizedBox(width: 8),
-                        _actionTile(
-                            icon: Icons.location_on_rounded,
-                            color: const Color(0xff1b69e8),
-                            label: communityText('Location'),
-                            onTap: _saving ? null : _chooseLocation),
-                        const SizedBox(width: 8),
-                        _actionTile(
-                            icon: Icons.more_horiz_rounded,
-                            color: Colors.blueGrey,
-                            label: communityText('More'),
-                            onTap: _saving
-                                ? null
-                                : () => setState(() => _showMore = !_showMore))
-                      ])),
-                  if (_showMore || _type != 'text' || _files.isNotEmpty)
-                    Card(
-                        elevation: 0,
-                        color: Colors.white,
-                        margin: const EdgeInsets.only(top: 10),
-                        child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Column(children: [
-                              if (_type != 'text')
-                                TextField(
-                                    controller: _url,
-                                    enabled: !_saving && _files.isEmpty,
-                                    maxLines: 2,
-                                    decoration: InputDecoration(
-                                        labelText: communityText(
-                                            'Paste a link or video URL'),
-                                        prefixIcon:
-                                            const Icon(Icons.link_rounded),
-                                        border: const OutlineInputBorder())),
-                              if (_type != 'text') const SizedBox(height: 8),
-                              if (['image', 'video', 'document']
-                                  .contains(_type))
-                                ListTile(
-                                    contentPadding: EdgeInsets.zero,
-                                    leading:
-                                        Icon(Icons.attach_file, color: primary),
-                                    title: Text(_files.isEmpty
-                                        ? communityText('Choose an attachment')
-                                        : _files
-                                            .map((file) => file.name)
-                                            .join(', ')),
-                                    subtitle: Text(communityText(
-                                        'Photos, videos and documents are supported.')),
-                                    trailing: IconButton(
-                                        onPressed: _saving ? null : _pick,
-                                        icon: const Icon(Icons.chevron_right))),
-                              if (_type == 'video' && _metadataLoading)
-                                const Padding(
-                                    padding: EdgeInsets.only(bottom: 8),
-                                    child: LinearProgressIndicator()),
-                              if (_type == 'video' && _thumbnailBytes != null)
-                                ClipRRect(
-                                    borderRadius: BorderRadius.circular(14),
-                                    child: AspectRatio(
-                                        aspectRatio: 16 / 9,
-                                        child: Stack(
-                                            fit: StackFit.expand,
-                                            children: [
-                                              Image.memory(_thumbnailBytes!,
-                                                  fit: BoxFit.cover),
-                                              const ColoredBox(
-                                                  color: Colors.black26),
-                                              const Center(
-                                                  child: Icon(
-                                                      Icons
-                                                          .play_circle_fill_rounded,
-                                                      color: Colors.white,
-                                                      size: 54)),
-                                              if (_durationSeconds != null)
-                                                Positioned(
-                                                    right: 10,
-                                                    bottom: 10,
-                                                    child: _StoryDurationBadge(
-                                                        seconds:
-                                                            _durationSeconds!))
-                                            ]))),
-                              if (_location.text.isNotEmpty)
-                                ListTile(
-                                    contentPadding: EdgeInsets.zero,
-                                    leading: const Icon(
-                                        Icons.location_on_outlined,
-                                        color: Colors.red),
-                                    title: Text(_location.text),
-                                    trailing: IconButton(
-                                        onPressed: () =>
-                                            setState(() => _location.clear()),
-                                        icon: const Icon(Icons.close)))
-                            ]))),
-                  const SizedBox(height: 12),
-                  Card(
-                      elevation: 0,
-                      color: primary.withValues(alpha: .08),
-                      margin: EdgeInsets.zero,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20)),
-                      child: SwitchListTile.adaptive(
-                          secondary: Icon(Icons.poll_rounded,
-                              color: primary, size: 30),
-                          title: Text(communityText('Add a poll'),
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.w800)),
-                          subtitle: Text(communityText('Let your team vote!')),
-                          value: _pollEnabled,
-                          onChanged: _saving
-                              ? null
-                              : (value) =>
-                                  setState(() => _pollEnabled = value))),
-                  if (_pollEnabled)
-                    Card(
-                        elevation: 0,
-                        color: Colors.white,
-                        margin: const EdgeInsets.only(top: 10),
-                        child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Column(children: [
-                              TextField(
-                                  controller: _pollQuestion,
-                                  maxLength: 500,
-                                  decoration: InputDecoration(
-                                      labelText: communityText('Poll question'),
-                                      border: const OutlineInputBorder())),
-                              for (var index = 0;
-                                  index < _pollOptions.length;
-                                  index++)
-                                Padding(
-                                    padding: const EdgeInsets.only(top: 8),
-                                    child: TextField(
-                                        controller: _pollOptions[index],
-                                        maxLength: 160,
-                                        decoration: InputDecoration(
-                                            labelText:
-                                                '${communityText('Option')} ${index + 1}',
-                                            border:
-                                                const OutlineInputBorder()))),
-                              SwitchListTile.adaptive(
-                                  contentPadding: EdgeInsets.zero,
-                                  title: Text(
-                                      communityText('Allow multiple answers')),
-                                  value: _pollMultiple,
-                                  onChanged: (value) =>
-                                      setState(() => _pollMultiple = value)),
-                              TextField(
-                                  controller: _pollClosesAt,
-                                  decoration: InputDecoration(
-                                      labelText: communityText(
-                                          'Poll closes at (optional ISO date)'),
-                                      border: const OutlineInputBorder()))
-                            ]))),
-                  const SizedBox(height: 12),
-                  Card(
-                      elevation: 0,
-                      color: Colors.white,
-                      margin: EdgeInsets.zero,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20)),
-                      child: ListTile(
-                          onTap: _saving
-                              ? null
-                              : () => setState(
-                                  () => _showAudience = !_showAudience),
-                          leading: Icon(Icons.shield_rounded,
-                              color: primary, size: 30),
-                          title: Text(communityText('Post visibility'),
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.w800)),
-                          subtitle: Text(_visibilityLabel()),
-                          trailing: Icon(_showAudience
-                              ? Icons.expand_less
-                              : Icons.chevron_right))),
-                  if (_showAudience)
-                    Card(
-                        elevation: 0,
-                        color: Colors.white,
-                        margin: const EdgeInsets.only(top: 8),
-                        child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Column(children: [
-                              DropdownButtonFormField<String>(
-                                  initialValue: _visibility,
-                                  decoration: InputDecoration(
-                                      labelText: communityText(
-                                          'Choose who can see this post'),
-                                      border: const OutlineInputBorder()),
-                                  items: const [
-                                    DropdownMenuItem(
-                                        value: 'company',
-                                        child: Text('All company employees')),
-                                    DropdownMenuItem(
-                                        value: 'department',
-                                        child: Text('Specific departments')),
-                                    DropdownMenuItem(
-                                        value: 'employees',
-                                        child: Text('Selected employees')),
-                                    DropdownMenuItem(
-                                        value: 'management',
-                                        child: Text('Management only')),
-                                    DropdownMenuItem(
-                                        value: 'hr', child: Text('HR only'))
-                                  ],
-                                  onChanged: _saving
-                                      ? null
-                                      : (value) => setState(() =>
-                                          _visibility = value ?? 'company')),
-                              if (_visibility == 'department' ||
-                                  _visibility == 'employees')
-                                Padding(
-                                    padding: const EdgeInsets.only(top: 10),
-                                    child: TextField(
-                                        controller: _audienceIds,
-                                        keyboardType: TextInputType.number,
-                                        decoration: InputDecoration(
-                                            labelText: communityText(
-                                                'Audience IDs (comma separated)'),
-                                            border:
-                                                const OutlineInputBorder())))
-                            ]))),
-                  if (_error != null)
-                    Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        child: Text(_error!,
-                            style: TextStyle(
-                                color: theme.colorScheme.error,
-                                fontWeight: FontWeight.w600))),
-                  const SizedBox(height: 8),
-                  Row(children: [
-                    Expanded(
-                        child: TextButton.icon(
-                            onPressed: _saving ? null : _saveDraft,
-                            icon: const Icon(Icons.save_outlined),
-                            label: Text(communityText('Save Draft')))),
-                    const SizedBox(height: 28, child: VerticalDivider()),
-                    Expanded(
-                        child: TextButton.icon(
-                            onPressed: _saving
-                                ? null
-                                : () => Navigator.maybePop(context),
-                            icon: const Icon(Icons.cancel_outlined),
-                            label: Text(communityText('Cancel'))))
-                  ])
-                ])));
+            body: Theme(
+                data: _composerTheme(context),
+                child: ListView(
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
+                    padding: EdgeInsets.fromLTRB(12, 12, 12,
+                        24 + MediaQuery.viewInsetsOf(context).bottom),
+                    children: [
+                      if (_error != null) _errorCard(),
+                      _headerCard(name, avatar, primary),
+                      const SizedBox(height: 10),
+                      _textCard(primary),
+                      if (_type != 'text') ...[
+                        const SizedBox(height: 10),
+                        _mediaCard(primary),
+                      ],
+                      const SizedBox(height: 10),
+                      _composeActionsCard(primary),
+                      if (_showMore) ...[
+                        const SizedBox(height: 10),
+                        _moreCard(primary),
+                      ],
+                      if (_showAudience) ...[
+                        const SizedBox(height: 10),
+                        _audienceCard(primary),
+                      ],
+                      if (_pollEnabled) ...[
+                        const SizedBox(height: 10),
+                        _pollCard(primary),
+                      ],
+                      const SizedBox(height: 14),
+                      Row(children: [
+                        Expanded(
+                            child: OutlinedButton.icon(
+                                onPressed: _saving ? null : _saveDraft,
+                                icon: const Icon(Icons.save_outlined),
+                                label: Text(communityText('Save draft')))),
+                        const SizedBox(width: 10),
+                        Expanded(
+                            child: TextButton.icon(
+                                onPressed: _saving ? null : _closeComposer,
+                                icon: const Icon(Icons.close_rounded),
+                                label: Text(communityText('Discard'))))
+                      ])
+                    ]))));
   }
 }
 
@@ -3547,6 +5390,7 @@ class SocialCommentsScreen extends StatefulWidget {
 class _SocialCommentsScreenState extends State<SocialCommentsScreen> {
   late final _api = widget.api ?? CommunityApi();
   final _text = TextEditingController();
+  final _composerFocus = FocusNode();
   final List<Map<String, dynamic>> _comments = [];
   bool _loading = false;
   bool _sending = false;
@@ -3554,6 +5398,8 @@ class _SocialCommentsScreenState extends State<SocialCommentsScreen> {
   int _page = 0;
   String? _error;
   int? _replyParent;
+  double _dragOffset = 0;
+  bool _dragging = false;
   @override
   void initState() {
     super.initState();
@@ -3563,6 +5409,7 @@ class _SocialCommentsScreenState extends State<SocialCommentsScreen> {
   @override
   void dispose() {
     _api.dispose();
+    _composerFocus.dispose();
     _text.dispose();
     super.dispose();
   }
@@ -3742,7 +5589,8 @@ class _SocialCommentsScreenState extends State<SocialCommentsScreen> {
     return CircleAvatar(
         radius: radius,
         backgroundColor: const Color(0xffdbe7fa),
-        backgroundImage: avatar.isNotEmpty ? NetworkImage(avatar) : null,
+        backgroundImage:
+            avatar.isNotEmpty ? communityAvatarImage(avatar) : null,
         child: avatar.isEmpty
             ? const Icon(Icons.person_outline_rounded, color: Color(0xff5068a0))
             : null);
@@ -3753,306 +5601,401 @@ class _SocialCommentsScreenState extends State<SocialCommentsScreen> {
     final canComment =
         context.watch<DashboardProvider>().features['social_feed.comment'] ==
             '1';
-    return Scaffold(
-        backgroundColor: Colors.white,
-        appBar: AppBar(
-            backgroundColor: Colors.white,
-            foregroundColor: const Color(0xff182230),
-            elevation: 0,
-            centerTitle: true,
-            title: Text(communityText('Comments'),
-                style: const TextStyle(fontWeight: FontWeight.w800)),
-            bottom: const PreferredSize(
-                preferredSize: Size.fromHeight(5),
-                child: SizedBox(
-                    width: 42,
-                    height: 4,
-                    child: DecoratedBox(
-                        decoration: BoxDecoration(
-                            color: Color(0xffaeb5bd),
-                            borderRadius:
-                                BorderRadius.all(Radius.circular(4))))))),
-        body: Column(children: [
-          if (_error != null)
-            Padding(padding: EdgeInsets.all(12), child: Text(_error!)),
-          Padding(
-              padding: const EdgeInsets.fromLTRB(18, 14, 18, 4),
-              child: Row(children: [
-                if (widget.reactionsCount > 0) ...[
-                  const Text('👍', style: TextStyle(fontSize: 18)),
-                  const SizedBox(width: 5),
-                  Text('${widget.reactionsCount}',
-                      style: const TextStyle(fontWeight: FontWeight.w700))
-                ],
-                const Spacer(),
-                if (widget.sharesCount > 0)
-                  Text('${widget.sharesCount} ${communityText('shares')}',
-                      style: const TextStyle(fontWeight: FontWeight.w700))
-              ])),
-          Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18),
-              child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: PopupMenuButton<String>(
-                      padding: EdgeInsets.zero,
-                      tooltip: communityText('Sort comments'),
-                      onSelected: (_) {},
-                      itemBuilder: (_) => [
-                            PopupMenuItem(
-                                value: 'relevant',
-                                child: Text(communityText('Most relevant'))),
-                            PopupMenuItem(
-                                value: 'newest',
-                                child: Text(communityText('Newest'))),
-                          ],
-                      child: Row(mainAxisSize: MainAxisSize.min, children: [
-                        Text(communityText('Most relevant'),
-                            style: const TextStyle(
-                                fontSize: 15, fontWeight: FontWeight.w700)),
-                        const SizedBox(width: 4),
-                        const Icon(Icons.keyboard_arrow_down_rounded, size: 20)
-                      ])))),
-          Expanded(
-              child: RefreshIndicator(
-                  onRefresh: () => _load(reset: true),
-                  child: ListView(
-                    physics: AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(14, 8, 14, 18),
-                    children: [
-                      if (_comments.isEmpty && !_loading)
-                        Padding(
-                            padding: EdgeInsets.all(32),
-                            child: Text(communityText('No comments yet.'))),
-                      for (final comment in _comments)
-                        Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                            child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _commentAvatar(comment),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                      child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                        Row(children: [
-                                          Expanded(
-                                              child: Text(
-                                                  '${(comment['author'] as Map?)?['name'] ?? communityText('Employee')}',
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  style: const TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.w800))),
-                                          Text(
-                                              ' · ${_date(comment['created_at'])}',
-                                              style: const TextStyle(
-                                                  color: Color(0xff75808d),
-                                                  fontSize: 12))
-                                        ]),
-                                        const SizedBox(height: 4),
-                                        Container(
-                                            width: double.infinity,
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 12, vertical: 9),
-                                            decoration: BoxDecoration(
-                                                color: const Color(0xfff0f2f5),
-                                                borderRadius:
-                                                    BorderRadius.circular(16)),
-                                            child: _ExpandableCommentText(
-                                                key: ValueKey(comment['id']),
-                                                text: '${comment['body']}')),
-                                        Row(children: [
-                                          if (canComment)
-                                            TextButton(
-                                                onPressed: () => setState(() =>
-                                                    _replyParent =
-                                                        comment['id'] as int),
-                                                style: TextButton.styleFrom(
-                                                    minimumSize: Size.zero,
-                                                    padding: const EdgeInsets
-                                                        .symmetric(
-                                                        horizontal: 7,
-                                                        vertical: 4)),
-                                                child: Text(
-                                                    communityText('Reply'),
-                                                    style: const TextStyle(
-                                                        fontWeight:
-                                                            FontWeight.w700))),
-                                          GestureDetector(
-                                              onTap: () => _reactComment(
-                                                  comment,
-                                                  comment['my_reaction'] ==
-                                                          'like'
-                                                      ? null
-                                                      : 'like'),
-                                              onLongPress: () =>
-                                                  _chooseCommentReaction(
-                                                      comment),
-                                              child: Padding(
-                                                  padding:
-                                                      const EdgeInsets.all(6),
-                                                  child: Row(children: [
-                                                    Text(
-                                                        comment['my_reaction'] ==
-                                                                null
-                                                            ? '♡'
-                                                            : (communityReactions[
-                                                                    comment[
-                                                                        'my_reaction']] ??
-                                                                '👍'),
+    return Stack(fit: StackFit.expand, children: [
+      ColoredBox(color: Colors.black.withValues(alpha: .35)),
+      AnimatedContainer(
+          duration:
+              _dragging ? Duration.zero : const Duration(milliseconds: 180),
+          curve: Curves.easeOut,
+          transform: Matrix4.translationValues(0, _dragOffset, 0),
+          child: Scaffold(
+              backgroundColor: Colors.white,
+              appBar: PreferredSize(
+                  preferredSize: const Size.fromHeight(kToolbarHeight + 22),
+                  child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onVerticalDragStart: (_) => setState(() {
+                            _dragging = true;
+                            _dragOffset = 0;
+                          }),
+                      onVerticalDragUpdate: (details) => setState(() {
+                            _dragOffset =
+                                (_dragOffset + details.delta.dy).clamp(0, 320);
+                          }),
+                      onVerticalDragEnd: (details) {
+                        setState(() => _dragging = false);
+                        if (_dragOffset > 80 ||
+                            (details.primaryVelocity ?? 0) > 300) {
+                          Navigator.maybePop(context);
+                        } else {
+                          setState(() => _dragOffset = 0);
+                        }
+                      },
+                      onVerticalDragCancel: () => setState(() {
+                            _dragging = false;
+                            _dragOffset = 0;
+                          }),
+                      child: AppBar(
+                          backgroundColor: Colors.white,
+                          foregroundColor: const Color(0xff182230),
+                          elevation: 0,
+                          centerTitle: true,
+                          leading: IconButton(
+                              tooltip: communityText('Close'),
+                              onPressed: () => Navigator.maybePop(context),
+                              icon: const Icon(Icons.close_rounded)),
+                          title: Text(communityText('Comments'),
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.w800)),
+                          bottom: PreferredSize(
+                              preferredSize: const Size.fromHeight(22),
+                              child: GestureDetector(
+                                  key: const ValueKey('comments-drag-handle'),
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () => Navigator.maybePop(context),
+                                  child: Center(
+                                      child: Container(
+                                          width: 44,
+                                          height: 5,
+                                          margin:
+                                              const EdgeInsets.only(bottom: 10),
+                                          decoration: BoxDecoration(
+                                              color: const Color(0xffc3cbd6),
+                                              borderRadius:
+                                                  BorderRadius.circular(
+                                                      4))))))))),
+              body: Column(children: [
+                if (_error != null)
+                  Padding(padding: EdgeInsets.all(12), child: Text(_error!)),
+                Padding(
+                    padding: const EdgeInsets.fromLTRB(18, 14, 18, 4),
+                    child: Row(children: [
+                      if (widget.reactionsCount > 0) ...[
+                        const Text('👍', style: TextStyle(fontSize: 18)),
+                        const SizedBox(width: 5),
+                        Text('${widget.reactionsCount}',
+                            style: const TextStyle(fontWeight: FontWeight.w700))
+                      ],
+                      const Spacer(),
+                      if (widget.sharesCount > 0)
+                        Text('${widget.sharesCount} ${communityText('shares')}',
+                            style: const TextStyle(fontWeight: FontWeight.w700))
+                    ])),
+                Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 18),
+                    child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: PopupMenuButton<String>(
+                            padding: EdgeInsets.zero,
+                            tooltip: communityText('Sort comments'),
+                            onSelected: (_) {},
+                            itemBuilder: (_) => [
+                                  PopupMenuItem(
+                                      value: 'relevant',
+                                      child:
+                                          Text(communityText('Most relevant'))),
+                                  PopupMenuItem(
+                                      value: 'newest',
+                                      child: Text(communityText('Newest'))),
+                                ],
+                            child:
+                                Row(mainAxisSize: MainAxisSize.min, children: [
+                              Text(communityText('Most relevant'),
+                                  style: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700)),
+                              const SizedBox(width: 4),
+                              const Icon(Icons.keyboard_arrow_down_rounded,
+                                  size: 20)
+                            ])))),
+                Expanded(
+                    child: RefreshIndicator(
+                        onRefresh: () => _load(reset: true),
+                        child: ListView(
+                          physics: AlwaysScrollableScrollPhysics(),
+                          keyboardDismissBehavior:
+                              ScrollViewKeyboardDismissBehavior.onDrag,
+                          padding: const EdgeInsets.fromLTRB(14, 8, 14, 18),
+                          children: [
+                            if (_comments.isEmpty && !_loading)
+                              Padding(
+                                  padding: EdgeInsets.all(32),
+                                  child:
+                                      Text(communityText('No comments yet.'))),
+                            for (final comment in _comments)
+                              Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 10),
+                                  child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        _commentAvatar(comment),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                            child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                              Row(children: [
+                                                Expanded(
+                                                    child: Text(
+                                                        '${(comment['author'] as Map?)?['name'] ?? communityText('Employee')}',
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
                                                         style: const TextStyle(
-                                                            fontSize: 17)),
-                                                    if ((comment[
-                                                                'reactions_count'] ??
-                                                            0) >
-                                                        0)
-                                                      Padding(
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .w800))),
+                                                Text(
+                                                    ' · ${_date(comment['created_at'])}',
+                                                    style: const TextStyle(
+                                                        color:
+                                                            Color(0xff75808d),
+                                                        fontSize: 12))
+                                              ]),
+                                              const SizedBox(height: 4),
+                                              Container(
+                                                  width: double.infinity,
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                      horizontal: 12,
+                                                      vertical: 9),
+                                                  decoration: BoxDecoration(
+                                                      color: const Color(
+                                                          0xfff0f2f5),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              16)),
+                                                  child: _ExpandableCommentText(
+                                                      key: ValueKey(
+                                                          comment['id']),
+                                                      text:
+                                                          '${comment['body']}')),
+                                              Row(children: [
+                                                if (canComment)
+                                                  TextButton(
+                                                      onPressed: () {
+                                                        setState(() =>
+                                                            _replyParent =
+                                                                comment['id']
+                                                                    as int);
+                                                        _composerFocus
+                                                            .requestFocus();
+                                                      },
+                                                      style: TextButton.styleFrom(
+                                                          minimumSize:
+                                                              Size.zero,
                                                           padding:
                                                               const EdgeInsets
-                                                                  .only(
-                                                                  left: 3),
-                                                          child: Text(
-                                                              '${comment['reactions_count']}',
-                                                              style: const TextStyle(
-                                                                  color: Color(
-                                                                      0xff65707e),
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w700)))
-                                                  ]))),
-                                          if ((comment['replies_count'] ?? 0) >
-                                              0)
-                                            TextButton(
-                                                onPressed: () =>
-                                                    _loadReplies(comment),
-                                                style: TextButton.styleFrom(
-                                                    minimumSize: Size.zero,
-                                                    padding: const EdgeInsets
-                                                        .symmetric(
-                                                        horizontal: 7,
-                                                        vertical: 4)),
-                                                child: Text(
-                                                    '${comment['replies_count']} ${communityText('replies')}',
-                                                    style: const TextStyle(
-                                                        fontWeight:
-                                                            FontWeight.w700))),
-                                          const Spacer(),
-                                          if (comment['can_edit'] == true)
-                                            IconButton(
-                                                visualDensity:
-                                                    VisualDensity.compact,
-                                                onPressed: () => _edit(comment),
-                                                icon: const Icon(
-                                                    Icons.edit_outlined,
-                                                    size: 18)),
-                                          if (comment['can_delete'] == true)
-                                            IconButton(
-                                                visualDensity:
-                                                    VisualDensity.compact,
-                                                onPressed: () =>
-                                                    _delete(comment),
-                                                icon: const Icon(
-                                                    Icons.delete_outline,
-                                                    size: 18))
-                                        ])
-                                      ]))
-                                ])),
-                      for (final comment in _comments)
-                        if (comment['replies'] is List)
-                          Padding(
-                              padding: const EdgeInsets.only(left: 34),
-                              child: Column(children: [
-                                for (final reply in comment['replies'] as List)
-                                  ListTile(
-                                      dense: true,
-                                      leading: const Icon(
-                                          Icons.subdirectory_arrow_right,
-                                          size: 18),
-                                      title: Text(
-                                          '${(reply['author'] as Map?)?['name'] ?? communityText('Employee')}'),
-                                      subtitle: Text('${reply['body']}'))
-                              ])),
-                      if (_loading) Center(child: CircularProgressIndicator()),
-                      if (_hasMore && !_loading && _comments.isNotEmpty)
-                        TextButton(
-                            onPressed: _load,
-                            child: Text(communityText('Load more comments'))),
-                      if (_error != null)
-                        TextButton(
-                            onPressed: () => _load(reset: _comments.isEmpty),
-                            child: Text(communityText('Try again'))),
-                    ],
-                  ))),
-          if (canComment)
-            SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(14, 6, 14, 10),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _text,
-                        enabled: !_sending,
-                        minLines: 1,
-                        maxLines: 4,
-                        maxLength: 2000,
-                        textCapitalization: TextCapitalization.sentences,
-                        decoration: InputDecoration(
-                          hintText: _replyParent == null
-                              ? communityText('Write a comment…')
-                              : communityText('Write a reply…'),
-                          counterText: '',
-                          filled: true,
-                          fillColor: const Color(0xfff0f2f5),
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 18, vertical: 12),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(24),
-                            borderSide: BorderSide.none,
+                                                                  .symmetric(
+                                                                  horizontal: 7,
+                                                                  vertical: 4)),
+                                                      child: Text(
+                                                          communityText(
+                                                              'Reply'),
+                                                          style: const TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w700))),
+                                                GestureDetector(
+                                                    onTap: () => _reactComment(
+                                                        comment,
+                                                        comment['my_reaction'] ==
+                                                                'like'
+                                                            ? null
+                                                            : 'like'),
+                                                    onLongPress: () =>
+                                                        _chooseCommentReaction(
+                                                            comment),
+                                                    child: Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(6),
+                                                        child: Row(children: [
+                                                          Text(
+                                                              comment['my_reaction'] ==
+                                                                      null
+                                                                  ? '♡'
+                                                                  : (communityReactions[
+                                                                          comment[
+                                                                              'my_reaction']] ??
+                                                                      '👍'),
+                                                              style:
+                                                                  const TextStyle(
+                                                                      fontSize:
+                                                                          17)),
+                                                          if ((comment[
+                                                                      'reactions_count'] ??
+                                                                  0) >
+                                                              0)
+                                                            Padding(
+                                                                padding:
+                                                                    const EdgeInsets
+                                                                        .only(
+                                                                        left:
+                                                                            3),
+                                                                child: Text(
+                                                                    '${comment['reactions_count']}',
+                                                                    style: const TextStyle(
+                                                                        color: Color(
+                                                                            0xff65707e),
+                                                                        fontWeight:
+                                                                            FontWeight.w700)))
+                                                        ]))),
+                                                if ((comment['replies_count'] ?? 0) > 0)
+                                                  TextButton(
+                                                      onPressed: () =>
+                                                          comment['replies'] is List
+                                                              ? setState(() =>
+                                                                  comment.remove(
+                                                                      'replies'))
+                                                              : _loadReplies(
+                                                                  comment),
+                                                      style: TextButton.styleFrom(
+                                                          minimumSize:
+                                                              Size.zero,
+                                                          padding:
+                                                              const EdgeInsets.symmetric(
+                                                                  horizontal: 7,
+                                                                  vertical: 4)),
+                                                      child: Text(
+                                                          comment['replies'] is List
+                                                              ? communityText('Hide replies')
+                                                              : '${comment['replies_count']} ${communityText('replies')}',
+                                                          style: const TextStyle(fontWeight: FontWeight.w700))),
+                                                const Spacer(),
+                                                if (comment['can_edit'] == true)
+                                                  IconButton(
+                                                      visualDensity:
+                                                          VisualDensity.compact,
+                                                      onPressed: () =>
+                                                          _edit(comment),
+                                                      icon: const Icon(
+                                                          Icons.edit_outlined,
+                                                          size: 18)),
+                                                if (comment['can_delete'] ==
+                                                    true)
+                                                  IconButton(
+                                                      visualDensity:
+                                                          VisualDensity.compact,
+                                                      onPressed: () =>
+                                                          _delete(comment),
+                                                      icon: const Icon(
+                                                          Icons.delete_outline,
+                                                          size: 18))
+                                              ]),
+                                              if (comment['replies'] is List)
+                                                Padding(
+                                                    padding:
+                                                        const EdgeInsets.only(
+                                                            left: 8, top: 2),
+                                                    child: Column(children: [
+                                                      for (final reply
+                                                          in comment['replies']
+                                                              as List)
+                                                        ListTile(
+                                                            dense: true,
+                                                            leading: const Icon(
+                                                                Icons
+                                                                    .subdirectory_arrow_right,
+                                                                size: 18),
+                                                            title: Text(
+                                                                '${(reply['author'] as Map?)?['name'] ?? communityText('Employee')}'),
+                                                            subtitle: _ExpandableCommentText(
+                                                                key: ValueKey(
+                                                                    'reply-${reply['id']}'),
+                                                                text:
+                                                                    '${reply['body']}')),
+                                                    ])),
+                                            ]))
+                                      ])),
+                            if (_loading)
+                              Center(child: CircularProgressIndicator()),
+                            if (_hasMore && !_loading && _comments.isNotEmpty)
+                              TextButton(
+                                  onPressed: _load,
+                                  child: Text(
+                                      communityText('Load more comments'))),
+                            if (_error != null)
+                              TextButton(
+                                  onPressed: () =>
+                                      _load(reset: _comments.isEmpty),
+                                  child: Text(communityText('Try again'))),
+                          ],
+                        ))),
+                if (canComment)
+                  SafeArea(
+                    top: false,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(14, 6, 14, 10),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _text,
+                              focusNode: _composerFocus,
+                              enabled: !_sending,
+                              minLines: 1,
+                              maxLines: 4,
+                              maxLength: 2000,
+                              textInputAction: TextInputAction.send,
+                              onSubmitted: (_) => _send(),
+                              textCapitalization: TextCapitalization.sentences,
+                              decoration: InputDecoration(
+                                hintText: _replyParent == null
+                                    ? communityText('Write a comment…')
+                                    : communityText('Write a reply…'),
+                                counterText: '',
+                                filled: true,
+                                fillColor: const Color(0xfff0f2f5),
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 18, vertical: 12),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(24),
+                                  borderSide: BorderSide.none,
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(24),
+                                  borderSide: BorderSide.none,
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(24),
+                                  borderSide: const BorderSide(
+                                      color: Color(0xff1769e8)),
+                                ),
+                              ),
+                            ),
                           ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(24),
-                            borderSide: BorderSide.none,
+                          if (_replyParent != null)
+                            IconButton(
+                              tooltip: communityText('Cancel reply'),
+                              onPressed: _sending
+                                  ? null
+                                  : () => setState(() => _replyParent = null),
+                              icon: const Icon(Icons.close),
+                            ),
+                          IconButton(
+                            style: IconButton.styleFrom(
+                              backgroundColor: const Color(0xff1769e8),
+                              foregroundColor: Colors.white,
+                            ),
+                            onPressed: _sending ? null : _send,
+                            icon: _sending
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(),
+                                  )
+                                : const Icon(Icons.send),
                           ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(24),
-                            borderSide:
-                                const BorderSide(color: Color(0xff1769e8)),
-                          ),
-                        ),
+                        ],
                       ),
                     ),
-                    if (_replyParent != null)
-                      IconButton(
-                        tooltip: communityText('Cancel reply'),
-                        onPressed: _sending
-                            ? null
-                            : () => setState(() => _replyParent = null),
-                        icon: const Icon(Icons.close),
-                      ),
-                    IconButton(
-                      style: IconButton.styleFrom(
-                        backgroundColor: const Color(0xff1769e8),
-                        foregroundColor: Colors.white,
-                      ),
-                      onPressed: _sending ? null : _send,
-                      icon: _sending
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(),
-                            )
-                          : const Icon(Icons.send),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-        ]));
+                  ),
+              ])))
+    ]);
   }
 }

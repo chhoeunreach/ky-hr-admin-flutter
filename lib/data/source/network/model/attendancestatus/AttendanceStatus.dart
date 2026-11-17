@@ -1,15 +1,15 @@
 class AttendanceStatus {
   AttendanceStatus({
-      required this.checkInAt,
-      required this.checkOutAt,
-      required this.productiveTimeInMin,});
+    required this.checkInAt,
+    required this.checkOutAt,
+    required this.productiveTimeInMin,
+  });
 
   factory AttendanceStatus.fromJson(dynamic json) {
     return AttendanceStatus(
-        checkInAt : json['check_in_at'].toString() ?? "-",
-        checkOutAt : json['check_out_at'].toString() ?? "-",
-        productiveTimeInMin : json['productive_time_in_min'] ?? 0
-    );
+        checkInAt: json['check_in_at']?.toString() ?? "-",
+        checkOutAt: json['check_out_at']?.toString() ?? "-",
+        productiveTimeInMin: json['productive_time_in_min'] ?? 0);
   }
   String checkInAt;
   String checkOutAt;
@@ -22,5 +22,4 @@ class AttendanceStatus {
     map['productive_time_in_min'] = productiveTimeInMin;
     return map;
   }
-
 }

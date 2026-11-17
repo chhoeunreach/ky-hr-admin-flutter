@@ -1,3 +1,4 @@
+import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/widget/buttonborder.dart';
 import 'package:flutter/material.dart';
 import 'package:html/parser.dart';
@@ -22,10 +23,13 @@ class Holidaycard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final enterprise = EnterpriseTheme.of(context);
     return Card(
       shape: ButtonBorder(),
       elevation: 0,
-      color: Colors.white12,
+      color: enterprise.isDark
+          ? const Color(0xFF1E293B).withValues(alpha: 0.90)
+          : Colors.white.withValues(alpha: 0.90),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 3),
         child: Row(
@@ -36,8 +40,10 @@ class Holidaycard extends StatelessWidget {
               child: Card(
                 shape: ButtonBorder(),
                 elevation: 0,
-                color: isPublicHoliday ? Colors.red : Colors.blueAccent,
-                child: Container(
+                color: isPublicHoliday
+                    ? const Color(0xFFEF4444)
+                    : enterprise.primary,
+                child: SizedBox(
                   width: 48,
                   height: 48,
                   child: Column(
@@ -45,12 +51,22 @@ class Holidaycard extends StatelessWidget {
                     children: [
                       Text(
                         day,
-                        style: TextStyle(color: Colors.white, fontSize: 16),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 5),
-                        child: TextSizerPlus(month,
-                            maxLines: 1, style: TextStyle(color: Colors.white)),
+                        child: TextSizerPlus(
+                          month,
+                          maxLines: 1,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -67,16 +83,21 @@ class Holidaycard extends StatelessWidget {
                     Text(
                       softWrap: true,
                       name,
-                      style: TextStyle(color: Colors.white, fontSize: 14),
+                      style: TextStyle(
+                        color: enterprise.text,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                    SizedBox(
-                      height: 3,
-                    ),
+                    const SizedBox(height: 3),
                     Text(
                       overflow: TextOverflow.fade,
                       softWrap: true,
-                      parse(desc).body!.text,
-                      style: TextStyle(color: Colors.white, fontSize: 11),
+                      parse(desc).body?.text ?? '',
+                      style: TextStyle(
+                        color: enterprise.mutedText,
+                        fontSize: 11,
+                      ),
                     ),
                   ],
                 ),

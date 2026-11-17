@@ -18,7 +18,7 @@ class HolidayController extends GetxController {
   var _holidayListFilter = <Holiday>[].obs;
 
   List<Holiday> get holidayList {
-    return _holidayListFilter.value;
+    return List.of(_holidayListFilter);
   }
 
   var toggleValue = 0.obs;

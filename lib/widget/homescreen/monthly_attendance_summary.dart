@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'package:cnattendance/features/community/community_api.dart';
+import 'package:cnattendance/features/community/community_strings.dart';
+import 'package:cnattendance/widget/homescreen/home_stories_panel.dart';
 import 'package:cnattendance/features/home_highlights/home_highlight_api.dart';
 import 'package:cnattendance/features/home_highlights/home_highlights_strings.dart';
 import 'package:cnattendance/models/home_highlight.dart';
@@ -14,18 +17,27 @@ class HomeAttendanceClockSummary extends StatelessWidget {
       required this.clock,
       required this.summary,
       this.highlightsEnabled = false,
+      this.storiesEnabled = false,
+      this.storiesApi,
       this.highlightsApi});
 
   final Widget clock;
   final MonthlyAttendanceSummary? summary;
   final bool highlightsEnabled;
+  final bool storiesEnabled;
+  final CommunityApi? storiesApi;
   final HomeHighlightApi? highlightsApi;
 
   @override
   Widget build(BuildContext context) =>
       LayoutBuilder(builder: (context, constraints) {
-        final indicator = highlightsEnabled
-            ? _HomeAttendanceTabs(summary: summary, api: highlightsApi)
+        final indicator = highlightsEnabled || storiesEnabled
+            ? _HomeAttendanceTabs(
+                summary: summary,
+                api: highlightsApi,
+                highlightsEnabled: highlightsEnabled,
+                storiesEnabled: storiesEnabled,
+                storiesApi: storiesApi)
             : HomeMonthlyAttendanceSummary(summary: summary);
         if (constraints.maxWidth < 360 ||
             MediaQuery.textScalerOf(context).scale(1) > 1.3) {
@@ -41,7 +53,16 @@ class HomeAttendanceClockSummary extends StatelessWidget {
 }
 
 class _HomeAttendanceTabs extends StatefulWidget {
-  const _HomeAttendanceTabs({required this.summary, this.api});
+  const _HomeAttendanceTabs(
+      {required this.summary,
+      this.api,
+      required this.highlightsEnabled,
+      required this.storiesEnabled,
+      this.storiesApi});
+
+  final bool highlightsEnabled;
+  final bool storiesEnabled;
+  final CommunityApi? storiesApi;
 
   final MonthlyAttendanceSummary? summary;
   final HomeHighlightApi? api;
@@ -65,20 +86,30 @@ class _HomeAttendanceTabsState extends State<_HomeAttendanceTabs>
   Timer? _settingsTimer;
   bool _foreground = true;
 
+  List<int> _rotationTabs() {
+    final tabs = <int>[0];
+    if (widget.highlightsEnabled && _items.isNotEmpty && _error == null) {
+      tabs.add(1);
+    }
+    if (widget.storiesEnabled) tabs.add(2);
+    return tabs;
+  }
+
   void _scheduleSwitch() {
     _switchTimer?.cancel();
     _switchTimer = null;
-    if (!_foreground ||
-        !_displaySettings.autoSwitchEnabled ||
-        _items.isEmpty ||
-        _error != null) return;
+    final tabs = _rotationTabs();
+    if (tabs.length < 2 || !_foreground || !_displaySettings.autoSwitchEnabled)
+      return;
     final seconds = _tab == 0
         ? _displaySettings.lateBonusSeconds
         : _displaySettings.highlightsSeconds;
     _switchTimer = Timer(Duration(seconds: seconds), () {
       if (!mounted) return;
-      if ((ModalRoute.of(context)?.isCurrent ?? true)) {
-        setState(() => _tab = _tab == 0 ? 1 : 0);
+      if (ModalRoute.of(context)?.isCurrent ?? true) {
+        final index = tabs.indexOf(_tab);
+        final next = tabs[(index < 0 ? 0 : index + 1) % tabs.length];
+        setState(() => _tab = next);
       }
       _scheduleSwitch();
     });
@@ -91,9 +122,27 @@ class _HomeAttendanceTabsState extends State<_HomeAttendanceTabs>
   }
 
   @override
+  void didUpdateWidget(covariant _HomeAttendanceTabs oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.storiesEnabled != widget.storiesEnabled ||
+        oldWidget.highlightsEnabled != widget.highlightsEnabled) {
+      if (_tab == 2 && !widget.storiesEnabled) {
+        _tab = widget.highlightsEnabled ? 1 : 0;
+      } else if (_tab == 1 && !widget.highlightsEnabled) {
+        _tab = widget.storiesEnabled ? 2 : 0;
+      }
+      _scheduleSwitch();
+    }
+  }
+
+  @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    if (!widget.highlightsEnabled) {
+      _loading = false;
+      return;
+    }
     _load();
     _settingsTimer = Timer.periodic(const Duration(minutes: 1), (_) {
       if (_foreground && !_loading) _load(silent: true);
@@ -103,7 +152,7 @@ class _HomeAttendanceTabsState extends State<_HomeAttendanceTabs>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _foreground = state == AppLifecycleState.resumed;
-    if (_foreground) {
+    if (_foreground && widget.highlightsEnabled) {
       _load(silent: true);
       _scheduleSwitch();
     } else {
@@ -139,7 +188,7 @@ class _HomeAttendanceTabsState extends State<_HomeAttendanceTabs>
         _displaySettings = feed.settings;
         _error = null;
         _loading = false;
-        if (_items.isEmpty && _displaySettings.autoSwitchEnabled) _tab = 0;
+        if (_tab == 1 && _items.isEmpty) _tab = 0;
       });
       if (changed || !(_switchTimer?.isActive ?? false) || _items.isEmpty)
         _scheduleSwitch();
@@ -178,16 +227,29 @@ class _HomeAttendanceTabsState extends State<_HomeAttendanceTabs>
                     onTap: () => _selectTab(0),
                   ),
                 ),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: _HomeAttendanceTab(
-                    label: homeHighlightsText('Highlights'),
-                    icon: Icons.auto_awesome_rounded,
-                    selected: _tab == 1,
-                    showDot: _items.isNotEmpty,
-                    onTap: () => _selectTab(1),
+                if (widget.highlightsEnabled) ...[
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: _HomeAttendanceTab(
+                      label: homeHighlightsText('Highlights'),
+                      icon: Icons.auto_awesome_rounded,
+                      selected: _tab == 1,
+                      showDot: _items.isNotEmpty,
+                      onTap: () => _selectTab(1),
+                    ),
                   ),
-                ),
+                ],
+                if (widget.storiesEnabled) ...[
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: _HomeAttendanceTab(
+                      label: communityText('Stories'),
+                      icon: Icons.amp_stories_outlined,
+                      selected: _tab == 2,
+                      onTap: () => _selectTab(2),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -198,20 +260,25 @@ class _HomeAttendanceTabsState extends State<_HomeAttendanceTabs>
           ),
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 180),
-            child: _tab == 0
-                ? HomeMonthlyAttendanceSummary(
-                    key: const ValueKey('home-late-bonus-tab'),
-                    summary: widget.summary,
-                    embedded: true,
+            child: _tab == 2
+                ? HomeStoriesPanel(
+                    key: const ValueKey('home-stories-tab'),
+                    api: widget.storiesApi,
                   )
-                : HomeHighlightCarousel(
-                    key: const ValueKey('home-highlights-tab'),
-                    api: _api,
-                    items: _items,
-                    loading: _loading,
-                    error: _error,
-                    onRetry: _load,
-                  ),
+                : _tab == 0
+                    ? HomeMonthlyAttendanceSummary(
+                        key: const ValueKey('home-late-bonus-tab'),
+                        summary: widget.summary,
+                        embedded: true,
+                      )
+                    : HomeHighlightCarousel(
+                        key: const ValueKey('home-highlights-tab'),
+                        api: _api,
+                        items: _items,
+                        loading: _loading,
+                        error: _error,
+                        onRetry: _load,
+                      ),
           ),
         ],
       ),
@@ -243,7 +310,7 @@ class _HomeAttendanceTab extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 160),
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 7),
         decoration: BoxDecoration(
           color: selected
               ? theme.secondary.withValues(alpha: .12)
@@ -251,19 +318,24 @@ class _HomeAttendanceTab extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
+          mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon, size: 13, color: color),
-            const SizedBox(width: 5),
+            const SizedBox(width: 4),
             Flexible(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: color,
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w800,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: AlignmentDirectional.centerStart,
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  softWrap: false,
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
             ),

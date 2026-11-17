@@ -121,7 +121,7 @@ class CommentScreenController extends GetxController {
             replies));
       }
       if (PAGE == 1) {
-        commentList.value = comments;
+        commentList.assignAll(comments);
       } else {
         commentList.addAll(comments);
       }
@@ -179,7 +179,7 @@ class CommentScreenController extends GetxController {
       mentionList.clear();
 
       if(hasComment(comment.data.id)){
-        for (var oldComment in commentList.value) {
+        for (var oldComment in commentList) {
           if (oldComment.id == comment.data.id) {
             var commentMentions = <Mention>[];
             for (var mention in comment.data.mentioned) {
@@ -256,7 +256,7 @@ class CommentScreenController extends GetxController {
   }
 
   bool hasComment(int id) {
-    for (var oldComment in commentList.value) {
+    for (var oldComment in commentList) {
       if (oldComment.id == id) {
         return true;
       }

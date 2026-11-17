@@ -1,7 +1,6 @@
 import 'package:cnattendance/widget/buttonborder.dart';
 import 'package:flutter/material.dart';
 import 'package:html/parser.dart';
-import 'package:text_sizer_plus/text_sizer_plus.dart';
 
 class BirthdayCard extends StatelessWidget {
   final int id;

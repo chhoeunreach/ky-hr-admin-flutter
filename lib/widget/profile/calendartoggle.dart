@@ -2,7 +2,6 @@ import 'package:cnattendance/provider/leavecalendarcontroller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
-import 'package:provider/provider.dart';
 import 'package:toggle_switch/toggle_switch.dart';
 
 class CalendarToggle extends StatelessWidget {

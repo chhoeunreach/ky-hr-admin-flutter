@@ -14,7 +14,7 @@ import 'package:nepali_date_picker/nepali_date_picker.dart' as picker;
 import 'package:nepali_date_picker/nepali_date_picker.dart';
 
 class EarlyLeaveSheet extends StatefulWidget {
-  bool isEarlyLeave;
+  final bool isEarlyLeave;
 
   EarlyLeaveSheet(this.isEarlyLeave);
 

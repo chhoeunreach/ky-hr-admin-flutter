@@ -8,7 +8,7 @@ import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
 
 class MentionBottomSheet extends StatelessWidget {
-  List<Member> members;
+  final List<Member> members;
 
   MentionBottomSheet(this.members);
 

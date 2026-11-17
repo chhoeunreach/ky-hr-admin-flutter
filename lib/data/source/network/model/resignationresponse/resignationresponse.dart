@@ -51,8 +51,8 @@ class Data {
   factory Data.fromMap(Map<String, dynamic> json) => Data(
         id: json["id"],
         employeeId: json["employee_id"].toString(),
-        resignationDate: json["resignation_date"].toString()??"",
-        lastWorkingDay: json["last_working_day"].toString()??"",
+        resignationDate: json["resignation_date"]?.toString() ?? "",
+        lastWorkingDay: json["last_working_day"]?.toString() ?? "",
         reason: json["reason"],
         status: json["status"],
         remark: json["admin_remark"] ?? "",

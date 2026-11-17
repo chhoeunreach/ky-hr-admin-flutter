@@ -28,7 +28,7 @@ class TrainingDetailController extends GetxController {
 
   Future<void> saveFileLocally(String url) async {
     Directory? directory = await getApplicationDocumentsDirectory();
-    String path = directory!.path;
+    String path = directory.path;
     print(path);
   }
 

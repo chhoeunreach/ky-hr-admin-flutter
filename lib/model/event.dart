@@ -1,4 +1,3 @@
-import 'package:cnattendance/data/source/network/model/eventdetailresponse/eventlistresponse.dart';
 
 class Event {
   int id;

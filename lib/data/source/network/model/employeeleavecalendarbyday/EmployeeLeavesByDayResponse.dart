@@ -1,5 +1,4 @@
 import '../employeeleavecalendarbyday/Data.dart';
-import 'EmployeeLeavesByDay.dart';
 
 class EmployeeLeavesByDayResponse {
   EmployeeLeavesByDayResponse({

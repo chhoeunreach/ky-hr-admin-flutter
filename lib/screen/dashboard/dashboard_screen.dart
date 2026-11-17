@@ -18,6 +18,7 @@ import 'package:cnattendance/screen/profile/front_side_preview_page.dart';
 import 'package:cnattendance/screen/sell_out_report_screen.dart';
 import 'package:cnattendance/screen/social_rewards/social_submission_screen.dart';
 import 'package:cnattendance/theme/enterprise_theme.dart';
+import 'package:cnattendance/widget/dashboard_drawer_scope.dart';
 import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
@@ -44,6 +45,9 @@ class DashboardScreenState extends State<DashboardScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _selectedRailIndex = 0;
   bool? _railExpanded;
+  bool _socialFeedImmersive = false;
+  final Map<String, GlobalKey<NavigatorState>> _tabNavigatorKeys = {};
+  final Map<String, _TabRouteObserver> _tabRouteObservers = {};
 
   bool _loadedUser = false;
 
@@ -213,13 +217,18 @@ class DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
       ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          if (constraints.maxWidth >= 720) {
-            return _buildRailLayout(context, constraints.maxWidth);
-          }
-          return _buildMobileTabs(context);
+      body: DashboardDrawerScope(
+        openDrawer: () {
+          _scaffoldKey.currentState?.openDrawer();
         },
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            if (constraints.maxWidth >= 720) {
+              return _buildRailLayout(context, constraints.maxWidth);
+            }
+            return _buildMobileTabs(context);
+          },
+        ),
       ),
     );
   }
@@ -263,11 +272,17 @@ class DashboardScreenState extends State<DashboardScreen> {
     ];
     final pages = <Widget>[
       HomeScreen(_controller),
-      if (features["social-feed"] == "1") const SocialFeedScreen(),
-      if (showRepairTab) const RepairDevicePage(),
+      if (features["social-feed"] == "1")
+        SocialFeedScreen(
+            showBackButton: false,
+            onImmersiveChanged: _handleSocialFeedImmersive),
+      if (showRepairTab) const RepairDevicePage(showBackButton: false),
       if (features["attendance"] == "1") AttendanceScreen(),
       MoreScreen(),
     ];
+    final socialFeedIndex = features["social-feed"] == "1" ? 1 : -1;
+    final showRailControls =
+        _selectedRailIndex.clamp(0, destinations.length - 1) != socialFeedIndex;
 
     return Row(
       children: [
@@ -322,14 +337,15 @@ class DashboardScreenState extends State<DashboardScreen> {
               child: extended
                   ? Row(
                       children: [
-                        IconButton.filledTonal(
-                          tooltip: 'Menu',
-                          icon: const Icon(Icons.menu),
-                          onPressed: () {
-                            _scaffoldKey.currentState?.openDrawer();
-                          },
-                        ),
-                        const SizedBox(width: 10),
+                        if (showRailControls)
+                          IconButton.filledTonal(
+                            tooltip: 'Menu',
+                            icon: const Icon(Icons.menu),
+                            onPressed: () {
+                              _scaffoldKey.currentState?.openDrawer();
+                            },
+                          ),
+                        if (showRailControls) const SizedBox(width: 10),
                         Expanded(
                           child: Text(
                             'HRKY',
@@ -342,21 +358,25 @@ class DashboardScreenState extends State<DashboardScreen> {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 4),
-                        _railToggleButton(extended: true),
+                        if (showRailControls) ...[
+                          const SizedBox(width: 4),
+                          _railToggleButton(extended: true),
+                        ],
                       ],
                     )
                   : Column(
                       children: [
-                        IconButton.filledTonal(
-                          tooltip: 'Menu',
-                          icon: const Icon(Icons.menu),
-                          onPressed: () {
-                            _scaffoldKey.currentState?.openDrawer();
-                          },
-                        ),
-                        const SizedBox(height: 8),
-                        _railToggleButton(extended: false),
+                        if (showRailControls) ...[
+                          IconButton.filledTonal(
+                            tooltip: 'Menu',
+                            icon: const Icon(Icons.menu),
+                            onPressed: () {
+                              _scaffoldKey.currentState?.openDrawer();
+                            },
+                          ),
+                          const SizedBox(height: 8),
+                          _railToggleButton(extended: false),
+                        ],
                       ],
                     ),
             ),
@@ -401,59 +421,94 @@ class DashboardScreenState extends State<DashboardScreen> {
     final bool showRepairTab = repairProvider.canView;
     final features = context.watch<DashboardProvider>().features;
 
-    final tabs = [
-      PersistentTabConfig(
-          screen: HomeScreen(_controller),
-          item: getItemConfig(
-            const Icon(Icons.home_filled),
-            translate('dashboard_screen.home'),
-          )),
-      if (features["social-feed"] == "1")
-        PersistentTabConfig(
-            screen: const SocialFeedScreen(),
-            item: getItemConfig(
-              const Icon(Icons.dynamic_feed_outlined),
-              translate('community.social_feed'),
-            )),
-      if (showRepairTab)
-        PersistentTabConfig(
-            screen: const RepairDevicePage(),
-            item: getItemConfig(
-              const Icon(Icons.build_circle_outlined),
-              translate('dashboard_screen.repair_list'),
-            )),
-      if (features["chat"] == "1")
-        PersistentTabConfig(
-            screen: ChatListScreen(),
-            item: getItemConfig(
-              const Icon(Icons.chat_bubble),
-              translate('dashboard_screen.chat'),
-            )),
-      if (features["leave-request"] == "1")
-        PersistentTabConfig(
-            screen: LeaveScreen(),
-            item: getItemConfig(
-              const Icon(Icons.sick),
-              translate('dashboard_screen.leave'),
-            )),
-      if (features["attendance"] == "1")
-        PersistentTabConfig(
-            screen: AttendanceScreen(),
-            item: getItemConfig(
-              const Icon(Icons.co_present_outlined),
-              translate('dashboard_screen.attendance'),
-            )),
-      PersistentTabConfig(
-          screen: MoreScreen(),
-          item: getItemConfig(
-            const Icon(Icons.more),
-            translate('dashboard_screen.more'),
-          )),
-    ];
+    final tabIds = <String>[];
+    final tabs = <PersistentTabConfig>[];
+
+    void addTab(String id, Widget screen, ItemConfig item) {
+      tabIds.add(id);
+      tabs.add(PersistentTabConfig(
+        screen: screen,
+        item: item,
+        navigatorConfig: _mobileTabNavigatorConfig(id),
+      ));
+    }
+
+    addTab(
+      'home',
+      HomeScreen(_controller),
+      getItemConfig(
+        const Icon(Icons.home_filled),
+        translate('dashboard_screen.home'),
+      ),
+    );
+    if (features["social-feed"] == "1")
+      addTab(
+        'social',
+        SocialFeedScreen(
+            showBackButton: false,
+            onImmersiveChanged: _handleSocialFeedImmersive),
+        getItemConfig(
+          const Icon(Icons.dynamic_feed_outlined),
+          translate('community.social_feed'),
+        ),
+      );
+    if (showRepairTab)
+      addTab(
+        'repair',
+        const RepairDevicePage(showBackButton: false),
+        getItemConfig(
+          const Icon(Icons.build_circle_outlined),
+          translate('dashboard_screen.repair_list'),
+        ),
+      );
+    if (features["chat"] == "1")
+      addTab(
+        'chat',
+        ChatListScreen(),
+        getItemConfig(
+          const Icon(Icons.chat_bubble),
+          translate('dashboard_screen.chat'),
+        ),
+      );
+    if (features["leave-request"] == "1")
+      addTab(
+        'leave',
+        LeaveScreen(),
+        getItemConfig(
+          const Icon(Icons.sick),
+          translate('dashboard_screen.leave'),
+        ),
+      );
+    if (features["attendance"] == "1")
+      addTab(
+        'attendance',
+        AttendanceScreen(),
+        getItemConfig(
+          const Icon(Icons.co_present_outlined),
+          translate('dashboard_screen.attendance'),
+        ),
+      );
+    addTab(
+      'more',
+      MoreScreen(),
+      getItemConfig(
+        const Icon(Icons.more),
+        translate('dashboard_screen.more'),
+      ),
+    );
 
     if (_controller.index >= tabs.length) {
       _controller.jumpToTab(0);
     }
+
+    final activeTabIndex = _controller.index.clamp(0, tabIds.length - 1);
+    final activeNavigator =
+        _tabNavigatorKeys[tabIds[activeTabIndex]]?.currentState;
+    final isSocialFeedActive = tabIds[activeTabIndex] == 'social';
+    final immersive = isSocialFeedActive && _socialFeedImmersive;
+    final socialDetailOpen =
+        isSocialFeedActive && (activeNavigator?.canPop() ?? false);
+    final hideMenuButton = immersive || (activeNavigator?.canPop() ?? false);
 
     return Stack(
       children: [
@@ -465,6 +520,7 @@ class DashboardScreenState extends State<DashboardScreen> {
           handleAndroidBackButtonPress: true,
           resizeToAvoidBottomInset: true,
           stateManagement: true,
+          hideNavigationBar: immersive || socialDetailOpen,
           popAllScreensOnTapOfSelectedTab: true,
           popActionScreens: PopActionScreensType.all,
           tabs: tabs,
@@ -472,25 +528,49 @@ class DashboardScreenState extends State<DashboardScreen> {
             return _EnterpriseFloatingNavBar(navBarConfig: navBarConfig);
           },
         ),
-        SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.only(left: 12, top: 6),
-            child: Material(
-              color: enterprise.surface.withValues(alpha: 0.68),
-              shape: const CircleBorder(),
-              clipBehavior: Clip.antiAlias,
-              child: IconButton(
-                tooltip: 'Menu',
-                icon: Icon(Icons.menu, color: enterprise.text),
-                onPressed: () {
-                  _scaffoldKey.currentState?.openDrawer();
-                },
+        if (!hideMenuButton)
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.only(left: 12, top: 6),
+              child: Material(
+                color: enterprise.surface.withValues(alpha: 0.68),
+                shape: const CircleBorder(),
+                clipBehavior: Clip.antiAlias,
+                child: IconButton(
+                  tooltip: 'Menu',
+                  icon: Icon(Icons.menu, color: enterprise.text),
+                  onPressed: () {
+                    _scaffoldKey.currentState?.openDrawer();
+                  },
+                ),
               ),
             ),
           ),
-        ),
       ],
     );
+  }
+
+  NavigatorConfig _mobileTabNavigatorConfig(String id) {
+    final navigatorKey =
+        _tabNavigatorKeys.putIfAbsent(id, () => GlobalKey<NavigatorState>());
+    final observer = _tabRouteObservers.putIfAbsent(
+        id, () => _TabRouteObserver(_onMobileTabRouteChanged));
+    return NavigatorConfig(
+      navigatorKey: navigatorKey,
+      navigatorObservers: <NavigatorObserver>[observer],
+    );
+  }
+
+  void _onMobileTabRouteChanged() {
+    if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  void _handleSocialFeedImmersive(bool immersive) {
+    if (!mounted || _socialFeedImmersive == immersive) return;
+    setState(() => _socialFeedImmersive = immersive);
   }
 
   Widget _sellOutDrawerItem(
@@ -1161,22 +1241,20 @@ class _EnterpriseFloatingNavBar extends StatelessWidget {
             child: Container(
               height: 64,
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.white
-                        .withValues(alpha: enterprise.isDark ? 0.13 : 0.72),
-                    enterprise.surface
-                        .withValues(alpha: enterprise.isDark ? 0.72 : 0.58),
-                  ],
-                ),
+                color: enterprise.isDark
+                    ? enterprise.surface.withValues(alpha: 0.88)
+                    : Colors.white.withValues(alpha: 0.94),
                 borderRadius: BorderRadius.circular(26),
-                border: Border.all(color: enterprise.glassStroke),
+                border: Border.all(
+                  color: enterprise.isDark
+                      ? enterprise.glassStroke
+                      : Colors.white.withValues(alpha: 0.80),
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: enterprise.accent.withValues(alpha: 0.20),
-                    blurRadius: 26,
-                    spreadRadius: 1,
-                    offset: const Offset(0, 12),
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 20,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
@@ -1216,57 +1294,38 @@ class _EnterpriseNavItem extends StatelessWidget {
     final enterprise = EnterpriseTheme.of(context);
 
     final iconTheme = IconThemeData(
-      color: selected ? Colors.white : enterprise.text.withValues(alpha: 0.62),
+      color: selected
+          ? Colors.white
+          : (enterprise.isDark ? Colors.white70 : const Color(0xFF475569)),
       size: 20,
-      shadows: selected
-          ? const [
-              Shadow(
-                color: Colors.black38,
-                blurRadius: 4,
-                offset: Offset(0, 1),
-              ),
-            ]
-          : null,
     );
 
     final Gradient? tabGradient = selected
-        ? LinearGradient(
+        ? const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              enterprise.secondary,
-              enterprise.primary,
-              enterprise.accent,
+              Color(0xFF0077F4),
+              Color(0xFF0052D4),
             ],
-            stops: const [0.0, 0.45, 1.0],
           )
         : null;
 
     final List<BoxShadow>? tabShadow = selected
         ? [
             BoxShadow(
-              color: enterprise.accent.withValues(alpha: 0.55),
-              blurRadius: 18,
-              spreadRadius: 1.5,
+              color: const Color(0xFF0077F4).withValues(alpha: 0.35),
+              blurRadius: 14,
               offset: const Offset(0, 3),
-            ),
-            BoxShadow(
-              color: enterprise.primary.withValues(alpha: 0.45),
-              blurRadius: 12,
-              offset: const Offset(0, 1),
             ),
           ]
         : null;
 
-    final BoxBorder? tabBorder = selected
-        ? Border.all(
-            color: enterprise.accent.withValues(alpha: 0.85),
-            width: 1.2,
-          )
-        : null;
+    final BoxBorder? tabBorder = null;
 
-    final Color textColor =
-        selected ? Colors.white : enterprise.text.withValues(alpha: 0.58);
+    final Color textColor = selected
+        ? Colors.white
+        : (enterprise.isDark ? Colors.white70 : const Color(0xFF475569));
 
     return Semantics(
       selected: selected,
@@ -1322,4 +1381,26 @@ class _EnterpriseNavItem extends StatelessWidget {
       ),
     );
   }
+}
+
+class _TabRouteObserver extends NavigatorObserver {
+  _TabRouteObserver(this.onRouteChanged);
+
+  final VoidCallback onRouteChanged;
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) =>
+      onRouteChanged();
+
+  @override
+  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) =>
+      onRouteChanged();
+
+  @override
+  void didRemove(Route<dynamic> route, Route<dynamic>? previousRoute) =>
+      onRouteChanged();
+
+  @override
+  void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) =>
+      onRouteChanged();
 }

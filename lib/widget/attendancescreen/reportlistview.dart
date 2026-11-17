@@ -7,6 +7,8 @@ import 'package:provider/provider.dart';
 import 'package:cnattendance/widget/attendancescreen/attendancecardview.dart';
 
 class ReportListView extends StatelessWidget {
+  const ReportListView({super.key, this.asSliver = false});
+  final bool asSliver;
   @override
   Widget build(BuildContext context) {
     final attendanceList =
@@ -17,6 +19,31 @@ class ReportListView extends StatelessWidget {
     final attendanceGrouped =
         EmployeeAttendanceReport.groupAttendanceByDate(attendanceList);
     final groupedEntries = attendanceGrouped.keys.toList();
+
+    if (asSliver) {
+      if (attendanceList.isEmpty) {
+        return SliverToBoxAdapter(
+            child: context.watch<AttendanceReportProvider>().isLoading
+                ? const Padding(
+                    padding: EdgeInsets.all(20),
+                    child: Center(child: CircularProgressIndicator()))
+                : const SizedBox.shrink());
+      }
+      return SliverPadding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        sliver: SliverList(
+            delegate: SliverChildBuilderDelegate((context, index) {
+          if (index == 0) return attendanceSummary(currentMonth);
+          if (index == 1)
+            return Padding(
+                padding: const EdgeInsets.only(top: 7),
+                child: attendanceReportTitle());
+          final day = groupedEntries[index - 2];
+          return AttendanceCardView(
+              index - 2, day, attendanceGrouped[day] ?? []);
+        }, childCount: groupedEntries.length + 2)),
+      );
+    }
 
     if (attendanceList.length > 0) {
       return SingleChildScrollView(

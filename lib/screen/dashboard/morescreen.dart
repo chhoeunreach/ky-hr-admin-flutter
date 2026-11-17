@@ -27,7 +27,7 @@ import 'package:cnattendance/screen/profile/group_list_screen.dart';
 import 'package:cnattendance/screen/profile/teamsheetscreen.dart';
 import 'package:cnattendance/screen/social_rewards/admin_social_rewards_screen.dart';
 import 'package:cnattendance/screen/social_rewards/social_submission_screen.dart';
-import 'package:cnattendance/screen/tadascreen/TadaScreen.dart';
+import 'package:cnattendance/screen/tadascreen/tadascreen.dart';
 import 'package:cnattendance/theme/app_theme_mode.dart';
 import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/theme/theme_provider.dart';
@@ -63,14 +63,18 @@ class MoreScreenState extends State<MoreScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final attendanceType = context.watch<PrefProvider>().attendanceType;
-    final features = context.watch<DashboardProvider>().features;
-    final showNfc = context.watch<MoreScreenProvider>().showNfc;
-    final attendanceMethod =
-        context.watch<DashboardProvider>().attendanceMethods;
-    final selectedThemeMode = context.watch<ThemeProvider>().mode;
-    final employeeId =
-        int.tryParse(context.watch<PrefProvider>().userId.trim()) ?? 0;
+    final attendanceType =
+        context.select<PrefProvider, String>((p) => p.attendanceType);
+    final features = context.select<DashboardProvider, Map<String, String>>(
+        (p) => Map.of(p.features));
+    final showNfc = context.select<MoreScreenProvider, bool>((p) => p.showNfc);
+    final attendanceMethod = context.select<DashboardProvider, List<String>>(
+        (p) => List.of(p.attendanceMethods));
+    final selectedThemeMode =
+        context.select<ThemeProvider, AppThemeMode>((p) => p.mode);
+    final employeeId = int.tryParse(
+            context.select<PrefProvider, String>((p) => p.userId).trim()) ??
+        0;
     final enterprise = EnterpriseTheme.of(context);
     final availableAttendanceMethods =
         attendanceMethod.map((method) => method.toLowerCase()).toList();

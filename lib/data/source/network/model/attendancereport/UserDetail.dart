@@ -1,15 +1,15 @@
 class UserDetail {
   UserDetail({
-      required this.userId,
-      required this.name,
-      required this.email,});
+    required this.userId,
+    required this.name,
+    required this.email,
+  });
 
   factory UserDetail.fromJson(dynamic json) {
     return UserDetail(
-        userId : json['user_id'],
-        name : json['name'].toString() ?? "",
-        email : json['email'].toString() ?? ""
-    );
+        userId: json['user_id'],
+        name: json['name']?.toString() ?? "",
+        email: json['email']?.toString() ?? "");
   }
   int userId;
   String name;
@@ -22,5 +22,4 @@ class UserDetail {
     map['email'] = email;
     return map;
   }
-
 }

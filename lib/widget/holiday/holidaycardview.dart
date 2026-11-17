@@ -2,7 +2,6 @@ import 'package:cnattendance/provider/holidaycontroller.dart';
 import 'package:cnattendance/widget/holiday/holidaycard.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:provider/provider.dart';
 
 class HolidayCardView extends StatelessWidget {
   @override

@@ -2,6 +2,7 @@ import 'package:cnattendance/model/event.dart';
 import 'package:cnattendance/provider/dashboardprovider.dart';
 import 'package:cnattendance/screen/eventscreen/eventdetailscreen.dart';
 import 'package:cnattendance/screen/eventscreen/eventlistscreen.dart';
+import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/widget/buttonborder.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
@@ -12,6 +13,7 @@ class RecentEvent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final event = context.watch<DashboardProvider>().event;
+    final enterprise = EnterpriseTheme.of(context);
     return Visibility(
       visible: event != null ? true : false,
       child: Padding(
@@ -23,7 +25,11 @@ class RecentEvent extends StatelessWidget {
               children: [
                 Text(
                   translate('common.office_events'),
-                  style: TextStyle(color: Colors.white, fontSize: 16),
+                  style: TextStyle(
+                    color: enterprise.text,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
                 Spacer(),
                 GestureDetector(
@@ -32,7 +38,11 @@ class RecentEvent extends StatelessWidget {
                   },
                   child: Text(
                     translate('home_screen.show_all'),
-                    style: TextStyle(color: Colors.white, fontSize: 12),
+                    style: TextStyle(
+                      color: enterprise.accent,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ],
@@ -43,11 +53,13 @@ class RecentEvent extends StatelessWidget {
             event != null
                 ? Card(
                     elevation: 0,
-                    margin: EdgeInsets.symmetric(vertical: 3),
-                    color: Colors.white12,
+                    margin: const EdgeInsets.symmetric(vertical: 3),
+                    color: enterprise.isDark
+                        ? const Color(0xFF1E293B).withValues(alpha: 0.90)
+                        : Colors.white.withValues(alpha: 0.90),
                     shape: ButtonBorder(),
                     child: InkWell(
-                      borderRadius: BorderRadius.only(
+                      borderRadius: const BorderRadius.only(
                           topLeft: Radius.circular(10),
                           bottomRight: Radius.circular(10)),
                       onTap: () {
@@ -74,19 +86,21 @@ class RecentEvent extends StatelessWidget {
                             Text(
                               event.location,
                               style: TextStyle(
-                                  color: Colors.white54,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.normal),
+                                color: enterprise.accent,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                             Text(
                               event.title,
                               style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold),
+                                color: enterprise.text,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                             Divider(
-                              color: Colors.white30,
+                              color: enterprise.glassStroke,
                               height: 8,
                             ),
                             Row(
@@ -98,9 +112,10 @@ class RecentEvent extends StatelessWidget {
                                           ? ""
                                           : event.endDate),
                                   style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.normal),
+                                    color: enterprise.mutedText,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.normal,
+                                  ),
                                 ),
                                 Spacer(),
                                 Text(
@@ -110,9 +125,10 @@ class RecentEvent extends StatelessWidget {
                                           ? ""
                                           : event.endTime),
                                   style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.normal),
+                                    color: enterprise.mutedText,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.normal,
+                                  ),
                                 ),
                               ],
                             ),

@@ -25,7 +25,7 @@ class ConfirmBottomSheet extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      translate('task_detail_screen.mask_as_finish'),
+                      translate('task_detail_screen.mark_as_finish'),
                       style: TextStyle(
                           color: Colors.white,
                           fontSize: 16,

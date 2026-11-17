@@ -10,6 +10,15 @@ import 'package:get/get.dart';
 
 class TeamSheetProvider with ChangeNotifier {
   TeamSheetRepository repository = TeamSheetRepository();
+  Future<void>? _contactsFuture;
+  bool _disposed = false;
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
+
   final List<Team> _teamList = [];
 
   final List<Team> mainTeamList = [];
@@ -79,6 +88,7 @@ class TeamSheetProvider with ChangeNotifier {
   Future<void> getTeam() async {
     try {
       final response = await repository.getTeam();
+      if (_disposed) return;
       makeTeamSheet(response.data.companyDetail.employee);
       makeChatContacts(response.data.chatContacts.isNotEmpty
           ? response.data.chatContacts
@@ -133,14 +143,15 @@ class TeamSheetProvider with ChangeNotifier {
     }
   }
 
-  Future<void> getChatContacts() async {
-    try {
-      final payload = await repository.getChatContacts();
-      makeChatContacts(payload.contacts);
-      makeOnlineChatContacts(payload.onlineContacts);
-    } catch (error) {
-      rethrow;
-    }
+  Future<void> getChatContacts() => _contactsFuture ??=
+      _loadChatContacts().whenComplete(() => _contactsFuture = null);
+
+  Future<void> _loadChatContacts() async {
+    final payload = await repository.getChatContacts();
+    if (_disposed) return;
+    makeChatContacts(payload.contacts, notify: false);
+    makeOnlineChatContacts(payload.onlineContacts, notify: false);
+    notifyListeners();
   }
 
   void makeTeamList() {
@@ -189,18 +200,19 @@ class TeamSheetProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void makeChatContacts(List<ChatContact> contacts) {
+  void makeChatContacts(List<ChatContact> contacts, {bool notify = true}) {
     chatContacts
       ..clear()
       ..addAll(contacts);
-    notifyListeners();
+    if (notify) notifyListeners();
   }
 
-  void makeOnlineChatContacts(List<ChatContact> contacts) {
+  void makeOnlineChatContacts(List<ChatContact> contacts,
+      {bool notify = true}) {
     onlineChatContacts
       ..clear()
       ..addAll(contacts);
-    notifyListeners();
+    if (notify) notifyListeners();
   }
 
   T? _firstWhereOrNull<T>(Iterable<T> values, bool Function(T) test) {

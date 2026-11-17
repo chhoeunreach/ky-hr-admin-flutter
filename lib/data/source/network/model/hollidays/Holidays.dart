@@ -10,9 +10,9 @@ class Holidays {
   factory Holidays.fromJson(dynamic json) {
     return Holidays(
       id: json['id'],
-      event: json['event'].toString() ?? "",
-      eventDate: json['event_date'].toString() ?? "",
-      description: json['description'].toString() ?? "",
+      event: json['event']?.toString() ?? "",
+      eventDate: json['event_date']?.toString() ?? "",
+      description: json['description']?.toString() ?? "",
       isPublicHoliday: json['is_public_holiday'] ?? false,
     );
   }

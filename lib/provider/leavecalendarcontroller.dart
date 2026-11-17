@@ -16,7 +16,6 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:nepali_date_picker/nepali_date_picker.dart';
 
-import '../data/source/network/model/hollidays/Holidays.dart';
 
 class LeaveCalendarController extends GetxController {
   var current = DateTime.now().obs;
@@ -35,11 +34,11 @@ class LeaveCalendarController extends GetxController {
   var isAd = true.obs;
 
   Map<String, List<dynamic>> get employeeLeaveList {
-    return _employeeLeaveList.value;
+    return Map.of(_employeeLeaveList);
   }
 
   List<LeaveByDay> get employeeLeaveByDayList {
-    return _employeeLeaveByDayList.value;
+    return List.of(_employeeLeaveByDayList);
   }
 
   Holiday? get employeeHoliday {

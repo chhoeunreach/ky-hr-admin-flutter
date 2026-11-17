@@ -6,8 +6,8 @@ import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
 
 class TeamBottomSheet extends StatelessWidget {
-  List<Member> leaders;
-  List<Member> members;
+  final List<Member> leaders;
+  final List<Member> members;
 
   TeamBottomSheet(this.leaders,this.members);
 

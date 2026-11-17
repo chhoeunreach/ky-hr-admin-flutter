@@ -1,5 +1,6 @@
 import 'package:cnattendance/provider/dashboardprovider.dart';
 import 'package:cnattendance/screen/profile/holidayscreen.dart';
+import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/widget/holiday/holidaycard.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
@@ -10,6 +11,7 @@ class UpcomingHoliday extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final holiday = context.watch<DashboardProvider>().holiday;
+    final enterprise = EnterpriseTheme.of(context);
     return Visibility(
       visible: holiday != null ? true : false,
       child: Padding(
@@ -21,7 +23,11 @@ class UpcomingHoliday extends StatelessWidget {
               children: [
                 Text(
                   translate('home_screen.upcoming_holiday'),
-                  style: TextStyle(color: Colors.white, fontSize: 16),
+                  style: TextStyle(
+                    color: enterprise.text,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
                 Spacer(),
                 GestureDetector(
@@ -30,7 +36,11 @@ class UpcomingHoliday extends StatelessWidget {
                   },
                   child: Text(
                     translate('home_screen.view_all'),
-                    style: TextStyle(color: Colors.white, fontSize: 12),
+                    style: TextStyle(
+                      color: enterprise.accent,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ],

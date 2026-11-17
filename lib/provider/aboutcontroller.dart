@@ -1,5 +1,4 @@
 import 'package:cnattendance/repositories/aboutrepository.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';

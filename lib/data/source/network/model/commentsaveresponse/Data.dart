@@ -48,12 +48,8 @@ class Data {
     data['description'] = this.description;
     data['id'] = this.id;
     data['username'] = this.username;
-    if (this.mentioned != null) {
-      data['mentioned'] = this.mentioned.map((v) => v.toJson()).toList();
-    }
-    if (this.replies != null) {
+    data['mentioned'] = this.mentioned.map((v) => v.toJson()).toList();
       data['replies'] = this.replies.map((v) => v.toJson()).toList();
-    }
-    return data;
+      return data;
   }
 }

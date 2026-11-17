@@ -16,13 +16,13 @@ import 'package:provider/provider.dart';
 
 class LoginScreen extends StatefulWidget {
   static const String routeName = '/login';
-  bool initial = true;
 
   @override
   State<StatefulWidget> createState() => loginScreenState();
 }
 
 class loginScreenState extends State<LoginScreen> {
+  bool _initial = true;
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
 
@@ -38,8 +38,8 @@ class loginScreenState extends State<LoginScreen> {
 
   @override
   void didChangeDependencies() {
-    if (widget.initial) {
-      widget.initial = false;
+    if (_initial) {
+      _initial = false;
       context.read<Auth>().getAppUrl();
     }
     super.didChangeDependencies();
@@ -49,7 +49,6 @@ class loginScreenState extends State<LoginScreen> {
   void dispose() {
     _usernameController.dispose();
     _passwordController.dispose();
-    _form.currentState!.dispose();
     super.dispose();
   }
 
@@ -162,15 +161,13 @@ class loginScreenState extends State<LoginScreen> {
       Navigator.of(context)
           .pushNamedAndRemoveUntil(DashboardScreen.routeName, (route) => false);
     } catch (error) {
-      print(error);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(error.toString())));
-    }
-
-    setState(() {
-      _isLoading = false;
+      if (mounted)
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(error.toString())));
+    } finally {
       EasyLoading.dismiss(animation: true);
-    });
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override

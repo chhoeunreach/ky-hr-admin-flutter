@@ -32,8 +32,8 @@ class AttendanceToggleState extends State<AttendanceToggle> {
               fontWeight: FontWeight.w900,
             ),
           ),
-          Consumer(
-            builder: (context, value, child) {
+          Builder(
+            builder: (context) {
               return provider.month.isEmpty
                   ? SizedBox.shrink()
                   : DropdownButtonHideUnderline(
@@ -54,12 +54,15 @@ class AttendanceToggleState extends State<AttendanceToggle> {
                                 ))
                             .toList(),
                         value: provider.month[provider.selectedMonth],
-                        onChanged: (value) {
-                          print((value as Month).index);
-                          setState(() {
-                            provider.selectedMonth = (value).index;
-                            provider.getAttendanceReport();
-                          });
+                        onChanged: (value) async {
+                          provider.selectedMonth = (value as Month).index;
+                          try {
+                            await provider.getAttendanceReport();
+                          } catch (error) {
+                            if (context.mounted)
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(error.toString())));
+                          }
                         },
                         iconStyleData: IconStyleData(
                           icon: Icon(

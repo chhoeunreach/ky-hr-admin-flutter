@@ -2,7 +2,6 @@ import 'package:cnattendance/provider/leavecalendarcontroller.dart';
 import 'package:cnattendance/widget/leavecalendar/leavelistcardview.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:provider/provider.dart';
 
 class LeaveListView extends StatelessWidget {
   @override

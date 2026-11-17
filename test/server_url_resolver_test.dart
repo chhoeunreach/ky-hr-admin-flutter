@@ -157,6 +157,44 @@ void main() {
     expect(count, 2);
   });
 
+  test('healthy primary is reused within the cache window and rechecks after',
+      () async {
+    var count = 0;
+    final resolver = ServerUrlResolver(
+      healthyCacheTtl: const Duration(seconds: 30),
+      client: MockClient((request) async {
+        count++;
+        return envelope();
+      }),
+    );
+    final prefs = await SharedPreferences.getInstance();
+    expect(await resolver.resolve(primary, prefs), primary);
+    expect(await resolver.resolve(primary, prefs), primary);
+    expect(count, 1);
+    expect(await resolver.resolve(primary, prefs, forceCheck: true), primary);
+    expect(count, 2);
+  });
+
+  test('a cached healthy primary still fails over once its window expires',
+      () async {
+    var primaryDown = false;
+    final resolver = ServerUrlResolver(
+      healthyCacheTtl: const Duration(milliseconds: 1),
+      client: MockClient((request) async {
+        if (request.url.host == 'primary.example' && primaryDown) {
+          throw http.ClientException('Connection refused');
+        }
+        return envelope();
+      }),
+    );
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('server_fallback:$primary', backup);
+    expect(await resolver.resolve(primary, prefs), primary);
+    primaryDown = true;
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    expect(await resolver.resolve(primary, prefs), backup);
+  });
+
   test('fresh app uses configured backup before login when primary fails',
       () async {
     SharedPreferences.setMockInitialValues({});

@@ -44,10 +44,8 @@ class AssignedTask {
     data['status'] = this.status;
     data['task_id'] = this.task_id;
     data['task_name'] = this.task_name;
-    if (this.assigned_member != null) {
-      data['assigned_member'] =
-          this.assigned_member.map((v) => v.toJson()).toList();
-    }
-    return data;
+    data['assigned_member'] =
+        this.assigned_member.map((v) => v.toJson()).toList();
+      return data;
   }
 }

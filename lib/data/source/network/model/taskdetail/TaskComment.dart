@@ -40,9 +40,7 @@ class TaskComment {
     data['created_by_name'] = this.created_by_name;
     data['description'] = this.description;
     data['id'] = this.id;
-    if (this.mentioned != null) {
-      data['mentioned'] = this.mentioned.map((v) => v.toJson()).toList();
-    }
-    return data;
+    data['mentioned'] = this.mentioned.map((v) => v.toJson()).toList();
+      return data;
   }
 }

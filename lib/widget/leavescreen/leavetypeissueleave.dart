@@ -60,7 +60,7 @@ class LeaveTypeIssueLeaveState extends State<LeaveTypeIssueLeave>{
             .toList(),
         value: selectedValue,
         onChanged: (value) {
-          selectedValue = value as Leave?;
+          selectedValue = value;
           if (selectedValue != null) {
             setState(() {
 

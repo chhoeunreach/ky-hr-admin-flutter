@@ -9,8 +9,8 @@ import 'package:provider/provider.dart';
 import 'package:cnattendance/widget/buttonborder.dart';
 
 class CancelLeaveBottomSheet extends StatefulWidget {
-  int id;
-  String leaveTypeId;
+  final int id;
+  final String leaveTypeId;
 
   CancelLeaveBottomSheet(this.id, this.leaveTypeId);
 

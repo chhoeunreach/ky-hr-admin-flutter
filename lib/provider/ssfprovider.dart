@@ -1,10 +1,7 @@
 import 'dart:convert';
 
 import 'package:cnattendance/data/source/datastore/preferences.dart';
-import 'package:cnattendance/data/source/network/model/paysliplist/Payslip.dart';
-import 'package:cnattendance/data/source/network/model/paysliplist/paysliplistresponse.dart';
 import 'package:cnattendance/data/source/network/model/ssflistresponse/ssflistresponse.dart';
-import 'package:cnattendance/model/month.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:nepali_date_picker/nepali_date_picker.dart';

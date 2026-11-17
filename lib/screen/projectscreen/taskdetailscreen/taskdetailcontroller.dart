@@ -146,8 +146,7 @@ class TaskDetailController extends GetxController {
       final responseData = json.decode(response.body);
 
       if (response.statusCode == 200) {
-        final taskResponse =
-            CheckListStatusToggleResponse.fromJson(responseData);
+        CheckListStatusToggleResponse.fromJson(responseData);
 
         return true;
       } else {

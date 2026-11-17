@@ -2,7 +2,6 @@ import 'package:cnattendance/screen/projectscreen/taskdetailscreen/taskdetailcon
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
-import 'package:hexcolor/hexcolor.dart';
 
 class HeaderSection extends StatelessWidget{
   @override
@@ -60,7 +59,7 @@ class HeaderSection extends StatelessWidget{
                 ),
                 Obx(
                       () => Text(
-                        controller.taskDetail.value.status!,
+                        controller.taskDetail.value.status,
                     style: TextStyle(
                         fontSize: 15,
                         color: Colors.white,

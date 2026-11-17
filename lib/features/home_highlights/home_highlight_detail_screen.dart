@@ -38,7 +38,11 @@ class HomeHighlightDetailScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: theme.surface,
         foregroundColor: theme.text,
+        iconTheme: IconThemeData(color: theme.text),
         elevation: 0,
+        leading: Navigator.of(context).canPop()
+            ? BackButton(color: theme.text)
+            : null,
         title: Text(homeHighlightsText('Highlight')),
       ),
       body: SafeArea(

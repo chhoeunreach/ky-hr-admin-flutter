@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 
 class SupportDetailScreen extends StatelessWidget {
-  Support support;
+  final Support support;
 
   SupportDetailScreen(this.support);
 

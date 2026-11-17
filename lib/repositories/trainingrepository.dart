@@ -2,8 +2,6 @@ import 'dart:convert';
 
 import 'package:cnattendance/data/source/datastore/preferences.dart';
 import 'package:cnattendance/data/source/network/connect.dart';
-import 'package:cnattendance/data/source/network/model/eventdetailresponse/eventlistresponse.dart';
-import 'package:cnattendance/data/source/network/model/eventlistresponse/eventdetailresponse.dart';
 import 'package:cnattendance/data/source/network/model/trainingresponse/trainingresponse.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:flutter/material.dart';

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
@@ -29,15 +30,24 @@ import 'package:webview_flutter/webview_flutter.dart';
 
 // import 'package:qr_bar_code_scanner_dialog/qr_bar_code_scanner_dialog.dart';
 
+import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
+import 'package:cnattendance/model/home_banner_config.dart';
+import 'home_model_view.dart';
 import '../customqrscanner.dart';
 
 class CheckAttendance extends StatefulWidget {
+  final PersistentTabController? controller;
+  final HomeBannerConfig? bannerConfig;
+
+  const CheckAttendance({Key? key, this.controller, this.bannerConfig})
+      : super(key: key);
+
   @override
   State<StatefulWidget> createState() => CheckAttendanceState();
 }
 
 class CheckAttendanceState extends State<CheckAttendance>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   static const Duration _zoneRefreshInterval = Duration(minutes: 1);
 
   late final AnimationController _pulseController;
@@ -45,6 +55,11 @@ class CheckAttendanceState extends State<CheckAttendance>
   final TransformationController _mapTransformationController =
       TransformationController();
   DateTime _now = DateTime.now();
+  late final ValueNotifier<DateTime> _clockNow = ValueNotifier(_now);
+  List<String>? _resolvedAttendanceMethods;
+  bool _clockEnabled = true;
+  bool _foreground = true;
+  bool _animateAttendance = false;
   bool _isRefreshingZone = false;
   double? _zoneDistanceMeters;
   String? _zoneError;
@@ -56,25 +71,68 @@ class CheckAttendanceState extends State<CheckAttendance>
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
-    )..repeat();
-    _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) {
-        final now = DateTime.now();
-        final dayChanged = now.year != _now.year ||
-            now.month != _now.month ||
-            now.day != _now.day;
-        setState(() => _now = now);
-        if (dayChanged) {
-          unawaited(context
-              .read<DashboardProvider>()
-              .refreshMonthlyAttendanceSummary());
-        }
-      }
-    });
+    );
+    WidgetsBinding.instance.addObserver(this);
+    _clockTimer =
+        Timer.periodic(const Duration(seconds: 1), (_) => _updateClock());
+  }
+
+  void _updateClock() {
+    if (!mounted ||
+        !_clockEnabled ||
+        !_foreground ||
+        !(ModalRoute.of(context)?.isCurrent ?? true)) return;
+    final now = DateTime.now();
+    _clockNow.value = now;
+    final dayChanged =
+        now.year != _now.year || now.month != _now.month || now.day != _now.day;
+    if (dayChanged) {
+      setState(() => _now = now);
+      unawaited(
+          context.read<DashboardProvider>().refreshMonthlyAttendanceSummary());
+    }
+  }
+
+  void _syncPulse() {
+    final shouldAnimate = _clockEnabled && _foreground && _animateAttendance;
+    if (shouldAnimate && !_pulseController.isAnimating) {
+      _pulseController.repeat();
+    } else if (!shouldAnimate && _pulseController.isAnimating) {
+      _pulseController.stop();
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _clockEnabled = TickerMode.valuesOf(context).enabled;
+    final dashboard = context.watch<DashboardProvider>();
+    _animateAttendance = dashboard.animated &&
+        dashboard.attendanceMethods.isNotEmpty &&
+        !MediaQuery.disableAnimationsOf(context);
+    _syncPulse();
+    final methods = dashboard.attendanceMethods;
+    if (!listEquals(_resolvedAttendanceMethods, methods)) {
+      final snapshot = List<String>.of(methods);
+      _resolvedAttendanceMethods = snapshot;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted)
+          unawaited(context.read<PrefProvider>().getAttendanceType(snapshot));
+      });
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _foreground = state == AppLifecycleState.resumed;
+    _syncPulse();
+    if (_foreground) _updateClock();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _clockNow.dispose();
     _pulseController.dispose();
     _mapTransformationController.dispose();
     _clockTimer.cancel();
@@ -704,70 +762,66 @@ class CheckAttendanceState extends State<CheckAttendance>
     }
   }
 
-  Widget _buildClock(EnterpriseTheme enterprise, bool isAD) {
-    final hourMinute = DateFormat('HH:mm').format(_now);
-    final period = DateFormat('a').format(_now);
-    final seconds = DateFormat('ss').format(_now);
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 260),
-      child: Column(
-        key: ValueKey(seconds),
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(bottom: 7),
-                child: Text(
-                  period,
-                  style: TextStyle(
-                    color: enterprise.mutedText,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                hourMinute,
+  Widget _buildClock(EnterpriseTheme enterprise, bool isAD, DateTime now) {
+    final hourMinute = DateFormat('HH:mm').format(now);
+    final period = DateFormat('a').format(now);
+    final seconds = DateFormat('ss').format(now);
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(bottom: 7),
+              child: Text(
+                period,
                 style: TextStyle(
-                  color: enterprise.text,
-                  fontSize: 34,
-                  fontWeight: FontWeight.w900,
-                  height: 1,
-                  letterSpacing: 0,
+                  color: enterprise.mutedText,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
-              const SizedBox(width: 4),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Text(
-                  seconds,
-                  style: TextStyle(
-                    color: enterprise.text.withValues(alpha: 0.84),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            isAD
-                ? DateFormat('EEEE , MMMM d , yyyy').format(_now)
-                : NepaliDateFormat('EEE , MMMM d , yyyy')
-                    .format(_now.toNepaliDateTime()),
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: enterprise.mutedText,
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
             ),
+            const SizedBox(width: 8),
+            Text(
+              hourMinute,
+              style: TextStyle(
+                color: enterprise.text,
+                fontSize: 34,
+                fontWeight: FontWeight.w900,
+                height: 1,
+                letterSpacing: 0,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Text(
+                seconds,
+                style: TextStyle(
+                  color: enterprise.text.withValues(alpha: 0.84),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          isAD
+              ? DateFormat('EEEE , MMMM d , yyyy').format(now)
+              : NepaliDateFormat('EEE , MMMM d , yyyy')
+                  .format(now.toNepaliDateTime()),
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: enterprise.mutedText,
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -787,6 +841,100 @@ class CheckAttendanceState extends State<CheckAttendance>
       child: Center(
         child: AnimatedBuilder(
           animation: _pulseController,
+          child: RepaintBoundary(
+              child: SizedBox(
+            width: diameter,
+            height: diameter,
+            child: Stack(alignment: Alignment.center, children: [
+              Container(
+                margin: const EdgeInsets.all(9),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: enterprise.accent.withValues(alpha: 0.42),
+                    width: 1.4,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: enterprise.accent.withValues(alpha: 0.28),
+                      blurRadius: 28,
+                      spreadRadius: 1,
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                margin: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: SweepGradient(
+                    colors: [
+                      enterprise.accent,
+                      qrCircleColor,
+                      enterprise.secondary,
+                      enterprise.accent,
+                    ],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: qrCircleColor.withValues(alpha: 0.26),
+                      blurRadius: 26,
+                      spreadRadius: -2,
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                margin: const EdgeInsets.all(21),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white
+                        .withValues(alpha: enterprise.isDark ? 0.18 : 0.70),
+                    width: 1,
+                  ),
+                ),
+              ),
+              Container(
+                margin: const EdgeInsets.all(25),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      Colors.white
+                          .withValues(alpha: enterprise.isDark ? 0.18 : 0.74),
+                      qrCircleColor.withValues(
+                          alpha: enterprise.isDark ? 0.36 : 0.18),
+                    ],
+                  ),
+                  border: Border.all(
+                    color: Colors.white
+                        .withValues(alpha: enterprise.isDark ? 0.20 : 0.82),
+                    width: 1.5,
+                  ),
+                ),
+              ),
+              Material(
+                color: Colors.transparent,
+                shape: const CircleBorder(),
+                child: InkWell(
+                  customBorder: const CircleBorder(),
+                  onTap: () => _handleAttendanceTap(attandanceType),
+                  child: SizedBox(
+                    width: diameter - 58,
+                    height: diameter - 58,
+                    child: Center(
+                      child: _attendanceIcon(
+                        attendanceType: attandanceType,
+                        repeat: animated,
+                        color: qrIconColor,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ]),
+          )),
           builder: (context, child) {
             final pulse = animated ? _pulseController.value : 0.0;
             final spread = 5 + (pulse * 18);
@@ -825,93 +973,7 @@ class CheckAttendanceState extends State<CheckAttendance>
                       ),
                     ),
                   ),
-                  Container(
-                    margin: const EdgeInsets.all(9),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: enterprise.accent.withValues(alpha: 0.42),
-                        width: 1.4,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: enterprise.accent.withValues(alpha: 0.28),
-                          blurRadius: 28,
-                          spreadRadius: 1,
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    margin: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: SweepGradient(
-                        colors: [
-                          enterprise.accent,
-                          qrCircleColor,
-                          enterprise.secondary,
-                          enterprise.accent,
-                        ],
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: qrCircleColor.withValues(alpha: 0.26),
-                          blurRadius: 26,
-                          spreadRadius: -2,
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    margin: const EdgeInsets.all(21),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.white
-                            .withValues(alpha: enterprise.isDark ? 0.18 : 0.70),
-                        width: 1,
-                      ),
-                    ),
-                  ),
-                  Container(
-                    margin: const EdgeInsets.all(25),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: RadialGradient(
-                        colors: [
-                          Colors.white.withValues(
-                              alpha: enterprise.isDark ? 0.18 : 0.74),
-                          qrCircleColor.withValues(
-                              alpha: enterprise.isDark ? 0.36 : 0.18),
-                        ],
-                      ),
-                      border: Border.all(
-                        color: Colors.white
-                            .withValues(alpha: enterprise.isDark ? 0.20 : 0.82),
-                        width: 1.5,
-                      ),
-                    ),
-                  ),
-                  Material(
-                    color: Colors.transparent,
-                    shape: const CircleBorder(),
-                    child: InkWell(
-                      customBorder: const CircleBorder(),
-                      onTap: () => _handleAttendanceTap(attandanceType),
-                      child: SizedBox(
-                        width: diameter - 58,
-                        height: diameter - 58,
-                        child: Center(
-                          child: _attendanceIcon(
-                            attendanceType: attandanceType,
-                            repeat: animated,
-                            color: qrIconColor,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+                  child!,
                 ],
               ),
             );
@@ -941,174 +1003,105 @@ class CheckAttendanceState extends State<CheckAttendance>
     final dashboardProvider = context.watch<DashboardProvider>();
     final attendanceList = dashboardProvider.attendanceList;
     final attandanceType = context.watch<PrefProvider>().attendanceType;
-    final isAD = dashboardProvider.isAD;
-    final attendanceMethod = dashboardProvider.attendanceMethods;
-    final animated = dashboardProvider.animated;
     final enterprise = EnterpriseTheme.of(context);
-    final isCheckedIn =
-        attendanceList['check-in'] != "-" && attendanceList['check-out'] == "-";
-    final panelTextColor = enterprise.text;
-    final progressBackgroundColor = enterprise.text.withValues(alpha: 0.14);
-    final productionProgressColor =
-        isCheckedIn ? enterprise.accent : enterprise.secondary;
-    final attendanceMessage = _attendanceAvailabilityMessage(attendanceMethod);
-    final zoneStatusCard = _buildZoneStatusCard(
-      provider: dashboardProvider,
-      enterprise: enterprise,
-    );
-    if (zoneStatusCard != null &&
-        dashboardProvider.effectiveWorkspaceRadiusMeters != null &&
+
+    final allowedDistance = (dashboardProvider.effectiveWorkspaceRadiusMeters ??
+            dashboardProvider.workspaceRadiusMeters ??
+            50)
+        .toDouble();
+    final hasBranchLocation = dashboardProvider.workspaceLatitude != null &&
+        dashboardProvider.workspaceLongitude != null;
+    final distance =
+        _zoneDistanceMeters ?? dashboardProvider.lastWorkspaceDistanceMeters;
+    final hasDistance =
+        hasBranchLocation && distance != null && _zoneError == null;
+    final isInZone = hasDistance && distance <= allowedDistance;
+    final currentLatitude = dashboardProvider.locationStatus['latitude'];
+    final currentLongitude = dashboardProvider.locationStatus['longitude'];
+    final hasCurrentLocation = currentLatitude != null &&
+        currentLongitude != null &&
+        currentLatitude != 0 &&
+        currentLongitude != 0;
+
+    final Widget mapWidget = hasBranchLocation
+        ? _AttendanceGoogleMapFrame(
+            branchLatitude: dashboardProvider.workspaceLatitude!,
+            branchLongitude: dashboardProvider.workspaceLongitude!,
+            currentLatitude: hasCurrentLocation ? currentLatitude : null,
+            currentLongitude: hasCurrentLocation ? currentLongitude : null,
+            configuredMapUrl: dashboardProvider.attendanceMapUrl,
+            enterprise: enterprise,
+          )
+        : Stack(
+            children: [
+              InteractiveViewer(
+                transformationController: _mapTransformationController,
+                minScale: 1,
+                maxScale: 3,
+                boundaryMargin: const EdgeInsets.all(80),
+                child: CustomPaint(
+                  painter: _AttendanceZoneMapPainter(
+                    branchLatitude: dashboardProvider.workspaceLatitude,
+                    branchLongitude: dashboardProvider.workspaceLongitude,
+                    currentLatitude:
+                        hasCurrentLocation ? currentLatitude : null,
+                    currentLongitude:
+                        hasCurrentLocation ? currentLongitude : null,
+                    allowedDistanceMeters: allowedDistance,
+                    distanceMeters: distance,
+                    inZone: isInZone,
+                    mapBackground: enterprise.isDark
+                        ? const Color(0xFF142233)
+                        : const Color(0xFFEAF3F6),
+                    branchColor: enterprise.primary,
+                    currentColor: isInZone
+                        ? const Color(0xFF16A34A)
+                        : const Color(0xFFE11D48),
+                    radiusColor: (isInZone
+                            ? const Color(0xFF16A34A)
+                            : const Color(0xFFE11D48))
+                        .withValues(alpha: 0.28),
+                    textColor: enterprise.text,
+                    mutedTextColor: enterprise.mutedText,
+                  ),
+                  child: const SizedBox.expand(),
+                ),
+              ),
+              Positioned(
+                right: 6,
+                top: 6,
+                child: _MapZoomControls(
+                  enterprise: enterprise,
+                  onZoomIn: () => _zoomAttendanceMap(1.25),
+                  onZoomOut: () => _zoomAttendanceMap(0.8),
+                ),
+              ),
+            ],
+          );
+
+    if (dashboardProvider.effectiveWorkspaceRadiusMeters != null &&
         !_isRefreshingZone &&
         _lastZoneRefreshAt == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _refreshZoneStatus();
       });
     }
-    context.read<PrefProvider>().getAttendanceType(attendanceMethod);
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          HomeAttendanceClockSummary(
-            clock: _buildClock(enterprise, isAD),
-            highlightsEnabled:
-                dashboardProvider.features["home-highlights"] == "1",
-            summary: dashboardProvider.monthlyAttendanceSummary?.month ==
-                    DateFormat('yyyy-MM').format(_now)
-                ? dashboardProvider.monthlyAttendanceSummary
-                : null,
-          ),
-          const SizedBox(height: 10),
-          if (attendanceMessage != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: EnterpriseGlass(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                radius: 12,
-                glowColor: enterprise.secondary,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.info_outline_rounded,
-                      color: enterprise.secondary,
-                      size: 18,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        attendanceMessage,
-                        style: TextStyle(
-                          color: panelTextColor,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          height: 1.35,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          if (attendanceMethod.isNotEmpty)
-            _buildAttendanceControl(
-              enterprise: enterprise,
-              attandanceType: attandanceType,
-              animated: animated,
-              isCheckedIn: isCheckedIn,
-            ),
-          if (attendanceMethod.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 6),
-              child: Text(
-                "${translate('home_screen.check_in')} | ${translate('home_screen.check_out')}",
-                style: TextStyle(
-                  color: panelTextColor,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ),
-          if (zoneStatusCard != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: zoneStatusCard,
-            ),
-          const SizedBox(height: 8),
-          EnterpriseGlass(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            radius: 14,
-            glowColor: productionProgressColor,
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.schedule_rounded,
-                        color: productionProgressColor, size: 16),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        translate('attendance_screen.working_time'),
-                        style: TextStyle(
-                          color: panelTextColor,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                    Text(
-                      attendanceList['production_hour'],
-                      style: TextStyle(
-                        color: panelTextColor,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 11,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                LinearPercentIndicator(
-                  animation: true,
-                  animationDuration: 1000,
-                  lineHeight: 9.0,
-                  padding: EdgeInsets.zero,
-                  percent: attendanceList['production-time']!,
-                  barRadius: const Radius.circular(20),
-                  backgroundColor: progressBackgroundColor,
-                  linearGradient: LinearGradient(
-                    colors: [productionProgressColor, enterprise.accent],
-                  ),
-                ),
-                const SizedBox(height: 5),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      attendanceList['check-in']!,
-                      style: TextStyle(
-                        color: enterprise.mutedText,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    Text(
-                      attendanceList['check-out']!,
-                      style: TextStyle(
-                        color: enterprise.mutedText,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+    return HomeModelView(
+      clockNow: _clockNow,
+      summary: dashboardProvider.monthlyAttendanceSummary,
+      pulseController: _pulseController,
+      animated: _animateAttendance,
+      onAttendanceTap: () => _handleAttendanceTap(attandanceType),
+      onRefreshZone: () => _refreshZoneStatus(force: true),
+      allowedDistanceMeters: allowedDistance,
+      distanceMeters: distance,
+      isInZone: isInZone,
+      isRefreshingZone: _isRefreshingZone,
+      attendanceList: attendanceList,
+      mapWidget: mapWidget,
+      controller: widget.controller,
+      bannerConfig: widget.bannerConfig,
     );
   }
 }

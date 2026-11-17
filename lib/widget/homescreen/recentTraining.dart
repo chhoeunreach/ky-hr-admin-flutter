@@ -3,6 +3,7 @@ import 'package:cnattendance/provider/prefprovider.dart';
 import 'package:cnattendance/screen/training/trainingdetailsscreen.dart';
 import 'package:cnattendance/screen/training/trainingscreen.dart';
 import 'package:flutter/material.dart';
+import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
@@ -12,6 +13,7 @@ class RecentTraining extends StatelessWidget {
   Widget build(BuildContext context) {
     final training = context.watch<DashboardProvider>().training;
     final userId = context.watch<PrefProvider>().userId;
+    final enterprise = EnterpriseTheme.of(context);
     return Visibility(
       visible: training != null ? true : false,
       child: Padding(
@@ -23,7 +25,7 @@ class RecentTraining extends StatelessWidget {
               children: [
                 Text(
                   translate('home_screen.training'),
-                  style: TextStyle(color: Colors.white, fontSize: 16),
+                  style: TextStyle(color: enterprise.text, fontSize: 16, fontWeight: FontWeight.w900),
                 ),
                 Spacer(),
                 GestureDetector(
@@ -32,7 +34,7 @@ class RecentTraining extends StatelessWidget {
                   },
                   child: Text(
                     translate('home_screen.show_all'),
-                    style: TextStyle(color: Colors.white, fontSize: 12),
+                    style: TextStyle(color: enterprise.accent, fontSize: 12, fontWeight: FontWeight.w700),
                   ),
                 ),
               ],
@@ -53,7 +55,7 @@ class RecentTraining extends StatelessWidget {
                           borderRadius: BorderRadius.only(
                               topLeft: Radius.circular(10),
                               bottomRight: Radius.circular(10))),
-                      color: Colors.white12,
+                      color: enterprise.isDark ? const Color(0xFF1E293B).withValues(alpha: 0.90) : Colors.white.withValues(alpha: 0.90),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 10),
@@ -76,7 +78,7 @@ class RecentTraining extends StatelessWidget {
                                               overflow: TextOverflow.ellipsis,
                                               style: TextStyle(
                                                   height: 1.0,
-                                                  color: Colors.white,
+                                                  color: enterprise.text,
                                                   fontWeight: FontWeight.bold,
                                                   fontSize: 14)),
                                           Text(
@@ -88,7 +90,7 @@ class RecentTraining extends StatelessWidget {
                                                 ? "Participant"
                                                 : "Trainer",
                                             style: TextStyle(
-                                                color: Colors.white,
+                                                color: enterprise.mutedText,
                                                 fontSize: 11),
                                           ),
                                         ],
@@ -110,14 +112,14 @@ class RecentTraining extends StatelessWidget {
                                         Text(
                                           "Start-End Date",
                                           style: TextStyle(
-                                              color: Colors.white70,
+                                              color: enterprise.mutedText,
                                               fontSize: 11),
                                         ),
                                         Row(
                                           children: [
                                             Text(training.startDate,
                                                 style: TextStyle(
-                                                    color: Colors.white,
+                                                    color: enterprise.text,
                                                     fontWeight:
                                                         FontWeight.normal,
                                                     fontSize: 11)),
@@ -127,7 +129,7 @@ class RecentTraining extends StatelessWidget {
                                             if (training.endDate.isNotEmpty)
                                               Text(" - ",
                                                   style: TextStyle(
-                                                      color: Colors.white,
+                                                      color: enterprise.text,
                                                       fontWeight:
                                                           FontWeight.normal,
                                                       fontSize: 11)),
@@ -138,7 +140,7 @@ class RecentTraining extends StatelessWidget {
                                             if (training.endDate.isNotEmpty)
                                               Text(training.endDate,
                                                   style: TextStyle(
-                                                      color: Colors.white,
+                                                      color: enterprise.text,
                                                       fontWeight:
                                                           FontWeight.normal,
                                                       fontSize: 11)),
@@ -150,7 +152,7 @@ class RecentTraining extends StatelessWidget {
                                       height: 24,
                                       child: VerticalDivider(
                                         width: 1,
-                                        color: Colors.white54,
+                                        color: enterprise.glassStroke,
                                       ),
                                     ),
                                     Column(
@@ -160,21 +162,21 @@ class RecentTraining extends StatelessWidget {
                                         Text(
                                           "Start-End Time",
                                           style: TextStyle(
-                                              color: Colors.white70,
+                                              color: enterprise.mutedText,
                                               fontSize: 11),
                                         ),
                                         Row(
                                           children: [
                                             Text(training.startTime,
                                                 style: TextStyle(
-                                                    color: Colors.white,
+                                                    color: enterprise.text,
                                                     fontWeight:
                                                         FontWeight.normal,
                                                     fontSize: 11)),
                                             if (training.endTime.isNotEmpty)
                                               Text(" - ",
                                                   style: TextStyle(
-                                                      color: Colors.white,
+                                                      color: enterprise.text,
                                                       fontWeight:
                                                           FontWeight.normal,
                                                       fontSize: 11)),
@@ -185,7 +187,7 @@ class RecentTraining extends StatelessWidget {
                                             if (training.endTime.isNotEmpty)
                                               Text(training.endTime,
                                                   style: TextStyle(
-                                                      color: Colors.white,
+                                                      color: enterprise.text,
                                                       fontWeight:
                                                           FontWeight.normal,
                                                       fontSize: 11)),

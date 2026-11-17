@@ -2,6 +2,7 @@ import 'community_media_urls.dart';
 import 'dart:convert';
 
 import 'package:cnattendance/data/source/datastore/preferences.dart';
+import 'package:flutter/foundation.dart' show compute, kIsWeb;
 import 'package:cnattendance/utils/constant.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
@@ -109,7 +110,12 @@ class CommunityApi {
     dynamic decoded;
     if (rawBody.isNotEmpty) {
       try {
-        decoded = jsonDecode(rawBody);
+        // Large feed payloads are decoded on a worker isolate so a full page of
+        // posts cannot block the frame that delivers it. Small API responses
+        // stay inline to avoid isolate start-up overhead.
+        decoded = rawBody.length >= 64 * 1024 && !kIsWeb
+            ? await compute(_decodeCommunityJson, rawBody)
+            : jsonDecode(rawBody);
       } catch (_) {
         decoded = null;
       }
@@ -144,6 +150,8 @@ class CommunityApi {
     return communityResponseMediaUrls(body, Uri.parse(base));
   }
 }
+
+dynamic _decodeCommunityJson(String body) => jsonDecode(body);
 
 String _responseError(int status) {
   if (status == 401) return 'Your session has expired. Please sign in again.';

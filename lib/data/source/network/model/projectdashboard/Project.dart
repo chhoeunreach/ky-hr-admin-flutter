@@ -51,10 +51,8 @@ class Project {
     data['project_progress_percent'] = this.project_progress_percent;
     data['start_date'] = this.start_date;
     data['status'] = this.status;
-    if (this.assigned_member != null) {
-      data['assigned_member'] =
-          this.assigned_member.map((v) => v.toJson()).toList();
-    }
-    return data;
+    data['assigned_member'] =
+        this.assigned_member.map((v) => v.toJson()).toList();
+      return data;
   }
 }

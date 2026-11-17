@@ -13,18 +13,18 @@ import 'package:share_plus/share_plus.dart';
 
 class PaySlipDetailScreen extends StatefulWidget {
   static const String routeName = "/paySlipDetail";
-  bool initial = true;
-  int payslipId = 0;
 
   @override
   State<StatefulWidget> createState() => PaySlipScreenState();
 }
 
 class PaySlipScreenState extends State<PaySlipDetailScreen> {
+  bool _initial = true;
+  int _payslipId = 0;
   @override
   void didChangeDependencies() {
-    if (widget.initial) {
-      widget.initial = false;
+    if (_initial) {
+      _initial = false;
       getPaySlipDetail();
     }
     super.didChangeDependencies();
@@ -32,16 +32,15 @@ class PaySlipScreenState extends State<PaySlipDetailScreen> {
 
   Future<void> getPaySlipDetail() async {
     EasyLoading.show(status: translate('loader.loading'), maskType: EasyLoadingMaskType.black);
-    widget.payslipId = ModalRoute.of(context)!.settings.arguments as int;
+    _payslipId = ModalRoute.of(context)!.settings.arguments as int;
     await context
         .read<PaySlipDetailProvider>()
-        .getPaySlipData(widget.payslipId.toString());
+        .getPaySlipData(_payslipId.toString());
     EasyLoading.dismiss(animation: true);
   }
 
   @override
   Widget build(BuildContext context) {
-    String? generatedPdfFilePath;
 
     final _flutterNativeHtmlToPdfPlugin = FlutterNativeHtmlToPdf();
 

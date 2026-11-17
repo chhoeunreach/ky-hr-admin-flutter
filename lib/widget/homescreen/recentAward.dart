@@ -1,6 +1,7 @@
 import 'package:cnattendance/provider/dashboardprovider.dart';
 import 'package:cnattendance/screen/awards/awarddetailsscreen.dart';
 import 'package:cnattendance/screen/awards/awardsscreen.dart';
+import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/widget/buttonborder.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
@@ -11,6 +12,7 @@ class RecentAward extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final award = context.watch<DashboardProvider>().award;
+    final enterprise = EnterpriseTheme.of(context);
     return Visibility(
       visible: award != null ? true : false,
       child: Padding(
@@ -22,7 +24,11 @@ class RecentAward extends StatelessWidget {
               children: [
                 Text(
                   translate('home_screen.recent_award'),
-                  style: TextStyle(color: Colors.white, fontSize: 16),
+                  style: TextStyle(
+                    color: enterprise.text,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
                 Spacer(),
                 GestureDetector(
@@ -31,7 +37,11 @@ class RecentAward extends StatelessWidget {
                   },
                   child: Text(
                     translate('home_screen.show_all'),
-                    style: TextStyle(color: Colors.white, fontSize: 12),
+                    style: TextStyle(
+                      color: enterprise.accent,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ],
@@ -48,7 +58,9 @@ class RecentAward extends StatelessWidget {
                       shape: ButtonBorder(),
                       elevation: 0,
                       margin: EdgeInsets.zero,
-                      color: Colors.white12,
+                      color: enterprise.isDark
+                          ? const Color(0xFF1E293B).withValues(alpha: 0.90)
+                          : Colors.white.withValues(alpha: 0.90),
                       child: Container(
                         width: MediaQuery.of(context).size.width - 30,
                         child: Padding(
@@ -65,16 +77,18 @@ class RecentAward extends StatelessWidget {
                                     award.award_name,
                                     maxLines: 2,
                                     style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold),
+                                      color: enterprise.text,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                   Text(
                                     award.employee_name,
                                     style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.normal),
+                                      color: enterprise.mutedText,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.normal,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -83,12 +97,11 @@ class RecentAward extends StatelessWidget {
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   border: Border.all(
-                                      color: Colors.white,
-                                      width:
-                                          1.5), // Change color and width as needed
+                                    color: enterprise.accent,
+                                    width: 1.5,
+                                  ),
                                 ),
-                                padding: EdgeInsets.all(
-                                    3), // Adjust padding if needed
+                                padding: const EdgeInsets.all(3),
                                 child: ClipOval(
                                   child: Image.network(
                                     award.image,

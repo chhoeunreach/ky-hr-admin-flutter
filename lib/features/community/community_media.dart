@@ -1,4 +1,5 @@
 import 'community_strings.dart';
+import 'feed_performance.dart';
 import 'video_cache.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -7,6 +8,7 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
@@ -62,6 +64,14 @@ Uri communityVideoPlaybackUri(Uri original, String? playbackUrl) {
   return stream;
 }
 
+/// Avatars are tiny on screen, so decode them at thumbnail size instead of
+/// pulling full-resolution profile photos into the image cache.
+ImageProvider<Object>? communityAvatarImage(String? url, {int pixels = 96}) {
+  final value = (url ?? '').trim();
+  if (value.isEmpty) return null;
+  return ResizeImage.resizeIfNeeded(pixels, pixels, NetworkImage(value));
+}
+
 class CommunityMedia extends StatelessWidget {
   const CommunityMedia(
       {super.key,
@@ -74,7 +84,15 @@ class CommunityMedia extends StatelessWidget {
       this.durationSeconds,
       this.aspectRatio,
       this.autoPlay = false,
-      this.useVideoCache = true});
+      this.useVideoCache = true,
+      this.muteController,
+      this.showMuteControl = true,
+      this.feedPosition,
+      this.onPlayStateChanged,
+      this.onVideoDuration,
+      this.loopVideo = true,
+      this.rememberPlayback = true,
+      this.videoTapEnabled = true});
   final String type;
   final String url;
   final bool compact;
@@ -84,10 +102,37 @@ class CommunityMedia extends StatelessWidget {
   final Object? durationSeconds;
   final Object? aspectRatio;
 
+  /// Index of the tile in the feed, used to preload only the videos adjacent
+  /// to whichever one is currently playing.
+  final int? feedPosition;
+
   /// When true, direct video files start playing automatically as they scroll
   /// into view (Facebook-style). Only the most visible video plays at a time.
   final bool autoPlay;
   final bool useVideoCache;
+
+  /// Optional external mute state, for screens that render their own button.
+  final CommunityVideoMuteController? muteController;
+
+  /// Whether the video shows its built-in mute button.
+  final bool showMuteControl;
+
+  /// Notifies owners that render their own story-style controls when the
+  /// native player starts or stops, so timers can follow real playback.
+  final ValueChanged<bool>? onPlayStateChanged;
+
+  /// Reports the real media duration once the player is initialized.
+  final ValueChanged<Duration>? onVideoDuration;
+
+  /// Feed videos loop; story videos play once and hand control back.
+  final bool loopVideo;
+
+  /// Disabled for stories so reopening always starts at the beginning.
+  final bool rememberPlayback;
+
+  /// Stories own all tap gestures (previous/next/pause); feed tiles keep their
+  /// own play/pause toggle.
+  final bool videoTapEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -109,7 +154,15 @@ class CommunityMedia extends StatelessWidget {
           compact: compact,
           thumbnailUrl: thumbnailUrl,
           durationSeconds: durationSeconds,
-          aspectRatio: aspectRatio);
+          aspectRatio: aspectRatio,
+          muteController: muteController,
+          showMuteControl: showMuteControl,
+          feedPosition: feedPosition,
+          onPlayStateChanged: onPlayStateChanged,
+          onVideoDuration: onVideoDuration,
+          loopVideo: loopVideo,
+          rememberPlayback: rememberPlayback,
+          videoTapEnabled: videoTapEnabled);
     }
     return _PlayableMedia(
         type: type,
@@ -148,6 +201,7 @@ class _ImageMedia extends StatefulWidget {
 }
 
 class _ImageMediaState extends State<_ImageMedia> {
+  final Object _heroTag = Object();
   ImageStream? _stream;
   ImageStreamListener? _listener;
   double _aspectRatio = 16 / 9;
@@ -181,32 +235,98 @@ class _ImageMediaState extends State<_ImageMedia> {
     super.dispose();
   }
 
+  int get _cacheWidth {
+    final logicalWidth = MediaQuery.maybeSizeOf(context)?.width ?? 720;
+    final pixelRatio = MediaQuery.maybeDevicePixelRatioOf(context) ?? 2;
+    return (logicalWidth * pixelRatio).clamp(320, 1280).round();
+  }
+
+  Future<void> _openViewer() async {
+    FeedVideoAutoplayManager.instance.pauseAll();
+    await Navigator.of(context, rootNavigator: true).push(
+        MaterialPageRoute<void>(
+            builder: (_) =>
+                _ImageViewerScreen(uri: widget.uri, heroTag: _heroTag)));
+  }
+
+  Widget _progressiveImage(
+          {required int cacheWidth, BoxFit fit = BoxFit.cover}) =>
+      CachedNetworkImage(
+          imageUrl: widget.uri.toString(),
+          fit: fit,
+          memCacheWidth: cacheWidth,
+          maxWidthDiskCache: 1600,
+          fadeInDuration: const Duration(milliseconds: 140),
+          filterQuality: FilterQuality.medium,
+          progressIndicatorBuilder: (_, __, progress) => ColoredBox(
+              color: const Color(0xffedf2f7),
+              child: Center(
+                  child: CircularProgressIndicator(
+                      value: progress.progress, strokeWidth: 2))),
+          errorWidget: (_, __, ___) => _MediaError(
+              icon: Icons.broken_image_outlined,
+              message: communityText('Image could not be loaded.'),
+              uri: widget.uri,
+              action: communityText('Open image')));
+
   Widget _imageStack() => Stack(fit: StackFit.expand, children: [
-        CachedNetworkImage(
-            imageUrl: widget.uri.toString(),
-            fit: BoxFit.cover,
-            filterQuality: FilterQuality.medium,
-            progressIndicatorBuilder: (_, __, progress) => ColoredBox(
-                color: const Color(0xffedf2f7),
-                child: Center(
-                    child: CircularProgressIndicator(
-                        value: progress.progress, strokeWidth: 2))),
-            errorWidget: (_, __, ___) => _MediaError(
-                icon: Icons.broken_image_outlined,
-                message: communityText('Image could not be loaded.'),
-                uri: widget.uri,
-                action: communityText('Open image'))),
+        Hero(tag: _heroTag, child: _progressiveImage(cacheWidth: _cacheWidth)),
       ]);
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-      onTap: widget.onTap ??
-          () => launchUrl(widget.uri, mode: LaunchMode.externalApplication),
+      onTap: widget.onTap ?? _openViewer,
       child: ClipRRect(
           borderRadius: BorderRadius.circular(16),
           child: widget.compact
               ? SizedBox.expand(child: _imageStack())
               : AspectRatio(aspectRatio: _aspectRatio, child: _imageStack())));
+}
+
+/// Full-screen image viewer with pinch-to-zoom, launched from feed images.
+class _ImageViewerScreen extends StatelessWidget {
+  const _ImageViewerScreen({required this.uri, required this.heroTag});
+
+  final Uri uri;
+  final Object heroTag;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          backgroundColor: Colors.black,
+          foregroundColor: Colors.white,
+          iconTheme: const IconThemeData(color: Colors.white),
+          actions: [
+            IconButton(
+                tooltip: communityText('Open image'),
+                onPressed: () =>
+                    launchUrl(uri, mode: LaunchMode.externalApplication),
+                icon: const Icon(Icons.open_in_new)),
+          ],
+        ),
+        body: Center(
+            child: Hero(
+                tag: heroTag,
+                child: InteractiveViewer(
+                    minScale: .8,
+                    maxScale: 4,
+                    child: CachedNetworkImage(
+                        imageUrl: uri.toString(),
+                        fit: BoxFit.contain,
+                        memCacheWidth: 1600,
+                        progressIndicatorBuilder: (_, __, progress) => Center(
+                            child: CircularProgressIndicator(
+                                value: progress.progress,
+                                color: Colors.white,
+                                strokeWidth: 2)),
+                        errorWidget: (_, __, ___) => _MediaError(
+                            icon: Icons.broken_image_outlined,
+                            message:
+                                communityText('Image could not be loaded.'),
+                            uri: uri,
+                            action: communityText('Open image')))))),
+      );
 }
 
 class _DocumentMedia extends StatelessWidget {
@@ -540,39 +660,175 @@ double communityMediaAspectRatio(Object? value) {
 /// Only one video may play at a time and playback stops when the app is sent
 /// to the background. Tiles register themselves by identity, so rebuilding a
 /// post or showing a second feed cannot steal playback from a live tile.
+///
+/// The manager also owns the visibility registry that decides which tile is
+/// most worth initializing, gates preloading to the videos adjacent to the
+/// active one, and remembers playback positions so scrolling back resumes
+/// where the user left off.
 class FeedVideoAutoplayManager extends ChangeNotifier {
   FeedVideoAutoplayManager._() {
     WidgetsBinding.instance.addObserver(_AutoplayLifecycleObserver(this));
+    unawaited(_probeNetwork());
   }
 
   static final FeedVideoAutoplayManager instance = FeedVideoAutoplayManager._();
 
+  /// A tile must be at least this visible before it can auto-play.
+  static const double visibilityThreshold = .6;
+
+  static const int _maxRememberedPositions = 80;
+
+  final Map<Object, _TileVisibility> _tiles = {};
+  final Map<String, Duration> _resumePositions = {};
+
   Object? _active;
+  Object? _suppressed;
+  bool _activePaused = false;
   bool _muted = true;
   bool _foreground = true;
+  bool _preloadAllowed = false;
+  bool _preloadProbed = false;
+  bool _lowMemoryMode = false;
 
   bool get muted => _muted;
   bool get foreground => _foreground;
+  bool get preloadAllowed => _preloadAllowed && !_lowMemoryMode;
+  bool get lowMemoryMode => _lowMemoryMode;
 
-  bool isActive(Object owner) => _foreground && identical(_active, owner);
+  /// True while the active video is held paused by a screen-owned control
+  /// (for example a story progress bar) without losing ownership.
+  bool get activePaused => _activePaused;
 
+  /// Whether this exact tile is the one allowed to play right now.
+  bool isActive(Object owner) =>
+      _foreground &&
+      identical(_active, owner) &&
+      !identical(_suppressed, owner);
+
+  /// Called when a tile crosses the visibility threshold and wants to play.
   void activate(Object owner) {
-    if (identical(_active, owner) && _foreground) return;
+    _suppressed = null;
+    _activePaused = false;
+    if (identical(_active, owner) && _foreground) {
+      notifyListeners();
+      return;
+    }
     _active = owner;
     notifyListeners();
   }
 
+  /// Pauses a tile the user explicitly stopped so visibility changes do not
+  /// immediately auto-play it again.
+  void suppress(Object owner) {
+    if (identical(_active, owner)) _active = null;
+    _activePaused = false;
+    _suppressed = owner;
+    notifyListeners();
+  }
+
   void deactivate(Object owner) {
-    if (!identical(_active, owner)) return;
-    _active = null;
+    if (identical(_active, owner)) {
+      _active = null;
+      _activePaused = false;
+    }
+    if (identical(_suppressed, owner)) _suppressed = null;
+    notifyListeners();
+  }
+
+  /// Pauses the active video but keeps ownership, so it can be resumed
+  /// without a new visibility event (used by story viewers).
+  void pauseActive() {
+    if (_active == null || _activePaused) return;
+    _activePaused = true;
+    notifyListeners();
+  }
+
+  void resumeActive() {
+    if (!_activePaused) return;
+    _activePaused = false;
     notifyListeners();
   }
 
   /// Pauses the current video, for example before opening another screen.
   void pauseAll() {
+    _activePaused = false;
     if (_active == null) return;
     _active = null;
     notifyListeners();
+  }
+
+  /// Reports how much of a tile is on screen. Fraction changes alone do not
+  /// notify listeners; only ownership changes do, so scrolling stays cheap.
+  void updateVisibility(Object owner, double fraction,
+      {int? position,
+      String? mediaId,
+      bool autoPlay = false,
+      Duration? playbackPosition}) {
+    final entry = _tiles.putIfAbsent(owner, _TileVisibility.new);
+    final wasVisible = entry.fraction >= visibilityThreshold;
+    entry.fraction = fraction.clamp(0.0, 1.0);
+    entry.autoPlay = autoPlay;
+    entry.position = position ?? entry.position;
+    entry.mediaId = mediaId ?? entry.mediaId;
+    entry.playbackPosition = playbackPosition ?? entry.playbackPosition;
+
+    if (fraction <= 0 && identical(_active, owner)) {
+      _active = null;
+      _activePaused = false;
+    }
+    if (fraction <= 0 && identical(_suppressed, owner)) _suppressed = null;
+    final nowVisible = entry.fraction >= visibilityThreshold;
+    if (nowVisible != wasVisible || (_active == null && nowVisible)) {
+      _promoteMostVisible();
+    }
+  }
+
+  void unregister(Object owner) {
+    final entry = _tiles.remove(owner);
+    if (entry?.mediaId != null && entry?.playbackPosition != null) {
+      rememberPosition(entry!.mediaId!, entry.playbackPosition!);
+    }
+    if (identical(_active, owner)) {
+      _active = null;
+      _activePaused = false;
+    }
+    if (identical(_suppressed, owner)) _suppressed = null;
+    if (_active == null) _promoteMostVisible();
+  }
+
+  /// Whether [owner] sits directly next to the active video and may be
+  /// initialized ahead of time. Only allowed on fast, unmetered networks.
+  bool shouldPreload(Object owner) {
+    if (!preloadAllowed) return false;
+    final active = _active;
+    if (active == null) return false;
+    final activePosition = _tiles[active]?.position;
+    final position = _tiles[owner]?.position;
+    if (activePosition == null || position == null) return false;
+    final distance = (position - activePosition).abs();
+    return distance == 1;
+  }
+
+  /// Playback position previously remembered for [mediaId], if any.
+  Duration? resumePosition(String mediaId) => _resumePositions[mediaId];
+
+  void rememberPosition(String mediaId, Duration position) {
+    if (mediaId.isEmpty || position <= const Duration(seconds: 1)) return;
+    _resumePositions.remove(mediaId);
+    _resumePositions[mediaId] = position;
+    while (_resumePositions.length > _maxRememberedPositions) {
+      _resumePositions.remove(_resumePositions.keys.first);
+    }
+  }
+
+  void forgetPosition(String mediaId) => _resumePositions.remove(mediaId);
+
+  @visibleForTesting
+  void clearTileRegistry() {
+    _tiles.clear();
+    _active = null;
+    _suppressed = null;
+    _activePaused = false;
   }
 
   void setMuted(bool value) {
@@ -583,11 +839,68 @@ class FeedVideoAutoplayManager extends ChangeNotifier {
 
   void toggleMuted() => setMuted(!_muted);
 
+  /// Low-RAM devices skip preloading and release idle players sooner.
+  void setLowMemoryMode(bool value) {
+    if (_lowMemoryMode == value) return;
+    _lowMemoryMode = value;
+    notifyListeners();
+  }
+
+  void _promoteMostVisible() {
+    Object? best;
+    double bestFraction = visibilityThreshold;
+    for (final entry in _tiles.entries) {
+      if (identical(entry.key, _suppressed) || !entry.value.autoPlay) continue;
+      final fraction = entry.value.fraction;
+      if (fraction < bestFraction) continue;
+      if (fraction == bestFraction && best != null) continue;
+      best = entry.key;
+      bestFraction = fraction;
+    }
+    if (identical(best, _active)) return;
+    _active = best;
+    _activePaused = false;
+    notifyListeners();
+  }
+
+  Future<void> _probeNetwork() async {
+    if (_preloadProbed) return;
+    _preloadProbed = true;
+    try {
+      final connectivity = Connectivity();
+      _preloadAllowed = _isUnmetered(await connectivity.checkConnectivity());
+      connectivity.onConnectivityChanged.listen((results) {
+        final allowed = _isUnmetered(results);
+        if (allowed == _preloadAllowed) return;
+        _preloadAllowed = allowed;
+        notifyListeners();
+      });
+    } catch (_) {
+      // Without connectivity information preloading stays disabled.
+      _preloadAllowed = false;
+    }
+  }
+
+  static bool _isUnmetered(List<ConnectivityResult> results) =>
+      results.contains(ConnectivityResult.wifi) ||
+      results.contains(ConnectivityResult.ethernet);
+
   void _setForeground(bool value) {
     if (_foreground == value) return;
     _foreground = value;
     notifyListeners();
   }
+}
+
+/// Alias for callers that only care about playback policy, not the singleton.
+typedef VideoPlaybackManager = FeedVideoAutoplayManager;
+
+class _TileVisibility {
+  double fraction = 0;
+  bool autoPlay = false;
+  int? position;
+  String? mediaId;
+  Duration? playbackPosition;
 }
 
 class _AutoplayLifecycleObserver with WidgetsBindingObserver {
@@ -599,6 +912,34 @@ class _AutoplayLifecycleObserver with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _manager._setForeground(state == AppLifecycleState.resumed);
   }
+
+  @override
+  void didHaveMemoryPressure() {
+    // Keep only the active player alive and stop speculative preloading until
+    // the app is restarted. This is intentionally sticky: a second pressure
+    // event is a strong signal that the device is under sustained pressure.
+    _manager.setLowMemoryMode(true);
+  }
+}
+
+/// Optional external mute state for a video surface.
+///
+/// Screens that draw their own mute button (for example full-screen stories)
+/// can pass one of these to [CommunityMedia] and hide the built-in control so
+/// both buttons live in the screen chrome instead of overlapping.
+class CommunityVideoMuteController extends ChangeNotifier {
+  CommunityVideoMuteController({bool muted = true}) : _muted = muted;
+
+  bool _muted;
+  bool get muted => _muted;
+
+  void setMuted(bool value) {
+    if (_muted == value) return;
+    _muted = value;
+    notifyListeners();
+  }
+
+  void toggle() => setMuted(!_muted);
 }
 
 /// Native video tile that starts muted when it scrolls into view, pauses when
@@ -613,6 +954,14 @@ class _AutoplayVideo extends StatefulWidget {
     this.thumbnailUrl,
     this.durationSeconds,
     this.aspectRatio,
+    this.muteController,
+    this.showMuteControl = true,
+    this.feedPosition,
+    this.onPlayStateChanged,
+    this.onVideoDuration,
+    this.loopVideo = true,
+    this.rememberPlayback = true,
+    this.videoTapEnabled = true,
   });
 
   final Uri uri;
@@ -623,17 +972,28 @@ class _AutoplayVideo extends StatefulWidget {
   final String? thumbnailUrl;
   final Object? durationSeconds;
   final Object? aspectRatio;
+  final CommunityVideoMuteController? muteController;
+  final bool showMuteControl;
+  final int? feedPosition;
+  final ValueChanged<bool>? onPlayStateChanged;
+  final ValueChanged<Duration>? onVideoDuration;
+  final bool loopVideo;
+  final bool rememberPlayback;
+  final bool videoTapEnabled;
 
   @override
   State<_AutoplayVideo> createState() => _AutoplayVideoState();
 }
 
 class _AutoplayVideoState extends State<_AutoplayVideo> {
-  static const double _visibilityThreshold = .6;
-  static const Duration _playDelay = Duration(milliseconds: 350);
-  static const Duration _disposeDelay = Duration(seconds: 4);
+  static const double _visibilityThreshold =
+      FeedVideoAutoplayManager.visibilityThreshold;
+  static const Duration _playDelay = Duration(milliseconds: 200);
+  static const Duration _disposeDelay = Duration(seconds: 3);
+  static const Duration _rememberEvery = Duration(seconds: 2);
 
   final FeedVideoAutoplayManager _manager = FeedVideoAutoplayManager.instance;
+  final FeedPerformanceTracker _tracker = FeedPerformanceTracker.instance;
   final UniqueKey _visibilityKey = UniqueKey();
 
   VideoPlayerController? _controller;
@@ -647,19 +1007,51 @@ class _AutoplayVideoState extends State<_AutoplayVideo> {
   bool _usingFallback = false;
   bool _bypassCache = false;
   bool _cacheInUse = false;
+  bool _firstFrameReported = false;
+  bool _reportedPlaying = false;
   Duration? _resumePosition;
   Duration _lastPosition = Duration.zero;
+  DateTime? _bufferingSince;
+  DateTime? _playingSince;
+  DateTime? _rememberedAt;
   int _initializationEpoch = 0;
+
+  String get _mediaId => widget.playbackUri.toString();
+
+  int get _feedPosition => widget.feedPosition ?? 0;
 
   @override
   void initState() {
     super.initState();
     _manager.addListener(_onManagerChanged);
+    widget.muteController?.addListener(_onMuteChanged);
+  }
+
+  bool get _muted => widget.muteController?.muted ?? _manager.muted;
+
+  void _onMuteChanged() {
+    if (!mounted) return;
+    final controller = _controller;
+    if (controller != null && _ready) {
+      controller.setVolume(_muted ? 0 : 1);
+    }
+    setState(() {});
   }
 
   @override
   void didUpdateWidget(covariant _AutoplayVideo oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.muteController != widget.muteController) {
+      oldWidget.muteController?.removeListener(_onMuteChanged);
+      widget.muteController?.addListener(_onMuteChanged);
+    }
+    if (oldWidget.feedPosition != widget.feedPosition) {
+      _manager.updateVisibility(this, _visible ? 1 : 0,
+          position: _feedPosition,
+          mediaId: _mediaId,
+          autoPlay: widget.autoPlay,
+          playbackPosition: _lastPosition);
+    }
     if (oldWidget.uri == widget.uri &&
         oldWidget.playbackUri == widget.playbackUri &&
         oldWidget.useVideoCache == widget.useVideoCache) return;
@@ -677,8 +1069,12 @@ class _AutoplayVideoState extends State<_AutoplayVideo> {
     _usingFallback = false;
     _bypassCache = false;
     _cacheInUse = false;
+    _firstFrameReported = false;
     _resumePosition = null;
     _lastPosition = Duration.zero;
+    _flushPlaybackTracking();
+    _reportPlayState(false);
+    _tracker.videoReleased(_mediaId);
     controller?.removeListener(_onPlayerChanged);
     controller?.dispose();
     if (_visible) {
@@ -693,7 +1089,12 @@ class _AutoplayVideoState extends State<_AutoplayVideo> {
     _playTimer?.cancel();
     _disposeTimer?.cancel();
     _manager.removeListener(_onManagerChanged);
+    widget.muteController?.removeListener(_onMuteChanged);
+    _rememberPosition(force: true);
+    _flushPlaybackTracking();
+    _tracker.videoReleased(_mediaId);
     _manager.deactivate(this);
+    _manager.unregister(this);
     _initializationEpoch++;
     final controller = _controller;
     _controller = null;
@@ -702,11 +1103,36 @@ class _AutoplayVideoState extends State<_AutoplayVideo> {
     super.dispose();
   }
 
+  void _rememberPosition({bool force = false}) {
+    if (!widget.rememberPlayback) return;
+    if (_lastPosition <= Duration.zero) return;
+    final now = DateTime.now();
+    if (!force &&
+        _rememberedAt != null &&
+        now.difference(_rememberedAt!) < _rememberEvery) return;
+    _rememberedAt = now;
+    _manager.rememberPosition(_mediaId, _lastPosition);
+  }
+
+  void _flushPlaybackTracking() {
+    final now = DateTime.now();
+    final buffering = _bufferingSince;
+    if (buffering != null) {
+      _tracker.videoBufferingSpan(_mediaId, now.difference(buffering));
+      _bufferingSince = null;
+    }
+    final playing = _playingSince;
+    if (playing != null) {
+      _tracker.videoPlaybackSpan(_mediaId, now.difference(playing));
+      _playingSince = null;
+    }
+  }
+
   void _onManagerChanged() {
     if (!mounted) return;
     final controller = _controller;
     if (controller != null && _ready) {
-      controller.setVolume(_manager.muted ? 0 : 1);
+      controller.setVolume(_muted ? 0 : 1);
     }
     _syncPlayback();
     setState(() {});
@@ -714,18 +1140,48 @@ class _AutoplayVideoState extends State<_AutoplayVideo> {
 
   void _syncPlayback() {
     final controller = _controller;
-    if (controller == null || !_ready) return;
     if (_manager.isActive(this)) {
+      _ensureController();
+      if (controller == null || !_ready) return;
+      if (_manager.activePaused) {
+        if (controller.value.isPlaying) {
+          _rememberPosition(force: true);
+          controller.pause();
+          _reportPlayState(false);
+        }
+        return;
+      }
       if (!controller.value.isPlaying) controller.play();
-    } else if (controller.value.isPlaying) {
-      controller.pause();
+    } else {
+      if (controller != null && controller.value.isPlaying) {
+        _rememberPosition(force: true);
+        controller.pause();
+        _reportPlayState(false);
+      }
     }
+  }
+
+  void _reportPlayState(bool playing) {
+    if (_reportedPlaying == playing) return;
+    _reportedPlaying = playing;
+    widget.onPlayStateChanged?.call(playing);
   }
 
   void _onVisibilityChanged(VisibilityInfo info) {
     if (!mounted) return;
-    final nowVisible = info.visibleFraction >= _visibilityThreshold;
-    if (nowVisible == _visible) return;
+    final fraction = info.visibleFraction;
+    _manager.updateVisibility(this, fraction,
+        position: _feedPosition,
+        mediaId: _mediaId,
+        autoPlay: widget.autoPlay,
+        playbackPosition: widget.rememberPlayback ? _lastPosition : null);
+    final nowVisible = fraction >= _visibilityThreshold;
+    if (nowVisible == _visible) {
+      if (!nowVisible && widget.autoPlay && _manager.shouldPreload(this)) {
+        _ensureController();
+      }
+      return;
+    }
     _visible = nowVisible;
     if (nowVisible) {
       _disposeTimer?.cancel();
@@ -748,7 +1204,10 @@ class _AutoplayVideoState extends State<_AutoplayVideo> {
 
   void _scheduleDispose() {
     _disposeTimer?.cancel();
-    _disposeTimer = Timer(_disposeDelay, () {
+    final delay = _manager.lowMemoryMode
+        ? const Duration(milliseconds: 1200)
+        : _disposeDelay;
+    _disposeTimer = Timer(delay, () {
       if (!mounted || _visible || _manager.isActive(this)) return;
       _releaseController();
     });
@@ -756,10 +1215,15 @@ class _AutoplayVideoState extends State<_AutoplayVideo> {
 
   void _releaseController() {
     _initializationEpoch++;
+    _rememberPosition(force: true);
+    _flushPlaybackTracking();
+    _reportPlayState(false);
+    _tracker.videoReleased(_mediaId);
     final controller = _controller;
     _controller = null;
     _initializing = false;
     _ready = false;
+    _firstFrameReported = false;
     controller?.removeListener(_onPlayerChanged);
     controller?.dispose();
     if (mounted) setState(() {});
@@ -769,6 +1233,7 @@ class _AutoplayVideoState extends State<_AutoplayVideo> {
     if (_controller != null || _initializing) return;
     _initializing = true;
     _failed = false;
+    _tracker.videoInitializeStarted(_mediaId);
     if (mounted) setState(() {});
     final epoch = ++_initializationEpoch;
     final remote = _usingFallback ? widget.uri : widget.playbackUri;
@@ -788,12 +1253,19 @@ class _AutoplayVideoState extends State<_AutoplayVideo> {
     try {
       await controller.initialize().timeout(const Duration(seconds: 25));
       if (!mounted || !identical(_controller, controller)) return;
-      await controller.setLooping(true);
-      await controller.setVolume(_manager.muted ? 0 : 1);
-      final resume = _resumePosition;
+      await controller.setLooping(widget.loopVideo);
+      await controller.setVolume(_muted ? 0 : 1);
+      final resume = widget.rememberPlayback
+          ? (_resumePosition ?? _manager.resumePosition(_mediaId))
+          : null;
       _resumePosition = null;
-      if (resume != null && resume > Duration.zero)
+      if (resume != null && resume > const Duration(seconds: 1)) {
         await controller.seekTo(resume);
+      }
+      final duration = controller.value.duration;
+      if (duration > Duration.zero) {
+        widget.onVideoDuration?.call(duration);
+      }
       if (!mounted || !identical(_controller, controller)) return;
       setState(() {
         _initializing = false;
@@ -830,11 +1302,45 @@ class _AutoplayVideoState extends State<_AutoplayVideo> {
   void _onPlayerChanged() {
     final controller = _controller;
     if (!mounted || controller == null) return;
-    if (!controller.value.hasError) {
-      _lastPosition = controller.value.position;
+    final value = controller.value;
+    if (!value.hasError) {
+      _lastPosition = value.position;
+      if (value.isBuffering) {
+        if (_bufferingSince == null) _bufferingSince = DateTime.now();
+        final playing = _playingSince;
+        if (playing != null) {
+          _tracker.videoPlaybackSpan(
+              _mediaId, DateTime.now().difference(playing));
+          _playingSince = null;
+        }
+      } else {
+        final buffering = _bufferingSince;
+        if (buffering != null) {
+          _tracker.videoBufferingSpan(
+              _mediaId, DateTime.now().difference(buffering));
+          _bufferingSince = null;
+        }
+        if (value.isPlaying) {
+          _playingSince ??= DateTime.now();
+          if (!_firstFrameReported) {
+            _firstFrameReported = true;
+            _tracker.videoFirstFrame(_mediaId);
+          }
+        } else {
+          final playing = _playingSince;
+          if (playing != null) {
+            _tracker.videoPlaybackSpan(
+                _mediaId, DateTime.now().difference(playing));
+            _playingSince = null;
+          }
+        }
+      }
+      if (value.isPlaying) _rememberPosition();
+      _reportPlayState(value.isPlaying && !value.isBuffering);
       return;
     }
     controller.removeListener(_onPlayerChanged);
+    _reportPlayState(false);
     if (_cacheInUse || (!_usingFallback && widget.playbackUri != widget.uri)) {
       if (_cacheInUse) {
         _bypassCache = true;
@@ -857,9 +1363,10 @@ class _AutoplayVideoState extends State<_AutoplayVideo> {
       _retry();
       return;
     }
-    if (_manager.isActive(this)) {
+    final playing = _controller?.value.isPlaying ?? false;
+    if (_manager.isActive(this) && playing) {
       _userPaused = true;
-      _manager.deactivate(this);
+      _manager.suppress(this);
     } else {
       _userPaused = false;
       _manager.activate(this);
@@ -869,12 +1376,12 @@ class _AutoplayVideoState extends State<_AutoplayVideo> {
 
   void _retry() {
     _userPaused = false;
-    _manager.activate(this);
-    _usingFallback = false;
-    _bypassCache = false;
     _resumePosition = _lastPosition;
     _releaseController();
+    _usingFallback = false;
+    _bypassCache = false;
     _failed = false;
+    _manager.activate(this);
     _ensureController();
   }
 
@@ -909,7 +1416,7 @@ class _AutoplayVideoState extends State<_AutoplayVideo> {
                   key: _visibilityKey,
                   onVisibilityChanged: _onVisibilityChanged,
                   child: GestureDetector(
-                      onTap: _togglePlay,
+                      onTap: widget.videoTapEnabled ? _togglePlay : null,
                       child: Stack(fit: StackFit.expand, children: [
                         _thumbnailLayer(),
                         if (_ready && _controller != null) _playerLayer(),
@@ -925,6 +1432,10 @@ class _AutoplayVideoState extends State<_AutoplayVideo> {
     final thumbnail = widget.thumbnailUrl == null
         ? null
         : communityMediaUri('image', widget.thumbnailUrl!);
+    final cacheWidth = ((MediaQuery.maybeSizeOf(context)?.width ?? 720) *
+            (MediaQuery.maybeDevicePixelRatioOf(context) ?? 2))
+        .clamp(320, 1280)
+        .round();
     return DecoratedBox(
         decoration: const BoxDecoration(
             gradient: LinearGradient(
@@ -936,6 +1447,9 @@ class _AutoplayVideoState extends State<_AutoplayVideo> {
             : CachedNetworkImage(
                 imageUrl: thumbnail.toString(),
                 fit: BoxFit.cover,
+                memCacheWidth: cacheWidth,
+                maxWidthDiskCache: 1600,
+                fadeInDuration: const Duration(milliseconds: 120),
                 errorWidget: (_, __, ___) => const SizedBox.expand()));
   }
 
@@ -1028,20 +1542,28 @@ class _AutoplayVideoState extends State<_AutoplayVideo> {
           if (duration != null)
             _MediaBadge(icon: Icons.play_circle_fill_rounded, label: duration),
           const Spacer(),
-          Material(
-              color: Colors.black.withValues(alpha: .5),
-              shape: const CircleBorder(),
-              child: InkWell(
-                  customBorder: const CircleBorder(),
-                  onTap: _manager.toggleMuted,
-                  child: Padding(
-                      padding: const EdgeInsets.all(7),
-                      child: Icon(
-                          _manager.muted
-                              ? Icons.volume_off_rounded
-                              : Icons.volume_up_rounded,
-                          color: Colors.white,
-                          size: 18))))
+          if (widget.showMuteControl)
+            Material(
+                color: Colors.black.withValues(alpha: .5),
+                shape: const CircleBorder(),
+                child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: () {
+                      final controller = widget.muteController;
+                      if (controller != null) {
+                        controller.toggle();
+                      } else {
+                        _manager.toggleMuted();
+                      }
+                    },
+                    child: Padding(
+                        padding: const EdgeInsets.all(7),
+                        child: Icon(
+                            _muted
+                                ? Icons.volume_off_rounded
+                                : Icons.volume_up_rounded,
+                            color: Colors.white,
+                            size: 18))))
         ]));
   }
 

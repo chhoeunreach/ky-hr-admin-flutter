@@ -11,19 +11,20 @@ class MeetingDomain {
     required this.publishDate,
     required this.image,
     required this.createdBy,
-    required this.participator,});
+    required this.participator,
+  });
 
   factory MeetingDomain.fromJson(dynamic json) {
     return MeetingDomain(
         id: json['id'],
-        title: json['title'].toString() ?? "",
-        agenda: json['agenda'].toString() ?? "",
-        venue: json['venue'].toString() ?? "",
-        meetingDate: json['meeting_date_nepali'].toString() ?? "",
-        meetingStartTime: json['meeting_start_time'].toString() ?? "",
-        publishDate: json['publish_date'].toString() ?? "",
-        image: json['image'].toString() ?? "",
-        createdBy : json['created_by'].toString() ?? "",
+        title: json['title']?.toString() ?? "",
+        agenda: json['agenda']?.toString() ?? "",
+        venue: json['venue']?.toString() ?? "",
+        meetingDate: json['meeting_date_nepali']?.toString() ?? "",
+        meetingStartTime: json['meeting_start_time']?.toString() ?? "",
+        publishDate: json['publish_date']?.toString() ?? "",
+        image: json['image']?.toString() ?? "",
+        createdBy: json['created_by']?.toString() ?? "",
         participator: List<Participator>.from(
             json['participator'].map((x) => Participator.fromJson(x))));
   }
@@ -53,5 +54,4 @@ class MeetingDomain {
     map['participator'] = participator.map((v) => v.toJson()).toList();
     return map;
   }
-
 }

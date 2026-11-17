@@ -48,9 +48,7 @@ class Reply {
     data['description'] = this.description;
     data['reply_id'] = this.reply_id;
     data['username'] = this.username;
-    if (this.mentioned != null) {
-      data['mentioned'] = this.mentioned.map((v) => v.toJson()).toList();
-    }
-    return data;
+    data['mentioned'] = this.mentioned.map((v) => v.toJson()).toList();
+      return data;
   }
 }

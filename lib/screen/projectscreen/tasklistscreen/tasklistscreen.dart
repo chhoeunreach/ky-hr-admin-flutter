@@ -7,7 +7,6 @@ import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
 import 'package:hexcolor/hexcolor.dart';
 import 'package:image_stack/image_stack.dart';
-import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:percent_indicator/linear_percent_indicator.dart';
 
 class TaskListScreen extends StatelessWidget {
@@ -408,7 +407,7 @@ class TaskListScreen extends StatelessWidget {
                                                 ),
                                                 Spacer(),
                                                 Text(
-                                                  item.status ?? "",
+                                                  item.status,
                                                   style: TextStyle(
                                                       color: Colors.white,
                                                       fontSize: 15),

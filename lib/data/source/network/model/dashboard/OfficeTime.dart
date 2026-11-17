@@ -8,8 +8,8 @@ class OfficeTime {
   factory OfficeTime.fromJson(dynamic json) {
     return OfficeTime(
         id: json['id'],
-        startTime: json['start_time'].toString() ?? "",
-        endTime: json['end_time'].toString() ?? "");
+        startTime: json['start_time']?.toString() ?? "",
+        endTime: json['end_time']?.toString() ?? "");
   }
 
   int id;

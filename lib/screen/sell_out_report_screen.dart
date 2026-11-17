@@ -82,14 +82,8 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
       widget.serviceType.isEmpty || _canonicalService == 'sell';
   String get _serviceLabel {
     if (_isSales) return translate('home_screen.service_sell');
-    if ([
-      'material',
-      'iron',
-      'repair',
-      'buy_in',
-      'icloud_cus',
-      'sell_sim'
-    ].contains(_canonicalService)) {
+    if (['material', 'iron', 'repair', 'buy_in', 'icloud_cus', 'sell_sim']
+        .contains(_canonicalService)) {
       return translate('home_screen.service_$_canonicalService');
     }
     return widget.serviceType;
@@ -175,8 +169,8 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
 
   Future<void> _openEdit(SellOutReport report) async {
     if (!_isEditableToday(report)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_sellOutTr('edit_today_only'))));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(_sellOutTr('edit_today_only'))));
       return;
     }
     final updated = await Navigator.of(context).push<bool>(
@@ -600,7 +594,9 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
                                 else
                                   SalesDashboard(
                                     reports: filtered,
-                                    showProductNames: _isSales || ['material', 'iron', 'repair', 'buy_in'].contains(_canonicalService),
+                                    showProductNames: _isSales ||
+                                        ['material', 'iron', 'repair', 'buy_in']
+                                            .contains(_canonicalService),
                                     calculation: calculation,
                                     reportsTitle: isSales
                                         ? null
@@ -1423,6 +1419,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
   bool _showSerialValidationErrors = false;
   bool _scanningSerial = false;
   bool _showCustomerPhoneError = false;
+  bool _showLineNumberErrors = false;
 
   final _sellerNameCtrl = TextEditingController();
   final _branchNameCtrl = TextEditingController();
@@ -1664,6 +1661,20 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
     _refreshCommissionSummary();
   }
 
+  String? _quantityError(String text) {
+    final quantity = int.tryParse(text.trim());
+    return quantity == null || quantity < 1
+        ? _sellOutTr('quantity_validation')
+        : null;
+  }
+
+  String? _unitPriceError(String text) {
+    final price = double.tryParse(text.trim());
+    return price == null || !price.isFinite || price < 0
+        ? _sellOutTr('unit_price_validation')
+        : null;
+  }
+
   void _refreshCommissionSummary() {
     _report.customerPhone = _customerPhoneCtrl.text.trim();
     _syncAllLines();
@@ -1681,13 +1692,14 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
 
   void _restoreICloudFields(SellOutReport existing) {
     final fields = <String, String>{};
-    final block = RegExp(r'(?:^|\n\n)iCloud Info\n([\s\S]*)$')
-        .firstMatch(existing.note);
+    final block =
+        RegExp(r'(?:^|\n\n)iCloud Info\n([\s\S]*)$').firstMatch(existing.note);
     if (block != null) {
       _noteCtrl.text = existing.note.substring(0, block.start).trim();
       String? key;
       for (final row in block.group(1)!.split('\n')) {
-        final match = RegExp(r'^(Account Name|Apple ID|iCloud Storage|Trusted Phone|Devices):\s*(.*)$')
+        final match = RegExp(
+                r'^(Account Name|Apple ID|iCloud Storage|Trusted Phone|Devices):\s*(.*)$')
             .firstMatch(row);
         if (match != null) {
           key = match.group(1)!;
@@ -1699,9 +1711,8 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
     }
     final line = existing.lines.isEmpty ? null : existing.lines.first;
     final separator = line?.productName.indexOf(' - ') ?? -1;
-    final account = separator >= 0
-        ? line!.productName.substring(separator + 3)
-        : '';
+    final account =
+        separator >= 0 ? line!.productName.substring(separator + 3) : '';
     _iCloudAccountNameCtrl.text = fields['Account Name'] ?? account;
     _iCloudAppleIdCtrl.text = fields['Apple ID'] ?? line?.sku ?? '';
     _iCloudStorageCtrl.text = fields['iCloud Storage'] ?? line?.storage ?? '';
@@ -1733,7 +1744,8 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
     final devices = _iCloudDevicesCtrl.text.trim();
 
     final label = posServiceLabel('icloud_cus');
-    final productName = accountName.isNotEmpty ? '$label - $accountName' : label;
+    final productName =
+        accountName.isNotEmpty ? '$label - $accountName' : label;
 
     _report.lines = [
       SellOutReportLine(
@@ -2111,6 +2123,17 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
       _showError(_sellOutTr('update_failed'), _sellOutTr('edit_today_only'));
       return;
     }
+    if (!_isICloudCustomer) {
+      for (final controllers in _lineControllers) {
+        final error = _quantityError(controllers.qty.text) ??
+            _unitPriceError(controllers.unitPrice.text);
+        if (error != null) {
+          setState(() => _showLineNumberErrors = true);
+          _showError(_sellOutTr('validation_error'), error);
+          return;
+        }
+      }
+    }
     _syncHeaderToReport();
     _syncAllLines();
     if (_isICloudCustomer) {
@@ -2263,7 +2286,9 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
               ? _sellOutTr('edit_report')
               : (widget.serviceType.isEmpty
                   ? _sellOutTr('title')
-                  : _isICloudCustomer ? posServiceLabel('icloud_cus') : widget.serviceType)),
+                  : _isICloudCustomer
+                      ? posServiceLabel('icloud_cus')
+                      : widget.serviceType)),
           centerTitle: true,
           backgroundColor: _sellOutNavy,
           foregroundColor: Colors.white,
@@ -2959,14 +2984,14 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                 ),
               ],
             ),
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: _lineControllers.length,
-              itemBuilder: (context, index) {
-                return _buildProductLineCard(
-                    index, _report.lines[index], _lineControllers[index]);
-              },
+            // The form already scrolls. Keep the fields mounted in that same
+            // viewport when the keyboard resizes it or reveals a focused field.
+            Column(
+              children: [
+                for (var index = 0; index < _lineControllers.length; index++)
+                  _buildProductLineCard(
+                      index, _report.lines[index], _lineControllers[index]),
+              ],
             ),
             const SizedBox(height: 8),
             SizedBox(
@@ -2996,6 +3021,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
   Widget _buildProductLineCard(
       int index, SellOutReportLine line, _LineControllers ctrls) {
     return Card(
+      key: ObjectKey(ctrls),
       margin: const EdgeInsets.only(bottom: 8),
       color: Colors.white,
       surfaceTintColor: Colors.transparent,
@@ -3145,14 +3171,23 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                       const SizedBox(width: 6),
                       Expanded(
                         child: _buildLineField(ctrls.qty, _sellOutTr('qty'),
-                            (v) => line.qty = int.tryParse(v) ?? 0),
+                            (v) => line.qty = int.tryParse(v) ?? 0,
+                            errorText: _showLineNumberErrors
+                                ? _quantityError(ctrls.qty.text)
+                                : null,
+                            keyboardType: TextInputType.number),
                       ),
                       const SizedBox(width: 6),
                       Expanded(
                         child: _buildLineField(
                             ctrls.unitPrice,
                             _sellOutTr('unit_price'),
-                            (v) => line.unitPrice = double.tryParse(v) ?? 0.0),
+                            (v) => line.unitPrice = double.tryParse(v) ?? 0.0,
+                            errorText: _showLineNumberErrors
+                                ? _unitPriceError(ctrls.unitPrice.text)
+                                : null,
+                            keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true)),
                       ),
                     ],
                   ),

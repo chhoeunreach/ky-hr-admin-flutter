@@ -122,7 +122,11 @@ class _HomeHighlightsScreenState extends State<HomeHighlightsScreen> {
       appBar: AppBar(
         backgroundColor: theme.surface,
         foregroundColor: theme.text,
+        iconTheme: IconThemeData(color: theme.text),
         elevation: 0,
+        leading: Navigator.of(context).canPop()
+            ? BackButton(color: theme.text)
+            : null,
         title: Text(homeHighlightsText('Home Highlights')),
       ),
       body: SafeArea(
@@ -249,73 +253,75 @@ class _HistoryTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final date = item.startsAt ?? item.createdAt;
+    final hasImage = item.imageUrl != null;
+    final body = hasImage ? item.snippet : item.plainBody;
     return Material(
       color: theme.surface.withValues(alpha: .86),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(14),
         side: BorderSide(color: theme.text.withValues(alpha: .09)),
       ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(14),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(10),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(11),
-                child: item.imageUrl != null
-                    ? CachedNetworkImage(
-                        imageUrl: item.imageUrl!,
-                        width: 86,
-                        height: 86,
-                        fit: BoxFit.cover,
-                        placeholder: (_, __) => Container(
-                          width: 86,
-                          height: 86,
-                          color: theme.text.withValues(alpha: .06),
-                        ),
-                        errorWidget: (_, __, ___) => _thumbFallback(theme),
-                      )
-                    : _thumbFallback(theme),
-              ),
-              const SizedBox(width: 12),
+              if (hasImage) ...[
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: CachedNetworkImage(
+                    imageUrl: item.imageUrl!,
+                    width: 72,
+                    height: 72,
+                    fit: BoxFit.cover,
+                    placeholder: (_, __) => Container(
+                      width: 72,
+                      height: 72,
+                      color: theme.text.withValues(alpha: .06),
+                    ),
+                    errorWidget: (_, __, ___) => _thumbFallback(theme),
+                  ),
+                ),
+                const SizedBox(width: 10),
+              ],
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       item.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                      maxLines: hasImage ? 2 : null,
+                      overflow: hasImage ? TextOverflow.ellipsis : null,
                       style: TextStyle(
                         color: theme.text,
-                        fontSize: 14,
+                        fontSize: 13.5,
                         height: 1.3,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-                    if (item.snippet.isNotEmpty) ...[
-                      const SizedBox(height: 5),
+                    if (body.isNotEmpty) ...[
+                      const SizedBox(height: 4),
                       Text(
-                        item.snippet,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                        body,
+                        maxLines: hasImage ? 2 : null,
+                        overflow: hasImage ? TextOverflow.ellipsis : null,
                         style: TextStyle(
                           color: theme.mutedText,
-                          fontSize: 12,
+                          fontSize: 11.5,
                           height: 1.4,
                         ),
                       ),
                     ],
                     if (date != null) ...[
-                      const SizedBox(height: 7),
+                      const SizedBox(height: 6),
                       Text(
                         DateFormat('MMM d, yyyy').format(date.toLocal()),
                         style: TextStyle(
                           color: theme.secondary,
-                          fontSize: 11,
+                          fontSize: 10.5,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -323,7 +329,9 @@ class _HistoryTile extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right_rounded, color: theme.mutedText),
+              const SizedBox(width: 4),
+              Icon(Icons.chevron_right_rounded,
+                  color: theme.mutedText, size: 18),
             ],
           ),
         ),
@@ -333,9 +341,10 @@ class _HistoryTile extends StatelessWidget {
 
   Widget _thumbFallback(EnterpriseTheme theme) {
     return Container(
-      width: 86,
-      height: 86,
+      width: 72,
+      height: 72,
       decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10),
         gradient: LinearGradient(
           colors: [
             theme.secondary.withValues(alpha: .22),

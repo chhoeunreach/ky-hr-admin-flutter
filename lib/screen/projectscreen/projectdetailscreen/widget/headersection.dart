@@ -2,7 +2,6 @@ import 'package:cnattendance/screen/projectscreen/projectdetailscreen/projectdet
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
-import 'package:hexcolor/hexcolor.dart';
 
 class HeaderSection extends StatelessWidget {
   @override

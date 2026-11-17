@@ -5,13 +5,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:video_player_platform_interface/video_player_platform_interface.dart';
 import 'package:visibility_detector/visibility_detector.dart';
+import 'package:cnattendance/features/community/community_api.dart';
 import 'package:cnattendance/features/community/community_media.dart';
+import 'package:cnattendance/features/community/social_feed_screen.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+class SilentCommunityApi extends CommunityApi {
+  @override
+  Future<Map<String, dynamic>> request(String method, String path,
+          {Map<String, dynamic>? data,
+          String? filePath,
+          String? fileMime,
+          List<String>? filePaths,
+          List<String>? fileMimes}) async =>
+      {'data': <String, dynamic>{}};
+}
 
 class FakeVideoPlatform extends VideoPlayerPlatform {
   final sources = <DataSource>[];
   final streams = <int, StreamController<VideoEvent>>{};
   final seeks = <Duration>[];
+  final plays = <int>[];
+  final loopings = <int, bool>{};
   bool failHls = false;
   bool failAll = false;
   @override
@@ -47,13 +62,19 @@ class FakeVideoPlatform extends VideoPlayerPlatform {
   }
 
   @override
-  Future<void> setLooping(int playerId, bool looping) async {}
+  Future<void> setLooping(int playerId, bool looping) async {
+    loopings[playerId] = looping;
+  }
+
   @override
   Future<void> setVolume(int playerId, double volume) async {}
   @override
   Future<void> setMixWithOthers(bool mixWithOthers) async {}
   @override
-  Future<void> play(int playerId) async {}
+  Future<void> play(int playerId) async {
+    plays.add(playerId);
+  }
+
   @override
   Future<void> pause(int playerId) async {}
   @override
@@ -155,6 +176,111 @@ void main() {
       expect(platform.sources.last.uri, endsWith('master.m3u8'));
       expect(find.byType(VideoPlayer), findsOneWidget);
       expect(find.text('Video could not be loaded. Retry.'), findsNothing);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump();
+    });
+
+    testWidgets('story video autoplays muted and follows manager pause',
+        (tester) async {
+      FeedVideoAutoplayManager.instance.pauseAll();
+      await tester.pumpWidget(MaterialApp(
+          home: SocialStoryViewer(api: SilentCommunityApi(), groups: [
+        {
+          'author': {'name': 'Dara', 'avatar': null},
+          'is_mine': false,
+          'has_unseen': true,
+          'stories': [
+            {
+              'id': 7,
+              'media_type': 'video',
+              'media_url': 'https://example.test/storage/stories/story.mp4',
+              'playback_url':
+                  'https://example.test/storage/video-streams/story/master.m3u8',
+              'thumbnail_url':
+                  'https://example.test/storage/video-streams/story/poster.jpg',
+              'duration_seconds': 30,
+              'caption': '',
+              'can_react': false,
+              'reactions_count': 0,
+              'aspect_ratio': '16:9',
+            }
+          ],
+        }
+      ])));
+      for (var i = 0; i < 12; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(platform.plays, isNotEmpty);
+      expect(platform.loopings[0], isFalse);
+      expect(find.byType(VideoPlayer), findsOneWidget);
+
+      FeedVideoAutoplayManager.instance.pauseActive();
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(
+          tester
+              .widget<VideoPlayer>(find.byType(VideoPlayer))
+              .controller
+              .value
+              .isPlaying,
+          isFalse);
+
+      FeedVideoAutoplayManager.instance.resumeActive();
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(
+          tester
+              .widget<VideoPlayer>(find.byType(VideoPlayer))
+              .controller
+              .value
+              .isPlaying,
+          isTrue);
+
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump();
+    });
+
+    testWidgets('story video taps still move to the next story',
+        (tester) async {
+      FeedVideoAutoplayManager.instance.pauseAll();
+      await tester.pumpWidget(MaterialApp(
+          home: SocialStoryViewer(api: SilentCommunityApi(), groups: [
+        {
+          'author': {'name': 'Dara', 'avatar': null},
+          'is_mine': false,
+          'has_unseen': true,
+          'stories': [
+            {
+              'id': 7,
+              'media_type': 'video',
+              'media_url': 'https://example.test/storage/stories/story.mp4',
+              'playback_url':
+                  'https://example.test/storage/video-streams/story/master.m3u8',
+              'duration_seconds': 30,
+              'caption': '',
+              'can_react': false,
+              'reactions_count': 0,
+            },
+            {
+              'id': 8,
+              'media_type': 'text',
+              'caption': 'Second story',
+              'duration_seconds': 30,
+              'can_react': false,
+              'reactions_count': 0,
+            },
+          ],
+        }
+      ])));
+      for (var i = 0; i < 12; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(find.byType(VideoPlayer), findsOneWidget);
+      final size = tester.getSize(find.byType(SocialStoryViewer));
+      await tester.tapAt(Offset(size.width * 0.85, size.height * 0.6));
+      for (var i = 0; i < 6; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(find.text('Second story'), findsOneWidget);
+
       await tester.pumpWidget(const SizedBox());
       await tester.pump();
     });

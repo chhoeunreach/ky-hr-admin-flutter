@@ -1,6 +1,7 @@
 import 'package:cnattendance/provider/dashboardprovider.dart';
 import 'package:cnattendance/widget/buttonborder.dart';
 import 'package:flutter/material.dart';
+import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:provider/provider.dart';
@@ -28,6 +29,7 @@ class WeeklyReportChartState extends State<WeeklyReportChart> {
   Widget build(BuildContext context) {
     final provider = Provider.of<DashboardProvider>(context);
     final hasWeeklyData = provider.weeklyReport.any((value) => value > 0);
+    final enterprise = EnterpriseTheme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: AspectRatio(
@@ -35,7 +37,7 @@ class WeeklyReportChartState extends State<WeeklyReportChart> {
         child: Card(
           elevation: 0,
           shape: ButtonBorder(),
-          color: Colors.white12,
+          color: enterprise.isDark ? const Color(0xFF1E293B).withValues(alpha: 0.90) : Colors.white.withValues(alpha: 0.90),
           child: Padding(
             padding: const EdgeInsets.all(10),
             child: Column(
@@ -54,14 +56,14 @@ class WeeklyReportChartState extends State<WeeklyReportChart> {
                     ),
                     Text(
                       translate('home_screen.weekly'),
-                      style: TextStyle(color: Colors.white, fontSize: 16),
+                      style: TextStyle(color: enterprise.text, fontSize: 16, fontWeight: FontWeight.w900),
                     ),
                     const SizedBox(
                       width: 4,
                     ),
                     Text(
                       translate('home_screen.reports'),
-                      style: TextStyle(color: Color(0xff77839a), fontSize: 12),
+                      style: TextStyle(color: enterprise.mutedText, fontSize: 12, fontWeight: FontWeight.w700),
                     ),
                   ],
                 ),

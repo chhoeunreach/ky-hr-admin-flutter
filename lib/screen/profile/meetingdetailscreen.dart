@@ -4,7 +4,6 @@ import 'package:cnattendance/screen/profile/employeedetailscreen.dart';
 import 'package:cnattendance/widget/buttonborder.dart';
 import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
 

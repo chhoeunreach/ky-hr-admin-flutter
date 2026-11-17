@@ -11,25 +11,25 @@ import 'package:hexcolor/hexcolor.dart';
 import 'package:provider/provider.dart';
 
 class PaySlipScreen extends StatefulWidget {
-  bool initital = true;
 
   @override
   State<StatefulWidget> createState() => PaySlipScreenState();
 }
 
 class PaySlipScreenState extends State<PaySlipScreen> {
+  bool _initial = true;
   bool showAll = true;
 
   @override
   Future<void> didChangeDependencies() async {
-    if (widget.initital) {
+    if (_initial) {
       context.read<PaySlipProvider>().getBS();
 
       if (showAll) {
         getAllValues();
       }
 
-      widget.initital = false;
+      _initial = false;
     }
     super.didChangeDependencies();
   }

@@ -283,7 +283,7 @@ class TrainingDetailScreen extends StatelessWidget {
                                       children: [
                                         Expanded(
                                           child: Text(
-                                            "${e.name ?? ''}",
+                                            "${e.name}",
                                             style: TextStyle(
                                               fontSize: 14,
                                               color: Colors.white,
@@ -294,7 +294,7 @@ class TrainingDetailScreen extends StatelessWidget {
                                         SizedBox(width: 5),
                                         Expanded(
                                           child: Text(
-                                            "${e.expertise ?? ''}",
+                                            "${e.expertise}",
                                             textAlign: TextAlign.end,
                                             style: TextStyle(
                                               fontSize: 12,
@@ -368,7 +368,7 @@ class TrainingDetailScreen extends StatelessWidget {
                                         Expanded(
                                           flex: 15,
                                           child: Text(
-                                            "${e.name ?? ''}",
+                                            "${e.name}",
                                             // Display index
                                             style: TextStyle(
                                               fontSize: 14,

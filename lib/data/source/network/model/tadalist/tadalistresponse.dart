@@ -26,9 +26,7 @@ class TadaListResponse {
     data['message'] = this.message;
     data['status'] = this.status;
     data['status_code'] = this.status_code;
-    if (this.data != null) {
-      data['data'] = this.data.map((v) => v.toJson()).toList();
-    }
-    return data;
+    data['data'] = this.data.map((v) => v.toJson()).toList();
+      return data;
   }
 }

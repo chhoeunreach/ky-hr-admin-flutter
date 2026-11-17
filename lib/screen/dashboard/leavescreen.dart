@@ -20,6 +20,7 @@ class LeaveScreen extends StatefulWidget {
 
 class LeaveScreenState extends State<LeaveScreen> with WidgetsBindingObserver {
   var init = true;
+  Future<String>? _refreshFuture;
   var showActions = false;
   var showDetails = false;
 
@@ -33,7 +34,23 @@ class LeaveScreenState extends State<LeaveScreen> with WidgetsBindingObserver {
     super.didChangeDependencies();
   }
 
-  Future<String> initialState() async {
+  Future<String> initialState() =>
+      _refreshFuture ??= _refresh().whenComplete(() {
+        _refreshFuture = null;
+      });
+
+  Future<String> _refresh() async {
+    try {
+      return await _loadLeave();
+    } catch (error) {
+      if (mounted)
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(error.toString())));
+      return 'Loaded';
+    }
+  }
+
+  Future<String> _loadLeave() async {
     final leaveProvider = Provider.of<LeaveProvider>(context, listen: false);
     final leaveData = await leaveProvider.getLeaveType();
 
@@ -89,14 +106,15 @@ class LeaveScreenState extends State<LeaveScreen> with WidgetsBindingObserver {
               return initialState();
             },
             child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
               child: Container(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     HeaderProfile(),
                     Container(
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 4),
                         width: double.infinity,
                         child: Text(
                           translate('leave_screen.leave'),
@@ -110,7 +128,8 @@ class LeaveScreenState extends State<LeaveScreen> with WidgetsBindingObserver {
                     Visibility(
                       visible: showActions,
                       child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 2),
                           child: LeaveButton()),
                     ),
                     const SizedBox(height: 8),

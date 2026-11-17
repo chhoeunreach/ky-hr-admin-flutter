@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class AttachmentBottomSheet extends StatelessWidget {
-  List<Attachment> attachments;
+  final List<Attachment> attachments;
 
   AttachmentBottomSheet(this.attachments);
 

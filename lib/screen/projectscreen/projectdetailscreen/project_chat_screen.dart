@@ -1,4 +1,3 @@
-import 'package:cnattendance/model/member.dart';
 import 'package:cnattendance/provider/old_group_chat_controller.dart';
 import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';

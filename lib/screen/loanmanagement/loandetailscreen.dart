@@ -39,7 +39,7 @@ class LoanDetailScreen extends StatelessWidget {
                     ),
                     Spacer(),
                     Text(
-                      "${translate('edit_loan_screen.total')} ",
+                      "${translate('loan_detail_screen.total')} ",
                       style: TextStyle(color: Colors.grey, fontSize: 18),
                     ),
                     Text("Rs " + "50000",
@@ -68,7 +68,7 @@ class LoanDetailScreen extends StatelessWidget {
                       height: 10,
                     ),
                     Text(
-                      translate('edit_loan_screen.requested_amount'),
+                      translate('loan_detail_screen.requested_amount'),
                       style: TextStyle(color: Colors.grey, fontSize: 15),
                     ),
                     Text(
@@ -79,7 +79,7 @@ class LoanDetailScreen extends StatelessWidget {
                       height: 10,
                     ),
                     Text(
-                      translate('edit_loan_screen.granted_amount'),
+                      translate('loan_detail_screen.granted_amount'),
                       style: TextStyle(color: Colors.grey, fontSize: 15),
                     ),
                     Text(
@@ -90,7 +90,7 @@ class LoanDetailScreen extends StatelessWidget {
                       height: 10,
                     ),
                     Text(
-                      translate('edit_loan_screen.interest_rate'),
+                      translate('loan_detail_screen.interest_rate'),
                       style: TextStyle(color: Colors.grey, fontSize: 15),
                     ),
                     Text(
@@ -101,7 +101,7 @@ class LoanDetailScreen extends StatelessWidget {
                       height: 10,
                     ),
                     Text(
-                      translate('edit_loan_screen.installment_period'),
+                      translate('loan_detail_screen.installment_period'),
                       style: TextStyle(color: Colors.grey, fontSize: 15),
                     ),
                     Text(
@@ -112,7 +112,7 @@ class LoanDetailScreen extends StatelessWidget {
                       height: 10,
                     ),
                     Text(
-                      translate('edit_loan_screen.is_settled'),
+                      translate('loan_detail_screen.is_settled'),
                       style: TextStyle(color: Colors.grey, fontSize: 15),
                     ),
                     Text(
@@ -123,7 +123,7 @@ class LoanDetailScreen extends StatelessWidget {
                       height: 10,
                     ),
                     Text(
-                      translate('edit_loan_screen.loan_detail'),
+                      translate('loan_detail_screen.loan_detail'),
                       style: TextStyle(color: Colors.grey, fontSize: 15),
                     ),
                     Text(
@@ -132,7 +132,7 @@ class LoanDetailScreen extends StatelessWidget {
                     ),
                     SizedBox(height: 20),
                     Text(
-                      translate('edit_loan_screen.verified_by'),
+                      translate('loan_detail_screen.verified_by'),
                       style: TextStyle(color: Colors.grey, fontSize: 15),
                     ),
                     Text(
@@ -141,7 +141,7 @@ class LoanDetailScreen extends StatelessWidget {
                     ),
                     SizedBox(height: 20),
                     Text(
-                      "translate('edit_loan_screen.remarks')",
+                      translate('loan_detail_screen.remarks'),
                       style: TextStyle(color: Colors.grey, fontSize: 15),
                     ),
                     Text(

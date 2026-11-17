@@ -50,9 +50,7 @@ class Data {
     data['title'] = this.title;
     data['total_expense'] = this.total_expense;
     data['verified_by'] = this.verified_by;
-    if (this.attachments != null) {
-      data['attachments'] = this.attachments.toJson();
-    }
-    return data;
+    data['attachments'] = this.attachments.toJson();
+      return data;
   }
 }

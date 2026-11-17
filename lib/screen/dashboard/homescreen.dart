@@ -22,8 +22,11 @@ import 'package:cnattendance/widget/homescreen/recentTraining.dart';
 import 'package:cnattendance/widget/homescreen/upcomingholiday.dart';
 import 'package:cnattendance/widget/homescreen/weeklyreportchart.dart';
 import 'package:cnattendance/widget/premium_background.dart';
+import 'package:cnattendance/theme/enterprise_theme.dart';
+import 'package:cnattendance/theme/app_theme_mode.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:focus_detector/focus_detector.dart';
@@ -332,7 +335,8 @@ class HomeScreenState extends State<HomeScreen> {
       final dashboardResponse =
           await Provider.of<DashboardProvider>(context, listen: false)
               .getDashboard();
-      _lastDashboardRefreshAt = now;
+      if (!mounted) return 'loaded';
+      _lastDashboardRefreshAt = DateTime.now();
       _dashboardLoadedOnce = true;
 
       final user = dashboardResponse.data.user;
@@ -452,74 +456,95 @@ class HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return PremiumBackground(
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: FocusDetector(
-          onFocusGained: () {
-            if (_dashboardLoadedOnce) {
-              unawaited(loadDashboard());
-            }
-          },
-          child: RefreshIndicator(
-            triggerMode: RefreshIndicatorTriggerMode.onEdge,
-            color: Colors.white,
-            backgroundColor: Colors.blueGrey,
-            edgeOffset: 50,
-            onRefresh: () {
-              return loadDashboard(force: true);
-            },
-            child: SafeArea(
-                child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 760),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const HeaderProfile(showServerTest: true),
-                      if (context
-                              .watch<DashboardProvider>()
-                              .features["attendance"] ==
-                          "1")
-                        CheckAttendance(),
-                      OverviewDashboard(controller),
-                      if (context
-                              .watch<DashboardProvider>()
-                              .features["holiday"] ==
-                          "1")
-                        UpcomingHoliday(),
-                      Selector<DashboardProvider, Map<String, String>>(
-                        selector: (_, provider) => provider.features,
-                        builder: (_, features, __) => Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (features["award"] == "1") RecentAward(),
-                            if (features["event"] == "1") RecentEvent(),
-                            if (features["training"] == "1") RecentTraining(),
-                          ],
-                        ),
-                      ),
-                      if (context
-                              .watch<DashboardProvider>()
-                              .features["attendance"] ==
-                          "1")
-                        WeeklyReportChart(),
-                      if (context
-                              .watch<DashboardProvider>()
-                              .features["team-sheet"] ==
-                          "1")
-                        MyTeam(),
-                      const SizedBox(height: 12),
-                    ],
-                  ),
-                ),
-              ),
-            )),
+    final showMenuInset = MediaQuery.sizeOf(context).width < 720;
+    final sections = context.select<DashboardProvider,
+            ({bool attendance, bool holiday, bool award, bool event, bool training, bool team})>(
+        (provider) => (
+              attendance: provider.features['attendance'] == '1',
+              holiday: provider.features['holiday'] == '1',
+              award: provider.features['award'] == '1',
+              event: provider.features['event'] == '1',
+              training: provider.features['training'] == '1',
+              team: provider.features['team-sheet'] == '1',
+            ));
+    final enterprise = EnterpriseTheme.of(context);
+    final bgAsset = enterprise.isDark
+        ? 'assets/images/home_bg_dark.svg'
+        : 'assets/images/home_bg.svg';
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: SvgPicture.asset(
+            bgAsset,
+            fit: BoxFit.cover,
+            alignment: Alignment.topCenter,
           ),
         ),
-      ),
+        if (enterprise.mode != AppThemeMode.light &&
+            enterprise.mode != AppThemeMode.dark)
+          Positioned.fill(
+            child: Container(
+              color: enterprise.primary.withValues(alpha: 0.08),
+            ),
+          ),
+        Scaffold(
+          backgroundColor: Colors.transparent,
+          body: FocusDetector(
+            onFocusGained: () {
+              if (_dashboardLoadedOnce) {
+                unawaited(loadDashboard());
+              }
+            },
+            child: RefreshIndicator(
+              triggerMode: RefreshIndicatorTriggerMode.onEdge,
+              color: Colors.white,
+              backgroundColor: Colors.blueGrey,
+              edgeOffset: 50,
+              onRefresh: () {
+                return loadDashboard(force: true);
+              },
+              child: SafeArea(
+                  child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 760),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        RepaintBoundary(
+                          child: Padding(
+                            padding: EdgeInsets.only(
+                              left: showMenuInset ? 48 : 0,
+                            ),
+                            child: const HeaderProfile(
+                              showServerTest: true,
+                              showMenuButton: false,
+                            ),
+                          ),
+                        ),
+                        if (sections.attendance)
+                          RepaintBoundary(
+                            child: CheckAttendance(controller: controller),
+                          ),
+                        OverviewDashboard(controller),
+                        if (sections.holiday) UpcomingHoliday(),
+                        if (sections.award) RecentAward(),
+                        if (sections.event) RecentEvent(),
+                        if (sections.training) RecentTraining(),
+                        if (sections.attendance)
+                          RepaintBoundary(child: WeeklyReportChart()),
+                        if (sections.team) MyTeam(),
+                        const SizedBox(height: 12),
+                      ],
+                    ),
+                  ),
+                ),
+              )),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

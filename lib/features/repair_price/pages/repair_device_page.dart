@@ -13,7 +13,8 @@ import '../widgets/repair_search_bar.dart';
 import 'repair_price_detail_page.dart';
 
 class RepairDevicePage extends StatelessWidget {
-  const RepairDevicePage({super.key});
+  const RepairDevicePage({super.key, this.showBackButton = true});
+  final bool showBackButton;
 
   static Route route() {
     return MaterialPageRoute(
@@ -25,18 +26,19 @@ class RepairDevicePage extends StatelessWidget {
   Widget build(BuildContext context) {
     try {
       Provider.of<RepairPriceProvider>(context, listen: false);
-      return const _RepairDeviceView();
+      return _RepairDeviceView(showBackButton: showBackButton);
     } catch (_) {
       return ChangeNotifierProvider(
         create: (_) => RepairPriceProvider()..initDevicePage(),
-        child: const _RepairDeviceView(),
+        child: _RepairDeviceView(showBackButton: showBackButton),
       );
     }
   }
 }
 
 class _RepairDeviceView extends StatefulWidget {
-  const _RepairDeviceView();
+  const _RepairDeviceView({required this.showBackButton});
+  final bool showBackButton;
 
   @override
   State<_RepairDeviceView> createState() => _RepairDeviceViewState();
@@ -85,11 +87,14 @@ class _RepairDeviceViewState extends State<_RepairDeviceView> {
           elevation: 0,
           toolbarHeight: 50,
           surfaceTintColor: Colors.transparent,
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back_ios_new_rounded,
-                size: 18, color: enterprise.text),
-            onPressed: () => Navigator.maybePop(context),
-          ),
+          automaticallyImplyLeading: false,
+          leading: widget.showBackButton
+              ? IconButton(
+                  icon: Icon(Icons.arrow_back_ios_new_rounded,
+                      size: 18, color: enterprise.text),
+                  onPressed: () => Navigator.maybePop(context),
+                )
+              : null,
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

@@ -12,12 +12,12 @@ class Participator {
   factory Participator.fromJson(dynamic json) {
     return Participator(
       id: json['id'],
-      name: json['name'].toString() ?? "",
-      email: json['email'].toString() ?? "",
-      phone: json['phone'].toString() ?? "",
-      onlineStatus: json['online_status'].toString() ?? "",
-      avatar: json['avatar'].toString() ?? "",
-      post: json['post'].toString() ?? "",
+      name: json['name']?.toString() ?? "",
+      email: json['email']?.toString() ?? "",
+      phone: json['phone']?.toString() ?? "",
+      onlineStatus: json['online_status']?.toString() ?? "",
+      avatar: json['avatar']?.toString() ?? "",
+      post: json['post']?.toString() ?? "",
     );
   }
 

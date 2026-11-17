@@ -2,7 +2,6 @@ import 'package:cnattendance/provider/meetingcontroller.dart';
 import 'package:cnattendance/widget/meeting/meetingcard.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
-import 'package:provider/provider.dart';
 
 class MeetingListView extends StatelessWidget {
   @override

@@ -933,7 +933,7 @@ packages:
     source: hosted
     version: "4.0.2"
   image:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: image
       sha256: "2237616a36c0d69aef7549ab439b833fb7f9fb9fc861af2cc9ac3eedddd69ca8"
@@ -973,7 +973,7 @@ packages:
     source: hosted
     version: "1.1.2"
   image_picker_android:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: image_picker_android
       sha256: c0a6763d50b354793d0192afd0a12560b823147d3ded7c6b77daf658fa05cc85
@@ -989,7 +989,7 @@ packages:
     source: hosted
     version: "3.0.5"
   image_picker_ios:
-    dependency: transitive
+    dependency: "direct dev"
     description:
       name: image_picker_ios
       sha256: "6703696ad49f5c3c8356d576d7ace84d1faf459afb07accbb0fae780753ff447"
@@ -1013,7 +1013,7 @@ packages:
     source: hosted
     version: "0.2.1+1"
   image_picker_platform_interface:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: image_picker_platform_interface
       sha256: "9ec26d410ff46f483c5519c29c02ef0e02e13a543f882b152d4bfd2f06802f80"
@@ -1181,7 +1181,7 @@ packages:
     source: hosted
     version: "1.0.1+1"
   nepali_utils:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: nepali_utils
       sha256: "686ac878ca844e0ec264a7c0da6404ab7992db5b9120d3ffe1356a3b1de266f4"
@@ -1399,10 +1399,9 @@ packages:
   persistent_bottom_nav_bar_v2:
     dependency: "direct main"
     description:
-      name: persistent_bottom_nav_bar_v2
-      sha256: f5cc01ed36d6f93ecb3b8b64eaaa5b41618c6ac75c54e8beb1d3486cfc6d8547
-      url: "https://pub.dev"
-    source: hosted
+      path: "third_party/persistent_bottom_nav_bar_v2"
+      relative: true
+    source: path
     version: "5.3.0"
   petitparser:
     dependency: transitive
@@ -1412,6 +1411,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.0.2"
+  photo_manager:
+    dependency: "direct main"
+    description:
+      name: photo_manager
+      sha256: "2d00a785b501bf1e5f6180bbef772846e767be11d45d11112b63092ef54a419e"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.12.0"
   platform:
     dependency: transitive
     description:
@@ -1962,7 +1969,7 @@ packages:
     source: hosted
     version: "2.12.1"
   video_player_platform_interface:
-    dependency: transitive
+    dependency: "direct dev"
     description:
       name: video_player_platform_interface
       sha256: "92c0fbabe20c788e71fd10d26cea998d0d253282e65d145aed0818731cf593ce"
@@ -2002,7 +2009,7 @@ packages:
     source: hosted
     version: "14.3.1"
   web:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: web
       sha256: d43c1d6b787bf0afad444700ae7f4db8827f701bc61c255ac8d328c6f4d52062

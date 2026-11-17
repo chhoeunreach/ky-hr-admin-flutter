@@ -50,11 +50,11 @@ class ProjectDashboardController extends GetxController {
       taskList.clear();
       projectList.clear();
 
-      overview.value['progress'] =
+      overview['progress'] =
           projectResponse.data.progressProject.progress_in_percent;
-      overview.value['total_project'] =
+      overview['total_project'] =
           projectResponse.data.progressProject.total_project_assigned;
-      overview.value['project_completed'] =
+      overview['project_completed'] =
           projectResponse.data.progressProject.total_project_completed;
 
       overview.refresh();

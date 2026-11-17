@@ -14,6 +14,21 @@ import 'package:intl/intl.dart';
 import 'package:nepali_date_picker/nepali_date_picker.dart';
 
 class ProfileProvider with ChangeNotifier {
+  ProfileProvider({Preferences? preferences, http.Client? client})
+      : _preferences = preferences ?? Preferences(),
+        _client = client;
+
+  final Preferences _preferences;
+  final http.Client? _client;
+  Future<Profileresponse>? _profileFuture;
+  bool _disposed = false;
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
+
   final up.Profile _profile = up.Profile(
     id: 0,
     avatar: '',
@@ -39,39 +54,41 @@ class ProfileProvider with ChangeNotifier {
   }
 
   Future<bool> isAd() async {
-    Preferences preferences = Preferences();
+    final preferences = Preferences();
     final value = await preferences.getEnglishDate();
 
     return value;
   }
 
-  Future<Profileresponse> getProfile() async {
-    Preferences preferences = Preferences();
-    var uri = Uri.parse(await preferences.getAppUrl() + Constant.PROFILE_URL);
+  Future<Profileresponse> getProfile() => _profileFuture ??=
+      _loadProfile().whenComplete(() => _profileFuture = null);
+
+  Future<Profileresponse> _loadProfile() async {
+    final preferences = _preferences;
+    final uri = Uri.parse(await preferences.getAppUrl() + Constant.PROFILE_URL);
 
     await checkValueInPref(preferences);
 
-    String token = await preferences.getToken();
+    final token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final headers = <String, String>{
       'Content-Type': 'application/json',
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
     };
 
     try {
-      final response = await http.get(uri, headers: headers);
+      final response = await (_client?.get(uri, headers: headers) ??
+          http.get(uri, headers: headers));
 
       final responseData = json.decode(response.body);
       if (response.statusCode == 200) {
-        print(responseData.toString());
-
         final responseJson = Profileresponse.fromJson(responseData);
-        parseUser(responseJson.data);
+        await parseUser(responseJson.data);
 
         return responseJson;
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         throw errorMessage;
       }
     } catch (error) {
@@ -80,8 +97,8 @@ class ProfileProvider with ChangeNotifier {
   }
 
   Future<void> parseUser(Profile profile) async {
-    Preferences preferences = Preferences();
-    final isAD = await preferences.getEnglishDate();
+    final isAD = await _preferences.getEnglishDate();
+    if (_disposed) return;
 
     _profile.id = profile.id;
     _profile.avatar = profile.avatar;
@@ -99,25 +116,22 @@ class ProfileProvider with ChangeNotifier {
     _profile.bank_type = profile.bankAccountType;
     _profile.employment_type = profile.employmentType;
 
-    _profile.dob = isAD
-        ? profile.dob
-        : NepaliDateFormat("yyyy-MM-dd").parseAndFormat(DateFormat("yyyy-MM-dd")
-            .parse(profile.dob)
-            .toNepaliDateTime()
-            .toString());
+    String displayDate(String value) {
+      if (isAD || value.isEmpty) return value;
+      final date = DateTime.tryParse(value);
+      if (date == null) return '';
+      return NepaliDateFormat('yyyy-MM-dd').format(date.toNepaliDateTime());
+    }
 
-    _profile.joinedDate = isAD
-        ? profile.joiningDate
-        : NepaliDateFormat("yyyy-MM-dd").parseAndFormat(DateFormat("yyyy-MM-dd")
-            .parse(profile.joiningDate)
-            .toNepaliDateTime()
-            .toString());
+    _profile.dob = displayDate(profile.dob);
+    _profile.joinedDate = displayDate(profile.joiningDate);
 
     notifyListeners();
   }
 
   Future<void> checkValueInPref(Preferences preferences) async {
     final user = await preferences.getUser();
+    if (_disposed) return;
     _profile.name = user.name;
     _profile.username = user.username;
     _profile.email = user.email;
@@ -133,11 +147,11 @@ class ProfileProvider with ChangeNotifier {
       String gender,
       String phone,
       File avatar) async {
-    Preferences preferences = Preferences();
-    var uri =
+    final preferences = Preferences();
+    final uri =
         Uri.parse(await preferences.getAppUrl() + Constant.EDIT_PROFILE_URL);
 
-    String token = await preferences.getToken();
+    final token = await preferences.getToken();
 
     var formattedDob = "";
     if (dob != "") {
@@ -150,9 +164,9 @@ class ProfileProvider with ChangeNotifier {
     dynamic response;
     try {
       if (avatar.path != '') {
-        var requests = http.MultipartRequest('POST', uri);
+        final requests = http.MultipartRequest('POST', uri);
 
-        Map<String, String> headers = {
+        final headers = <String, String>{
           'Accept': 'application/json; charset=UTF-8',
           'Content-type': 'multipart/form-data',
           'Authorization': 'Bearer $token'
@@ -161,7 +175,7 @@ class ProfileProvider with ChangeNotifier {
         final img.Image capturedImage =
             img.decodeImage(await File(avatar.path).readAsBytes())!;
         final img.Image orientedImage = img.bakeOrientation(capturedImage);
-        var file =
+        final file =
             await File(avatar.path).writeAsBytes(img.encodeJpg(orientedImage));
 
         requests.files.add(
@@ -182,14 +196,14 @@ class ProfileProvider with ChangeNotifier {
         final responseJson =
             Profileresponse.fromJson(json.decode(responseBody));
         if (responseJson.statusCode == 200) {
-          parseUser(responseJson.data);
+          await parseUser(responseJson.data);
           return responseJson;
         } else {
-          var errorMessage = responseJson.message;
+          final errorMessage = responseJson.message;
           throw errorMessage;
         }
       } else {
-        Map<String, String> headers = {
+        final headers = <String, String>{
           'Accept': 'application/json; charset=UTF-8',
           'Authorization': 'Bearer $token'
         };
@@ -208,10 +222,10 @@ class ProfileProvider with ChangeNotifier {
           debugPrint(responseData.toString());
           final responseJson = Profileresponse.fromJson(responseData);
 
-          parseUser(responseJson.data);
+          await parseUser(responseJson.data);
           return responseJson;
         } else {
-          var errorMessage = responseData['message'];
+          final errorMessage = responseData['message'];
           throw errorMessage;
         }
       }

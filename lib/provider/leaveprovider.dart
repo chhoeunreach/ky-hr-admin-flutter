@@ -83,10 +83,10 @@ class LeaveProvider with ChangeNotifier {
 
     for (var leave in leaveList) {
       _leaveList.add(Leave(
-          id: int.parse(leave.leaveTypeId),
+          id: int.tryParse(leave.leaveTypeId) ?? 0,
           name: leave.leaveTypeName,
           allocated: leave.leaveTaken,
-          total: int.parse(leave.totalLeaveAllocated),
+          total: int.tryParse(leave.totalLeaveAllocated) ?? 0,
           status: leave.leaveTypeStatus,
           isEarlyLeave: leave.earlyExit));
     }
@@ -120,9 +120,10 @@ class LeaveProvider with ChangeNotifier {
       queryParameters['leave_type'] = _selectedType.toString();
     }
 
-    var uri = Uri.parse(await preferences.getAppUrl() +
-            Constant.LEAVE_TYPE_DETAIL_URL)
-        .replace(queryParameters: queryParameters.isEmpty ? null : queryParameters);
+    var uri = Uri.parse(
+            await preferences.getAppUrl() + Constant.LEAVE_TYPE_DETAIL_URL)
+        .replace(
+            queryParameters: queryParameters.isEmpty ? null : queryParameters);
 
     String token = await preferences.getToken();
 
@@ -248,10 +249,10 @@ class LeaveProvider with ChangeNotifier {
     }
   }
 
-  Future<GeneralResponse> issueResignation(String from,
-      String reason) async {
+  Future<GeneralResponse> issueResignation(String from, String reason) async {
     Preferences preferences = Preferences();
-    var uri = Uri.parse(await preferences.getAppUrl() + Constant.APPLY_RESIGNATION_URL);
+    var uri = Uri.parse(
+        await preferences.getAppUrl() + Constant.APPLY_RESIGNATION_URL);
 
     String token = await preferences.getToken();
 
@@ -285,7 +286,8 @@ class LeaveProvider with ChangeNotifier {
 
   Future<ResignationRepsonse> getResignation() async {
     Preferences preferences = Preferences();
-    var uri = Uri.parse(await preferences.getAppUrl() + Constant.RESIGNATION_URL);
+    var uri =
+        Uri.parse(await preferences.getAppUrl() + Constant.RESIGNATION_URL);
 
     String token = await preferences.getToken();
 

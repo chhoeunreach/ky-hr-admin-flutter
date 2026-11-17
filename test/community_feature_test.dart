@@ -65,6 +65,27 @@ Map<String, dynamic> postFixture({bool owner = false}) => {
       'can_delete': owner,
     };
 
+Map<String, dynamic> storyFixture({bool mine = false}) => {
+      'id': 5,
+      'media_type': 'text',
+      'caption': 'Team celebration',
+      'duration_seconds': 300,
+      'can_delete': mine,
+      'can_react': !mine,
+      'is_mine': mine,
+      'reactions': <String, dynamic>{},
+      'reactions_count': 0,
+      'my_reaction': null,
+      'author': {'name': mine ? 'Me' : 'Dara', 'avatar': null},
+    };
+
+Map<String, dynamic> storyGroup({bool mine = false}) => {
+      'author': {'name': mine ? 'Me' : 'Dara', 'avatar': null},
+      'is_mine': mine,
+      'has_unseen': true,
+      'stories': [storyFixture(mine: mine)],
+    };
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUp(() {
@@ -268,6 +289,34 @@ void main() {
     expect(api.payloads.single?['body'], 'New employee post');
   });
 
+  testWidgets('text typed as Create Post opens is kept and published',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'user_id': 10,
+      'user_token': 'test',
+      'social_feed_draft_new': jsonEncode({'body': 'Older saved draft'}),
+    });
+    final api = FakeCommunityApi();
+    await tester.pumpWidget(app(SocialPostComposer(api: api), {}));
+    await tester.pumpAndSettle();
+    final body = find.byType(TextField).first;
+    expect(tester.widget<TextField>(body).focusNode!.hasFocus, isFalse);
+    expect(tester.testTextInput.isVisible, isFalse);
+    await tester.tap(body);
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextField>(body).focusNode!.hasFocus, isTrue);
+    expect(
+        tester.widget<TextField>(body).controller!.selection.isValid, isTrue);
+    expect(tester.testTextInput.isVisible, isTrue);
+    await tester.enterText(body, 'My new post');
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextField>(body).controller!.text, 'My new post');
+
+    await tester.tap(find.text('Publish post'));
+    await tester.pumpAndSettle();
+    expect(api.payloads.single?['body'], 'My new post');
+  });
+
   testWidgets('permission errors show a retry and remain usable',
       (tester) async {
     final api = FakeCommunityApi()..failure = Exception('Access revoked.');
@@ -342,6 +391,116 @@ void main() {
     expect(find.byType(TextField), findsNothing);
   });
 
+  testWidgets('long comments expand and collapse again', (tester) async {
+    final api = FakeCommunityApi()
+      ..responses['GET social-feed/1/comments?page=1'] = {
+        'data': [
+          {
+            'id': 9,
+            'body': List.filled(60, 'long comment text').join(' '),
+            'author': {'name': 'Dara'},
+            'created_at': '2026-11-11T02:00:00Z',
+            'replies_count': 0,
+            'reactions_count': 0,
+            'my_reaction': null,
+            'can_edit': false,
+            'can_delete': false,
+          }
+        ],
+        'next_page_url': null
+      };
+    await tester.pumpWidget(app(SocialCommentsScreen(postId: 1, api: api),
+        {'social_feed.comment': '1'}));
+    await tester.pumpAndSettle();
+    expect(find.text('See more'), findsOneWidget);
+    await tester.tap(find.text('See more'));
+    await tester.pump();
+    expect(find.text('See less'), findsOneWidget);
+    await tester.ensureVisible(find.text('See less'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('See less'));
+    await tester.pump();
+    expect(find.text('See more'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('comment replies expand under the comment and collapse',
+      (tester) async {
+    final api = FakeCommunityApi()
+      ..responses['GET social-feed/1/comments?page=1'] = {
+        'data': [
+          {
+            'id': 9,
+            'body': 'Parent comment',
+            'author': {'name': 'Dara'},
+            'created_at': '2026-11-11T02:00:00Z',
+            'replies_count': 1,
+            'reactions_count': 0,
+            'my_reaction': null,
+            'can_edit': false,
+            'can_delete': false,
+          }
+        ],
+        'next_page_url': null
+      }
+      ..responses['GET social-feed/1/comments/9/replies'] = {
+        'data': [
+          {
+            'id': 12,
+            'body': 'Nested reply',
+            'author': {'name': 'Sok'},
+          }
+        ],
+        'next_page_url': null
+      };
+    await tester.pumpWidget(app(SocialCommentsScreen(postId: 1, api: api),
+        {'social_feed.comment': '1'}));
+    await tester.pumpAndSettle();
+    expect(find.text('Nested reply'), findsNothing);
+    await tester.tap(find.text('1 replies'));
+    await tester.pumpAndSettle();
+    expect(find.text('Nested reply'), findsOneWidget);
+    expect(find.text('Hide replies'), findsOneWidget);
+    await tester.tap(find.text('Hide replies'));
+    await tester.pump();
+    expect(find.text('Nested reply'), findsNothing);
+    expect(find.text('1 replies'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('comments hide on handle tap and drag down like Facebook',
+      (tester) async {
+    final api = FakeCommunityApi()
+      ..responses['GET social-feed/1/comments?page=1'] = {
+        'data': <dynamic>[],
+        'next_page_url': null
+      };
+    Widget host() => Builder(
+        builder: (context) => Scaffold(
+            body: Center(
+                child: TextButton(
+                    onPressed: () => Navigator.of(context, rootNavigator: true)
+                        .push(MaterialPageRoute(
+                            builder: (_) =>
+                                SocialCommentsScreen(postId: 1, api: api))),
+                    child: const Text('Open comments')))));
+    await tester.pumpWidget(app(host(), {'social_feed.comment': '1'}));
+    await tester.tap(find.text('Open comments'));
+    await tester.pumpAndSettle();
+    expect(find.byType(SocialCommentsScreen), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('comments-drag-handle')));
+    await tester.pumpAndSettle();
+    expect(find.byType(SocialCommentsScreen), findsNothing);
+
+    await tester.tap(find.text('Open comments'));
+    await tester.pumpAndSettle();
+    await tester.drag(find.byKey(const ValueKey('comments-drag-handle')),
+        const Offset(0, 140));
+    await tester.pumpAndSettle();
+    expect(find.byType(SocialCommentsScreen), findsNothing);
+    await tester.pumpWidget(const SizedBox());
+  });
+
   testWidgets(
       'leaving comments while publishing does not reuse disposed controls',
       (tester) async {
@@ -395,6 +554,145 @@ void main() {
     await tester.tap(find.text('Show popup'));
     await tester.pumpAndSettle();
     expect(api.calls, isEmpty);
+  });
+
+  testWidgets('immersive mode hides app bar while scrolling the feed',
+      (tester) async {
+    final posts = List.generate(
+        20,
+        (index) => {
+              ...postFixture(),
+              'id': index + 1,
+              'body': 'Post ${index + 1}',
+            });
+    final api = FakeCommunityApi()
+      ..responses['GET social-feed?page=1'] = {
+        'data': posts,
+        'next_page_url': null
+      };
+    await tester
+        .pumpWidget(app(SocialFeedScreen(api: api), {'social_feed.view': '1'}));
+    await tester.pumpAndSettle();
+    expect(find.text('Social Feed'), findsOneWidget);
+    await tester.drag(
+        find.byType(CustomScrollView).first, const Offset(0, -400));
+    await tester.pumpAndSettle();
+    expect(find.text('Social Feed'), findsNothing);
+    await tester.drag(
+        find.byType(CustomScrollView).first, const Offset(0, 400));
+    await tester.pumpAndSettle();
+    expect(find.text('Social Feed'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('feed builds posts lazily as they scroll into view',
+      (tester) async {
+    final posts = List.generate(
+        12,
+        (index) => {
+              ...postFixture(),
+              'id': index + 1,
+              'body': 'Post ${index + 1}',
+            });
+    final api = FakeCommunityApi()
+      ..responses['GET social-feed?page=1'] = {
+        'data': posts,
+        'next_page_url': null
+      };
+    await tester
+        .pumpWidget(app(SocialFeedScreen(api: api), {'social_feed.view': '1'}));
+    await tester.pumpAndSettle();
+    expect(find.text('Post 1'), findsOneWidget);
+    expect(find.text('Post 12'), findsNothing);
+    await tester.drag(
+        find.byType(CustomScrollView).first, const Offset(0, -2600));
+    await tester.pumpAndSettle();
+    expect(find.text('Post 12'), findsOneWidget);
+  });
+
+  testWidgets('feed loads the next page with the cursor while scrolling',
+      (tester) async {
+    final posts = List.generate(
+        12,
+        (index) => {
+              ...postFixture(),
+              'id': index + 1,
+              'body': 'Post ${index + 1}',
+            });
+    final api = FakeCommunityApi()
+      ..responses['GET social-feed?page=1'] = {
+        'data': posts,
+        'next_cursor': 'page-2',
+        'has_more': true,
+      }
+      ..responses['GET social-feed?cursor=page-2&per_page=12'] = {
+        'data': [
+          {...postFixture(), 'id': 99, 'body': 'Older post'}
+        ],
+        'next_cursor': null,
+        'has_more': false,
+      };
+    await tester
+        .pumpWidget(app(SocialFeedScreen(api: api), {'social_feed.view': '1'}));
+    await tester.pumpAndSettle();
+    expect(api.calls.first, 'GET social-feed?page=1');
+    await tester.drag(
+        find.byType(CustomScrollView).first, const Offset(0, -2200));
+    await tester.pumpAndSettle();
+    expect(api.calls, contains('GET social-feed?cursor=page-2&per_page=12'));
+    await tester.drag(
+        find.byType(CustomScrollView).first, const Offset(0, -400));
+    await tester.pumpAndSettle();
+    expect(find.text('Older post'), findsOneWidget);
+  });
+
+  testWidgets('story progress advances on its own timer', (tester) async {
+    final api = FakeCommunityApi();
+    await tester.pumpWidget(app(
+        SocialStoryViewer(groups: [storyGroup()], api: api),
+        {'social_feed.view': '1'}));
+    await tester.pump(const Duration(milliseconds: 700));
+    final bars = tester
+        .widgetList<FractionallySizedBox>(find.byType(FractionallySizedBox))
+        .where((bar) => (bar.widthFactor ?? 0) > 0);
+    expect(bars, isNotEmpty);
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump();
+  });
+
+  testWidgets('story viewer sends and toggles facebook-style reactions',
+      (tester) async {
+    final api = FakeCommunityApi();
+    await tester.pumpWidget(app(
+        SocialStoryViewer(groups: [storyGroup()], api: api),
+        {'social_feed.view': '1'}));
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('story-reaction-love')));
+    await tester.pump();
+    expect(api.calls, contains('PUT social-stories/5/reaction'));
+    expect(api.payloads.last, {'reaction': 'love'});
+    await tester.tap(find.byKey(const ValueKey('story-reaction-love')));
+    await tester.pump();
+    expect(api.payloads.last, {'reaction': null});
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('story owner sees a reactions summary instead of the bar',
+      (tester) async {
+    final group = storyGroup(mine: true);
+    final story = (group['stories'] as List).single as Map<String, dynamic>;
+    story['reactions'] = {'love': 2};
+    story['reactions_count'] = 2;
+    final api = FakeCommunityApi();
+    await tester.pumpWidget(app(SocialStoryViewer(groups: [group], api: api),
+        {'social_feed.view': '1'}));
+    await tester.pump();
+    expect(find.byKey(const ValueKey('story-reaction-love')), findsNothing);
+    await tester.tap(find.text('2'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(api.calls, contains('GET social-stories/5/reactions'));
+    await tester.pumpWidget(const SizedBox());
   });
 
   testWidgets('Khmer feed title uses the selected language', (tester) async {

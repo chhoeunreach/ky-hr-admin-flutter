@@ -80,21 +80,13 @@ class Data {
     data['progress_percent'] = this.progress_percent;
     data['start_date'] = this.start_date;
     data['status'] = this.status;
-    if (this.assigned_member != null) {
-      data['assigned_member'] =
-          this.assigned_member.map((v) => v.toJson()).toList();
-    }
-    if (this.assigned_task_detail != null) {
+    data['assigned_member'] =
+        this.assigned_member.map((v) => v.toJson()).toList();
       data['assigned_task_detail'] =
-          this.assigned_task_detail.map((v) => v.toJson()).toList();
-    }
-    if (this.attachments != null) {
+        this.assigned_task_detail.map((v) => v.toJson()).toList();
       data['attachments'] = this.attachments.map((v) => v.toJson()).toList();
-    }
-    if (this.project_leader != null) {
       data['project_leader'] =
-          this.project_leader.map((v) => v.toJson()).toList();
-    }
-    return data;
+        this.project_leader.map((v) => v.toJson()).toList();
+      return data;
   }
 }

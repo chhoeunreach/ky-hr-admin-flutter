@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:nepali_english_calendar/nepali_english_calendar.dart';
-import 'package:provider/provider.dart';
 import 'package:nepali_utils/nepali_utils.dart';
 import 'package:table_calendar/table_calendar.dart';
 

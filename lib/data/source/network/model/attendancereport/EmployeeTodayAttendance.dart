@@ -7,9 +7,9 @@ class EmployeeTodayAttendance {
 
   factory EmployeeTodayAttendance.fromJson(dynamic json) {
     return EmployeeTodayAttendance(
-        checkInAt: json['check_in_at'].toString() ?? "-",
-        checkOutAt: json['check_out_at'].toString() ?? "-",
-        productiveTime: json['productive_time_in_min'].toString() ?? "0");
+        checkInAt: json['check_in_at']?.toString() ?? "-",
+        checkOutAt: json['check_out_at']?.toString() ?? "-",
+        productiveTime: json['productive_time_in_min']?.toString() ?? "0");
   }
 
   String checkInAt;

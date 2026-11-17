@@ -66,14 +66,10 @@ class Data {
     data['start_date'] = this.start_date;
     data['status'] = this.status;
     data['progress_percent'] = this.progress_percent;
-    if (this.assigned_member != null) {
-      data['assigned_member'] =
-          this.assigned_member.map((v) => v.toJson()).toList();
-    }
-    if (this.project_leader != null) {
+    data['assigned_member'] =
+        this.assigned_member.map((v) => v.toJson()).toList();
       data['project_leader'] =
-          this.project_leader.map((v) => v.toJson()).toList();
-    }
-    return data;
+        this.project_leader.map((v) => v.toJson()).toList();
+      return data;
   }
 }

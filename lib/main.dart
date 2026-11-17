@@ -117,30 +117,52 @@ Future<void> main() async {
     if (initialStorage.read("language") == null) {
       await initialStorage.write("language", "km");
     }
+    // Reuse a recently verified server for a few seconds so the home screen,
+    // notifications and first navigation do not each pay an extra health-check
+    // round-trip. The next call after the window re-verifies, preserving
+    // failover behaviour.
+    ServerUrlResolver.shared.healthyCacheTtl = const Duration(seconds: 15);
     ChatBadgeController.ensureRegistered();
 
     if (Platform.isAndroid) {
-      await FlutterDisplayMode.setHighRefreshRate();
+      // Cosmetic; never block the first frame on it.
+      unawaited(FlutterDisplayMode.setHighRefreshRate());
     }
 
     await PushNotificationService.initialize();
-
-    // Offline-first image upload queue: clear out any rows left stuck in
-    // `uploading` from a previous process kill, then start the background
-    // sync worker so queued images keep retrying even if the app is closed.
-    await DatabaseHelper.instance.resetStuckUploadingToPending();
-    await DatabaseHelper.instance.resetStuckAttendanceUploadingToPending();
-    await BackgroundSyncManager.instance.initialize();
-    await BackgroundSyncManager.instance.cancelAll();
 
     runApp(LocalizedApp(delegate, MyApp()));
     Future.microtask(() => IncomingChatListener.instance.start());
     unawaited(PushNotificationService.finishStartupSetup());
     configLoading();
+    // Offline-first queue recovery and the background worker are not needed to
+    // paint the first frame. Run them after the UI is attached so cold start is
+    // not blocked by SQLite/platform-channel work.
+    unawaited(_warmUpBackgroundServices());
   } catch (error, stackTrace) {
     debugPrint('App startup failed: $error');
     debugPrintStack(stackTrace: stackTrace);
     runApp(_StartupErrorApp(error: error.toString()));
+  }
+}
+
+/// Post-first-frame warm-up: recovers upload queues left behind by a previous
+/// process kill and starts the background sync worker. Failures are logged so
+/// they can never take down the already-running UI.
+Future<void> _warmUpBackgroundServices() async {
+  try {
+    await DatabaseHelper.instance.resetStuckUploadingToPending();
+    await DatabaseHelper.instance.resetStuckAttendanceUploadingToPending();
+  } catch (error, stackTrace) {
+    debugPrint('Upload queue recovery failed: $error');
+    debugPrintStack(stackTrace: stackTrace);
+  }
+  try {
+    await BackgroundSyncManager.instance.initialize();
+    await BackgroundSyncManager.instance.cancelAll();
+  } catch (error, stackTrace) {
+    debugPrint('Background sync warm-up failed: $error');
+    debugPrintStack(stackTrace: stackTrace);
   }
 }
 
@@ -243,60 +265,52 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         ],
         child: Portal(
           child: InAppNotification(
-            child: GestureDetector(
-              behavior: HitTestBehavior.translucent,
-              onTap: () {
-                // Dismiss the keyboard when tapping outside the TextField
-                FocusScope.of(context).requestFocus();
-              },
-              child: LocalizationProvider(
-                state: LocalizationProvider.of(context).state,
-                child: Consumer<ThemeProvider>(
-                  builder: (context, themeProvider, _) {
-                    return AnimatedTheme(
-                      data: themeProvider.themeData,
-                      duration: AppThemeData.animationDuration,
-                      child: GetMaterialApp(
-                        navigatorKey: NavigationService.navigatorKey,
-                        debugShowCheckedModeBanner: false,
-                        localizationsDelegates: [
-                          GlobalMaterialLocalizations.delegate,
-                          GlobalWidgetsLocalizations.delegate,
-                          GlobalCupertinoLocalizations.delegate,
-                          localizationDelegate
-                        ],
-                        supportedLocales: localizationDelegate.supportedLocales,
-                        locale: Locale(storage.read("language") ?? "km"),
-                        theme: themeProvider.themeData,
-                        darkTheme: themeProvider.darkTheme,
-                        themeMode: themeProvider.mode == AppThemeMode.dark
-                            ? ThemeMode.dark
-                            : ThemeMode.light,
-                        initialRoute: '/',
-                        routes: {
-                          '/': (_) => SplashScreen(),
-                          LoginScreen.routeName: (_) => LoginScreen(),
-                          DashboardScreen.routeName: (_) => DashboardScreen(),
-                          ProfileScreen.routeName: (_) => ProfileScreen(),
-                          IdCardScreen.routeName: (_) => const IdCardScreen(),
-                          FrontSidePreviewPage.routeName: (_) =>
-                              const FrontSidePreviewPage(),
-                          EditProfileScreen.routeName: (_) =>
-                              EditProfileScreen(),
-                          MeetingDetailScreen.routeName: (_) =>
-                              MeetingDetailScreen(),
-                          PaySlipDetailScreen.routeName: (_) =>
-                              PaySlipDetailScreen(),
-                          PosWorkspaceScreen.routeName: (_) =>
-                              const PosWorkspaceScreen(),
-                          SellOutReportScreen.routeName: (_) =>
-                              const SellOutReportScreen(),
-                        },
-                        builder: EasyLoading.init(),
-                      ),
-                    );
-                  },
-                ),
+            child: LocalizationProvider(
+              state: LocalizationProvider.of(context).state,
+              child: Consumer<ThemeProvider>(
+                builder: (context, themeProvider, _) {
+                  return AnimatedTheme(
+                    data: themeProvider.themeData,
+                    duration: AppThemeData.animationDuration,
+                    child: GetMaterialApp(
+                      navigatorKey: NavigationService.navigatorKey,
+                      debugShowCheckedModeBanner: false,
+                      localizationsDelegates: [
+                        GlobalMaterialLocalizations.delegate,
+                        GlobalWidgetsLocalizations.delegate,
+                        GlobalCupertinoLocalizations.delegate,
+                        localizationDelegate
+                      ],
+                      supportedLocales: localizationDelegate.supportedLocales,
+                      locale: Locale(storage.read("language") ?? "km"),
+                      theme: themeProvider.themeData,
+                      darkTheme: themeProvider.darkTheme,
+                      themeMode: themeProvider.mode == AppThemeMode.dark
+                          ? ThemeMode.dark
+                          : ThemeMode.light,
+                      initialRoute: '/',
+                      routes: {
+                        '/': (_) => SplashScreen(),
+                        LoginScreen.routeName: (_) => LoginScreen(),
+                        DashboardScreen.routeName: (_) => DashboardScreen(),
+                        ProfileScreen.routeName: (_) => ProfileScreen(),
+                        IdCardScreen.routeName: (_) => const IdCardScreen(),
+                        FrontSidePreviewPage.routeName: (_) =>
+                            const FrontSidePreviewPage(),
+                        EditProfileScreen.routeName: (_) => EditProfileScreen(),
+                        MeetingDetailScreen.routeName: (_) =>
+                            MeetingDetailScreen(),
+                        PaySlipDetailScreen.routeName: (_) =>
+                            PaySlipDetailScreen(),
+                        PosWorkspaceScreen.routeName: (_) =>
+                            const PosWorkspaceScreen(),
+                        SellOutReportScreen.routeName: (_) =>
+                            const SellOutReportScreen(),
+                      },
+                      builder: EasyLoading.init(),
+                    ),
+                  );
+                },
               ),
             ),
           ),

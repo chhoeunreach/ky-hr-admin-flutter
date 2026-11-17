@@ -30,6 +30,19 @@ class AttendanceReportProvider with ChangeNotifier {
   List<Month> month = [];
 
   var isLoading = false;
+  Future<void>? _calendarFuture;
+  Future<void>? _reportFuture;
+  int? _requestedMonth;
+  int _reportRevision = 0;
+  bool? _dateInAd;
+  bool _disposed = false;
+
+  @override
+  void dispose() {
+    _disposed = true;
+    _reportRevision++;
+    super.dispose();
+  }
 
   int selectedMonth = DateTime.now().month - 1;
 
@@ -45,34 +58,66 @@ class AttendanceReportProvider with ChangeNotifier {
     return _currentMonthReport;
   }
 
-  void getDate() async {
-    final isAd = (await repository.getDateInAd());
-    month = isAd ? engMonth : nepaliMonth;
-
-    NepaliDateTime currentTime = NepaliDateTime.now();
-    selectedMonth =
-        await isAd ? DateTime.now().month - 1 : currentTime.month - 1;
-    notifyListeners();
-    getAttendanceReport();
+  Future<void> getDate() {
+    return _calendarFuture ??= _initializeDate().whenComplete(() {
+      _calendarFuture = null;
+    });
   }
 
-  Future<void> getAttendanceReport() async {
+  Future<void> _initializeDate() async {
+    final isAd = await repository.getDateInAd();
+    if (_disposed) return;
+    if (_dateInAd != isAd || month.isEmpty) {
+      month = isAd ? engMonth : nepaliMonth;
+      selectedMonth =
+          isAd ? DateTime.now().month - 1 : NepaliDateTime.now().month - 1;
+      _dateInAd = isAd;
+    }
+    await getAttendanceReport();
+  }
+
+  Future<void> getAttendanceReport() {
+    if (_disposed) return Future.value();
+    if (_reportFuture != null && _requestedMonth == selectedMonth) {
+      return _reportFuture!;
+    }
+    final revision = ++_reportRevision;
+    final requestedMonth = selectedMonth;
+    _requestedMonth = requestedMonth;
     isLoading = true;
+    _reportFuture = _fetchReport(requestedMonth, revision);
+    notifyListeners();
+    return _reportFuture!;
+  }
+
+  Future<void> _fetchReport(int requestedMonth, int revision) async {
     try {
-      final responseJson = await repository.getAttendanceReport(selectedMonth);
-      isLoading = false;
-      makeTodayReport(responseJson.data.employeeTodayAttendance);
-      makeMonthlyReport(responseJson.data.attendanceSummary);
-      makeAttendanceReport(responseJson.data.employeeAttendance);
+      final response = await repository.getAttendanceReport(requestedMonth);
+      if (_disposed ||
+          revision != _reportRevision ||
+          selectedMonth != requestedMonth) return;
+      final data = response.data;
+      makeTodayReport(data.employeeTodayAttendance, notify: false);
+      makeMonthlyReport(data.attendanceSummary, notify: false);
       getProdHour(
-          int.parse(responseJson.data.employeeTodayAttendance.productiveTime));
-    } catch (error) {
-      isLoading = false;
-      throw error;
+          int.tryParse(data.employeeTodayAttendance.productiveTime) ?? 0,
+          notify: false);
+      makeAttendanceReport(data.employeeAttendance, notify: false);
+    } catch (_) {
+      if (!_disposed &&
+          revision == _reportRevision &&
+          selectedMonth == requestedMonth) rethrow;
+    } finally {
+      if (!_disposed && revision == _reportRevision) {
+        isLoading = false;
+        _reportFuture = null;
+        notifyListeners();
+      }
     }
   }
 
-  void makeAttendanceReport(List<EmployeeAttendance> employeeAttendance) {
+  void makeAttendanceReport(List<EmployeeAttendance> employeeAttendance,
+      {bool notify = true}) {
     _attendanceReport.clear();
     for (var item in employeeAttendance) {
       _attendanceReport.add(EmployeeAttendanceReport(
@@ -81,7 +126,7 @@ class AttendanceReportProvider with ChangeNotifier {
         attendance_date_ad: item.attendanceDateAd,
         week_day: item.weekDay,
         worked_hours: item.workedhrs ?? "-",
-        working_hours: item.workingHour ?? "-",
+        working_hours: item.workingHour,
         check_in: item.checkIn,
         check_out: item.checkOut,
         overTime: item.overTime,
@@ -115,43 +160,41 @@ class AttendanceReportProvider with ChangeNotifier {
       }
     }
 
-    notifyListeners();
+    if (notify) notifyListeners();
   }
 
-  void makeTodayReport(EmployeeTodayAttendance employeeTodayAttendance) {
+  void makeTodayReport(EmployeeTodayAttendance employeeTodayAttendance,
+      {bool notify = true}) {
     _todayReport['check_in_at'] = employeeTodayAttendance.checkInAt;
     _todayReport['check_out_at'] = employeeTodayAttendance.checkOutAt;
     _todayReport['day_status'] = 'present';
     _todayReport['status_label'] = '';
 
-    print(_todayReport['check_in_at']);
-    print(_todayReport['check_out_at']);
-
-    notifyListeners();
+    if (notify) notifyListeners();
   }
 
-  void makeMonthlyReport(AttendanceSummary attendanceSummary) {
+  void makeMonthlyReport(AttendanceSummary attendanceSummary,
+      {bool notify = true}) {
     _currentMonthReport['present_days'] = attendanceSummary.totalPresent;
     _currentMonthReport['worked_hour'] = attendanceSummary.totalWorkedHours;
 
-    notifyListeners();
+    if (notify) notifyListeners();
   }
 
-  String getProdHour(int value) {
-    double second = value * 60.toDouble();
-    double min = second / 60;
-    int minGone = (min % 60).toInt();
-    int hour = min ~/ 60;
+  String getProdHour(int value, {bool notify = true}) {
+    final second = value * 60.toDouble();
+    final min = second / 60;
+    final minGone = (min % 60).toInt();
+    final hour = min ~/ 60;
 
-    print("$hour hr $minGone min");
     _todayReport['production_hour'] = "$hour hr $minGone min";
 
-    double hours = value / 60;
-    double hr = hours / Constant.TOTAL_WORKING_HOUR;
+    final hours = value / 60;
+    final hr = hours / Constant.TOTAL_WORKING_HOUR;
 
     _todayReport['production_percent'] = hr > 1.0 ? 1.0 : hr;
 
-    notifyListeners();
+    if (notify) notifyListeners();
     return "$hour hr $minGone min";
   }
 }

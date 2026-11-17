@@ -17,25 +17,30 @@ class AttendanceScreenState extends State<AttendanceScreen> {
   var initial = true;
 
   @override
-  Future<void> didChangeDependencies() async {
-    if (initial) {
-      final provider =
-          Provider.of<AttendanceReportProvider>(context, listen: false);
-      provider.getDate();
-      loadAttendanceReport();
-      initial = false;
-    }
-    super.didChangeDependencies();
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && initial) {
+        initial = false;
+        loadAttendanceReport(initialize: true);
+      }
+    });
   }
 
-  Future<String> loadAttendanceReport() async {
+  Future<String> loadAttendanceReport({bool initialize = false}) async {
     try {
-      await Provider.of<AttendanceReportProvider>(context, listen: false)
-          .getAttendanceReport();
-      return 'loaded';
-    } catch (e) {
-      return 'loaded';
+      final provider = context.read<AttendanceReportProvider>();
+      if (initialize) {
+        await provider.getDate();
+      } else {
+        await provider.getAttendanceReport();
+      }
+    } catch (error) {
+      if (mounted)
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(error.toString())));
     }
+    return 'loaded';
   }
 
   @override
@@ -45,28 +50,25 @@ class AttendanceScreenState extends State<AttendanceScreen> {
         backgroundColor: Colors.transparent,
         body: FocusDetector(
           onVisibilityGained: () {
-            final provider =
-                Provider.of<AttendanceReportProvider>(context, listen: false);
-            provider.getDate();
+            if (initial) initial = false;
+            loadAttendanceReport(initialize: true);
           },
           child: SafeArea(
               child: RefreshIndicator(
             onRefresh: () {
               return loadAttendanceReport();
             },
-            child: SingleChildScrollView(
-              physics: AlwaysScrollableScrollPhysics(),
-              child: Container(
-                width: double.infinity,
-                child: Column(
-                  children: [
-                    HeaderProfile(),
-                    AttendanceStatus(),
-                    AttendanceToggle(),
-                    ReportListView()
-                  ],
-                ),
-              ),
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                SliverToBoxAdapter(
+                    child: Column(children: [
+                  const HeaderProfile(),
+                  AttendanceStatus(),
+                  AttendanceToggle(),
+                ])),
+                const ReportListView(asSliver: true),
+              ],
             ),
           )),
         ),

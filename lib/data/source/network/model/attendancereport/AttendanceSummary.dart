@@ -1,13 +1,13 @@
 class AttendanceSummary {
   AttendanceSummary({
-      required this.totalPresent,
-      required this.totalWorkedHours,});
+    required this.totalPresent,
+    required this.totalWorkedHours,
+  });
 
   factory AttendanceSummary.fromJson(dynamic json) {
     return AttendanceSummary(
-        totalPresent : json['totalPresent'].toString() ?? "-",
-        totalWorkedHours : json['totalWorkedHours'].toString() ?? "-"
-    );
+        totalPresent: json['totalPresent']?.toString() ?? "-",
+        totalWorkedHours: json['totalWorkedHours']?.toString() ?? "-");
   }
   String totalPresent;
   String totalWorkedHours;
@@ -18,5 +18,4 @@ class AttendanceSummary {
     map['totalWorkedHours'] = totalWorkedHours;
     return map;
   }
-
 }

@@ -16,9 +16,7 @@ class Data {
     Map<String, dynamic> toJson() {
         final Map<String, dynamic> data = new Map<String, dynamic>();
         data['currency'] = this.currency;
-        if (this.payslip != null) {
-            data['payslip'] = this.payslip.map((v) => v.toJson()).toList();
-        }
-        return data;
+          data['payslip'] = this.payslip.map((v) => v.toJson()).toList();
+              return data;
     }
 }

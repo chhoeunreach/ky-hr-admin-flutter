@@ -112,6 +112,7 @@ class DashboardProvider with ChangeNotifier {
   var department = "";
   var branch = "";
   List<PaymentQrCode> paymentQrCodes = [];
+  String? _scheduledShiftsSignature;
 
   Map<String, String> get overviewList {
     return _overviewList;
@@ -245,25 +246,34 @@ class DashboardProvider with ChangeNotifier {
         monthlyAttendanceSummary =
             dashboardResponse.data.monthlyAttendanceSummary;
       }
-      updateAttendanceStatus(dashboardResponse.data.employeeTodayAttendance);
-      updateOverView(dashboardResponse.data.overview);
-
-      makeWeeklyReport(dashboardResponse.data.employeeWeeklyReport);
+      // Set every field the home screen reads, then notify once. Previously
+      // this path emitted 3-4 notifications, rebuilding the whole dashboard
+      // each time while the response was still being processed.
+      updateAttendanceStatus(
+          dashboardResponse.data.employeeTodayAttendance,
+          notify: false);
+      updateOverView(dashboardResponse.data.overview, notify: false);
+      makeWeeklyReport(dashboardResponse.data.employeeWeeklyReport,
+          notify: false);
       await controlFeatures(dashboardResponse.data.features);
-      await preferences.saveUserDashboard(dashboardResponse.data.user);
 
       employeeList = dashboardResponse.data.employee;
-      preferences.saveShowNfc(dashboardResponse.data.addNfc);
-      preferences.saveNote(dashboardResponse.data.attendance_note);
-      preferences
-          .saveEmployeeLocation(dashboardResponse.data.employee_location);
-      isNoteEnabled = await preferences.getNote();
       isAttendanceSelfieEnabled = dashboardResponse.data.attendance_selfie;
       isAttendanceMapEnabled = dashboardResponse.data.attendance_map;
       isWorkspaceRadiusEnabled =
           dashboardResponse.data.attendance_location_radius_enabled;
       attendanceMapUrl = dashboardResponse.data.attendance_map_url;
-      isLocationEnabled = await preferences.getEnableLocation();
+      attendanceMethods = dashboardResponse.data.attedanceMethod;
+
+      // Independent SharedPreferences reads in parallel instead of serially.
+      final dashboardReads = await Future.wait<Object?>([
+        preferences.getNote(),
+        preferences.getEnableLocation(),
+        preferences.getEnglishDate(),
+      ]);
+      isNoteEnabled = dashboardReads[0] as bool;
+      isLocationEnabled = dashboardReads[1] as bool;
+      isAD = dashboardReads[2] as bool;
 
       final holidayResponse = dashboardResponse.data.holiday;
       final recentAwardResponse = dashboardResponse.data.recentAward;
@@ -271,17 +281,16 @@ class DashboardProvider with ChangeNotifier {
       training = dashboardResponse.data.recentTraining;
 
       if (holidayResponse != null) {
-        bool isAd = await preferences.getEnglishDate();
         DateTime tempDate =
             DateFormat("yyyy-MM-dd").parse(holidayResponse.eventDate);
 
         NepaliDateTime nepaliDate = tempDate.toNepaliDateTime();
         holiday = Holiday(
             id: holidayResponse.id,
-            day: isAd
+            day: isAD
                 ? DateFormat('dd').format(tempDate)
                 : NepaliDateFormat('dd').format(nepaliDate),
-            month: isAd
+            month: isAD
                 ? DateFormat('MMM').format(tempDate)
                 : NepaliDateFormat('MMMM').format(nepaliDate),
             title: holidayResponse.event,
@@ -309,11 +318,21 @@ class DashboardProvider with ChangeNotifier {
         award = null;
       }
 
-      attendanceMethods = dashboardResponse.data.attedanceMethod;
+      // Everything visible is ready: paint the dashboard once.
+      notifyListeners();
 
-      DateTime startTime = DateFormat("hh:mm a")
+      // Persistence and notification scheduling are not required for the first
+      // frame. Fire-and-forget them so slow disk/platform-channel work never
+      // delays rendering or the next interaction.
+      unawaited(preferences.saveUserDashboard(dashboardResponse.data.user));
+      preferences.saveShowNfc(dashboardResponse.data.addNfc);
+      preferences.saveNote(dashboardResponse.data.attendance_note);
+      preferences
+          .saveEmployeeLocation(dashboardResponse.data.employee_location);
+
+      final startTime = DateFormat("hh:mm a")
           .parse(dashboardResponse.data.officeTime.startTime);
-      DateTime endTime = DateFormat("hh:mm a")
+      final endTime = DateFormat("hh:mm a")
           .parse(dashboardResponse.data.officeTime.endTime);
 
       final now = DateTime.now();
@@ -329,20 +348,18 @@ class DashboardProvider with ChangeNotifier {
       }).toList();
 
       if (upcomingShifts.isNotEmpty) {
-        AwesomeNotifications().cancelAllSchedules();
-        for (var shift in upcomingShifts) {
-          scheduleNewNotification(
-              shift,
-              "សូមកត់ត្រាវត្តមានចូលឱ្យទាន់ពេលវេលា ⏱️⌛️",
-              startTime.hour,
-              startTime.minute,
-              "ជិតដល់ពេលចេញពីធ្វើការហើយ 😄⌛️ កុំភ្លេចកត់ត្រាវត្តមានចេញ ⏱️",
-              endTime.hour,
-              endTime.minute);
+        // Re-scheduling cancels and recreates every notification; only do that
+        // when the relevant schedule actually changed (e.g. once per day),
+        // not on every home-page focus refresh.
+        final signature =
+            '${upcomingShifts.join(',')}|${startTime.hour}:${startTime.minute}|${endTime.hour}:${endTime.minute}';
+        if (signature != _scheduledShiftsSignature) {
+          _scheduledShiftsSignature = signature;
+          unawaited(_scheduleShiftNotifications(
+              upcomingShifts, startTime, endTime));
         }
       }
 
-      checkAD();
       return dashboardResponse;
     } else {
       if (response.statusCode == 401) {
@@ -663,7 +680,8 @@ class DashboardProvider with ChangeNotifier {
     return null;
   }
 
-  void makeWeeklyReport(List<dynamic> employeeWeeklyReport) {
+  void makeWeeklyReport(List<dynamic> employeeWeeklyReport,
+      {bool notify = true}) {
     const int daysInWeek = 7;
     _weeklyReport.clear();
     for (var item in employeeWeeklyReport) {
@@ -692,10 +710,11 @@ class DashboardProvider with ChangeNotifier {
     rawBarGroups.addAll(barchartValue);
     showingBarGroups.addAll(rawBarGroups);
 
-    notifyListeners();
+    if (notify) notifyListeners();
   }
 
-  void updateAttendanceStatus(EmployeeTodayAttendance employeeTodayAttendance) {
+  void updateAttendanceStatus(EmployeeTodayAttendance employeeTodayAttendance,
+      {bool notify = true}) {
     _attendanceList.update('production-time',
         (value) => calculateProdHour(employeeTodayAttendance.productionTime));
     _attendanceList.update(
@@ -705,10 +724,10 @@ class DashboardProvider with ChangeNotifier {
     _attendanceList.update(
         'check-in', (value) => employeeTodayAttendance.checkInAt);
 
-    notifyListeners();
+    if (notify) notifyListeners();
   }
 
-  void updateOverView(Overview overview) {
+  void updateOverView(Overview overview, {bool notify = true}) {
     _overviewList.update('present', (value) => overview.presentDays.toString());
     _overviewList.update(
         'holiday', (value) => overview.totalHolidays.toString());
@@ -727,7 +746,7 @@ class DashboardProvider with ChangeNotifier {
     _overviewList.update(
         'active_event', (value) => overview.active_event.toString());
 
-    notifyListeners();
+    if (notify) notifyListeners();
   }
 
   double calculateProdHour(int value) {
@@ -756,7 +775,7 @@ class DashboardProvider with ChangeNotifier {
     }
 
     this.features = featureList;
-    await preferences.setFeatures(featureList);
+    unawaited(preferences.setFeatures(featureList));
   }
 
   Future<bool> getCheckInStatus() async {
@@ -999,6 +1018,25 @@ class DashboardProvider with ChangeNotifier {
       }
       var errorMessage = responseData['message'];
       throw errorMessage;
+    }
+  }
+
+  Future<void> _scheduleShiftNotifications(
+      List<String> upcomingShifts, DateTime startTime, DateTime endTime) async {
+    try {
+      await AwesomeNotifications().cancelAllSchedules();
+      for (var shift in upcomingShifts) {
+        await scheduleNewNotification(
+            shift,
+            "សូមកត់ត្រាវត្តមានចូលឱ្យទាន់ពេលវេលា ⏱️⌛️",
+            startTime.hour,
+            startTime.minute,
+            "ជិតដល់ពេលចេញពីធ្វើការហើយ 😄⌛️ កុំភ្លេចកត់ត្រាវត្តមានចេញ ⏱️",
+            endTime.hour,
+            endTime.minute);
+      }
+    } catch (_) {
+      // Notification scheduling must never break a dashboard refresh.
     }
   }
 

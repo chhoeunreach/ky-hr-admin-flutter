@@ -1,14 +1,15 @@
 class CompanyRules {
   CompanyRules({
-      required this.title,
-      required this.contentType,
-      required this.description,});
+    required this.title,
+    required this.contentType,
+    required this.description,
+  });
 
   factory CompanyRules.fromJson(dynamic json) {
     return CompanyRules(
-        title : json['title'].toString() ?? "",
-        contentType : json['content_type'].toString() ?? "",
-        description : json['description'].toString() ?? "",
+      title: json['title']?.toString() ?? "",
+      contentType: json['content_type']?.toString() ?? "",
+      description: json['description']?.toString() ?? "",
     );
   }
 
@@ -23,5 +24,4 @@ class CompanyRules {
     map['description'] = description;
     return map;
   }
-
 }

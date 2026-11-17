@@ -24,6 +24,7 @@ class NotificationController extends GetxController {
   final errorMessage = ''.obs;
   final unreadCount = 0.obs;
   late ScrollController controller;
+  Future<void>? _refreshInFlight;
 
   List<Not.Notification> get notificationList {
     return [..._notificationList];
@@ -39,7 +40,22 @@ class NotificationController extends GetxController {
     await refreshNotifications();
   }
 
-  Future<void> refreshNotifications() async {
+  /// Refreshes the first page, sharing one in-flight request. The controller is
+  /// created during the home build and both `onReady` and `ensureLoaded` can
+  /// ask for data on the same frame; without this guard that caused two
+  /// identical startup requests.
+  Future<void> refreshNotifications() {
+    final inFlight = _refreshInFlight;
+    if (inFlight != null) return inFlight;
+    final future = _runRefreshNotifications();
+    _refreshInFlight = future;
+    future.whenComplete(() {
+      if (identical(_refreshInFlight, future)) _refreshInFlight = null;
+    });
+    return future;
+  }
+
+  Future<void> _runRefreshNotifications() async {
     page = 1;
     hasMore.value = true;
     errorMessage.value = '';

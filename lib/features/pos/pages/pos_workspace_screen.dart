@@ -8,7 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:cnattendance/screen/sell_out_report_screen.dart';
-import 'package:cnattendance/screen/profile/notificationscreen.dart';
+import 'package:cnattendance/screen/profile/NotificationScreen.dart';
 import 'package:cnattendance/services/sell_out_api_service.dart';
 import '../models/pos_report.dart';
 import '../providers/pos_reporting_provider.dart';

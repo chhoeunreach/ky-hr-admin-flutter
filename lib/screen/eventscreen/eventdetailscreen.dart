@@ -13,7 +13,7 @@ class EventDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final model = Get.put(EventListController());
+    Get.put(EventListController());
     return Container(
       decoration: RadialDecoration(),
       child: Scaffold(

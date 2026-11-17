@@ -2,14 +2,14 @@ class Company {
   Company({
     required this.id,
     required this.name,
-    required this.weekend,});
+    required this.weekend,
+  });
 
   factory Company.fromJson(dynamic json) {
     return Company(
         id: json['id'],
-        name: json['name'].toString() ?? "",
-        weekend: json['weekend']
-    );
+        name: json['name']?.toString() ?? "",
+        weekend: json['weekend']);
   }
 
   int id;
@@ -23,5 +23,4 @@ class Company {
     map['weekend'] = weekend;
     return map;
   }
-
 }

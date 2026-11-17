@@ -143,7 +143,7 @@ class EditTadaController extends GetxController {
       final responseData = json.decode(response.body);
 
       if (response.statusCode == 200) {
-        final tadaResponse = IssueLeaveResponse.fromJson(responseData);
+        IssueLeaveResponse.fromJson(responseData);
         showToast("Tada has been updated");
         Get.back();
         return "Loaded";
@@ -187,7 +187,7 @@ class EditTadaController extends GetxController {
       final responseData = json.decode(response.body);
 
       if (response.statusCode == 200) {
-        final tadaResponse = IssueLeaveResponse.fromJson(responseData);
+        IssueLeaveResponse.fromJson(responseData);
 
         attachmentList.removeAt(index);
 

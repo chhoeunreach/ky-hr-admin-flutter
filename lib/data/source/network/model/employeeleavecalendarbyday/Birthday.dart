@@ -10,10 +10,10 @@ class Birthday {
   factory Birthday.fromJson(dynamic json) {
     return Birthday(
       id: json['id'],
-      name: json['name'].toString() ?? "",
-      dob: json['dob'].toString() ?? "",
-      role: json['post'].toString() ?? "",
-      avatar: json['avatar'].toString() ?? "",
+      name: json['name']?.toString() ?? "",
+      dob: json['dob']?.toString() ?? "",
+      role: json['post']?.toString() ?? "",
+      avatar: json['avatar']?.toString() ?? "",
     );
   }
 

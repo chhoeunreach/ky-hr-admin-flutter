@@ -11,11 +11,11 @@ class User {
   factory User.fromJson(dynamic json) {
     return User(
         id: json['id'] ?? 0,
-        name: json['name'].toString() ?? "",
-        email: json['email'].toString() ?? "",
-        username: json['username'].toString() ?? "",
-        avatar: json['avatar'].toString() ?? "",
-        workspace_type: json['workspace_type'].toString() ?? "");
+        name: json['name']?.toString() ?? "",
+        email: json['email']?.toString() ?? "",
+        username: json['username']?.toString() ?? "",
+        avatar: json['avatar']?.toString() ?? "",
+        workspace_type: json['workspace_type']?.toString() ?? "");
   }
 
   final int id;

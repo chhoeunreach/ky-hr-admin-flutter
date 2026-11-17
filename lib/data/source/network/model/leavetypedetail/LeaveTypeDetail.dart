@@ -17,17 +17,17 @@ class LeaveTypeDetail {
   factory LeaveTypeDetail.fromJson(dynamic json) {
     return LeaveTypeDetail(
       id: json['id'],
-      noOfDays: json['no_of_days'].toString() ?? "",
-      leaveTypeId: json['leave_type_id'].toString() ?? "",
-      leaveTypeName: json['leave_type_name'].toString() ?? "",
-      leaveFrom: json['leave_from'].toString() ?? "",
-      leaveTo: json['leave_to'].toString() ?? "",
-      leaveRequestedDate: json['leave_requested_date'].toString() ?? "",
-      status: json['status'].toString() ?? "",
-      leaveReason: json['leave_reason'].toString() ?? "",
-      adminRemark: json['admin_remark'].toString() ?? "",
+      noOfDays: json['no_of_days']?.toString() ?? "",
+      leaveTypeId: json['leave_type_id']?.toString() ?? "",
+      leaveTypeName: json['leave_type_name']?.toString() ?? "",
+      leaveFrom: json['leave_from']?.toString() ?? "",
+      leaveTo: json['leave_to']?.toString() ?? "",
+      leaveRequestedDate: json['leave_requested_date']?.toString() ?? "",
+      status: json['status']?.toString() ?? "",
+      leaveReason: json['leave_reason']?.toString() ?? "",
+      adminRemark: json['admin_remark']?.toString() ?? "",
       earlyExit: json['early_exit'] ?? false,
-      statusUpdatedBy: json['status_updated_by'].toString() ?? "",
+      statusUpdatedBy: json['status_updated_by']?.toString() ?? "",
     );
   }
 

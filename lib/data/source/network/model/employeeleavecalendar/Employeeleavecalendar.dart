@@ -6,8 +6,8 @@ class Employeeleavecalendar {
 
   factory Employeeleavecalendar.fromJson(dynamic json) {
     return Employeeleavecalendar(
-      date: json['date'].toString() ?? "",
-      leaveCount: json['leave_count'].toString() ?? "0",
+      date: json['date']?.toString() ?? "",
+      leaveCount: json['leave_count']?.toString() ?? "0",
     );
   }
 
