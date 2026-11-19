@@ -1,3 +1,4 @@
+import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:cnattendance/widget/buttonborder.dart';
 import 'package:cnattendance/widget/headerprofile.dart';
@@ -93,6 +94,7 @@ class LeaveScreenState extends State<LeaveScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    final enterprise = EnterpriseTheme.of(context);
     return PremiumBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
@@ -118,10 +120,10 @@ class LeaveScreenState extends State<LeaveScreen> with WidgetsBindingObserver {
                         width: double.infinity,
                         child: Text(
                           translate('leave_screen.leave'),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            color: enterprise.text,
                           ),
                         )),
                     LeaveListDashboard(),
@@ -137,10 +139,10 @@ class LeaveScreenState extends State<LeaveScreen> with WidgetsBindingObserver {
                       visible: showDetails,
                       child: Text(
                         translate('leave_screen.recent_leave_activity'),
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: enterprise.text,
                           fontSize: 14,
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
                     ),
@@ -152,8 +154,12 @@ class LeaveScreenState extends State<LeaveScreen> with WidgetsBindingObserver {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 12, vertical: 8),
                             child: Card(
-                              color: Colors.white12,
-                              shape: ButtonBorder(),
+                              color: enterprise.cardBackground,
+                              elevation: enterprise.isDark ? 0 : 2,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                side: BorderSide(color: enterprise.cardBorder),
+                              ),
                               child: Padding(
                                 padding: const EdgeInsets.only(top: 30),
                                 child: Column(

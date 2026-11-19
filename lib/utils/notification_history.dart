@@ -11,7 +11,7 @@ class NotificationHistory {
   static const String _storageKey = 'local_notification_history';
   static const int _maxEntries = 50;
 
-  static Future<String?> saveRemoteMessage(
+  static Future<({String? key, bool isNew})> saveRemoteMessage(
     RemoteMessage message, {
     required String title,
     required String body,
@@ -20,18 +20,26 @@ class NotificationHistory {
     final trimmedBody = body.trim();
 
     if (trimmedTitle.isEmpty && trimmedBody.isEmpty) {
-      return null;
+      return (key: null, isNew: false);
     }
 
     final box = GetStorage();
     final existing = _readRawEntries(box);
     final date = (message.sentTime ?? DateTime.now()).toUtc().toIso8601String();
-    final dedupeKey =
-        (message.messageId != null && message.messageId!.trim().isNotEmpty)
-            ? 'message:${message.messageId!.trim()}'
-            : '$trimmedTitle|$trimmedBody|$date';
+    final eventId =
+        message.data['notification_event_id']?.toString().trim() ?? '';
+    final messageId = message.messageId?.trim() ?? '';
+    final deliveryKey = messageId.isEmpty ? null : 'message:$messageId';
+    final dedupeKey = eventId.isNotEmpty
+        ? 'event:$eventId'
+        : deliveryKey ?? '$trimmedTitle|$trimmedBody|$date';
 
-    existing.removeWhere((item) => item['key'] == dedupeKey);
+    for (final item in existing) {
+      final key = item['key'];
+      if (key is String && (key == dedupeKey || key == deliveryKey)) {
+        return (key: key, isNew: false);
+      }
+    }
     existing.insert(0, {
       'key': dedupeKey,
       'messageId': message.messageId,
@@ -48,7 +56,7 @@ class NotificationHistory {
     }
 
     await box.write(_storageKey, existing);
-    return dedupeKey;
+    return (key: dedupeKey, isNew: true);
   }
 
   static Future<List<Not.Notification>> loadStoredNotifications() async {

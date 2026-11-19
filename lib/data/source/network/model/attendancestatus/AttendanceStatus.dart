@@ -6,10 +6,12 @@ class AttendanceStatus {
   });
 
   factory AttendanceStatus.fromJson(dynamic json) {
+    final minutes = num.tryParse('${json['productive_time_in_min']}');
     return AttendanceStatus(
         checkInAt: json['check_in_at']?.toString() ?? "-",
         checkOutAt: json['check_out_at']?.toString() ?? "-",
-        productiveTimeInMin: json['productive_time_in_min'] ?? 0);
+        productiveTimeInMin:
+            minutes != null && minutes.isFinite ? minutes.toInt() : 0);
   }
   String checkInAt;
   String checkOutAt;

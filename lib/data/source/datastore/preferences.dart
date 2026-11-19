@@ -1,12 +1,17 @@
 import 'dart:convert';
 import 'package:cnattendance/data/source/network/model/login/User.dart';
+import 'package:cnattendance/model/banner_slideshow_config.dart';
+import 'package:cnattendance/model/home_banner_config.dart';
 import 'package:cnattendance/data/source/network/model/dashboard/User.dart'
     as DashboardUser;
 import 'package:cnattendance/data/source/network/model/login/Login.dart';
+import 'package:cnattendance/provider/chatbadgecontroller.dart';
+import 'package:cnattendance/utils/chat_unread_store.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:cnattendance/services/server_url_resolver.dart';
 import 'package:cnattendance/services/server_configuration.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Preferences with ChangeNotifier {
@@ -39,6 +44,7 @@ class Preferences with ChangeNotifier {
   final String SHOW_NFC = "SHOW_NFC";
   final String SHOWNOTE = "SHOW_NOTE";
   final String SHOWLOCATION = "SHOWLOCATION";
+  final String COMPANY_VERIFY_REQUIRED = "company_verify_required";
 
   //feature control
   final String PROJECT_MANAGEMENT = "project-management";
@@ -175,7 +181,20 @@ class Preferences with ChangeNotifier {
     await prefs.setBool(ATTENDANCE_TYPE_USER_SET, false);
     await prefs.setString(APP_URL, "");
 
+    await _clearChatUnreadState();
+
     notifyListeners();
+  }
+
+  Future<void> _clearChatUnreadState() async {
+    try {
+      await ChatUnreadStore.clearAll();
+      if (Get.isRegistered<ChatBadgeController>()) {
+        await Get.find<ChatBadgeController>().refreshUnreadCount();
+      }
+    } catch (e) {
+      debugPrint('Unable to clear chat unread state: $e');
+    }
   }
 
   void saveUserAuth(bool value) async {
@@ -202,6 +221,17 @@ class Preferences with ChangeNotifier {
     }
     await prefs.setString(APP_URL, value);
     _serverUrlResolver.invalidate(value);
+    notifyListeners();
+  }
+
+  Future<bool> getCompanyVerifyRequired() async {
+    final prefs = await _sharedPrefs;
+    return prefs.getBool(COMPANY_VERIFY_REQUIRED) ?? false;
+  }
+
+  Future<void> setCompanyVerifyRequired(bool value) async {
+    final prefs = await _sharedPrefs;
+    await prefs.setBool(COMPANY_VERIFY_REQUIRED, value);
     notifyListeners();
   }
 
@@ -436,6 +466,56 @@ class Preferences with ChangeNotifier {
     notifyListeners();
   }
 
+  static const String _homeSlideshowKey = 'home_banner_slideshow_v1';
+
+  /// Returns the locally stored banner slideshow.
+  ///
+  /// Falls back to the legacy single-banner keys when the slideshow has never
+  /// been saved so existing installs keep their configured banner.
+  Future<BannerSlideshowConfig> getHomeSlideshow() async {
+    final prefs = await _sharedPrefs;
+    final raw = prefs.getString(_homeSlideshowKey);
+    if (raw != null && raw.trim().isNotEmpty) {
+      try {
+        return BannerSlideshowConfig.fromJson(
+            jsonDecode(raw) as Map<String, dynamic>);
+      } catch (_) {
+        // Corrupt payload -> fall through to legacy migration.
+      }
+    }
+
+    final legacyUrl = prefs.getString('home_banner_image_url') ?? '';
+    if (legacyUrl.trim().isEmpty) {
+      return const BannerSlideshowConfig();
+    }
+    return BannerSlideshowConfig.legacy(
+      imageUrl: legacyUrl,
+      linkUrl: prefs.getString('home_banner_link_url') ?? '',
+      title: prefs.getString('home_banner_title') ?? '',
+    );
+  }
+
+  /// Updates the slideshow cache without notifying listeners. This avoids
+  /// reloading the home banner when a fresh server response is cached.
+  Future<void> cacheHomeSlideshow(BannerSlideshowConfig config) async {
+    final prefs = await _sharedPrefs;
+    await prefs.setString(_homeSlideshowKey, jsonEncode(config.toJson()));
+  }
+
+  Future<void> saveHomeSlideshow(BannerSlideshowConfig config) async {
+    await cacheHomeSlideshow(config);
+    notifyListeners();
+  }
+
+  Future<void> resetHomeSlideshow() async {
+    final prefs = await _sharedPrefs;
+    await prefs.remove(_homeSlideshowKey);
+    await prefs.remove('home_banner_image_url');
+    await prefs.remove('home_banner_link_url');
+    await prefs.remove('home_banner_title');
+    notifyListeners();
+  }
+
   Future<String> getHomeQuote() async {
     final prefs = await _sharedPrefs;
     return prefs.getString('home_quote_text') ??
@@ -446,6 +526,25 @@ class Preferences with ChangeNotifier {
     final prefs = await _sharedPrefs;
     await prefs.setString('home_quote_text', quote.trim());
     notifyListeners();
+  }
+
+  Future<void> cacheHomeQuote({
+    required String text,
+    required String? author,
+    required QuoteStyle? style,
+  }) async {
+    final prefs = await _sharedPrefs;
+    await Future.wait([
+      prefs.setString('home_quote_text', text.trim()),
+      if (author == null || author.trim().isEmpty)
+        prefs.remove('home_quote_author')
+      else
+        prefs.setString('home_quote_author', author.trim()),
+      if (style == null)
+        prefs.remove('home_quote_style')
+      else
+        prefs.setString('home_quote_style', jsonEncode(style.toJson())),
+    ]);
   }
 
   Future<bool> getHomeQuoteShow() async {
@@ -459,9 +558,49 @@ class Preferences with ChangeNotifier {
     notifyListeners();
   }
 
+  Future<String?> getHomeQuoteAuthor() async {
+    final prefs = await _sharedPrefs;
+    return prefs.getString('home_quote_author');
+  }
+
+  Future<void> saveHomeQuoteAuthor(String? author) async {
+    final prefs = await _sharedPrefs;
+    if (author == null || author.trim().isEmpty) {
+      await prefs.remove('home_quote_author');
+    } else {
+      await prefs.setString('home_quote_author', author.trim());
+    }
+    notifyListeners();
+  }
+
+  Future<QuoteStyle?> getHomeQuoteStyle() async {
+    final prefs = await _sharedPrefs;
+    final jsonStr = prefs.getString('home_quote_style');
+    if (jsonStr == null || jsonStr.trim().isEmpty) return null;
+    try {
+      final decoded = jsonDecode(jsonStr);
+      if (decoded is Map<String, dynamic>) {
+        return QuoteStyle.fromJson(decoded);
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Future<void> saveHomeQuoteStyle(QuoteStyle? style) async {
+    final prefs = await _sharedPrefs;
+    if (style == null) {
+      await prefs.remove('home_quote_style');
+    } else {
+      await prefs.setString('home_quote_style', jsonEncode(style.toJson()));
+    }
+    notifyListeners();
+  }
+
   Future<void> resetHomeQuote() async {
     final prefs = await _sharedPrefs;
     await prefs.remove('home_quote_text');
+    await prefs.remove('home_quote_author');
+    await prefs.remove('home_quote_style');
     await prefs.setBool('home_quote_show', true);
     notifyListeners();
   }

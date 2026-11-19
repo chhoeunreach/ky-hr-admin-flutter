@@ -7,6 +7,7 @@ import 'package:cnattendance/data/source/network/model/login/User.dart';
 import 'package:cnattendance/provider/dashboardprovider.dart';
 import 'package:cnattendance/provider/profileprovider.dart';
 import 'package:cnattendance/screen/profile/profilescreen.dart';
+import 'package:cnattendance/widget/morescreen/services.dart';
 import 'package:cnattendance/widget/profile/basicdetail.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -137,6 +138,47 @@ void main() {
     provider.dispose();
     dashboard.dispose();
     client.close();
+  });
+
+  testWidgets(
+      'the More profile link shows Back and returns to More', (tester) async {
+    final client = MockClient((_) async => _response());
+    final profile =
+        ProfileProvider(preferences: _Preferences(), client: client);
+    final dashboard = DashboardProvider();
+    addTearDown(client.close);
+    addTearDown(profile.dispose);
+    addTearDown(dashboard.dispose);
+
+    await tester.pumpWidget(MultiProvider(
+      providers: [
+        ChangeNotifierProvider<ProfileProvider>.value(value: profile),
+        ChangeNotifierProvider<DashboardProvider>.value(value: dashboard),
+      ],
+      child: MaterialApp(
+        home: Scaffold(
+          appBar: AppBar(title: const Text('More')),
+          body: Services('Profile', Icons.person, ProfileScreen()),
+        ),
+      ),
+    ));
+
+    await tester.tap(find.text('Profile'));
+    await tester.pumpAndSettle();
+    expect(find.byType(ProfileScreen), findsOneWidget);
+    expect(find.byType(BackButton), findsOneWidget);
+    final scaffold = tester.widget<Scaffold>(find.descendant(
+      of: find.byType(ProfileScreen),
+      matching: find.byType(Scaffold),
+    ));
+    expect(scaffold.drawer, isNull);
+    expect(scaffold.endDrawer, isNull);
+
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+    expect(find.text('More'), findsOneWidget);
+    expect(find.byType(ProfileScreen), findsNothing);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets(

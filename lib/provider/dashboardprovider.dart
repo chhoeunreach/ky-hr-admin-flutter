@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:core';
-import 'dart:developer';
 import 'dart:io';
 import 'dart:math' as Random;
 
@@ -19,20 +18,22 @@ import 'package:cnattendance/data/source/network/model/teamsheet/Employee.dart'
 import 'package:cnattendance/data/source/network/model/trainingresponse/trainingresponse.dart';
 import 'package:cnattendance/model/award.dart';
 import 'package:cnattendance/models/monthly_attendance_summary.dart';
+import 'package:cnattendance/models/top_bonus_employee.dart';
 import 'package:cnattendance/model/holiday.dart';
 import 'package:cnattendance/screen/auth/login_screen.dart';
+import 'package:cnattendance/services/device_clock_service.dart';
 import 'package:cnattendance/utils/app_device_info.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:cnattendance/utils/locationstatus.dart';
 import 'package:cnattendance/utils/wifiinfo.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_translate/flutter_translate.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:hexcolor/hexcolor.dart';
 import 'package:http/http.dart' as http;
-import 'package:http_interceptor_plus/http_interceptor_plus.dart';
 import 'package:intl/intl.dart';
 import 'package:nepali_date_picker/nepali_date_picker.dart';
 
@@ -47,6 +48,8 @@ class DashboardProvider with ChangeNotifier {
   final Preferences _monthlySummaryPreferences;
   final http.Client? _monthlySummaryClient;
   MonthlyAttendanceSummary? monthlyAttendanceSummary;
+  List<TopBonusEmployee> topBonusEmployees = const [];
+  bool employeeOnline = false;
   int _monthlySummaryRevision = 0;
   bool _summaryDisposed = false;
 
@@ -191,7 +194,6 @@ class DashboardProvider with ChangeNotifier {
   Future<Dashboardresponse> getDashboard() async {
     final summaryRevision = _monthlySummaryRevision;
     final preferences = Preferences();
-    animated = getAnimation();
     final uri =
         Uri.parse(await preferences.getAppUrl() + Constant.DASHBOARD_URL);
 
@@ -221,6 +223,7 @@ class DashboardProvider with ChangeNotifier {
       department = dashboardResponse.data.user.department;
       branch = dashboardResponse.data.user.branch;
       paymentQrCodes = dashboardResponse.data.user.paymentQrCodes;
+      employeeOnline = dashboardResponse.data.user.onlineStatus;
 
       if (dashboardResponse.data.user.dob != "") {
         final dob =
@@ -246,11 +249,11 @@ class DashboardProvider with ChangeNotifier {
         monthlyAttendanceSummary =
             dashboardResponse.data.monthlyAttendanceSummary;
       }
+      topBonusEmployees = dashboardResponse.data.topBonusEmployees;
       // Set every field the home screen reads, then notify once. Previously
       // this path emitted 3-4 notifications, rebuilding the whole dashboard
       // each time while the response was still being processed.
-      updateAttendanceStatus(
-          dashboardResponse.data.employeeTodayAttendance,
+      updateAttendanceStatus(dashboardResponse.data.employeeTodayAttendance,
           notify: false);
       updateOverView(dashboardResponse.data.overview, notify: false);
       makeWeeklyReport(dashboardResponse.data.employeeWeeklyReport,
@@ -355,8 +358,8 @@ class DashboardProvider with ChangeNotifier {
             '${upcomingShifts.join(',')}|${startTime.hour}:${startTime.minute}|${endTime.hour}:${endTime.minute}';
         if (signature != _scheduledShiftsSignature) {
           _scheduledShiftsSignature = signature;
-          unawaited(_scheduleShiftNotifications(
-              upcomingShifts, startTime, endTime));
+          unawaited(
+              _scheduleShiftNotifications(upcomingShifts, startTime, endTime));
         }
       }
 
@@ -1148,10 +1151,20 @@ class DashboardProvider with ChangeNotifier {
       File? attendanceSelfie,
       String offlineRequestId = "",
       DateTime? recordedAt}) async {
+    final clockService = DeviceClockService();
+    DeviceClockCheck clockCheck;
+    try {
+      clockCheck = await clockService.check();
+    } finally {
+      clockService.dispose();
+    }
+    if (clockCheck.status == DeviceClockStatus.incorrect) {
+      throw translate('device_clock.mismatch_message');
+    }
+
     Preferences preferences = Preferences();
     var uri =
         Uri.parse(await preferences.getAppUrl() + Constant.ATTENDANCE_URL);
-    print(identifier);
 
     String token = await preferences.getToken();
 
@@ -1167,9 +1180,9 @@ class DashboardProvider with ChangeNotifier {
 
     final shouldSendCoordinates = type == "wifi" || shouldEnforce;
     final latitude =
-        shouldSendCoordinates ? locationStatus['latitude'].toString() : "";
+        shouldSendCoordinates ? locationStatus['latitude'].toString() : "0";
     final longitude =
-        shouldSendCoordinates ? locationStatus['longitude'].toString() : "";
+        shouldSendCoordinates ? locationStatus['longitude'].toString() : "0";
 
     final deviceDetails = await AppDeviceInfo.getDetails();
     final body = {
@@ -1204,11 +1217,8 @@ class DashboardProvider with ChangeNotifier {
       final streamedResponse = await request.send();
       response = await http.Response.fromStream(streamedResponse);
     } else {
-      final http.Client client = LoggingMiddleware(http.Client());
-      response = await client.post(uri, headers: headers, body: body);
+      response = await http.post(uri, headers: headers, body: body);
     }
-
-    log(response.body.toString());
 
     final responseData = json.decode(response.body);
 

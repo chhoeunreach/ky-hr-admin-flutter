@@ -91,7 +91,9 @@ class _RepairPriceDetailView extends StatelessWidget {
           ),
         ),
         body: !provider.canView
-            ? _buildAccessDenied(context, provider)
+            ? provider.serviceLoadingState == RepairLoadingState.loading
+                ? const Center(child: CircularProgressIndicator())
+                : _buildAccessDenied(context, provider)
             : LayoutBuilder(
                 builder: (context, constraints) {
                   final isTablet = constraints.maxWidth >= 600;
@@ -159,12 +161,7 @@ class _RepairPriceDetailView extends StatelessWidget {
               ),
               icon: const Icon(Icons.refresh_rounded, size: 18),
               label: const Text('ព្យាយាមម្ដងទៀត / Retry'),
-              onPressed: () async {
-                await provider.loadWebPermissions();
-                if (provider.canView) {
-                  provider.initServiceDetailPage();
-                }
-              },
+              onPressed: provider.initServiceDetailPage,
             ),
           ],
         ),
@@ -251,6 +248,14 @@ class _RepairPriceDetailView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (provider.canUpdatePrices && !provider.canViewCost)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 4, 14, 8),
+              child: Text(
+                translate('repair_screen.price_edit_requires_cost_access'),
+                style: TextStyle(color: enterprise.text, fontSize: 12),
+              ),
+            ),
           // Device Info Card Banner
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -455,13 +460,13 @@ class _RepairPriceDetailView extends StatelessWidget {
           separatorBuilder: (_, __) => const SizedBox(height: 8),
           itemBuilder: (context, index) {
             final service = provider.services[index];
-            final isSelected =
-                isTablet && provider.selectedService?.id == service.id;
+            final isSelected = isTablet &&
+                provider.selectedService?.priceKey == service.priceKey;
 
             return RepairServiceCard(
               service: service,
               canViewCost: provider.canViewCost,
-              canManagePrices: provider.canUpdatePrices,
+              canManagePrices: provider.canEditServicePrice(service),
               isSelected: isSelected,
               onTap: () {
                 provider.selectService(service);
@@ -471,12 +476,12 @@ class _RepairPriceDetailView extends StatelessWidget {
                     device: device,
                     service: service,
                     canViewCost: provider.canViewCost,
-                    canManagePrices: provider.canUpdatePrices,
+                    canManagePrices: provider.canEditServicePrice(service),
                     onPriceUpdated: provider.saveServicePrice,
                   );
                 }
               },
-              onEditPrice: provider.canUpdatePrices
+              onEditPrice: provider.canEditServicePrice(service)
                   ? () {
                       RepairEditPriceSheet.show(
                         context,
@@ -537,7 +542,7 @@ class _RepairPriceDetailView extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   RepairStatusBadge(status: service.availabilityStatus),
-                  if (provider.canUpdatePrices) ...[
+                  if (provider.canEditServicePrice(service)) ...[
                     const SizedBox(height: 8),
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(

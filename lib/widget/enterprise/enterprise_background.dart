@@ -2,12 +2,12 @@ import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:cnattendance/theme/app_theme_mode.dart';
+import 'package:cnattendance/theme/royal_colors.dart';
 import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:flutter/material.dart';
 
 class PremiumBackground extends StatefulWidget {
   final Widget child;
-
   const PremiumBackground({Key? key, required this.child}) : super(key: key);
 
   @override
@@ -25,7 +25,10 @@ class _PremiumBackgroundState extends State<PremiumBackground> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    precacheImage(_worldMapProvider, context);
+    final theme = EnterpriseTheme.of(context);
+    if (!theme.isKhmerHeritage && !theme.isRoyalBlueGold) {
+      precacheImage(_worldMapProvider, context);
+    }
   }
 
   @override
@@ -41,22 +44,24 @@ class _PremiumBackgroundState extends State<PremiumBackground> {
             progress: _staticProgress,
           ),
         ),
-        Positioned.fill(
-          child: RepaintBoundary(
-            child: Opacity(
-              opacity: recipe.mapOpacity,
-              child: Image(
-                image: _worldMapProvider,
-                fit: BoxFit.cover,
-                color: recipe.mapTint,
-                colorBlendMode: BlendMode.softLight,
-                filterQuality: FilterQuality.low,
-                gaplessPlayback: true,
+        if (recipe.mapOpacity > 0)
+          Positioned.fill(
+            child: RepaintBoundary(
+              child: Opacity(
+                opacity: recipe.mapOpacity,
+                child: Image(
+                  image: _worldMapProvider,
+                  fit: BoxFit.cover,
+                  color: recipe.mapTint,
+                  colorBlendMode: BlendMode.softLight,
+                  filterQuality: FilterQuality.low,
+                  gaplessPlayback: true,
+                ),
               ),
             ),
           ),
-        ),
-        Positioned.fill(child: _BlurEffectsLayer(recipe: recipe)),
+        if (!enterprise.isRoyalBlueGold)
+          Positioned.fill(child: _BlurEffectsLayer(recipe: recipe)),
         widget.child,
       ],
     );
@@ -87,16 +92,20 @@ class _AnimatedPremiumLayers extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final begin = Alignment.lerp(
-      Alignment.topLeft,
-      Alignment.topRight,
-      progress,
-    )!;
-    final end = Alignment.lerp(
-      Alignment.bottomRight,
-      Alignment.bottomLeft,
-      progress,
-    )!;
+    final begin = enterprise.isRoyalBlueGold
+        ? Alignment.topCenter
+        : Alignment.lerp(
+            Alignment.topLeft,
+            Alignment.topRight,
+            progress,
+          )!;
+    final end = enterprise.isRoyalBlueGold
+        ? Alignment.bottomCenter
+        : Alignment.lerp(
+            Alignment.bottomRight,
+            Alignment.bottomLeft,
+            progress,
+          )!;
     final glowShift = (progress - 0.5) * 2;
 
     return Stack(
@@ -104,12 +113,14 @@ class _AnimatedPremiumLayers extends StatelessWidget {
         Positioned.fill(
           child: DecoratedBox(
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: begin,
-                end: end,
-                colors: recipe.gradientColors,
-                stops: const [0, 0.34, 0.70, 1],
-              ),
+              gradient: enterprise.layout.background != null
+                  ? enterprise.pageGradient
+                  : LinearGradient(
+                      begin: begin,
+                      end: end,
+                      colors: recipe.gradientColors,
+                      stops: const [0, 0.34, 0.70, 1],
+                    ),
             ),
           ),
         ),
@@ -554,18 +565,18 @@ class _PremiumBackgroundRecipe {
       case AppThemeMode.light:
         return _recipe(
           colors: const [
-            Color(0xffedf6ff),
-            Color(0xffc7dcff),
-            Color(0xffeaf3ff),
-            Color(0xfff8fbff),
+            Color(0xff04122e),
+            Color(0xff0b2f6b),
+            Color(0xff1e5bb8),
+            Color(0xffa8c8f0),
           ],
-          mapTint: const Color(0xff60a5fa),
-          mapOpacity: 0.11,
-          glow: const Color(0xff60a5fa),
-          accent: const Color(0xff1d4ed8),
-          wave: const Color(0xff2563eb),
+          mapTint: const Color(0xff5eb1ff),
+          mapOpacity: 0.12,
+          glow: const Color(0xff0066ff),
+          accent: const Color(0xff5eb1ff),
+          wave: const Color(0xff3d8bff),
           detail: _BackgroundDetailStyle.bubbles,
-          detailColor: const Color(0xff3b82f6),
+          detailColor: const Color(0xff7dd3ff),
           light: true,
         );
       case AppThemeMode.dark:
@@ -732,18 +743,45 @@ class _PremiumBackgroundRecipe {
       case AppThemeMode.rosePink:
         return _recipe(
           colors: const [
-            Color(0xff881337),
-            Color(0xffbe123c),
-            Color(0xfff43f5e),
-            Color(0xff3b0718),
+            Color(0xff880e4f),
+            Color(0xffc2185b),
+            Color(0xffe91e63),
+            Color(0xffad1457),
           ],
-          mapTint: const Color(0xffff8aaa),
+          mapTint: const Color(0xfff8bbd0),
           mapOpacity: 0.12,
-          glow: const Color(0xffe11d48),
-          accent: const Color(0xffffb3c7),
-          wave: const Color(0xffff8aaa),
+          glow: const Color(0xffe91e63),
+          accent: const Color(0xffff80ab),
+          wave: const Color(0xfff8bbd0),
           detail: _BackgroundDetailStyle.flowers,
-          detailColor: const Color(0xffffb3c7),
+          detailColor: const Color(0xffff80ab),
+        );
+      case AppThemeMode.royalBlueGold:
+        return _recipe(
+          colors: RoyalColors.background,
+          mapTint: RoyalColors.skyBlue,
+          mapOpacity: 0,
+          glow: RoyalColors.electricBlue,
+          accent: RoyalColors.gold,
+          wave: RoyalColors.darkGold,
+          detail: _BackgroundDetailStyle.flowers,
+          detailColor: RoyalColors.gold,
+        );
+      case AppThemeMode.khmerHeritage:
+        return _recipe(
+          colors: const [
+            Color(0xff611b35),
+            Color(0xff390f24),
+            Color(0xff2c0a1a),
+            Color(0xff210814),
+          ],
+          mapTint: const Color(0xffe3b877),
+          mapOpacity: 0,
+          glow: const Color(0xff862b48),
+          accent: const Color(0xffedc478),
+          wave: const Color(0xff943f58),
+          detail: _BackgroundDetailStyle.flowers,
+          detailColor: const Color(0xffe3b877),
         );
     }
   }

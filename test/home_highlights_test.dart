@@ -7,6 +7,8 @@ import 'package:cnattendance/data/source/datastore/preferences.dart';
 import 'package:cnattendance/features/home_highlights/home_highlight_api.dart';
 import 'package:cnattendance/features/home_highlights/home_highlights_screen.dart';
 import 'package:cnattendance/models/home_highlight.dart';
+import 'package:cnattendance/theme/app_theme_data.dart';
+import 'package:cnattendance/theme/app_theme_mode.dart';
 import 'package:cnattendance/widget/homescreen/monthly_attendance_summary.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -191,6 +193,48 @@ void main() {
     expect(find.text('Highlight'), findsNothing);
     expect(find.text('Late & Bonus'), findsOneWidget);
   });
+
+  for (final mode in AppThemeMode.values) {
+    testWidgets('highlight history and details are readable in ${mode.name}',
+        (tester) async {
+      final api = HomeHighlightApi(
+        preferences: _Prefs(),
+        client: MockClient((_) async => http.Response(
+            jsonEncode({
+              'data': [_highlightJson()],
+              'meta': {'current_page': 1, 'last_page': 1, 'total': 1},
+            }),
+            200)),
+      );
+      addTearDown(api.dispose);
+      await tester.pumpWidget(MaterialApp(
+        theme: AppThemeData.themeData(mode),
+        home: HomeHighlightsScreen(api: api),
+      ));
+      await tester.pumpAndSettle();
+
+      void expectReadableTitle(String title) {
+        final appBar = tester.widget<AppBar>(find.byType(AppBar));
+        final text = tester.widget<Text>(find.text(title));
+        final luminances = [
+          appBar.backgroundColor!.computeLuminance(),
+          text.style!.color!.computeLuminance(),
+        ]..sort();
+        expect((luminances.last + 0.05) / (luminances.first + 0.05),
+            greaterThanOrEqualTo(4.5));
+      }
+
+      expectReadableTitle('Home Highlights');
+      await tester.tap(find.text('Company wins award'));
+      await tester.pumpAndSettle();
+      expectReadableTitle('Highlight');
+      expect(find.byType(Html), findsOneWidget);
+
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+      expect(find.byType(HomeHighlightsScreen), findsOneWidget);
+    });
+  }
 
   test('plain body strips markup for carousel snippets', () {
     final highlight = HomeHighlight.fromJson(_highlightJson());

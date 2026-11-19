@@ -15,6 +15,7 @@ import 'package:cnattendance/widget/attendance_bottom_sheet.dart';
 import 'package:cnattendance/widget/homescreen/monthly_attendance_summary.dart';
 import 'package:cnattendance/widget/customalertdialog.dart';
 import 'package:cnattendance/widget/customnfcdialog.dart';
+import 'package:cnattendance/widget/device_clock_gate.dart';
 import 'package:cnattendance/widget/profile/note_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -32,14 +33,26 @@ import 'package:webview_flutter/webview_flutter.dart';
 
 import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
 import 'package:cnattendance/model/home_banner_config.dart';
+import 'package:cnattendance/theme/theme_layout.dart';
 import 'home_model_view.dart';
+import 'royal_dashboard_widgets.dart';
 import '../customqrscanner.dart';
 
 class CheckAttendance extends StatefulWidget {
   final PersistentTabController? controller;
   final HomeBannerConfig? bannerConfig;
+  final Map<LayoutItem, Widget> otherSections;
+  final bool dashboardLoading, dashboardError;
+  final VoidCallback? onRetryDashboard;
 
-  const CheckAttendance({Key? key, this.controller, this.bannerConfig})
+  const CheckAttendance(
+      {Key? key,
+      this.controller,
+      this.bannerConfig,
+      this.otherSections = const {},
+      this.dashboardLoading = false,
+      this.dashboardError = false,
+      this.onRetryDashboard})
       : super(key: key);
 
   @override
@@ -61,6 +74,7 @@ class CheckAttendanceState extends State<CheckAttendance>
   bool _foreground = true;
   bool _animateAttendance = false;
   bool _isRefreshingZone = false;
+  bool _attendanceInFlight = false;
   double? _zoneDistanceMeters;
   String? _zoneError;
   DateTime? _lastZoneRefreshAt;
@@ -84,12 +98,19 @@ class CheckAttendanceState extends State<CheckAttendance>
         !(ModalRoute.of(context)?.isCurrent ?? true)) return;
     final now = DateTime.now();
     _clockNow.value = now;
-    final dayChanged =
-        now.year != _now.year || now.month != _now.month || now.day != _now.day;
+    final royal = EnterpriseTheme.of(context).isRoyalBlueGold;
+    final current = royal ? royalLocalTime(now) : now;
+    final previous = royal ? royalLocalTime(_now) : _now;
+    final dayChanged = current.year != previous.year ||
+        current.month != previous.month ||
+        current.day != previous.day;
     if (dayChanged) {
       setState(() => _now = now);
-      unawaited(
-          context.read<DashboardProvider>().refreshMonthlyAttendanceSummary());
+      final provider = context.read<DashboardProvider>();
+      if (provider.features['attendance'] == '1') {
+        unawaited(provider.refreshMonthlyAttendanceSummary());
+        if (royal) widget.onRetryDashboard?.call();
+      }
     }
   }
 
@@ -192,6 +213,18 @@ class CheckAttendanceState extends State<CheckAttendance>
           _lastZoneRefreshAt = null;
         });
       }
+      if (force &&
+          EnterpriseTheme.of(context).isRoyalBlueGold &&
+          provider.isLocationEnabled) {
+        setState(() => _isRefreshingZone = true);
+        try {
+          await provider.getCheckInStatus();
+        } catch (error) {
+          if (mounted) _showAttendanceWarning(error.toString());
+        } finally {
+          if (mounted) setState(() => _isRefreshingZone = false);
+        }
+      }
       return;
     }
 
@@ -231,8 +264,20 @@ class CheckAttendanceState extends State<CheckAttendance>
 
   Future<bool> _ensureWithinScanDistanceIfPossible() async {
     final provider = context.read<DashboardProvider>();
+    final royal = EnterpriseTheme.of(context).isRoyalBlueGold;
     if (!provider.isWorkspaceRadiusEnabled) {
-      return true;
+      if (!royal || !provider.isLocationEnabled) return true;
+      try {
+        if (await provider.getCheckInStatus()) return mounted;
+      } catch (error) {
+        if (mounted) _showAttendanceWarning(error.toString());
+        return false;
+      }
+      if (mounted) {
+        _showAttendanceWarning(
+            translate('attendance_messages.gps_unavailable_warning'));
+      }
+      return false;
     }
     try {
       final distance = await provider.getWorkspaceDistanceMeters(
@@ -240,6 +285,7 @@ class CheckAttendanceState extends State<CheckAttendance>
       );
       if (!mounted) return false;
 
+      if (royal) setState(() => _zoneDistanceMeters = distance);
       final accuracy = provider.currentLocationAccuracyMeters;
       if (accuracy != null &&
           accuracy > DashboardProvider.scanAttendanceMaxAccuracyMeters) {
@@ -256,7 +302,11 @@ class CheckAttendanceState extends State<CheckAttendance>
       }
 
       if (distance == null) {
-        return true;
+        if (royal) {
+          _showAttendanceWarning(
+              translate('attendance_messages.gps_unavailable_warning'));
+        }
+        return !royal;
       }
 
       final allowedDistance =
@@ -574,9 +624,9 @@ class CheckAttendanceState extends State<CheckAttendance>
     }
   }
 
-  Future<void> scanQr() async {
+  Future<void> scanQr({bool royal = false}) async {
     final ok = await _ensureWithinScanDistanceIfPossible();
-    if (!ok) return;
+    if (!ok || !mounted) return;
 
     final result = await showCustomQrScanner(context);
     if (result != null && result.trim().isNotEmpty) {
@@ -587,13 +637,30 @@ class CheckAttendanceState extends State<CheckAttendance>
       final selfie = provider.isAttendanceSelfieEnabled
           ? await _captureAttendanceSelfie()
           : null;
+      if (!mounted) return;
       if (provider.isAttendanceSelfieEnabled && selfie == null) {
         showToast(translate('attendance_messages.selfie_required'));
         return;
       }
 
-      if (provider.isNoteEnabled) {
-        showModalBottomSheet(
+      if (provider.isNoteEnabled && royal) {
+        final note = await showModalBottomSheet<String>(
+          context: context,
+          useRootNavigator: true,
+          isScrollControlled: true,
+          builder: (context) => NoteBottomSheet(
+            result,
+            'qr',
+            attendanceSelfie: selfie,
+            returnNote: true,
+          ),
+        );
+        if (mounted && note != null) {
+          await onAttendanceVerify('qr', result,
+              attendanceSelfie: selfie, note: note);
+        }
+      } else if (provider.isNoteEnabled) {
+        await showModalBottomSheet(
             context: context,
             useRootNavigator: true,
             isScrollControlled: true,
@@ -605,7 +672,7 @@ class CheckAttendanceState extends State<CheckAttendance>
               );
             });
       } else {
-        onAttendanceVerify("qr", result, attendanceSelfie: selfie);
+        await onAttendanceVerify("qr", result, attendanceSelfie: selfie);
       }
     }
   }
@@ -625,81 +692,65 @@ class CheckAttendanceState extends State<CheckAttendance>
     return distance <= radiusInMeters;
   }
 
-  void onAttendanceVerify(String type, String identifier,
-      {File? attendanceSelfie}) async {
+  Future<void> onAttendanceVerify(String type, String identifier,
+      {File? attendanceSelfie, String note = ''}) async {
+    if (!mounted) return;
     final provider = context.read<DashboardProvider>();
+    if (type == 'qr' || type == 'nfc') {
+      final ok = await _ensureWithinScanDistanceIfPossible();
+      if (!ok || !mounted) return;
+    }
+
     final syncService = AttendanceSyncService();
     final offlineRequestId = syncService.createOfflineRequestId();
     final recordedAt = DateTime.now();
+    String message;
+    EasyLoading.show(
+      status: translate('loader.requesting'),
+      maskType: EasyLoadingMaskType.black,
+    );
     try {
-      if (type == "qr" || type == "nfc") {
-        final ok = await _ensureWithinScanDistanceIfPossible();
-        if (!ok) return;
-      }
-
-      EasyLoading.show(
-          status: translate('loader.requesting'),
-          maskType: EasyLoadingMaskType.black);
       final response = await provider.verifyAttendanceApi(
         type,
-        "",
+        note,
         identifier: identifier,
         attendanceSelfie: attendanceSelfie,
         offlineRequestId: offlineRequestId,
         recordedAt: recordedAt,
       );
-      if (!mounted) return;
-      EasyLoading.dismiss(animation: true);
-
-      showDialog(
-        context: context,
-        builder: (context) {
-          return Dialog(
-            child: CustomAlertDialog(response.message),
+      message = response.message;
+    } catch (error) {
+      message = error.toString();
+      if (_isOfflineQueueableError(error)) {
+        try {
+          await _queueOfflineAttendance(
+            syncService: syncService,
+            provider: provider,
+            type: type,
+            identifier: identifier,
+            note: note,
+            attendanceSelfie: attendanceSelfie,
+            offlineRequestId: offlineRequestId,
+            recordedAt: recordedAt,
           );
-        },
-      );
-    } catch (e) {
-      final message = e.toString();
-      if (_isOfflineQueueableError(e)) {
-        await _queueOfflineAttendance(
-          syncService: syncService,
-          provider: provider,
-          type: type,
-          identifier: identifier,
-          note: "",
-          attendanceSelfie: attendanceSelfie,
-          offlineRequestId: offlineRequestId,
-          recordedAt: recordedAt,
-        );
-        if (!mounted) return;
-        EasyLoading.dismiss(animation: true);
-        showDialog(
-          context: context,
-          builder: (context) {
-            return Dialog(
-              child: CustomAlertDialog(
-                translate('attendance_messages.saved_offline'),
-              ),
-            );
-          },
-        );
-        return;
+          message = translate('attendance_messages.saved_offline');
+        } catch (queueError) {
+          message = queueError.toString();
+        }
+      } else {
+        final extra =
+            await provider.buildWorkspaceDistanceInfoIfNeeded(message);
+        if (extra != null) message = '$message\n\n$extra';
       }
-
-      final extra = await provider.buildWorkspaceDistanceInfoIfNeeded(message);
-      if (!mounted) return;
+    } finally {
       EasyLoading.dismiss(animation: true);
-      showDialog(
-        context: context,
-        builder: (context) {
-          return Dialog(
-            child: CustomAlertDialog(
-                extra == null ? message : '$message\n\n$extra'),
-          );
-        },
-      );
     }
+
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (_) => Dialog(child: CustomAlertDialog(message)),
+    );
   }
 
   bool _isOfflineQueueableError(Object error) {
@@ -741,10 +792,31 @@ class CheckAttendanceState extends State<CheckAttendance>
     );
   }
 
-  Future<void> _handleAttendanceTap(String attandanceType) async {
-    if (attandanceType == "QR") {
-      scanQr();
-    } else if (attandanceType == "NFC") {
+  Future<void> _handleAttendanceTap(String attendanceType) async {
+    if (_attendanceInFlight || !mounted) return;
+    final royal = EnterpriseTheme.of(context).isRoyalBlueGold;
+    if (royal) setState(() => _attendanceInFlight = true);
+    try {
+      await _openAttendance(attendanceType, royal: royal);
+    } catch (error) {
+      if (mounted) _showAttendanceWarning(error.toString());
+    } finally {
+      if (royal && mounted) setState(() => _attendanceInFlight = false);
+    }
+  }
+
+  Future<void> _openAttendance(String attandanceType,
+      {required bool royal}) async {
+    final clockOk = await ensureDeviceClockAllowsAction(context);
+    if (!clockOk || !mounted) return;
+
+    if (attandanceType.toUpperCase() == "QR") {
+      if (royal &&
+          !context.read<DashboardProvider>().attendanceMethods.any(
+                (method) => method.toLowerCase() == 'qr',
+              )) return;
+      await scanQr(royal: royal);
+    } else if (attandanceType.toUpperCase() == "NFC") {
       final isAvailable = await NfcManager.instance.isAvailable();
       if (!isAvailable) {
         showToast(translate('attendance_messages.nfc_not_present'));
@@ -752,7 +824,7 @@ class CheckAttendanceState extends State<CheckAttendance>
       }
       showNFCScanner();
     } else {
-      showModalBottomSheet(
+      await showModalBottomSheet(
           context: context,
           useRootNavigator: true,
           isScrollControlled: true,
@@ -1079,7 +1151,8 @@ class CheckAttendanceState extends State<CheckAttendance>
             ],
           );
 
-    if (dashboardProvider.effectiveWorkspaceRadiusMeters != null &&
+    if (!enterprise.isRoyalBlueGold &&
+        dashboardProvider.effectiveWorkspaceRadiusMeters != null &&
         !_isRefreshingZone &&
         _lastZoneRefreshAt == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1099,9 +1172,14 @@ class CheckAttendanceState extends State<CheckAttendance>
       isInZone: isInZone,
       isRefreshingZone: _isRefreshingZone,
       attendanceList: attendanceList,
+      scannerBusy: _attendanceInFlight,
+      dashboardLoading: widget.dashboardLoading,
+      dashboardError: widget.dashboardError,
+      onRetryDashboard: widget.onRetryDashboard,
       mapWidget: mapWidget,
       controller: widget.controller,
       bannerConfig: widget.bannerConfig,
+      otherSections: widget.otherSections,
     );
   }
 }

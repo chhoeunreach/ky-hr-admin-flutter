@@ -6,10 +6,12 @@ class EmployeeTodayAttendance {
   });
 
   factory EmployeeTodayAttendance.fromJson(dynamic json) {
+    final minutes = num.tryParse('${json['productive_time_in_min']}');
     return EmployeeTodayAttendance(
         checkInAt: json['check_in_at']?.toString() ?? "",
         checkOutAt: json['check_out_at']?.toString() ?? "",
-        productionTime: json['productive_time_in_min'] ?? 0);
+        productionTime:
+            minutes != null && minutes.isFinite ? minutes.toInt() : 0);
   }
 
   int productionTime;

@@ -1,34 +1,23 @@
 import 'package:cnattendance/features/community/social_feed_screen.dart';
-import 'dart:io';
-import 'package:cnattendance/features/pos/pages/pos_workspace_screen.dart';
 import 'dart:ui';
 
-import 'package:cnattendance/data/source/network/model/dashboard/User.dart';
 import 'package:cnattendance/data/source/datastore/preferences.dart';
 import 'package:cnattendance/provider/dashboardprovider.dart';
 import 'package:cnattendance/provider/prefprovider.dart';
-import 'package:cnattendance/screen/dashboard/chatlistscreen.dart';
 import 'package:cnattendance/screen/dashboard/homescreen.dart';
 import 'package:cnattendance/screen/dashboard/leavescreen.dart';
 import 'package:cnattendance/screen/dashboard/attendancescreen.dart';
 import 'package:cnattendance/screen/dashboard/morescreen.dart';
-import 'package:cnattendance/screen/links/link_list_screen.dart';
-import 'package:cnattendance/screen/loanmanagement/loancalculatescreen.dart';
-import 'package:cnattendance/screen/profile/front_side_preview_page.dart';
-import 'package:cnattendance/screen/sell_out_report_screen.dart';
-import 'package:cnattendance/screen/social_rewards/social_submission_screen.dart';
 import 'package:cnattendance/theme/enterprise_theme.dart';
+import 'package:cnattendance/theme/theme_layout.dart';
+import 'package:cnattendance/widget/dashboard_drawer.dart';
 import 'package:cnattendance/widget/dashboard_drawer_scope.dart';
 import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
-import 'package:get/get.dart';
-import 'package:http/http.dart' as http;
-import 'package:path_provider/path_provider.dart';
+import 'package:cnattendance/theme/royal_colors.dart';
 import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
 import 'package:provider/provider.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:cnattendance/features/repair_price/pages/repair_device_page.dart';
 import 'package:cnattendance/features/repair_price/providers/repair_price_provider.dart';
 
@@ -86,160 +75,48 @@ class DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final enterprise = EnterpriseTheme.of(context);
-    final employeeId =
-        int.tryParse(context.watch<PrefProvider>().userId.trim()) ?? 0;
-    final dashboardProvider = context.watch<DashboardProvider>();
-    final branchName = dashboardProvider.branch.trim();
-    final paymentQrCodes = dashboardProvider.paymentQrCodes;
-    final drawerWidth = (MediaQuery.sizeOf(context).width * 0.76).clamp(
-      236.0,
-      280.0,
-    );
+    const drawer = DashboardDrawer();
     return Scaffold(
       key: _scaffoldKey,
-      drawer: Drawer(
-        width: drawerWidth,
-        backgroundColor: enterprise.surface,
-        child: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _paymentQrHeader(
-                context,
-                enterprise,
-                branchName.isEmpty ? 'Branch' : branchName,
-                paymentQrCodes,
-              ),
-              _drawerSectionLabel(enterprise, 'Services'),
-              _drawerMenuItem(enterprise,
-                  icon: Icons.dashboard_outlined,
-                  label: translate('pos.dashboard'),
-                  permissionKey: 'sell-staff-report', onTap: () {
-                Navigator.of(context).pop();
-                Get.to(() => const PosWorkspaceScreen());
-              }),
-              _sellOutDrawerItem(
-                context,
-                enterprise,
-                translate('home_screen.service_sell'),
-                Icons.point_of_sale,
-              ),
-              _sellOutDrawerItem(
-                context,
-                enterprise,
-                translate('home_screen.service_sell_sim'),
-                Icons.sim_card,
-                serviceTypeValue: 'SellSim',
-              ),
-              _sellOutDrawerItem(
-                context,
-                enterprise,
-                translate('home_screen.service_material'),
-                Icons.inventory_2_outlined,
-              ),
-              _sellOutDrawerItem(
-                context,
-                enterprise,
-                translate('home_screen.service_iron'),
-                Icons.local_laundry_service,
-              ),
-              _sellOutDrawerItem(
-                context,
-                enterprise,
-                translate('home_screen.service_repair'),
-                Icons.build_circle_outlined,
-              ),
-              _sellOutDrawerItem(
-                context,
-                enterprise,
-                translate('home_screen.service_buy_in'),
-                Icons.add_shopping_cart,
-              ),
-              _sellOutDrawerItem(
-                context,
-                enterprise,
-                translate('home_screen.service_icloud_cus'),
-                Icons.cloud_outlined,
-                serviceTypeValue: 'iCloud Cus',
-              ),
-              _drawerDivider(enterprise),
-              _drawerSectionLabel(enterprise, 'Tools'),
-              _drawerMenuItem(enterprise,
-                  icon: Icons.dynamic_feed_outlined,
-                  label: translate('community.social_feed'),
-                  permissionKey: 'social-feed', onTap: () {
-                Navigator.of(context).pop();
-                Get.to(() => const SocialFeedScreen());
-              }),
-              _drawerMenuItem(
-                enterprise,
-                icon: Icons.calculate_outlined,
-                label: translate('loan_calculate_screen.loan_calculator'),
-                permissionKey: 'loan',
-                onTap: () {
-                  Navigator.of(context).pop();
-                  Get.to(() => LoanCalculateScreen());
-                },
-              ),
-              _drawerMenuItem(
-                enterprise,
-                icon: Icons.campaign_outlined,
-                label: translate('dashboard_screen.social_rewards'),
-                permissionKey: 'social-rewards',
-                onTap: () {
-                  Navigator.of(context).pop();
-                  Get.to(
-                    () => SocialSubmissionScreen(employeeId: employeeId),
-                  );
-                },
-              ),
-              _drawerMenuItem(
-                enterprise,
-                icon: Icons.badge_rounded,
-                label: translate('dashboard_screen.view_my_card'),
-                permissionKey: 'id-card',
-                onTap: () {
-                  Navigator.of(context).pop();
-                  Get.to(() => const FrontSidePreviewPage());
-                },
-              ),
-              _drawerMenuItem(
-                enterprise,
-                icon: Icons.link,
-                label: translate('more_screen.links'),
-                permissionKey: 'links',
-                onTap: () {
-                  Navigator.of(context).pop();
-                  Get.to(() => const LinkListScreen());
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-      body: DashboardDrawerScope(
-        openDrawer: () {
-          _scaffoldKey.currentState?.openDrawer();
-        },
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            if (constraints.maxWidth >= 720) {
-              return _buildRailLayout(context, constraints.maxWidth);
-            }
-            return _buildMobileTabs(context);
+      drawer: enterprise.layout.menuOnRight ? null : drawer,
+      endDrawer: enterprise.layout.menuOnRight ? drawer : null,
+      body: ChangeNotifierProvider(
+        create: (_) => RepairPriceProvider(),
+        child: DashboardDrawerScope(
+          openDrawer: () {
+            _openDashboardDrawer(enterprise.layout.menuOnRight);
           },
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              if (constraints.maxWidth >= 720) {
+                return _buildRailLayout(context, constraints.maxWidth);
+              }
+              return _buildMobileTabs(context);
+            },
+          ),
         ),
       ),
     );
   }
 
   Widget _buildRailLayout(BuildContext context, double width) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final enterprise = EnterpriseTheme.of(context);
+    final sidebarFg = sidebarForeground(enterprise);
     final extended = _railExpanded ?? (width >= 1100);
-    final repairProvider = Provider.of<RepairPriceProvider>(context);
-    final bool showRepairTab = repairProvider.canView;
     final features = context.watch<DashboardProvider>().features;
+    final hasSocialFeed = features['social-feed'] == '1';
+    final repairIndex = hasSocialFeed ? 2 : 1;
 
+    final railItems = [
+      LayoutItem.home,
+      if (hasSocialFeed) LayoutItem.social,
+      LayoutItem.repair,
+      if (LayoutItem.attendance.allowed(features)) LayoutItem.attendance,
+      LayoutItem.more,
+    ];
+    final visibleRail = enterprise.layout.visibleTabIndices(railItems);
+    final selectedRail = visibleRail.indexOf(_selectedRailIndex);
+    final showDrawerButton = enterprise.layout.showMenuButton;
     final destinations = <NavigationRailDestination>[
       NavigationRailDestination(
         icon: const Icon(Icons.dashboard_outlined),
@@ -252,12 +129,11 @@ class DashboardScreenState extends State<DashboardScreen> {
           selectedIcon: const Icon(Icons.dynamic_feed),
           label: Text(translate('community.social_feed')),
         ),
-      if (showRepairTab)
-        NavigationRailDestination(
-          icon: const Icon(Icons.build_circle_outlined),
-          selectedIcon: const Icon(Icons.build_circle),
-          label: Text(translate('dashboard_screen.repair_list')),
-        ),
+      NavigationRailDestination(
+        icon: const Icon(Icons.build_circle_outlined),
+        selectedIcon: const Icon(Icons.build_circle),
+        label: Text(translate('dashboard_screen.repair_list')),
+      ),
       if (features["attendance"] == "1")
         NavigationRailDestination(
           icon: const Icon(Icons.analytics_outlined),
@@ -276,7 +152,10 @@ class DashboardScreenState extends State<DashboardScreen> {
         SocialFeedScreen(
             showBackButton: false,
             onImmersiveChanged: _handleSocialFeedImmersive),
-      if (showRepairTab) const RepairDevicePage(showBackButton: false),
+      if (_selectedRailIndex == repairIndex)
+        const RepairDevicePage(showBackButton: false)
+      else
+        const SizedBox.shrink(),
       if (features["attendance"] == "1") AttendanceScreen(),
       MoreScreen(),
     ];
@@ -288,22 +167,22 @@ class DashboardScreenState extends State<DashboardScreen> {
       children: [
         Container(
           decoration: BoxDecoration(
-            color: colorScheme.surface,
+            gradient: enterprise.pageGradient,
             border: Border(
               right: BorderSide(
-                color: colorScheme.outlineVariant.withValues(alpha: 0.72),
+                color: sidebarFg.withValues(alpha: 0.14),
               ),
             ),
             boxShadow: [
               BoxShadow(
-                color: colorScheme.shadow.withValues(alpha: 0.08),
-                blurRadius: 18,
-                offset: const Offset(8, 0),
+                color: Colors.black.withValues(alpha: 0.12),
+                blurRadius: 20,
+                offset: const Offset(7, 0),
               ),
             ],
           ),
           child: NavigationRail(
-            selectedIndex: _selectedRailIndex.clamp(0, destinations.length - 1),
+            selectedIndex: selectedRail < 0 ? null : selectedRail,
             extended: extended,
             minWidth: 76,
             minExtendedWidth: 204,
@@ -312,23 +191,22 @@ class DashboardScreenState extends State<DashboardScreen> {
                 ? NavigationRailLabelType.none
                 : NavigationRailLabelType.selected,
             backgroundColor: Colors.transparent,
-            indicatorColor: colorScheme.primaryContainer,
+            indicatorColor: enterprise.accent.withValues(alpha: 0.24),
             indicatorShape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
-            selectedIconTheme:
-                IconThemeData(color: colorScheme.onPrimaryContainer, size: 22),
+            selectedIconTheme: IconThemeData(color: sidebarFg, size: 22),
             selectedLabelTextStyle: TextStyle(
-              color: colorScheme.onSurface,
+              color: sidebarFg,
               fontSize: 12,
               fontWeight: FontWeight.w900,
             ),
             unselectedIconTheme: IconThemeData(
-              color: colorScheme.onSurface.withValues(alpha: 0.62),
+              color: sidebarFg.withValues(alpha: 0.68),
               size: 21,
             ),
             unselectedLabelTextStyle: TextStyle(
-              color: colorScheme.onSurface.withValues(alpha: 0.62),
+              color: sidebarFg.withValues(alpha: 0.68),
               fontSize: 11,
               fontWeight: FontWeight.w700,
             ),
@@ -337,22 +215,24 @@ class DashboardScreenState extends State<DashboardScreen> {
               child: extended
                   ? Row(
                       children: [
-                        if (showRailControls)
+                        if (showRailControls && showDrawerButton)
                           IconButton.filledTonal(
                             tooltip: 'Menu',
                             icon: const Icon(Icons.menu),
                             onPressed: () {
-                              _scaffoldKey.currentState?.openDrawer();
+                              _openDashboardDrawer(
+                                  enterprise.layout.menuOnRight);
                             },
                           ),
-                        if (showRailControls) const SizedBox(width: 10),
+                        if (showRailControls && showDrawerButton)
+                          const SizedBox(width: 10),
                         Expanded(
                           child: Text(
                             'HRKY',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              color: colorScheme.onSurface,
+                              color: sidebarFg,
                               fontSize: 18,
                               fontWeight: FontWeight.w900,
                             ),
@@ -367,23 +247,28 @@ class DashboardScreenState extends State<DashboardScreen> {
                   : Column(
                       children: [
                         if (showRailControls) ...[
-                          IconButton.filledTonal(
-                            tooltip: 'Menu',
-                            icon: const Icon(Icons.menu),
-                            onPressed: () {
-                              _scaffoldKey.currentState?.openDrawer();
-                            },
-                          ),
-                          const SizedBox(height: 8),
+                          if (showDrawerButton) ...[
+                            IconButton.filledTonal(
+                              tooltip: 'Menu',
+                              icon: const Icon(Icons.menu),
+                              onPressed: () {
+                                _openDashboardDrawer(
+                                    enterprise.layout.menuOnRight);
+                              },
+                            ),
+                            const SizedBox(height: 8),
+                          ],
                           _railToggleButton(extended: false),
                         ],
                       ],
                     ),
             ),
-            destinations: destinations,
+            destinations: [
+              for (final index in visibleRail) destinations[index]
+            ],
             onDestinationSelected: (index) {
               setState(() {
-                _selectedRailIndex = index;
+                _selectedRailIndex = visibleRail[index];
               });
             },
           ),
@@ -415,26 +300,34 @@ class DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  void _openDashboardDrawer(bool onRight) {
+    final scaffold = _scaffoldKey.currentState;
+    if (onRight) {
+      scaffold?.openEndDrawer();
+    } else {
+      scaffold?.openDrawer();
+    }
+  }
+
   Widget _buildMobileTabs(BuildContext context) {
     final enterprise = EnterpriseTheme.of(context);
-    final repairProvider = Provider.of<RepairPriceProvider>(context);
-    final bool showRepairTab = repairProvider.canView;
+    final sidebarFg = sidebarForeground(enterprise);
     final features = context.watch<DashboardProvider>().features;
 
-    final tabIds = <String>[];
+    final tabIds = <LayoutItem>[];
     final tabs = <PersistentTabConfig>[];
 
-    void addTab(String id, Widget screen, ItemConfig item) {
+    void addTab(LayoutItem id, Widget screen, ItemConfig item) {
       tabIds.add(id);
       tabs.add(PersistentTabConfig(
         screen: screen,
         item: item,
-        navigatorConfig: _mobileTabNavigatorConfig(id),
+        navigatorConfig: _mobileTabNavigatorConfig(id.name),
       ));
     }
 
     addTab(
-      'home',
+      LayoutItem.home,
       HomeScreen(_controller),
       getItemConfig(
         const Icon(Icons.home_filled),
@@ -443,7 +336,7 @@ class DashboardScreenState extends State<DashboardScreen> {
     );
     if (features["social-feed"] == "1")
       addTab(
-        'social',
+        LayoutItem.social,
         SocialFeedScreen(
             showBackButton: false,
             onImmersiveChanged: _handleSocialFeedImmersive),
@@ -452,27 +345,19 @@ class DashboardScreenState extends State<DashboardScreen> {
           translate('community.social_feed'),
         ),
       );
-    if (showRepairTab)
-      addTab(
-        'repair',
-        const RepairDevicePage(showBackButton: false),
-        getItemConfig(
-          const Icon(Icons.build_circle_outlined),
-          translate('dashboard_screen.repair_list'),
-        ),
-      );
-    if (features["chat"] == "1")
-      addTab(
-        'chat',
-        ChatListScreen(),
-        getItemConfig(
-          const Icon(Icons.chat_bubble),
-          translate('dashboard_screen.chat'),
-        ),
-      );
+    addTab(
+      LayoutItem.repair,
+      const RepairDevicePage(showBackButton: false),
+      getItemConfig(
+        const Icon(Icons.build_circle_outlined),
+        translate(enterprise.isRoyalBlueGold
+            ? 'royal.repair'
+            : 'dashboard_screen.repair_list'),
+      ),
+    );
     if (features["leave-request"] == "1")
       addTab(
-        'leave',
+        LayoutItem.leave,
         LeaveScreen(),
         getItemConfig(
           const Icon(Icons.sick),
@@ -481,7 +366,7 @@ class DashboardScreenState extends State<DashboardScreen> {
       );
     if (features["attendance"] == "1")
       addTab(
-        'attendance',
+        LayoutItem.attendance,
         AttendanceScreen(),
         getItemConfig(
           const Icon(Icons.co_present_outlined),
@@ -489,7 +374,7 @@ class DashboardScreenState extends State<DashboardScreen> {
         ),
       );
     addTab(
-      'more',
+      LayoutItem.more,
       MoreScreen(),
       getItemConfig(
         const Icon(Icons.more),
@@ -503,20 +388,33 @@ class DashboardScreenState extends State<DashboardScreen> {
 
     final activeTabIndex = _controller.index.clamp(0, tabIds.length - 1);
     final activeNavigator =
-        _tabNavigatorKeys[tabIds[activeTabIndex]]?.currentState;
-    final isSocialFeedActive = tabIds[activeTabIndex] == 'social';
+        _tabNavigatorKeys[tabIds[activeTabIndex].name]?.currentState;
+    final isSocialFeedActive = tabIds[activeTabIndex] == LayoutItem.social;
     final immersive = isSocialFeedActive && _socialFeedImmersive;
     final socialDetailOpen =
         isSocialFeedActive && (activeNavigator?.canPop() ?? false);
     final hideMenuButton = immersive || (activeNavigator?.canPop() ?? false);
 
+    final visibleTabs = enterprise.layout.visibleTabIndices(tabIds);
+    final menuOnRight = enterprise.layout.menuOnRight;
+
     return Stack(
       children: [
         PersistentTabView(
           key: ValueKey(
-              'tabs_${features["social-feed"]}_${showRepairTab}_${features["chat"]}_${features["leave-request"]}_${features["attendance"]}'),
+              'tabs_${features["social-feed"]}_${features["leave-request"]}_${features["attendance"]}'),
           controller: _controller,
-          backgroundColor: themedChromeColor(),
+          onTabChanged: (index) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) setState(() {});
+            });
+            if (index != tabIds.indexOf(LayoutItem.repair)) return;
+            final provider = context.read<RepairPriceProvider>();
+            if (provider.deviceLoadingState != RepairLoadingState.initial) {
+              provider.initDevicePage();
+            }
+          },
+          backgroundColor: enterprise.layout.background ?? themedChromeColor(),
           handleAndroidBackButtonPress: true,
           resizeToAvoidBottomInset: true,
           stateManagement: true,
@@ -525,23 +423,39 @@ class DashboardScreenState extends State<DashboardScreen> {
           popActionScreens: PopActionScreensType.all,
           tabs: tabs,
           navBarBuilder: (navBarConfig) {
-            return _EnterpriseFloatingNavBar(navBarConfig: navBarConfig);
+            return DashboardNavigationBar(
+                navBarConfig: navBarConfig, visibleTabs: visibleTabs);
           },
         ),
-        if (!hideMenuButton)
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.only(left: 12, top: 6),
-              child: Material(
-                color: enterprise.surface.withValues(alpha: 0.68),
-                shape: const CircleBorder(),
-                clipBehavior: Clip.antiAlias,
-                child: IconButton(
-                  tooltip: 'Menu',
-                  icon: Icon(Icons.menu, color: enterprise.text),
-                  onPressed: () {
-                    _scaffoldKey.currentState?.openDrawer();
-                  },
+        if (!hideMenuButton &&
+            enterprise.layout.showMenuButton &&
+            tabIds[activeTabIndex] != LayoutItem.more)
+          Positioned(
+            top: 0,
+            left: menuOnRight ? null : 12,
+            right: menuOnRight ? 12 : null,
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Material(
+                  color:
+                      enterprise.colors.backgroundColor.withValues(alpha: 0.84),
+                  shape:
+                      enterprise.isKhmerHeritage || enterprise.isRoyalBlueGold
+                          ? RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(13),
+                              side: BorderSide(color: enterprise.cardBorder),
+                            )
+                          : const CircleBorder(),
+                  clipBehavior: Clip.antiAlias,
+                  child: IconButton(
+                    tooltip:
+                        MaterialLocalizations.of(context).openAppDrawerTooltip,
+                    icon: Icon(Icons.menu, color: sidebarFg),
+                    onPressed: () {
+                      _openDashboardDrawer(enterprise.layout.menuOnRight);
+                    },
+                  ),
                 ),
               ),
             ),
@@ -572,660 +486,15 @@ class DashboardScreenState extends State<DashboardScreen> {
     if (!mounted || _socialFeedImmersive == immersive) return;
     setState(() => _socialFeedImmersive = immersive);
   }
-
-  Widget _sellOutDrawerItem(
-    BuildContext context,
-    EnterpriseTheme enterprise,
-    String serviceType,
-    IconData icon, {
-    String? serviceTypeValue,
-  }) {
-    return _drawerMenuItem(
-      enterprise,
-      icon: icon,
-      label: serviceType,
-      permissionKey: "sell-staff-report",
-      onTap: () {
-        Navigator.of(context).pop();
-        Get.to(() =>
-            SellOutReportScreen(serviceType: serviceTypeValue ?? serviceType));
-      },
-    );
-  }
-
-  Widget _drawerMenuItem(
-    EnterpriseTheme enterprise, {
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-    String? permissionKey,
-  }) {
-    if (permissionKey != null &&
-        context.watch<DashboardProvider>().features[permissionKey] != '1') {
-      return const SizedBox.shrink();
-    }
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: onTap,
-          child: Container(
-            height: 42,
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            child: Row(
-              children: [
-                Container(
-                  width: 30,
-                  height: 30,
-                  decoration: BoxDecoration(
-                    color: enterprise.primary.withValues(alpha: 0.10),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    icon,
-                    color: enterprise.primary.withValues(alpha: 0.92),
-                    size: 17,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: enterprise.text,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-                Icon(
-                  Icons.chevron_right_rounded,
-                  color: enterprise.mutedText.withValues(alpha: 0.62),
-                  size: 18,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _drawerSectionLabel(EnterpriseTheme enterprise, String label) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 6, 18, 5),
-      child: Text(
-        label.toUpperCase(),
-        style: TextStyle(
-          color: enterprise.mutedText.withValues(alpha: 0.72),
-          fontSize: 10,
-          fontWeight: FontWeight.w900,
-          letterSpacing: 0,
-        ),
-      ),
-    );
-  }
-
-  Widget _drawerDivider(EnterpriseTheme enterprise) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      child: Divider(
-        height: 1,
-        color: enterprise.glassStroke,
-      ),
-    );
-  }
-
-  Widget _paymentQrHeader(
-    BuildContext context,
-    EnterpriseTheme enterprise,
-    String branchName,
-    List<PaymentQrCode> paymentQrCodes,
-  ) {
-    final firstQr =
-        paymentQrCodes.isNotEmpty ? paymentQrCodes.first.qrCodeUrl : '';
-    final firstQrUri = _absoluteUri(firstQr);
-    return InkWell(
-      onTap: () => _showPaymentQr(
-        context,
-        enterprise,
-        branchName,
-        paymentQrCodes,
-      ),
-      child: Container(
-        width: double.infinity,
-        margin: const EdgeInsets.fromLTRB(10, 10, 10, 8),
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(18),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              enterprise.primary.withValues(alpha: 0.95),
-              enterprise.accent.withValues(alpha: 0.86),
-            ],
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: enterprise.accent.withValues(alpha: 0.24),
-              blurRadius: 18,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            if (firstQrUri != null)
-              Container(
-                width: 48,
-                height: 48,
-                padding: const EdgeInsets.all(3),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(11),
-                  child: Image.network(
-                    firstQrUri.toString(),
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => const Icon(
-                      Icons.qr_code_2_rounded,
-                      color: Colors.black87,
-                      size: 34,
-                    ),
-                  ),
-                ),
-              )
-            else
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(
-                  Icons.qr_code_2_rounded,
-                  color: Colors.black87,
-                  size: 38,
-                ),
-              ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Payment QR',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    branchName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.82),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    paymentQrCodes.isEmpty
-                        ? 'No QR uploaded'
-                        : '${paymentQrCodes.length} code(s) View',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.92),
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showPaymentQr(
-    BuildContext context,
-    EnterpriseTheme enterprise,
-    String branchName,
-    List<PaymentQrCode> paymentQrCodes,
-  ) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(22),
-          ),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 360, maxHeight: 560),
-            child: Padding(
-              padding: const EdgeInsets.all(18),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Payment QR',
-                    style: TextStyle(
-                      color: enterprise.text,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    branchName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: enterprise.mutedText,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Flexible(
-                    child: paymentQrCodes.isEmpty
-                        ? _emptyPaymentQrState(enterprise)
-                        : ListView.separated(
-                            shrinkWrap: true,
-                            itemCount: paymentQrCodes.length,
-                            separatorBuilder: (_, __) =>
-                                const SizedBox(height: 12),
-                            itemBuilder: (context, index) {
-                              return _paymentQrCard(
-                                context,
-                                enterprise,
-                                paymentQrCodes[index],
-                              );
-                            },
-                          ),
-                  ),
-                  const SizedBox(height: 14),
-                  SizedBox(
-                    width: double.infinity,
-                    child: TextButton(
-                      onPressed: () => Navigator.of(dialogContext).pop(),
-                      child: const Text('Close'),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _emptyPaymentQrState(EnterpriseTheme enterprise) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 22),
-      decoration: BoxDecoration(
-        color: enterprise.glassFill,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: enterprise.glassStroke),
-      ),
-      child: Column(
-        children: [
-          Icon(
-            Icons.qr_code_2_rounded,
-            color: enterprise.mutedText,
-            size: 72,
-          ),
-          const SizedBox(height: 10),
-          Text(
-            'No payment QR uploaded',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: enterprise.text,
-              fontSize: 13,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _paymentQrCard(
-    BuildContext context,
-    EnterpriseTheme enterprise,
-    PaymentQrCode paymentQrCode,
-  ) {
-    final paymentLink = paymentQrCode.link.trim();
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: enterprise.glassFill,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: enterprise.glassStroke),
-      ),
-      child: Column(
-        children: [
-          Text(
-            paymentQrCode.paymentName,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: enterprise.text,
-              fontSize: 14,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 10),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(14),
-            child: Container(
-              width: 230,
-              height: 230,
-              color: Colors.white,
-              padding: const EdgeInsets.all(8),
-              child: _paymentQrImage(paymentQrCode.qrCodeUrl, size: 72),
-            ),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  icon: const Icon(Icons.open_in_full_rounded, size: 18),
-                  label: const Text('View full'),
-                  onPressed: () {
-                    _showFullPaymentQr(context, enterprise, paymentQrCode);
-                  },
-                ),
-              ),
-              if (paymentLink.isNotEmpty) ...[
-                const SizedBox(width: 8),
-                OutlinedButton.icon(
-                  icon: const Icon(Icons.link_rounded, size: 18),
-                  label: const Text('Link'),
-                  onPressed: () => _openPaymentLink(context, paymentLink),
-                ),
-              ],
-              const SizedBox(width: 8),
-              Expanded(
-                child: FilledButton.icon(
-                  icon: const Icon(Icons.download_rounded, size: 18),
-                  label: const Text('Download'),
-                  onPressed: () {
-                    _downloadPaymentQr(context, paymentQrCode);
-                  },
-                ),
-              ),
-            ],
-          ),
-          if (paymentLink.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Material(
-              color: enterprise.primary.withValues(alpha: 0.10),
-              borderRadius: BorderRadius.circular(12),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(12),
-                onTap: () => _openPaymentLink(context, paymentLink),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 8,
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.link_rounded,
-                        size: 16,
-                        color: enterprise.primary,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          paymentLink,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: enterprise.primary,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w800,
-                            decoration: TextDecoration.underline,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Icon(
-                        Icons.open_in_new_rounded,
-                        size: 16,
-                        color: enterprise.primary,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  void _showFullPaymentQr(
-    BuildContext context,
-    EnterpriseTheme enterprise,
-    PaymentQrCode paymentQrCode,
-  ) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return Dialog.fullscreen(
-          backgroundColor: Colors.black,
-          child: SafeArea(
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        tooltip: 'Close',
-                        icon: const Icon(Icons.close, color: Colors.white),
-                        onPressed: () => Navigator.of(dialogContext).pop(),
-                      ),
-                      Expanded(
-                        child: Text(
-                          paymentQrCode.paymentName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        tooltip: 'Download',
-                        icon: const Icon(
-                          Icons.download_rounded,
-                          color: Colors.white,
-                        ),
-                        onPressed: () {
-                          _downloadPaymentQr(context, paymentQrCode);
-                        },
-                      ),
-                      if (paymentQrCode.link.trim().isNotEmpty)
-                        IconButton(
-                          tooltip: 'Open link',
-                          icon: const Icon(
-                            Icons.open_in_new_rounded,
-                            color: Colors.white,
-                          ),
-                          onPressed: () {
-                            _openPaymentLink(context, paymentQrCode.link);
-                          },
-                        ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Center(
-                    child: InteractiveViewer(
-                      minScale: 0.8,
-                      maxScale: 5,
-                      child: Container(
-                        color: Colors.white,
-                        padding: const EdgeInsets.all(14),
-                        child:
-                            _paymentQrImage(paymentQrCode.qrCodeUrl, size: 92),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Future<void> _downloadPaymentQr(
-    BuildContext context,
-    PaymentQrCode paymentQrCode,
-  ) async {
-    try {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Preparing QR download...')),
-      );
-      final uri = _absoluteUri(paymentQrCode.qrCodeUrl);
-      if (uri == null) {
-        throw Exception('Invalid QR image URL');
-      }
-      final response = await http.get(uri);
-      if (response.statusCode != 200) {
-        throw Exception('Failed to download QR image');
-      }
-      final dir = await getTemporaryDirectory();
-      final ext = _imageExtension(paymentQrCode.qrCodeUrl);
-      final name = _safeFileName(paymentQrCode.paymentName);
-      final filePath =
-          '${dir.path}/payment_qr_${name}_${DateTime.now().millisecondsSinceEpoch}.$ext';
-      final file = File(filePath);
-      await file.writeAsBytes(response.bodyBytes);
-      await Share.shareXFiles(
-        [XFile(filePath)],
-        text: paymentQrCode.paymentName,
-      );
-    } catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Download failed: $error')),
-      );
-    }
-  }
-
-  Future<void> _openPaymentLink(BuildContext context, String link) async {
-    final uri = _paymentLinkUri(link);
-    if (uri == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invalid payment link')),
-      );
-      return;
-    }
-
-    try {
-      final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
-      if (!opened && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not open payment link')),
-        );
-      }
-    } catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not open payment link: $error')),
-      );
-    }
-  }
-
-  Uri? _paymentLinkUri(String link) {
-    final trimmed = link.trim();
-    if (trimmed.isEmpty) return null;
-
-    final withScheme = RegExp(r'^[a-zA-Z][a-zA-Z0-9+.-]*://').hasMatch(trimmed)
-        ? trimmed
-        : 'https://$trimmed';
-    return _absoluteUri(withScheme);
-  }
-
-  Uri? _absoluteUri(String value) {
-    final uri = Uri.tryParse(value.trim());
-    if (uri == null || !uri.hasScheme || !uri.hasAuthority) {
-      return null;
-    }
-    return uri;
-  }
-
-  Widget _paymentQrImage(String url, {required double size}) {
-    final uri = _absoluteUri(url);
-    if (uri == null) {
-      return Icon(
-        Icons.broken_image_outlined,
-        color: Colors.black54,
-        size: size,
-      );
-    }
-
-    return Image.network(
-      uri.toString(),
-      fit: BoxFit.contain,
-      errorBuilder: (_, __, ___) => Icon(
-        Icons.broken_image_outlined,
-        color: Colors.black54,
-        size: size,
-      ),
-    );
-  }
-
-  String _imageExtension(String url) {
-    final cleanUrl = url.split('?').first.toLowerCase();
-    final ext = cleanUrl.contains('.') ? cleanUrl.split('.').last : 'png';
-    return ['jpg', 'jpeg', 'png', 'webp'].contains(ext) ? ext : 'png';
-  }
-
-  String _safeFileName(String value) {
-    final cleaned = value
-        .trim()
-        .toLowerCase()
-        .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
-        .replaceAll(RegExp(r'_+'), '_')
-        .replaceAll(RegExp(r'^_|_$'), '');
-    return cleaned.isEmpty ? 'branch' : cleaned;
-  }
 }
 
-class _EnterpriseFloatingNavBar extends StatelessWidget {
+class DashboardNavigationBar extends StatelessWidget {
   final NavBarConfig navBarConfig;
 
-  const _EnterpriseFloatingNavBar({required this.navBarConfig});
+  const DashboardNavigationBar(
+      {super.key, required this.navBarConfig, required this.visibleTabs});
+
+  final List<int> visibleTabs;
 
   @override
   Widget build(BuildContext context) {
@@ -1235,32 +504,47 @@ class _EnterpriseFloatingNavBar extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(26),
+          borderRadius: BorderRadius.circular(28),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+            enabled: !enterprise.isRoyalBlueGold,
+            filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
             child: Container(
-              height: 64,
+              height: 66,
               decoration: BoxDecoration(
-                color: enterprise.isDark
-                    ? enterprise.surface.withValues(alpha: 0.88)
-                    : Colors.white.withValues(alpha: 0.94),
-                borderRadius: BorderRadius.circular(26),
+                gradient: enterprise.isRoyalBlueGold
+                    ? const LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [RoyalColors.deepBlue, RoyalColors.navy],
+                      )
+                    : enterprise.pageGradient,
+                borderRadius: BorderRadius.circular(28),
                 border: Border.all(
-                  color: enterprise.isDark
-                      ? enterprise.glassStroke
-                      : Colors.white.withValues(alpha: 0.80),
+                  color: enterprise.accent.withValues(
+                    alpha:
+                        enterprise.isKhmerHeritage || enterprise.isRoyalBlueGold
+                            ? .68
+                            : .34,
+                  ),
+                  width: 1,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
-                    blurRadius: 20,
-                    offset: const Offset(0, 4),
+                    color: enterprise.primary.withValues(alpha: 0.18),
+                    blurRadius: 24,
+                    spreadRadius: 0.5,
+                    offset: const Offset(0, 0),
+                  ),
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.35),
+                    blurRadius: 22,
+                    offset: const Offset(0, 8),
                   ),
                 ],
               ),
               child: Row(
                 children: [
-                  for (var i = 0; i < navBarConfig.items.length; i++)
+                  for (final i in visibleTabs)
                     Expanded(
                       child: _EnterpriseNavItem(
                         item: navBarConfig.items[i],
@@ -1292,40 +576,67 @@ class _EnterpriseNavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final enterprise = EnterpriseTheme.of(context);
-
+    final heritage = enterprise.isKhmerHeritage;
+    final royal = enterprise.isRoyalBlueGold;
+    final duration = MediaQuery.disableAnimationsOf(context)
+        ? Duration.zero
+        : const Duration(milliseconds: 260);
+    final inactiveColor =
+        sidebarForeground(enterprise).withValues(alpha: royal ? .97 : .72);
+    final customAccent = enterprise.layout.accent;
+    final activeColor = customAccent == null
+        ? (royal
+            ? RoyalColors.navy
+            : heritage
+                ? enterprise.colors.backgroundColor
+                : Colors.white)
+        : ThemeData.estimateBrightnessForColor(customAccent) == Brightness.dark
+            ? Colors.white
+            : const Color(0xff211720);
+    final textColor = selected ? activeColor : inactiveColor;
     final iconTheme = IconThemeData(
-      color: selected
-          ? Colors.white
-          : (enterprise.isDark ? Colors.white70 : const Color(0xFF475569)),
+      color: textColor,
       size: 20,
     );
 
     final Gradient? tabGradient = selected
-        ? const LinearGradient(
+        ? LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF0077F4),
-              Color(0xFF0052D4),
-            ],
+            colors: customAccent != null
+                ? [
+                    customAccent,
+                    Color.lerp(
+                        customAccent,
+                        activeColor == Colors.white
+                            ? Colors.black
+                            : Colors.white,
+                        .16)!,
+                  ]
+                : royal
+                    ? RoyalColors.goldGradient.colors
+                    : heritage
+                        ? [enterprise.text, enterprise.accent]
+                        : [
+                            sidebarTone(enterprise.primary),
+                            sidebarTone(enterprise.secondary),
+                          ],
           )
         : null;
 
     final List<BoxShadow>? tabShadow = selected
         ? [
             BoxShadow(
-              color: const Color(0xFF0077F4).withValues(alpha: 0.35),
-              blurRadius: 14,
+              color: enterprise.primary.withValues(alpha: 0.36),
+              blurRadius: 16,
               offset: const Offset(0, 3),
             ),
           ]
         : null;
 
-    final BoxBorder? tabBorder = null;
-
-    final Color textColor = selected
-        ? Colors.white
-        : (enterprise.isDark ? Colors.white70 : const Color(0xFF475569));
+    final BoxBorder? tabBorder = selected
+        ? Border.all(color: enterprise.accent.withValues(alpha: 0.44))
+        : null;
 
     return Semantics(
       selected: selected,
@@ -1335,12 +646,12 @@ class _EnterpriseNavItem extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         onTap: onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 260),
+          duration: duration,
           curve: Curves.easeOutCubic,
-          margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 5),
-          padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 2),
+          margin: const EdgeInsets.symmetric(horizontal: 3, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 3),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(20),
             gradient: tabGradient,
             border: tabBorder,
             boxShadow: tabShadow,
@@ -1353,27 +664,31 @@ class _EnterpriseNavItem extends StatelessWidget {
                 child: selected ? item.icon : item.inactiveIcon,
               ),
               const SizedBox(height: 2),
-              AnimatedDefaultTextStyle(
-                duration: const Duration(milliseconds: 260),
-                style: TextStyle(
-                  color: textColor,
-                  fontSize: 9.5,
-                  letterSpacing: -0.1,
-                  fontWeight: selected ? FontWeight.w900 : FontWeight.w700,
-                  height: 1.1,
-                  shadows: selected
-                      ? const [
-                          Shadow(
-                            color: Colors.black45,
-                            blurRadius: 4,
-                            offset: Offset(0, 1),
-                          ),
-                        ]
-                      : null,
+              Flexible(
+                child: AnimatedDefaultTextStyle(
+                  duration: duration,
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 9.5,
+                    letterSpacing: -0.1,
+                    fontWeight: selected ? FontWeight.w900 : FontWeight.w700,
+                    height: 1.1,
+                    shadows:
+                        selected && !heritage && !royal && customAccent == null
+                            ? const [
+                                Shadow(
+                                  color: Colors.black45,
+                                  blurRadius: 4,
+                                  offset: Offset(0, 1),
+                                ),
+                              ]
+                            : null,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  child: Text(item.title ?? ''),
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                child: Text(item.title ?? ''),
               ),
             ],
           ),

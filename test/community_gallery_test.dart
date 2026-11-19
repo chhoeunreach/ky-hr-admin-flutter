@@ -480,15 +480,14 @@ void main() {
     ));
     await tester.pumpAndSettle();
     final body = find.byType(TextField).first;
-    final context = tester.element(body);
-    expect(
-        Theme.of(context).textTheme.bodyLarge?.color, const Color(0xff101828));
+    final colors = Theme.of(tester.element(body)).colorScheme;
+    expect(colors.brightness, Brightness.dark);
     expect(
         tester
             .widget<EditableText>(find.byType(EditableText).first)
             .style
             .color,
-        const Color(0xff101828));
+        colors.onSurface);
     await tester.tap(body);
     await tester.enterText(body, 'Visible in dark mode');
     await tester.pump();

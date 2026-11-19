@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 
 class ChatBadgeController extends GetxController {
   final unreadCount = 0.obs;
+  final conversationCounts = <String, int>{}.obs;
   final activeConversationId = RxnString();
 
   static ChatBadgeController ensureRegistered() {
@@ -23,6 +24,17 @@ class ChatBadgeController extends GetxController {
 
   Future<void> refreshUnreadCount() async {
     unreadCount.value = await ChatUnreadStore.getTotalUnreadCount();
+    conversationCounts.assignAll(await ChatUnreadStore.getAllCounts());
+  }
+
+  int conversationUnread(Iterable<String> conversationIds) {
+    var total = 0;
+    for (final conversationId in conversationIds) {
+      final key = conversationId.trim();
+      if (key.isEmpty) continue;
+      total += conversationCounts[key] ?? 0;
+    }
+    return total;
   }
 
   Future<void> syncAppBadge() async {

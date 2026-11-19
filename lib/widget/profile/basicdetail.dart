@@ -1,5 +1,5 @@
 import 'package:cnattendance/provider/profileprovider.dart';
-import 'package:cnattendance/widget/buttonborder.dart';
+import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/widget/cartTitle.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
@@ -9,13 +9,17 @@ class BasicDetail extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final profile = Provider.of<ProfileProvider>(context).profile;
+    final enterprise = EnterpriseTheme.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       width: double.infinity,
       child: Card(
-        shape: ButtonBorder(),
-        color: Colors.white10,
-        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: enterprise.cardBorder),
+        ),
+        color: enterprise.cardBackground,
+        elevation: enterprise.isDark ? 0 : 2,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
           child: Column(

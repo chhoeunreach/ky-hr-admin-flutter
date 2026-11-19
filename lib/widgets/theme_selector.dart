@@ -1,6 +1,8 @@
 import 'package:cnattendance/theme/app_theme_data.dart';
 import 'package:cnattendance/theme/app_theme_mode.dart';
+import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/theme/theme_provider.dart';
+import 'package:cnattendance/widgets/theme_layout_editor.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -10,6 +12,7 @@ class ThemeSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<ThemeProvider>();
+    final enterprise = EnterpriseTheme.of(context);
     return LayoutBuilder(
       builder: (context, constraints) {
         final cardWidth = (constraints.maxWidth * 0.44).clamp(118.0, 150.0);
@@ -20,26 +23,33 @@ class ThemeSelector extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.palette_outlined,
-                    color: Colors.white,
+                    color: enterprise.accent,
                     size: 18,
                   ),
                   const SizedBox(width: 6),
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       'Theme Mode',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: Colors.white,
+                        color: enterprise.text,
                         fontSize: 14,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                   ),
+                  IconButton(
+                    tooltip: 'Customize layout',
+                    color: enterprise.accent,
+                    icon: const Icon(Icons.tune_rounded, size: 18),
+                    onPressed: () => _openLayoutEditor(context),
+                  ),
                   TextButton(
                     style: TextButton.styleFrom(
+                      foregroundColor: enterprise.accent,
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                       minimumSize: const Size(0, 32),
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -79,10 +89,71 @@ class ThemeSelector extends StatelessWidget {
                   },
                 ),
               ),
+              if (provider.mode == AppThemeMode.rosePink) ...[
+                const SizedBox(height: 8),
+                _RoseEffectSettings(provider: provider, enterprise: enterprise),
+              ],
             ],
           ),
         );
       },
+    );
+  }
+}
+
+class _RoseEffectSettings extends StatelessWidget {
+  const _RoseEffectSettings({required this.provider, required this.enterprise});
+
+  final ThemeProvider provider;
+  final EnterpriseTheme enterprise;
+
+  static const _options = <(String, String, IconData)>[
+    ('floating_hearts', 'Floating hearts', Icons.favorite_border),
+    ('rose_petals', 'Rose petals', Icons.local_florist_outlined),
+    ('heart_glow', 'Heart glow', Icons.blur_on),
+    ('sparkle_effects', 'Sparkles', Icons.auto_awesome),
+    ('qr_pulse', 'QR pulse', Icons.qr_code_2),
+    ('reduce_animations', 'Reduce motion', Icons.motion_photos_off_outlined),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: enterprise.glassFill,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: enterprise.glassStroke),
+      ),
+      child: Column(
+        children: [
+          for (var i = 0; i < _options.length; i += 2)
+            Row(
+              children: [
+                Expanded(child: _effectTile(context, _options[i])),
+                Expanded(child: _effectTile(context, _options[i + 1])),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _effectTile(BuildContext context, (String, String, IconData) option) {
+    final (key, label, icon) = option;
+    return SwitchListTile.adaptive(
+      dense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+      visualDensity: VisualDensity.compact,
+      secondary: Icon(icon, size: 16, color: enterprise.accent),
+      title: Text(label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+              color: enterprise.text,
+              fontSize: 11,
+              fontWeight: FontWeight.w600)),
+      value: provider.effectEnabled(key),
+      onChanged: (value) => provider.setEffect(key, value),
     );
   }
 }
@@ -93,12 +164,17 @@ class ThemeSelectorPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<ThemeProvider>();
-    final colors = AppThemeData.info(provider.mode).colors;
+    final colors = provider.colors;
     return Scaffold(
       backgroundColor: colors.backgroundColor,
       appBar: AppBar(
         title: const Text('Choose Your Theme'),
         actions: [
+          IconButton(
+            tooltip: 'Customize layout',
+            icon: const Icon(Icons.tune_rounded),
+            onPressed: () => _openLayoutEditor(context),
+          ),
           TextButton(
             onPressed: () async {
               await context.read<ThemeProvider>().resetToSystemMode();
@@ -133,6 +209,12 @@ class ThemeSelectorPage extends StatelessWidget {
       ),
     );
   }
+}
+
+void _openLayoutEditor(BuildContext context) {
+  Navigator.of(context).push(MaterialPageRoute(
+    builder: (_) => const ThemeLayoutEditor(),
+  ));
 }
 
 class _ThemePreviewCard extends StatelessWidget {

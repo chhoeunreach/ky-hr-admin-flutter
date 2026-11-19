@@ -1,11 +1,11 @@
+import 'package:cnattendance/model/auth.dart';
 import 'package:cnattendance/provider/morescreenprovider.dart';
 import 'package:cnattendance/screen/auth/login_screen.dart';
+import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/utils/navigationservice.dart';
-import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_translate/flutter_translate.dart';
-import 'package:hexcolor/hexcolor.dart';
 import 'package:provider/provider.dart';
 import 'package:cnattendance/widget/buttonborder.dart';
 
@@ -31,6 +31,13 @@ class LogOutBottomSheetState extends State<LogOutBottomSheet> {
         return;
       }
       if (response.statusCode == 200 || response.statusCode == 401) {
+        if (!mounted) {
+          return;
+        }
+        await context.read<Auth>().resetAppUrl();
+        if (!mounted) {
+          return;
+        }
         Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
           MaterialPageRoute(
             builder: (BuildContext context) {
@@ -64,8 +71,13 @@ class LogOutBottomSheetState extends State<LogOutBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final enterprise = EnterpriseTheme.of(context);
     return Container(
-      decoration: RadialDecoration(),
+      decoration: BoxDecoration(
+        color: enterprise.cardBackground,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        border: Border.all(color: enterprise.cardBorder),
+      ),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: SafeArea(
         child: Column(
@@ -77,24 +89,28 @@ class LogOutBottomSheetState extends State<LogOutBottomSheet> {
               children: [
                 Text(
                   translate('common.log_out'),
-                  style: TextStyle(fontSize: 18, color: Colors.white),
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: enterprise.text,
+                  ),
                 ),
                 IconButton(
                     onPressed: () {
                       Navigator.pop(context);
                     },
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.close,
                       size: 20,
-                      color: Colors.white,
+                      color: enterprise.text,
                     )),
               ],
             ),
             Padding(
-              padding: EdgeInsets.only(bottom: 8.0),
+              padding: const EdgeInsets.only(bottom: 8.0),
               child: Text(
                 translate('common.log_out_alert'),
-                style: TextStyle(color: Colors.white, fontSize: 18),
+                style: TextStyle(color: enterprise.mutedText, fontSize: 16),
               ),
             ),
             Padding(
@@ -107,7 +123,7 @@ class LogOutBottomSheetState extends State<LogOutBottomSheet> {
                       padding: const EdgeInsets.only(right: 5),
                       child: TextButton(
                           style: TextButton.styleFrom(
-                              backgroundColor: HexColor("#036eb7"),
+                              backgroundColor: enterprise.primary,
                               shape: ButtonBorder()),
                           onPressed: () async {
                             logout();
@@ -116,7 +132,7 @@ class LogOutBottomSheetState extends State<LogOutBottomSheet> {
                             padding: const EdgeInsets.symmetric(vertical: 10),
                             child: Text(
                               translate('common.confirm'),
-                              style: TextStyle(color: Colors.white),
+                              style: const TextStyle(color: Colors.white),
                             ),
                           )),
                     ),
@@ -126,7 +142,9 @@ class LogOutBottomSheetState extends State<LogOutBottomSheet> {
                       padding: const EdgeInsets.only(left: 5),
                       child: TextButton(
                           style: TextButton.styleFrom(
-                              backgroundColor: HexColor("#036eb7"),
+                              backgroundColor: enterprise.isDark
+                                  ? const Color(0xFF334155)
+                                  : const Color(0xFFE2E8F0),
                               shape: ButtonBorder()),
                           onPressed: () {
                             Navigator.pop(context);
@@ -135,14 +153,14 @@ class LogOutBottomSheetState extends State<LogOutBottomSheet> {
                             padding: const EdgeInsets.symmetric(vertical: 10),
                             child: Text(
                               translate('common.go_back'),
-                              style: TextStyle(color: Colors.white),
+                              style: TextStyle(color: enterprise.text),
                             ),
                           )),
                     ),
                   ),
                 ],
               ),
-            )
+            ),
           ],
         ),
       ),

@@ -9,10 +9,12 @@ import 'package:http/testing.dart';
 import 'package:cnattendance/models/monthly_attendance_summary.dart';
 import 'package:cnattendance/theme/app_theme_data.dart';
 import 'package:cnattendance/theme/app_theme_mode.dart';
+import 'package:cnattendance/widget/homescreen/home_attendance_highlights.dart';
 import 'package:cnattendance/widget/homescreen/monthly_attendance_summary.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_translate/flutter_translate.dart';
+import 'package:provider/provider.dart';
 
 class _SummaryPreferences extends Preferences {
   @override
@@ -202,6 +204,81 @@ void main() {
     await tester.tap(find.byType(HomeMonthlyAttendanceSummary));
     await tester.pumpAndSettle();
     expect(find.textContaining('unavailable'), findsOneWidget);
+  });
+
+  for (final mode in AppThemeMode.values) {
+    testWidgets('attendance details are readable in ${mode.name}',
+        (tester) async {
+      await tester.pumpWidget(MaterialApp(
+        theme: AppThemeData.themeData(mode),
+        home: Scaffold(
+          body: HomeMonthlyAttendanceSummary(
+            summary: MonthlyAttendanceSummary.fromJson(payload()),
+          ),
+        ),
+      ));
+      await tester.tap(find.byKey(const ValueKey('home-bonus-progress')));
+      await tester.pumpAndSettle();
+
+      final dialog = tester.widget<AlertDialog>(find.byType(AlertDialog));
+      final background = dialog.backgroundColor!;
+      final text =
+          Color.alphaBlend(dialog.contentTextStyle!.color!, background);
+      final luminances = [
+        background.computeLuminance(),
+        text.computeLuminance()
+      ]..sort();
+      expect((luminances.last + 0.05) / (luminances.first + 0.05),
+          greaterThanOrEqualTo(4.5));
+      expect(find.textContaining('2026-11'), findsOneWidget);
+
+      await tester.tap(find.text(translate('home_attendance.close')));
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsNothing);
+    });
+  }
+
+  testWidgets('Home reduction and bonus progress fit enlarged text',
+      (tester) async {
+    Localization.load(jsonDecode(File('assets/i18n/km.json').readAsStringSync())
+        as Map<String, dynamic>);
+    await tester.binding.setSurfaceSize(const Size(320, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(ChangeNotifierProvider(
+      create: (_) => DashboardProvider(),
+      child: MaterialApp(
+        theme: AppThemeData.themeData(AppThemeMode.rosePink),
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context)
+              .copyWith(textScaler: const TextScaler.linear(1.5)),
+          child: child!,
+        ),
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: HomeAttendanceHighlights(
+              summary: MonthlyAttendanceSummary.fromJson(payload()),
+            ),
+          ),
+        ),
+      ),
+    ));
+    expect(tester.takeException(), isNull);
+    expect(find.text(r'-$1.20'), findsOneWidget);
+    expect(find.text('32% / 100%'), findsOneWidget);
+    expect(
+        tester
+            .widget<LinearProgressIndicator>(
+                find.byType(LinearProgressIndicator))
+            .value,
+        closeTo(0.32, 0.001));
+    await tester.tap(find.text(r'-$1.20'));
+    await tester.pumpAndSettle();
+    final dialog = find.byType(AlertDialog);
+    expect(dialog, findsOneWidget);
+    expect(
+      find.descendant(of: dialog, matching: find.textContaining(r'-$1.20')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('large text and a dark theme remain usable on a small phone',

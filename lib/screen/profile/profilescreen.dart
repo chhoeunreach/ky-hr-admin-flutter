@@ -1,6 +1,7 @@
 import 'package:cnattendance/provider/dashboardprovider.dart';
 import 'package:cnattendance/provider/profileprovider.dart';
 import 'package:cnattendance/screen/profile/front_side_preview_page.dart';
+import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/widget/profile/basicdetail.dart';
 import 'package:cnattendance/widget/profile/bankdetail.dart';
 import 'package:cnattendance/widget/profile/companydetail.dart';
@@ -56,13 +57,22 @@ class ProfileScreenState extends State<ProfileScreen> {
     final userProfile = context.watch<ProfileProvider>().profile;
     final showIdCard = context
         .select<DashboardProvider, bool>((p) => p.features['id-card'] == '1');
+    final enterprise = EnterpriseTheme.of(context);
     return PremiumBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
-          title: Text(translate('profile_screen.profile')),
+          title: Text(
+            translate('profile_screen.profile'),
+            style: TextStyle(
+              color: enterprise.text,
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          iconTheme: IconThemeData(color: enterprise.text),
           actions: [
             if (showIdCard)
               IconButton(
@@ -71,7 +81,7 @@ class ProfileScreenState extends State<ProfileScreen> {
                   Navigator.of(context)
                       .pushNamed(FrontSidePreviewPage.routeName);
                 },
-                icon: const Icon(Icons.badge_rounded),
+                icon: Icon(Icons.badge_rounded, color: enterprise.text),
               ),
           ],
         ),
@@ -95,7 +105,7 @@ class ProfileScreenState extends State<ProfileScreen> {
                             child: Text(translate('connection_error.retry'))),
                       ])),
                 const Heading(),
-                if (showIdCard) _buildMyCardButton(context),
+                if (showIdCard) _buildMyCardButton(context, enterprise),
                 userProfile.post != ''
                     ? Container(
                         padding: const EdgeInsets.only(
@@ -103,7 +113,11 @@ class ProfileScreenState extends State<ProfileScreen> {
                         width: double.infinity,
                         child: Text(
                           translate('profile_screen.basic_details'),
-                          style: TextStyle(color: Colors.white38, fontSize: 15),
+                          style: TextStyle(
+                            color: enterprise.text,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                       )
                     : SizedBox(),
@@ -115,7 +129,11 @@ class ProfileScreenState extends State<ProfileScreen> {
                         width: double.infinity,
                         child: Text(
                           translate('profile_screen.company_details'),
-                          style: TextStyle(color: Colors.white38, fontSize: 15),
+                          style: TextStyle(
+                            color: enterprise.text,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                       )
                     : SizedBox(),
@@ -127,7 +145,11 @@ class ProfileScreenState extends State<ProfileScreen> {
                         width: double.infinity,
                         child: Text(
                           translate('profile_screen.bank_details'),
-                          style: TextStyle(color: Colors.white38, fontSize: 15),
+                          style: TextStyle(
+                            color: enterprise.text,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                       )
                     : SizedBox(),
@@ -140,7 +162,7 @@ class ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildMyCardButton(BuildContext context) {
+  Widget _buildMyCardButton(BuildContext context, EnterpriseTheme enterprise) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 8),
       child: SizedBox(
@@ -149,14 +171,14 @@ class ProfileScreenState extends State<ProfileScreen> {
           onPressed: () {
             Navigator.of(context).pushNamed(FrontSidePreviewPage.routeName);
           },
-          icon: const Icon(Icons.badge_rounded),
+          icon: Icon(Icons.badge_rounded, color: enterprise.accent),
           label: Text(translate('dashboard_screen.view_my_card')),
           style: OutlinedButton.styleFrom(
-            foregroundColor: Colors.white,
-            side: const BorderSide(color: Colors.white54),
+            foregroundColor: enterprise.text,
+            side: BorderSide(color: enterprise.accent),
             padding: const EdgeInsets.symmetric(vertical: 12),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(10),
             ),
             textStyle: const TextStyle(
               fontSize: 14,

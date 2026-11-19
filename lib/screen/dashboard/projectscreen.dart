@@ -5,7 +5,8 @@ import 'package:cnattendance/screen/projectscreen/projectdetailscreen/projectdet
 import 'package:cnattendance/screen/projectscreen/projectlistscreen/projectlistscreen.dart';
 import 'package:cnattendance/screen/projectscreen/taskdetailscreen/taskdetailscreen.dart';
 import 'package:cnattendance/screen/projectscreen/tasklistscreen/tasklistscreen.dart';
-import 'package:cnattendance/widget/radialDecoration.dart';
+import 'package:cnattendance/theme/enterprise_theme.dart';
+import 'package:cnattendance/widget/premium_background.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:focus_detector/focus_detector.dart';
@@ -20,14 +21,22 @@ class ProjectScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: RadialDecoration(),
+    final enterprise = EnterpriseTheme.of(context);
+    return PremiumBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
           elevation: 0,
           backgroundColor: Colors.transparent,
-          title: Text(translate('project_screen.project_management')),
+          title: Text(
+            translate('project_screen.project_management'),
+            style: TextStyle(
+              color: enterprise.text,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          iconTheme: IconThemeData(color: enterprise.text),
         ),
         body: FocusDetector(
           onFocusGained: () {
@@ -35,8 +44,8 @@ class ProjectScreen extends StatelessWidget {
           },
           child: RefreshIndicator(
             triggerMode: RefreshIndicatorTriggerMode.onEdge,
-            color: Colors.white,
-            backgroundColor: Colors.blueGrey,
+            color: enterprise.accent,
+            backgroundColor: enterprise.cardBackground,
             edgeOffset: 50,
             onRefresh: () {
               return model.getProjectOverview();
@@ -47,7 +56,11 @@ class ProjectScreen extends StatelessWidget {
               child: Container(
                 width: double.infinity,
                 child: Column(
-                  children: [projectOverview(), recentProject(), recentTasks()],
+                  children: [
+                    projectOverview(enterprise),
+                    recentProject(enterprise),
+                    recentTasks(enterprise)
+                  ],
                 ),
               ),
             )),
@@ -57,13 +70,14 @@ class ProjectScreen extends StatelessWidget {
     );
   }
 
-  Widget projectOverview() {
+  Widget projectOverview(EnterpriseTheme enterprise) {
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(10), bottomRight: Radius.circular(10))),
-      color: Colors.white12,
+              topLeft: Radius.circular(10), bottomRight: Radius.circular(10)),
+          side: BorderSide(color: enterprise.cardBorder)),
+      color: enterprise.cardBackground,
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: Container(
         padding: EdgeInsets.all(20),
@@ -79,14 +93,16 @@ class ProjectScreen extends StatelessWidget {
                 center: Obx(
                   () => Text(
                     model.overview['progress'].toString() + "%",
-                    style: new TextStyle(
+                    style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 20.0,
-                        color: Colors.white),
+                        color: enterprise.text),
                   ),
                 ),
                 circularStrokeCap: CircularStrokeCap.round,
-                backgroundColor: Colors.white12,
+                backgroundColor: enterprise.isDark
+                    ? Colors.white12
+                    : const Color(0xFFE2E8F0),
                 progressColor: (model.overview['progress']! / 100) <= .25
                     ? HexColor("#C1E1C1")
                     : (model.overview['progress']! / 100) <= .50
@@ -105,11 +121,11 @@ class ProjectScreen extends StatelessWidget {
                 children: [
                   Text(translate('project_screen.progress_current_task'),
                       style: TextStyle(
-                          color: Colors.white,
+                          color: enterprise.text,
                           fontWeight: FontWeight.bold,
                           fontSize: 20)),
                   Divider(
-                    color: Colors.white54,
+                    color: enterprise.cardBorder,
                     endIndent: 0,
                     indent: 0,
                   ),
@@ -120,7 +136,7 @@ class ProjectScreen extends StatelessWidget {
                             model.overview['total_project'].toString() +
                             " ${translate('project_screen.task_completed')}",
                         style: TextStyle(
-                            color: Colors.white,
+                            color: enterprise.mutedText,
                             fontWeight: FontWeight.normal,
                             fontSize: 12)),
                   ),
@@ -133,7 +149,7 @@ class ProjectScreen extends StatelessWidget {
     );
   }
 
-  Widget recentProject() {
+  Widget recentProject(EnterpriseTheme enterprise) {
     return Obx(
       () => Visibility(
         visible: model.projectList.isEmpty ? false : true,
@@ -148,7 +164,7 @@ class ProjectScreen extends StatelessWidget {
                   Text(
                     translate('project_screen.recent_projects'),
                     style: TextStyle(
-                        color: Colors.white,
+                        color: enterprise.text,
                         fontSize: 20,
                         fontWeight: FontWeight.bold),
                   ),
@@ -160,7 +176,7 @@ class ProjectScreen extends StatelessWidget {
                       translate('project_screen.view_all'),
                       style: TextStyle(
                           decoration: TextDecoration.underline,
-                          color: Colors.white,
+                          color: enterprise.accent,
                           fontSize: 15,
                           fontWeight: FontWeight.normal),
                     ),
@@ -191,8 +207,9 @@ class ProjectScreen extends StatelessWidget {
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.only(
                               topLeft: Radius.circular(10),
-                              bottomRight: Radius.circular(10))),
-                      color: Colors.white12,
+                              bottomRight: Radius.circular(10)),
+                          side: BorderSide(color: enterprise.cardBorder)),
+                      color: enterprise.cardBackground,
                       child: Container(
                         width: MediaQuery.sizeOf(context).width - 50,
                         padding: const EdgeInsets.symmetric(
@@ -208,7 +225,7 @@ class ProjectScreen extends StatelessWidget {
                                     Icon(
                                       Icons.work,
                                       size: 20,
-                                      color: Colors.white,
+                                      color: enterprise.accent,
                                     ),
                                     SizedBox(
                                       width: 5,
@@ -219,7 +236,7 @@ class ProjectScreen extends StatelessWidget {
                                           overflow: TextOverflow.ellipsis,
                                           style: TextStyle(
                                               height: 1,
-                                              color: Colors.white,
+                                              color: enterprise.text,
                                               fontWeight: FontWeight.bold,
                                               fontSize: 18)),
                                     ),
@@ -239,13 +256,13 @@ class ProjectScreen extends StatelessWidget {
                                         Text(
                                           "Date",
                                           style: TextStyle(
-                                              color: Colors.white70,
+                                              color: enterprise.mutedText,
                                               fontSize: 12),
                                         ),
                                         Text(
                                           item.date,
                                           style: TextStyle(
-                                              color: Colors.white,
+                                              color: enterprise.text,
                                               fontSize: 15),
                                         ),
                                       ],
@@ -257,13 +274,14 @@ class ProjectScreen extends StatelessWidget {
                                         Text(
                                           "Status",
                                           style: TextStyle(
-                                              color: Colors.white70,
+                                              color: enterprise.mutedText,
                                               fontSize: 12),
                                         ),
                                         Text(
                                           item.status,
                                           style: TextStyle(
-                                              color: Colors.white,
+                                              color: enterprise.accent,
+                                              fontWeight: FontWeight.w600,
                                               fontSize: 15),
                                         ),
                                       ],
@@ -275,13 +293,13 @@ class ProjectScreen extends StatelessWidget {
                                         Text(
                                           "Priority",
                                           style: TextStyle(
-                                              color: Colors.white70,
+                                              color: enterprise.mutedText,
                                               fontSize: 12),
                                         ),
                                         Text(
                                           item.priority,
                                           style: TextStyle(
-                                              color: Colors.white,
+                                              color: enterprise.text,
                                               fontSize: 15),
                                         ),
                                       ],
@@ -296,7 +314,9 @@ class ProjectScreen extends StatelessWidget {
                                   percent: item.progress / 100,
                                   lineHeight: 5,
                                   barRadius: Radius.circular(20),
-                                  backgroundColor: Colors.white12,
+                                  backgroundColor: enterprise.isDark
+                                      ? Colors.white12
+                                      : const Color(0xFFE2E8F0),
                                   progressColor: item.progress <= 25
                                       ? HexColor("#C1E1C1")
                                       : item.progress <= 50
@@ -314,21 +334,22 @@ class ProjectScreen extends StatelessWidget {
                                   totalCount: memberImages.length,
                                   imageRadius: 25,
                                   imageCount: 4,
-                                  imageBorderColor: Colors.white,
+                                  imageBorderColor:
+                                      enterprise.cardBackground,
                                   imageBorderWidth: 1,
                                 ),
                                 Spacer(),
                                 Icon(
                                   Icons.flag,
                                   size: 15,
-                                  color: Colors.white,
+                                  color: enterprise.mutedText,
                                 ),
                                 SizedBox(
                                   width: 5,
                                 ),
                                 Text(item.noOfTask.toString(),
                                     style: TextStyle(
-                                        color: Colors.white,
+                                        color: enterprise.mutedText,
                                         fontWeight: FontWeight.normal,
                                         fontSize: 12)),
                               ],
@@ -347,7 +368,7 @@ class ProjectScreen extends StatelessWidget {
     );
   }
 
-  Widget recentTasks() {
+  Widget recentTasks(EnterpriseTheme enterprise) {
     return Obx(
       () => Visibility(
         visible: model.taskList.isEmpty ? false : true,
@@ -361,7 +382,7 @@ class ProjectScreen extends StatelessWidget {
                   Text(
                     translate('project_screen.recent_tasks'),
                     style: TextStyle(
-                        color: Colors.white,
+                        color: enterprise.text,
                         fontSize: 20,
                         fontWeight: FontWeight.bold),
                   ),
@@ -374,7 +395,7 @@ class ProjectScreen extends StatelessWidget {
                       translate('project_screen.view_all'),
                       style: TextStyle(
                           decoration: TextDecoration.underline,
-                          color: Colors.white,
+                          color: enterprise.accent,
                           fontSize: 15,
                           fontWeight: FontWeight.normal),
                     ),
@@ -408,8 +429,9 @@ class ProjectScreen extends StatelessWidget {
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.only(
                                 topLeft: Radius.circular(10),
-                                bottomRight: Radius.circular(10))),
-                        color: Colors.white12,
+                                bottomRight: Radius.circular(10)),
+                            side: BorderSide(color: enterprise.cardBorder)),
+                        color: enterprise.cardBackground,
                         elevation: 0,
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
@@ -425,7 +447,7 @@ class ProjectScreen extends StatelessWidget {
                                       maxLines: 2,
                                       style: TextStyle(
                                           height: 1.5,
-                                          color: Colors.white,
+                                          color: enterprise.text,
                                           fontWeight: FontWeight.bold,
                                           fontSize: 20)),
                                   Row(
@@ -433,7 +455,7 @@ class ProjectScreen extends StatelessWidget {
                                       Icon(
                                         Icons.work,
                                         size: 10,
-                                        color: Colors.white54,
+                                        color: enterprise.mutedText,
                                       ),
                                       SizedBox(
                                         width: 5,
@@ -443,7 +465,7 @@ class ProjectScreen extends StatelessWidget {
                                             maxLines: 2,
                                             style: TextStyle(
                                                 height: 1.5,
-                                                color: Colors.white54,
+                                                color: enterprise.mutedText,
                                                 fontWeight: FontWeight.bold,
                                                 fontSize: 12)),
                                       ),
@@ -463,13 +485,13 @@ class ProjectScreen extends StatelessWidget {
                                           Text(
                                             "Start Date",
                                             style: TextStyle(
-                                                color: Colors.white70,
+                                                color: enterprise.mutedText,
                                                 fontSize: 12),
                                           ),
                                           Text(
                                             item.date ?? "",
                                             style: TextStyle(
-                                                color: Colors.white,
+                                                color: enterprise.text,
                                                 fontSize: 15),
                                           ),
                                         ],
@@ -481,13 +503,13 @@ class ProjectScreen extends StatelessWidget {
                                           Text(
                                             "End Date",
                                             style: TextStyle(
-                                                color: Colors.white70,
+                                                color: enterprise.mutedText,
                                                 fontSize: 12),
                                           ),
                                           Text(
                                             item.endDate ?? "",
                                             style: TextStyle(
-                                                color: Colors.white,
+                                                color: enterprise.text,
                                                 fontSize: 15),
                                           ),
                                         ],
@@ -499,13 +521,13 @@ class ProjectScreen extends StatelessWidget {
                                           Text(
                                             "Priority",
                                             style: TextStyle(
-                                                color: Colors.white70,
+                                                color: enterprise.mutedText,
                                                 fontSize: 12),
                                           ),
                                           Text(
                                             item.priority ?? "",
                                             style: TextStyle(
-                                                color: Colors.white,
+                                                color: enterprise.text,
                                                 fontSize: 15),
                                           ),
                                         ],
@@ -522,7 +544,9 @@ class ProjectScreen extends StatelessWidget {
                                       percent: item.progress! / 100,
                                       lineHeight: 5,
                                       barRadius: Radius.circular(20),
-                                      backgroundColor: Colors.white12,
+                                      backgroundColor: enterprise.isDark
+                                          ? Colors.white12
+                                          : const Color(0xFFE2E8F0),
                                       progressColor: item.progress! <= 25
                                           ? HexColor("#C1E1C1")
                                           : item.progress! <= 50
@@ -534,7 +558,7 @@ class ProjectScreen extends StatelessWidget {
                                   if (item.progress == 0 &&
                                       item.hasProgress == false)
                                     Divider(
-                                      color: Colors.white24,
+                                      color: enterprise.cardBorder,
                                     ),
                                   SizedBox(
                                     height: 5,
@@ -548,14 +572,17 @@ class ProjectScreen extends StatelessWidget {
                                     totalCount: members.length,
                                     imageRadius: 25,
                                     imageCount: 4,
-                                    imageBorderColor: Colors.white,
+                                    imageBorderColor:
+                                        enterprise.cardBackground,
                                     imageBorderWidth: 1,
                                   ),
                                   Spacer(),
                                   Text(
                                     item.status,
                                     style: TextStyle(
-                                        color: Colors.white, fontSize: 15),
+                                        color: enterprise.accent,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 15),
                                   ),
                                 ],
                               ),

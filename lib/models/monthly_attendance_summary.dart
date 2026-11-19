@@ -9,6 +9,7 @@ class MonthlyAttendanceSummary {
     this.approvedLateCount,
     this.approvedTimeLeaveCount,
     this.excusedLateCount,
+    this.bonusCurrency = 'USD',
   });
 
   final String month;
@@ -18,6 +19,7 @@ class MonthlyAttendanceSummary {
   int? get totalLateCount =>
       excusedLateCount == null ? null : lateCount + excusedLateCount!;
   final double deduction, bonusTarget;
+  final String bonusCurrency;
 
   double get progress =>
       workingDays > 0 ? (completedDays / workingDays).clamp(0.0, 1.0) : 0;
@@ -55,6 +57,9 @@ class MonthlyAttendanceSummary {
       lateCount: late!.toInt(),
       deduction: amount!,
       bonusTarget: target!,
+      bonusCurrency: RegExp(r'^[A-Z]{3}$').hasMatch('${bonus['currency']}')
+          ? bonus['currency'] as String
+          : 'USD',
       completedDays: complete!.toInt(),
       workingDays: days!.toInt(),
       approvedLateCount: approvedLate?.toInt(),

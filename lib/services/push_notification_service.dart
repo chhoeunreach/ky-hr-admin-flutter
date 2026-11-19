@@ -22,7 +22,6 @@ import 'package:cnattendance/utils/notification_history.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_ringtone_player/flutter_ringtone_player.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
@@ -36,6 +35,10 @@ const String _iosTestFlightUpdateUrl =
     'https://testflight.apple.com/join/hPG4ZA38';
 
 class PushNotificationService {
+  static Future<void>? _initialization;
+  static Future<void>? _initialNotificationOpen;
+  static ReceivedAction? _initialLocalAction;
+
   static String _messageTitle(RemoteMessage message) {
     return message.notification?.title ??
         message.data["notification_title"] ??
@@ -108,27 +111,18 @@ class PushNotificationService {
     return {
       'messageId': message.messageId,
       'sentTime': message.sentTime?.toIso8601String(),
-      'title': _messageTitle(message),
-      'body': _messageBody(message),
       'type': message.data['type'],
       'chat_message_type':
           message.data['chat_message_type'] ?? message.data['message_type'],
-      'data': message.data.toString(),
     };
   }
 
-  static Future<void> _reportIosPushSetupStatus() async {
+  static Future<void> _reportIosPushSetupStatus(String? fcmToken) async {
     try {
-      final fcmToken = await FcmToken.get();
       final apnsToken = await FirebaseMessaging.instance.getAPNSToken();
       final settings =
           await FirebaseMessaging.instance.getNotificationSettings();
 
-      final apnsReady = apnsToken != null && apnsToken.trim().isNotEmpty;
-      final fcmReady = fcmToken != null && fcmToken.trim().isNotEmpty;
-
-      debugPrint('iOS APNS token: ${_maskToken(apnsToken)}');
-      debugPrint('iOS FCM token: ${_maskToken(fcmToken)}');
       _logPushDiagnostic('iOS setup status', {
         'authorization':
             _authorizationStatusLabel(settings.authorizationStatus),
@@ -138,19 +132,8 @@ class PushNotificationService {
         'apns': _maskToken(apnsToken),
         'fcm': _maskToken(fcmToken),
       });
-
-      final statusMessage = apnsReady && fcmReady
-          ? 'iOS push ready\nAPNS: ${_maskToken(apnsToken)}\nFCM: ${_maskToken(fcmToken)}'
-          : 'iOS push not ready\nAPNS: ${_maskToken(apnsToken)}\nFCM: ${_maskToken(fcmToken)}';
-
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        showToast(statusMessage);
-      });
     } catch (e) {
       debugPrint('iOS push setup check failed: $e');
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        showToast('iOS push check failed\n$e');
-      });
     }
   }
 
@@ -164,6 +147,7 @@ class PushNotificationService {
       message: _messageBody(message),
     ).toMap(localKey: localKey ?? "");
     for (final key in const [
+      'action',
       'home_highlight_id',
       'target_version',
       'latest_version',
@@ -202,33 +186,16 @@ class PushNotificationService {
     }
   }
 
-  static bool _isAppUpdatePayload(Map<String, dynamic> data,
-      {String? title, String? body}) {
+  @visibleForTesting
+  static bool isAppUpdatePayload(Map<String, dynamic> data) {
     final type = data['type']?.toString().toLowerCase().trim() ?? '';
     if (type == 'app_update' || type == 'version_update') return true;
     if (data['action']?.toString().toLowerCase().trim() == 'app_update') {
       return true;
     }
-    if (data.containsKey('target_version') ||
-        data.containsKey('latest_version')) {
-      return true;
-    }
-    final t = (title ?? data['notification_title'] ?? data['title'] ?? '')
-        .toString()
-        .toLowerCase();
-    final b =
-        (body ?? data['message'] ?? data['body'] ?? data['description'] ?? '')
-            .toString()
-            .toLowerCase();
-    if (t.contains('អាប់ដេត') ||
-        t.contains('update') ||
-        t.contains('version')) {
-      return true;
-    }
-    if (b.contains('អាប់ដេត') || b.contains('កំណែថ្មី')) {
-      return true;
-    }
-    return false;
+    return ['target_version', 'latest_version'].any(
+      (key) => data[key]?.toString().trim().isNotEmpty ?? false,
+    );
   }
 
   static Future<void> _showAppUpdatePrompt({
@@ -248,7 +215,13 @@ class PushNotificationService {
     try {
       final details = await AppDeviceInfo.getDetails();
       final currentVersion = details.appVersion;
+      if (!context.mounted ||
+          (targetVersion.isNotEmpty &&
+              !AppDeviceInfo.isVersionOlder(currentVersion, targetVersion))) {
+        return;
+      }
       await showAppUpdateDialog(
+        automatic: true,
         context: context,
         currentVersion: currentVersion,
         latestVersion:
@@ -339,25 +312,6 @@ class PushNotificationService {
     );
   }
 
-  static String _toastMessage(RemoteMessage message) {
-    final title = _messageTitle(message).trim();
-    final body = _messageBody(message).trim();
-
-    if (title.isEmpty && body.isEmpty) {
-      return "You have a new Digital HRMS notification";
-    }
-
-    if (body.isEmpty || body == title) {
-      return title;
-    }
-
-    if (title.isEmpty) {
-      return body;
-    }
-
-    return "$title\n$body";
-  }
-
   static Future<void> _openNotificationFromPayload(
       Map<String, String?> payload) async {
     final localKey = payload['local_key']?.trim();
@@ -379,39 +333,14 @@ class PushNotificationService {
       return;
     }
 
-    if (_isAppUpdatePayload(payload,
-        title: payload["title"], body: payload["message"])) {
-      final targetVersion = payload['target_version'] ?? '';
-      final downloadUrl = _platformDownloadUrl(payload);
-      final forceUpdate = _parseBoolLike(payload['force_update']);
-      final title = payload['title'] ?? 'មានកំណែអាប់ដេតថ្មី';
-      final message = payload['message'] ?? '';
-
-      final context =
-          NavigationService.navigatorKey.currentContext ?? Get.context;
-      if (context != null) {
-        final details = await AppDeviceInfo.getDetails();
-        final currentVersion = details.appVersion;
-        await showAppUpdateDialog(
-          context: context,
-          currentVersion: currentVersion,
-          latestVersion:
-              targetVersion.isNotEmpty ? targetVersion : currentVersion,
-          downloadUrl: downloadUrl,
-          releaseNotes: message,
-          alertTitle: title,
-          isForceUpdate: forceUpdate,
-        );
-        return;
-      }
-
-      Get.to(GeneralScreen(), arguments: {
-        "title": title,
-        "message": message,
-        "date": "",
-        "type": "app_update",
-        "download_url": downloadUrl,
-      });
+    if (isAppUpdatePayload(payload)) {
+      await _showAppUpdatePrompt(
+        targetVersion: payload['target_version'] ?? payload['latest_version'] ?? '',
+        downloadUrl: _platformDownloadUrl(payload),
+        title: payload['title'] ?? 'មានកំណែអាប់ដេតថ្មី',
+        message: payload['message'] ?? '',
+        forceUpdate: _parseBoolLike(payload['force_update']),
+      );
       return;
     }
 
@@ -501,7 +430,15 @@ class PushNotificationService {
     return v == '1' || v == 'true' || v == 'yes';
   }
 
-  static Future<void> _showForegroundSystemNotification(
+  @visibleForTesting
+  static bool systemPresentsRemoteMessage(
+    RemoteMessage message, {
+    required bool isIOS,
+    required bool isForeground,
+  }) =>
+      message.notification != null && (isIOS || !isForeground);
+
+  static Future<void> _showSystemNotification(
     RemoteMessage message, {
     String? localKey,
   }) async {
@@ -515,7 +452,7 @@ class PushNotificationService {
         ),
       );
     } catch (e) {
-      debugPrint('Failed to show foreground notification: $e');
+      debugPrint('Failed to show system notification: $e');
     }
   }
 
@@ -551,15 +488,35 @@ class PushNotificationService {
     return 'push:$type|$conversationId|$sender|$sentAt|$body';
   }
 
+  @visibleForTesting
+  static bool shouldTrackChatUnread(
+    RemoteMessage message, {
+    required bool includeDirectChat,
+  }) {
+    final type = message.data["type"]?.toString().trim() ?? "";
+    final isDirectChat = type == "chat";
+    final isGroupChat = type == "group_chat";
+    return isGroupChat || (includeDirectChat && isDirectChat);
+  }
+
+  @visibleForTesting
+  static String chatConversationIdFor(RemoteMessage message) {
+    return _chatConversationId(message);
+  }
+
+  @visibleForTesting
+  static String chatMessageKeyFor(RemoteMessage message) {
+    return _chatMessageKey(message);
+  }
+
   static Future<void> _trackIncomingChatUnread(
     RemoteMessage message, {
     required bool includeDirectChat,
   }) async {
-    final type = message.data["type"]?.toString().trim() ?? "";
-    final isDirectChat = type == "chat";
-    final isGroupChat = type == "group_chat";
-
-    if (!isGroupChat && !(includeDirectChat && isDirectChat)) {
+    if (!shouldTrackChatUnread(
+      message,
+      includeDirectChat: includeDirectChat,
+    )) {
       return;
     }
 
@@ -591,13 +548,15 @@ class PushNotificationService {
     }
   }
 
-  static Future<String?> _storeNotificationHistory(
-      RemoteMessage message) async {
-    final localKey = await NotificationHistory.saveRemoteMessage(
+  static Future<({String? key, bool isNew})> _storeNotificationHistory(
+    RemoteMessage message,
+  ) async {
+    final entry = await NotificationHistory.saveRemoteMessage(
       message,
       title: _messageTitle(message),
       body: _messageBody(message),
     );
+    if (!entry.isNew) return entry;
 
     try {
       if (Get.isRegistered<NotificationController>()) {
@@ -610,7 +569,7 @@ class PushNotificationService {
       await _syncUnreadBadgeFromStorage();
     }
 
-    return localKey;
+    return entry;
   }
 
   static Future<void> _openNotification(
@@ -618,10 +577,32 @@ class PushNotificationService {
     String? localKey,
   }) async {
     final resolvedLocalKey =
-        localKey ?? await _storeNotificationHistory(message);
+        localKey ?? (await _storeNotificationHistory(message)).key;
     await _openNotificationFromPayload(
       _notificationPayload(message, localKey: resolvedLocalKey),
     );
+  }
+
+  /// Read launch actions once, after the authenticated home screen is ready.
+  static Future<void> openInitialNotification() =>
+      _initialNotificationOpen ??= _openInitialNotification();
+
+  static Future<void> _openInitialNotification() async {
+    try {
+      final localAction = _initialLocalAction;
+      _initialLocalAction = null;
+      if (localAction != null) {
+        await _onAwesomeNotificationActionReceived(localAction);
+        return;
+      }
+      final message = await FirebaseMessaging.instance.getInitialMessage();
+      if (message != null) {
+        _logPushDiagnostic('getInitialMessage', _messageLogDetails(message));
+        await _openNotification(message);
+      }
+    } catch (error) {
+      debugPrint('Unable to open initial notification: $error');
+    }
   }
 
   @pragma('vm:entry-point')
@@ -630,13 +611,13 @@ class PushNotificationService {
     await _openNotificationFromPayload(receivedAction.payload ?? {});
   }
 
-  static void _showMessengerAlert(
+  static bool _showMessengerAlert(
     RemoteMessage message, {
     String? localKey,
   }) {
     final context = NavigationService.navigatorKey.currentState?.context;
     if (context == null) {
-      return;
+      return false;
     }
 
     final title = _messageTitle(message);
@@ -713,8 +694,10 @@ class PushNotificationService {
         ),
         context: context,
       );
+      return true;
     } catch (e) {
-      print(e);
+      debugPrint('Failed to show in-app notification: $e');
+      return false;
     }
   }
 
@@ -723,30 +706,19 @@ class PushNotificationService {
     await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform);
     await GetStorage.init();
+    ChatUnreadStore.markStorageReady();
     _logPushDiagnostic('onBackgroundMessage', _messageLogDetails(message));
-    await _trackIncomingChatUnread(
+    final entry = await _storeNotificationHistory(message);
+    if (!entry.isNew) return;
+    await _trackIncomingChatUnread(message, includeDirectChat: true);
+    // The OS presents messages that already carry a notification payload.
+    if (!systemPresentsRemoteMessage(
       message,
-      includeDirectChat: true,
-    );
-    final localKey = await _storeNotificationHistory(message);
-    FlutterRingtonePlayer().play(
-      fromAsset: "assets/sound/beep.mp3",
-    );
-    if (message.notification == null) {
-      final badge = await _currentUnreadNotificationBadge();
-      try {
-        await AwesomeNotifications().createNotification(
-          content: _buildNotificationContent(
-            message,
-            badge: badge,
-            localKey: localKey,
-          ),
-        );
-      } catch (e) {
-        debugPrint('Failed to show background notification: $e');
-      }
+      isIOS: Platform.isIOS,
+      isForeground: false,
+    )) {
+      await _showSystemNotification(message, localKey: entry.key);
     }
-    print(message.data.toString());
   }
 
   static Future<void> _syncFcmTokenWithBackend(String? token) async {
@@ -801,31 +773,20 @@ class PushNotificationService {
       });
 
       if (Platform.isIOS) {
-        final apnsToken = await FirebaseMessaging.instance.getAPNSToken();
-        print('APNS Token: $apnsToken');
         await FirebaseMessaging.instance
             .setForegroundNotificationPresentationOptions(
           alert: true,
           badge: true,
           sound: true,
         );
-        await _reportIosPushSetupStatus();
       }
 
       final fcmToken = await FcmToken.get();
+      if (Platform.isIOS) {
+        await _reportIosPushSetupStatus(fcmToken);
+      }
       if (fcmToken != null && fcmToken.isNotEmpty) {
         await _syncFcmTokenWithBackend(fcmToken);
-      }
-
-      final initialMessage =
-          await FirebaseMessaging.instance.getInitialMessage();
-      if (initialMessage != null) {
-        _logPushDiagnostic(
-          'getInitialMessage',
-          _messageLogDetails(initialMessage),
-        );
-      } else {
-        _logPushDiagnostic('getInitialMessage', {'message': 'none'});
       }
 
       final data =
@@ -838,13 +799,15 @@ class PushNotificationService {
     }
   }
 
-  static Future<void> initialize() async {
+  static Future<void> initialize() => _initialization ??= _initialize();
+
+  static Future<void> _initialize() async {
     FirebaseMessaging.onBackgroundMessage(_messageHandler);
     FirebaseFirestore.instance.settings =
         const Settings(persistenceEnabled: false);
     FirebaseFirestore.instance.clearPersistence();
 
-    AwesomeNotifications().initialize(
+    await AwesomeNotifications().initialize(
       'resource://drawable/app_icon',
       [
         NotificationChannel(
@@ -877,44 +840,43 @@ class PushNotificationService {
       debug: true,
     );
 
+    _initialLocalAction =
+        await AwesomeNotifications().getInitialNotificationAction(
+      removeFromActionEvents: true,
+    );
     await AwesomeNotifications().setListeners(
       onActionReceivedMethod: _onAwesomeNotificationActionReceived,
     );
 
-    AwesomeNotifications().isNotificationAllowed().then((isAllowed) {
-      if (!isAllowed) {
-        AwesomeNotifications().requestPermissionToSendNotifications();
+    FirebaseMessaging.onMessage.listen((message) async {
+      _logPushDiagnostic('onMessage', _messageLogDetails(message));
+      final entry = await _storeNotificationHistory(message);
+      if (!entry.isNew) return;
+      await _trackIncomingChatUnread(message, includeDirectChat: false);
+
+      // iOS already presents foreground pushes that carry a system alert.
+      if (systemPresentsRemoteMessage(
+        message,
+        isIOS: Platform.isIOS,
+        isForeground: true,
+      )) {
+        return;
       }
-    });
 
-    FirebaseMessaging.onMessage.listen((event) async {
-      _logPushDiagnostic('onMessage', _messageLogDetails(event));
-      await _trackIncomingChatUnread(
-        event,
-        includeDirectChat: false,
-      );
-      final localKey = await _storeNotificationHistory(event);
-      FlutterRingtonePlayer().play(
-        fromAsset: "assets/sound/beep.mp3",
-      );
-      showToast(
-        _toastMessage(event),
-        onTap: () => _openNotification(event, localKey: localKey),
-      );
-      await _showForegroundSystemNotification(event, localKey: localKey);
-      _showMessengerAlert(event, localKey: localKey);
-
-      if (_isAppUpdatePayload(event.data,
-          title: _messageTitle(event), body: _messageBody(event))) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _showAppUpdatePrompt(
-            targetVersion: event.data['target_version']?.toString() ?? '',
-            downloadUrl: _platformDownloadUrl(event.data),
-            title: _messageTitle(event),
-            message: _messageBody(event),
-            forceUpdate: _parseBoolLike(event.data['force_update']),
-          );
-        });
+      if (isAppUpdatePayload(message.data)) {
+        final targetVersion =
+            message.data['target_version']?.toString().trim() ?? '';
+        await _showAppUpdatePrompt(
+          targetVersion: targetVersion.isNotEmpty
+              ? targetVersion
+              : (message.data['latest_version']?.toString().trim() ?? ''),
+          downloadUrl: _platformDownloadUrl(message.data),
+          title: _messageTitle(message),
+          message: _messageBody(message),
+          forceUpdate: _parseBoolLike(message.data['force_update']),
+        );
+      } else if (!_showMessengerAlert(message, localKey: entry.key)) {
+        await _showSystemNotification(message, localKey: entry.key);
       }
     });
 
@@ -925,18 +887,11 @@ class PushNotificationService {
 
     FirebaseMessaging.onMessageOpenedApp.listen((message) async {
       _logPushDiagnostic('onMessageOpenedApp', _messageLogDetails(message));
-      final localKey = await _storeNotificationHistory(message);
-      print(message.data.toString());
-      await _openNotification(message, localKey: localKey);
+      await _openNotification(message);
     });
   }
 
   static Future<void> finishStartupSetup() async {
     await _finishStartupSetup();
-  }
-
-  @pragma('vm:entry-point')
-  static Future<void> handleBackgroundMessage(RemoteMessage message) async {
-    await _messageHandler(message);
   }
 }

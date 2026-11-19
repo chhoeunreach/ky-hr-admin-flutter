@@ -33,6 +33,7 @@ class HomeHighlightCarousel extends StatefulWidget {
 class _HomeHighlightCarouselState extends State<HomeHighlightCarousel>
     with WidgetsBindingObserver {
   bool _foreground = true;
+  bool _motionDisabled = false;
   bool _routeOpen = false;
   final PageController _pageController = PageController();
   int _page = 0;
@@ -61,16 +62,29 @@ class _HomeHighlightCarouselState extends State<HomeHighlightCarousel>
     _syncAutoRotate();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final motionDisabled = MediaQuery.disableAnimationsOf(context);
+    if (_motionDisabled == motionDisabled) return;
+    _motionDisabled = motionDisabled;
+    _syncAutoRotate();
+  }
+
   void _syncAutoRotate() {
     _timer?.cancel();
     _timer = null;
-    if (widget.loading || widget.items.length <= 1) return;
+    if (_motionDisabled ||
+        !_foreground ||
+        widget.loading ||
+        widget.items.length <= 1) {
+      return;
+    }
     _timer = Timer.periodic(const Duration(seconds: 6), (_) {
       if (!mounted ||
           !_foreground ||
           _routeOpen ||
           !_pageController.hasClients ||
-          MediaQuery.disableAnimationsOf(context) ||
           !(ModalRoute.of(context)?.isCurrent ?? true) ||
           _pageController.position.isScrollingNotifier.value) return;
       final next = (_page + 1) % widget.items.length;
@@ -85,6 +99,7 @@ class _HomeHighlightCarouselState extends State<HomeHighlightCarousel>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _foreground = state == AppLifecycleState.resumed;
+    _syncAutoRotate();
   }
 
   @override

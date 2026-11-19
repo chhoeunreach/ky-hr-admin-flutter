@@ -122,13 +122,26 @@ class RepairPriceApiService {
     String? search,
     int? categoryId,
   }) async {
-    final response = await _get('/devices/$deviceId/services', {
-      'search': search,
-      'category_id': categoryId,
-    });
-    return _list(response)
-        .map((item) => RepairService.fromJson(Map<String, dynamic>.from(item)))
-        .toList();
+    final services = <Object, RepairService>{};
+    var lastPage = 1;
+    for (var page = 1; page <= lastPage; page++) {
+      final response = await _get('/devices/$deviceId/services', {
+        'search': search,
+        'category_id': categoryId,
+        'page': page,
+        'per_page': 50,
+      });
+      final items = _list(response);
+      if (items.isEmpty) break;
+      if (page == 1 && response is Map && response['pagination'] is Map) {
+        lastPage = int.tryParse('${response['pagination']['last_page']}') ?? 1;
+      }
+      for (final item in items.whereType<Map>()) {
+        final service = RepairService.fromJson(Map<String, dynamic>.from(item));
+        services[service.priceKey] = service;
+      }
+    }
+    return services.values.toList();
   }
 
   // 7. GET /api/repair-price/categories
@@ -212,20 +225,22 @@ class RepairPriceApiService {
   Future<RepairDevice> createDevice(Map<String, dynamic> data) async {
     final response = await _post('/admin/devices', data);
     if (response is Map && response['data'] is Map) {
-      return RepairDevice.fromJson(Map<String, dynamic>.from(response['data']));
+      final device =
+          RepairDevice.fromJson(Map<String, dynamic>.from(response['data']));
+      if (device.id > 0) return device;
     }
-    return RepairDevice.fromJson(
-        Map<String, dynamic>.from(response is Map ? response : data));
+    throw const RepairApiException('Invalid repair device response');
   }
 
   // PUT /api/repair-price/admin/devices/{id}
   Future<RepairDevice> updateDevice(int id, Map<String, dynamic> data) async {
     final response = await _put('/admin/devices/$id', data);
     if (response is Map && response['data'] is Map) {
-      return RepairDevice.fromJson(Map<String, dynamic>.from(response['data']));
+      final device =
+          RepairDevice.fromJson(Map<String, dynamic>.from(response['data']));
+      if (device.id == id) return device;
     }
-    return RepairDevice.fromJson(
-        Map<String, dynamic>.from(response is Map ? response : data));
+    throw const RepairApiException('Invalid repair device response');
   }
 
   // DELETE /api/repair-price/admin/devices/{id}

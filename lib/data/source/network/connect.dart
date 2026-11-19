@@ -3,12 +3,11 @@ import 'dart:convert';
 import 'package:cnattendance/data/source/datastore/preferences.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
-import 'package:http_interceptor_plus/http_interceptor_plus.dart';
 
 class Connect {
   /// One client for the whole app so Dart's HTTP layer can keep TCP/TLS
   /// connections alive between requests instead of reconnecting per call.
-  static final http.Client _client = LoggingMiddleware(http.Client());
+  static final http.Client _client = http.Client();
 
   Future<http.Response> getResponse(
       String url, Map<String, String> headers) async {

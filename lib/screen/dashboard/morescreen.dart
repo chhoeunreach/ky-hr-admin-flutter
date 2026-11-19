@@ -7,6 +7,7 @@ import 'package:cnattendance/screen/advancesalary/admin/admin_advancesalary_scre
 import 'package:cnattendance/screen/assetscreen/assetscreen.dart';
 import 'package:cnattendance/screen/awards/awardsscreen.dart';
 import 'package:cnattendance/screen/complainscreen/complainscreen.dart';
+import 'package:cnattendance/screen/dashboard/admin/banner_admin_screen.dart';
 import 'package:cnattendance/screen/dashboard/projectscreen.dart';
 import 'package:cnattendance/screen/eventscreen/eventlistscreen.dart';
 import 'package:cnattendance/screen/meeting_attendance/meeting_attendance_screen.dart';
@@ -34,6 +35,7 @@ import 'package:cnattendance/theme/theme_provider.dart';
 import 'package:cnattendance/screen/training/trainingscreen.dart';
 import 'package:cnattendance/screen/warningscreen/warningscreen.dart';
 import 'package:cnattendance/utils/constant.dart';
+import 'package:cnattendance/widget/enterprise/app_motion.dart';
 import 'package:cnattendance/widget/headerprofile.dart';
 import 'package:cnattendance/widgets/theme_selector.dart';
 import 'package:cnattendance/widget/premium_background.dart';
@@ -42,7 +44,6 @@ import 'package:flutter/material.dart';
 import 'package:cnattendance/widget/morescreen/services.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:focus_detector/focus_detector.dart';
-import 'package:get_storage/get_storage.dart';
 import 'package:provider/provider.dart';
 
 class MoreScreen extends StatefulWidget {
@@ -76,6 +77,8 @@ class MoreScreenState extends State<MoreScreen> {
             context.select<PrefProvider, String>((p) => p.userId).trim()) ??
         0;
     final enterprise = EnterpriseTheme.of(context);
+    final inlineMenuButton = enterprise.layout.showMenuButton &&
+        MediaQuery.sizeOf(context).width < 720;
     final availableAttendanceMethods =
         attendanceMethod.map((method) => method.toLowerCase()).toList();
 
@@ -201,19 +204,19 @@ class MoreScreenState extends State<MoreScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  HeaderProfile(),
+                  HeaderProfile(showMenuButton: inlineMenuButton),
                   if (features['social-feed'] == '1')
                     Services(translate('community.social_feed'),
                         Icons.dynamic_feed_outlined, const SocialFeedScreen()),
                   Padding(
                       padding:
-                          EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                          const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                       child: Text(
                         translate('more_screen.attendance_default_method'),
                         style: TextStyle(
-                            color: Colors.white,
+                            color: enterprise.text,
                             fontSize: 13,
-                            fontWeight: FontWeight.bold),
+                            fontWeight: FontWeight.w800),
                       )),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -245,13 +248,13 @@ class MoreScreenState extends State<MoreScreen> {
                   ),
                   Padding(
                       padding:
-                          EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                          const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                       child: Text(
                         translate('more_screen.account'),
                         style: TextStyle(
-                            color: Colors.white,
+                            color: enterprise.text,
                             fontSize: 13,
-                            fontWeight: FontWeight.bold),
+                            fontWeight: FontWeight.w800),
                       )),
                   if (features["profile"] == "1")
                     Services(translate('more_screen.profile'), Icons.person,
@@ -260,14 +263,14 @@ class MoreScreenState extends State<MoreScreen> {
                     Services(translate('more_screen.change_password'),
                         Icons.password, ChangePasswordScreen()),
                   Padding(
-                      padding: EdgeInsets.only(
+                      padding: const EdgeInsets.only(
                           left: 14, right: 14, top: 12, bottom: 6),
                       child: Text(
                         translate('more_screen.office_desk'),
                         style: TextStyle(
-                            color: Colors.white,
+                            color: enterprise.text,
                             fontSize: 13,
-                            fontWeight: FontWeight.bold),
+                            fontWeight: FontWeight.w800),
                       )),
                   if (features["team-sheet"] == "1")
                     Services(translate('more_screen.team_sheet'), Icons.group,
@@ -323,16 +326,16 @@ class MoreScreenState extends State<MoreScreen> {
                           Icons.perm_device_information_outlined,
                           ComplainScreen()),
                   Padding(
-                      padding: EdgeInsets.only(
+                      padding: const EdgeInsets.only(
                           left: 14, right: 14, top: 12, bottom: 6),
                       child: GestureDetector(
                         onLongPress: showFeatureDebug,
                         child: Text(
                           translate('more_screen.finance'),
                           style: TextStyle(
-                              color: Colors.white,
+                              color: enterprise.text,
                               fontSize: 13,
-                              fontWeight: FontWeight.bold),
+                              fontWeight: FontWeight.w800),
                         ),
                       )),
                   features["tada"] != "1"
@@ -378,19 +381,25 @@ class MoreScreenState extends State<MoreScreen> {
                       ? SizedBox.shrink()
                       : Services(translate('more_screen.social_rewards'),
                           Icons.verified, const AdminSocialRewardsScreen()),
+                  features["banner-admin"] != "1"
+                      ? SizedBox.shrink()
+                      : Services(
+                          translate('more_screen.banner_manager'),
+                          Icons.view_carousel_rounded,
+                          const BannerAdminScreen()),
                   /*features["loan"] != "1"
                                 ? SizedBox.shrink()
                                 : Services(translate('more_screen.loans'),
                                     Icons.handshake_outlined, LoanListScreen()),*/
                   Padding(
-                      padding: EdgeInsets.only(
+                      padding: const EdgeInsets.only(
                           left: 14, right: 14, top: 12, bottom: 6),
                       child: Text(
                         translate('more_screen.additional'),
                         style: TextStyle(
-                            color: Colors.white,
+                            color: enterprise.text,
                             fontSize: 13,
-                            fontWeight: FontWeight.bold),
+                            fontWeight: FontWeight.w800),
                       )),
                   //Services('Issue Ticket', Icons.note, ProfileScreen()),
                   features["support"] != "1"
@@ -415,14 +424,14 @@ class MoreScreenState extends State<MoreScreen> {
                     control: 1,
                   ),
                   Padding(
-                      padding: EdgeInsets.only(
+                      padding: const EdgeInsets.only(
                           left: 14, right: 14, top: 12, bottom: 6),
                       child: Text(
                         translate('more_screen.others'),
                         style: TextStyle(
-                            color: Colors.white,
+                            color: enterprise.text,
                             fontSize: 13,
-                            fontWeight: FontWeight.bold),
+                            fontWeight: FontWeight.w800),
                       )),
                   features["dark-mode"] != "1"
                       ? SizedBox.shrink()
@@ -474,36 +483,10 @@ class MoreScreenState extends State<MoreScreen> {
                     padding: EdgeInsets.symmetric(horizontal: 10, vertical: 0),
                     child: Column(
                       children: [
-                        ListTile(
-                          trailing: Switch(
-                            activeThumbColor: Colors.blue,
-                            value: getAnimation(),
-                            onChanged: (value) {
-                              final box = GetStorage();
-                              box.write('animation',
-                                  !(box.read("animation") ?? true));
-                            },
-                          ),
-                          dense: true,
-                          minLeadingWidth: 5,
-                          leading: Icon(
-                            Icons.animation,
-                            color: Colors.white,
-                          ),
-                          title: Text(
-                            translate('more_screen.animation'),
-                            style: TextStyle(color: Colors.white, fontSize: 13),
-                          ),
-                          onTap: () {
-                            final box = GetStorage();
-                            box.write(
-                                'animation', !(box.read("animation") ?? true));
-                          },
-                          selected: true,
-                        ),
-                        const Divider(
+                        const AnimationSettingsTile(),
+                        Divider(
                           height: 1,
-                          color: Colors.white24,
+                          color: enterprise.cardBorder,
                           indent: 15,
                           endIndent: 15,
                         ),

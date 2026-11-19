@@ -32,8 +32,5 @@ List<Color> themedRadialColors() {
 
 Color themedChromeColor() {
   final mode = AppThemeModeX.fromId(GetStorage().read('app_theme_mode'));
-  if (mode == AppThemeMode.light || mode == AppThemeMode.dark) {
-    return HexColor(getAppTheme() ? radialBoxTheme : "#000000");
-  }
   return AppThemeData.info(mode).colors.cardColor;
 }

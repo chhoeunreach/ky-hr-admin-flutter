@@ -153,7 +153,7 @@ class RepairDevice {
       'image': image,
       if (brand != null) 'repair_brand_id': brand!.id,
       if (deviceType != null) 'repair_device_type_id': deviceType!.id,
-      if (series != null) 'repair_device_series_id': series!.id,
+      'repair_device_series_id': series?.id,
     };
   }
 

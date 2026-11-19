@@ -51,6 +51,7 @@ class MoreScreenProvider with ChangeNotifier {
         final jsonResponse = Logoutresponse.fromJson(responseData);
 
         await preferences.clearPrefs();
+        await preferences.setCompanyVerifyRequired(true);
         features = {};
         showNfc = false;
         notifyListeners();

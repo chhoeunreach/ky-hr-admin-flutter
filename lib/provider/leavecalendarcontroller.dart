@@ -10,12 +10,10 @@ import 'package:cnattendance/data/source/network/model/employeeleavecalendarbyda
 import 'package:cnattendance/model/LeaveByDay.dart';
 import 'package:cnattendance/model/holiday.dart';
 import 'package:cnattendance/utils/constant.dart';
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:nepali_date_picker/nepali_date_picker.dart';
-
 
 class LeaveCalendarController extends GetxController {
   var current = DateTime.now().obs;
@@ -23,11 +21,12 @@ class LeaveCalendarController extends GetxController {
   var currentMonth = DateTime.now().month.obs;
   var nextMonth = (DateTime.now().month + 1).obs;
 
-  RxMap<String, List<dynamic>> _employeeLeaveList = <String, List<dynamic>>{}.obs;
+  RxMap<String, List<dynamic>> _employeeLeaveList =
+      <String, List<dynamic>>{}.obs;
 
   var _employeeLeaveByDayList = <LeaveByDay>[].obs;
   final Rxn<Holiday> _employeeHoliday = Rxn<Holiday>();
-  var  _employeeBirthdayList = <Birthday>[].obs;
+  var _employeeBirthdayList = <Birthday>[].obs;
 
   var toggleValue = 0.obs;
 
@@ -77,8 +76,6 @@ class LeaveCalendarController extends GetxController {
 
       final responseData = json.decode(response.body);
       if (response.statusCode == 200) {
-        debugPrint(responseData.toString());
-
         final responseJson =
             Employeeleavecalendarresponse.fromJson(responseData);
 
@@ -104,7 +101,6 @@ class LeaveCalendarController extends GetxController {
 
   Future<EmployeeLeavesByDayResponse> getLeavesByDay(String value) async {
     Preferences preferences = Preferences();
-    print("Leave date for " + value.toString());
     var uri =
         Uri.parse(await preferences.getAppUrl() + Constant.OFFICE_CALENDAR_API)
             .replace(queryParameters: {'leave_date': value});
@@ -122,8 +118,6 @@ class LeaveCalendarController extends GetxController {
 
       final responseData = json.decode(response.body);
       if (response.statusCode == 200) {
-        debugPrint(responseData.toString());
-
         final responseJson = EmployeeLeavesByDayResponse.fromJson(responseData);
 
         makeLeaveByDayList(responseJson.data.employeeLeaves);
@@ -174,8 +168,7 @@ class LeaveCalendarController extends GetxController {
           description: item.description,
           dateTime: tempDate,
           isPublicHoliday: item.is_public_holiday);
-
-    }else{
+    } else {
       _employeeHoliday.value = null;
     }
   }

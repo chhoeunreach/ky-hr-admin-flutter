@@ -1,8 +1,8 @@
 import 'package:cnattendance/provider/leaveprovider.dart';
+import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
-import 'package:hexcolor/hexcolor.dart';
 import 'package:provider/provider.dart';
 
 //ignore: must_be_immutable
@@ -17,6 +17,7 @@ class LeavetypeFilterState extends State<LeavetypeFilter> {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<LeaveProvider>(context);
+    final enterprise = EnterpriseTheme.of(context);
 
     void onToggleChanged() async {
       try {
@@ -43,23 +44,25 @@ class LeavetypeFilterState extends State<LeavetypeFilter> {
       children: [
         Text(
           translate('leave_screen.filter'),
-          style: TextStyle(color: Colors.white, fontSize: 20),
+          style: TextStyle(
+            color: enterprise.text,
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+          ),
         ),
         DropdownButtonHideUnderline(
           child: DropdownButton2<int>(
             isExpanded: true,
             hint: Row(
               children: [
-                SizedBox(
-                  width: 4,
-                ),
+                const SizedBox(width: 4),
                 Expanded(
                   child: Text(
                     translate('leave_screen.select_leave_type'),
                     style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: enterprise.mutedText,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -71,10 +74,10 @@ class LeavetypeFilterState extends State<LeavetypeFilter> {
                       value: item.id,
                       child: Text(
                         item.name,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: enterprise.text,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -93,21 +96,20 @@ class LeavetypeFilterState extends State<LeavetypeFilter> {
               icon: const Icon(
                 Icons.arrow_forward_ios_outlined,
               ),
-              iconSize: 14,
-              iconEnabledColor: Colors.black,
+              iconSize: 13,
+              iconEnabledColor: enterprise.mutedText,
               iconDisabledColor: Colors.grey,
             ),
             buttonStyleData: ButtonStyleData(
-              height: 50,
+              height: 42,
               width: 160,
-              padding: const EdgeInsets.only(left: 14, right: 14),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(10),
-                    topRight: Radius.circular(0),
-                    bottomLeft: Radius.circular(0),
-                    bottomRight: Radius.circular(10)),
-                color: HexColor("#FFFFFF"),
+                borderRadius: BorderRadius.circular(10),
+                color: enterprise.isDark
+                    ? const Color(0xFF0F172A)
+                    : const Color(0xFFF8FAFC),
+                border: Border.all(color: enterprise.cardBorder),
               ),
               elevation: 0,
             ),
@@ -115,18 +117,16 @@ class LeavetypeFilterState extends State<LeavetypeFilter> {
               maxHeight: 200,
               padding: null,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(0),
-                    topRight: Radius.circular(10),
-                    bottomLeft: Radius.circular(10),
-                    bottomRight: Radius.circular(10)),
-                color: HexColor("#FFFFFF"),
+                borderRadius: BorderRadius.circular(10),
+                color:
+                    enterprise.isDark ? const Color(0xFF1E293B) : Colors.white,
+                border: Border.all(color: enterprise.cardBorder),
               ),
               elevation: 8,
             ),
-            menuItemStyleData: MenuItemStyleData(
-              height: 40,
-              padding: const EdgeInsets.only(left: 14, right: 14),
+            menuItemStyleData: const MenuItemStyleData(
+              height: 38,
+              padding: EdgeInsets.symmetric(horizontal: 12),
             ),
           ),
         ),

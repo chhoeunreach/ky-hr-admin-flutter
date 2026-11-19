@@ -86,6 +86,18 @@ class _CustomQrScannerDialogState extends State<_CustomQrScannerDialog> {
           child: MobileScanner(
             controller: _controller,
             onDetect: _onDetect,
+            errorBuilder: (context, error) => Center(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Text(
+                  translate(
+                      error.errorCode == MobileScannerErrorCode.permissionDenied
+                          ? 'royal.camera_required'
+                          : 'royal.camera_unavailable'),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
           ),
         ),
       ),

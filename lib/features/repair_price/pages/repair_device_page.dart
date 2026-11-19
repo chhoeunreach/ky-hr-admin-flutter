@@ -53,10 +53,7 @@ class _RepairDeviceViewState extends State<_RepairDeviceView> {
     _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        final provider = context.read<RepairPriceProvider>();
-        if (provider.deviceLoadingState == RepairLoadingState.initial) {
-          provider.initDevicePage();
-        }
+        context.read<RepairPriceProvider>().initDevicePage();
       }
     });
   }
@@ -135,17 +132,16 @@ class _RepairDeviceViewState extends State<_RepairDeviceView> {
                     context,
                     brands: provider.brands,
                     deviceTypes: provider.deviceTypes,
-                    series: provider.series,
                     existingDevices: provider.devices,
                     onSave: (device) => provider.addDevice(device),
-                    onAddBrand: (brand) => provider.addBrand(brand),
-                    onAddDeviceType: (type) => provider.addDeviceType(type),
                   );
                 },
               )
             : null,
         body: !provider.canView
-            ? _buildAccessDenied(context, provider)
+            ? provider.deviceLoadingState == RepairLoadingState.forbidden
+                ? _buildAccessDenied(context, provider)
+                : _buildDeviceBody(context, provider)
             : Column(
                 children: [
                   // Search Box & Filters Header
@@ -458,14 +454,10 @@ class _RepairDeviceViewState extends State<_RepairDeviceView> {
                               context,
                               brands: provider.brands,
                               deviceTypes: provider.deviceTypes,
-                              series: provider.series,
                               existingDevices: provider.devices,
                               device: device,
                               onSave: (d) => provider.updateDevice(d),
                               onDelete: (id) => provider.deleteDevice(id),
-                              onAddBrand: (brand) => provider.addBrand(brand),
-                              onAddDeviceType: (type) =>
-                                  provider.addDeviceType(type),
                             )
                         : null,
                     onDelete: provider.canManageDevices
@@ -505,14 +497,10 @@ class _RepairDeviceViewState extends State<_RepairDeviceView> {
                             context,
                             brands: provider.brands,
                             deviceTypes: provider.deviceTypes,
-                            series: provider.series,
                             existingDevices: provider.devices,
                             device: device,
                             onSave: (d) => provider.updateDevice(d),
                             onDelete: (id) => provider.deleteDevice(id),
-                            onAddBrand: (brand) => provider.addBrand(brand),
-                            onAddDeviceType: (type) =>
-                                provider.addDeviceType(type),
                           )
                       : null,
                   onDelete: provider.canManageDevices
@@ -569,14 +557,16 @@ class _RepairDeviceViewState extends State<_RepairDeviceView> {
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(ctx);
-              provider.deleteDevice(device.id);
+              final deleted = await provider.deleteDevice(device.id);
+              if (!context.mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(
-                      '${translate('repair_screen.device_deleted')}: "${device.name}"'),
-                  backgroundColor: Colors.redAccent,
+                  content: Text(translate(deleted
+                      ? 'repair_screen.device_deleted'
+                      : 'repair_screen.device_delete_failed')),
+                  backgroundColor: deleted ? Colors.green : Colors.redAccent,
                 ),
               );
             },

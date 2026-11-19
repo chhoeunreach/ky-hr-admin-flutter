@@ -1,4 +1,4 @@
-import 'package:cnattendance/widget/radialDecoration.dart';
+import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 
@@ -18,6 +18,7 @@ class AttendanceDetailBottomSheetState
     extends State<AttendanceDetailBottomSheet> {
   @override
   Widget build(BuildContext context) {
+    final enterprise = EnterpriseTheme.of(context);
     double workedHr = 0;
     final workingHr = widget.attendances.first.working_hours_min;
     final statusLabel = _attendanceStatusLabel(
@@ -33,7 +34,11 @@ class AttendanceDetailBottomSheetState
     final extraTime = workingHr - workedHr;
 
     return Container(
-      decoration: RadialDecoration(),
+      decoration: BoxDecoration(
+        color: enterprise.cardBackground,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        border: Border.all(color: enterprise.cardBorder),
+      ),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: SafeArea(
           child: Column(
@@ -46,17 +51,17 @@ class AttendanceDetailBottomSheetState
                 "${translate('attendance_screen.attendance_summary')}",
                 style: TextStyle(
                     fontSize: 20,
-                    color: Colors.white,
+                    color: enterprise.text,
                     fontWeight: FontWeight.bold),
               ),
               IconButton(
                   onPressed: () {
                     Navigator.pop(context);
                   },
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.close,
                     size: 20,
-                    color: Colors.white,
+                    color: enterprise.text,
                   )),
             ],
           ),
@@ -66,40 +71,42 @@ class AttendanceDetailBottomSheetState
                 child: Text(
                   translate('attendance_screen.start_time'),
                   textAlign: TextAlign.start,
-                  style: TextStyle(color: Colors.grey, fontSize: 16),
+                  style: TextStyle(color: enterprise.mutedText, fontSize: 14),
                 ),
               ),
               Expanded(
                 child: Text(
                   translate('attendance_screen.end_time'),
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey, fontSize: 16),
+                  style: TextStyle(color: enterprise.mutedText, fontSize: 14),
                 ),
               ),
               Expanded(
                 child: Text(
                   translate('attendance_screen.worked_hours'),
                   textAlign: TextAlign.end,
-                  style: TextStyle(color: Colors.grey, fontSize: 16),
+                  style: TextStyle(color: enterprise.mutedText, fontSize: 14),
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 6),
           if (dayStatus != 'present')
             Container(
               width: double.infinity,
-              margin: const EdgeInsets.only(top: 8, bottom: 6),
+              margin: const EdgeInsets.only(top: 4, bottom: 8),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.12),
+                color: enterprise.accent.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: enterprise.accent.withValues(alpha: 0.25)),
               ),
               child: Text(
                 statusLabel,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 15,
+                style: TextStyle(
+                    color: enterprise.accent,
+                    fontSize: 14,
                     fontWeight: FontWeight.bold),
               ),
             ),
@@ -109,46 +116,49 @@ class AttendanceDetailBottomSheetState
             primary: false,
             itemBuilder: (context, index) {
               final attendance = widget.attendances[index];
-              return Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      attendance.check_in,
-                      textAlign: TextAlign.start,
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold),
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        attendance.check_in,
+                        textAlign: TextAlign.start,
+                        style: TextStyle(
+                            color: enterprise.text,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600),
+                      ),
                     ),
-                  ),
-                  Expanded(
-                    child: Text(
-                      attendance.check_out,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold),
+                    Expanded(
+                      child: Text(
+                        attendance.check_out,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            color: enterprise.text,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600),
+                      ),
                     ),
-                  ),
-                  Expanded(
-                    child: Text(
-                      attendance.worked_hours,
-                      textAlign: TextAlign.end,
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold),
+                    Expanded(
+                      child: Text(
+                        attendance.worked_hours,
+                        textAlign: TextAlign.end,
+                        style: TextStyle(
+                            color: enterprise.text,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               );
             },
           ),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8.0),
             child: Divider(
-              color: Colors.white38,
+              color: enterprise.cardBorder,
               height: 5,
             ),
           ),
@@ -157,25 +167,38 @@ class AttendanceDetailBottomSheetState
             children: [
               Text(
                 translate('attendance_screen.worked_hours'),
-                style: TextStyle(color: Colors.white, fontSize: 18),
+                style: TextStyle(
+                  color: enterprise.text,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               Text(
                 convertMinutesToFormattedString(workedHr),
-                style: TextStyle(color: Colors.white, fontSize: 18),
+                style: TextStyle(
+                  color: enterprise.text,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),
+          const SizedBox(height: 4),
           if (extraTime.isNegative)
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
                   translate('attendance_screen.overtime'),
-                  style: TextStyle(color: Colors.white, fontSize: 16),
+                  style: TextStyle(color: enterprise.mutedText, fontSize: 14),
                 ),
                 Text(
                   "+${convertMinutesToFormattedString(extraTime)}",
-                  style: TextStyle(color: Colors.green, fontSize: 16),
+                  style: const TextStyle(
+                    color: Colors.green,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ),
@@ -185,11 +208,15 @@ class AttendanceDetailBottomSheetState
               children: [
                 Text(
                   translate('attendance_screen.undertime'),
-                  style: TextStyle(color: Colors.grey, fontSize: 16),
+                  style: TextStyle(color: enterprise.mutedText, fontSize: 14),
                 ),
                 Text(
                   "-${convertMinutesToFormattedString(extraTime)}",
-                  style: TextStyle(color: Colors.red, fontSize: 16),
+                  style: const TextStyle(
+                    color: Colors.red,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ),

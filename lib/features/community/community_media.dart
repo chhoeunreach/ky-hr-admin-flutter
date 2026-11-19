@@ -92,7 +92,8 @@ class CommunityMedia extends StatelessWidget {
       this.onVideoDuration,
       this.loopVideo = true,
       this.rememberPlayback = true,
-      this.videoTapEnabled = true});
+      this.videoTapEnabled = true,
+      this.allowFullscreen = false});
   final String type;
   final String url;
   final bool compact;
@@ -134,6 +135,9 @@ class CommunityMedia extends StatelessWidget {
   /// own play/pause toggle.
   final bool videoTapEnabled;
 
+  /// Lets users open a native video in a full-screen player.
+  final bool allowFullscreen;
+
   @override
   Widget build(BuildContext context) {
     if (type == 'text' || url.isEmpty) return SizedBox.shrink();
@@ -162,7 +166,8 @@ class CommunityMedia extends StatelessWidget {
           onVideoDuration: onVideoDuration,
           loopVideo: loopVideo,
           rememberPlayback: rememberPlayback,
-          videoTapEnabled: videoTapEnabled);
+          videoTapEnabled: videoTapEnabled,
+          allowFullscreen: allowFullscreen);
     }
     return _PlayableMedia(
         type: type,
@@ -683,6 +688,7 @@ class FeedVideoAutoplayManager extends ChangeNotifier {
 
   Object? _active;
   Object? _suppressed;
+  Object? _fullscreenOwner;
   bool _activePaused = false;
   bool _muted = true;
   bool _foreground = true;
@@ -707,6 +713,7 @@ class FeedVideoAutoplayManager extends ChangeNotifier {
 
   /// Called when a tile crosses the visibility threshold and wants to play.
   void activate(Object owner) {
+    if (_fullscreenOwner != null && !identical(_fullscreenOwner, owner)) return;
     _suppressed = null;
     _activePaused = false;
     if (identical(_active, owner) && _foreground) {
@@ -715,6 +722,15 @@ class FeedVideoAutoplayManager extends ChangeNotifier {
     }
     _active = owner;
     notifyListeners();
+  }
+
+  void _enterFullscreen(Object owner) {
+    _fullscreenOwner = owner;
+    activate(owner);
+  }
+
+  void _leaveFullscreen(Object owner) {
+    if (identical(_fullscreenOwner, owner)) _fullscreenOwner = null;
   }
 
   /// Pauses a tile the user explicitly stopped so visibility changes do not
@@ -784,6 +800,7 @@ class FeedVideoAutoplayManager extends ChangeNotifier {
   }
 
   void unregister(Object owner) {
+    _leaveFullscreen(owner);
     final entry = _tiles.remove(owner);
     if (entry?.mediaId != null && entry?.playbackPosition != null) {
       rememberPosition(entry!.mediaId!, entry.playbackPosition!);
@@ -828,6 +845,7 @@ class FeedVideoAutoplayManager extends ChangeNotifier {
     _tiles.clear();
     _active = null;
     _suppressed = null;
+    _fullscreenOwner = null;
     _activePaused = false;
   }
 
@@ -847,6 +865,7 @@ class FeedVideoAutoplayManager extends ChangeNotifier {
   }
 
   void _promoteMostVisible() {
+    if (_fullscreenOwner != null) return;
     Object? best;
     double bestFraction = visibilityThreshold;
     for (final entry in _tiles.entries) {
@@ -962,6 +981,7 @@ class _AutoplayVideo extends StatefulWidget {
     this.loopVideo = true,
     this.rememberPlayback = true,
     this.videoTapEnabled = true,
+    this.allowFullscreen = false,
   });
 
   final Uri uri;
@@ -980,6 +1000,7 @@ class _AutoplayVideo extends StatefulWidget {
   final bool loopVideo;
   final bool rememberPlayback;
   final bool videoTapEnabled;
+  final bool allowFullscreen;
 
   @override
   State<_AutoplayVideo> createState() => _AutoplayVideoState();
@@ -997,6 +1018,8 @@ class _AutoplayVideoState extends State<_AutoplayVideo> {
   final UniqueKey _visibilityKey = UniqueKey();
 
   VideoPlayerController? _controller;
+  ValueNotifier<int>? _fullscreenRefresh;
+  VisibilityInfo? _fullscreenVisibility;
   Timer? _playTimer;
   Timer? _disposeTimer;
   bool _visible = false;
@@ -1098,6 +1121,12 @@ class _AutoplayVideoState extends State<_AutoplayVideo> {
     _initializationEpoch++;
     final controller = _controller;
     _controller = null;
+    final fullscreen = _fullscreenRefresh;
+    if (fullscreen != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (identical(fullscreen, _fullscreenRefresh)) fullscreen.value++;
+      });
+    }
     controller?.removeListener(_onPlayerChanged);
     controller?.dispose();
     super.dispose();
@@ -1138,6 +1167,13 @@ class _AutoplayVideoState extends State<_AutoplayVideo> {
     setState(() {});
   }
 
+  void _updatePlayerView(VoidCallback update) {
+    if (!mounted) return;
+    setState(update);
+    final fullscreen = _fullscreenRefresh;
+    if (fullscreen != null) fullscreen.value++;
+  }
+
   void _syncPlayback() {
     final controller = _controller;
     if (_manager.isActive(this)) {
@@ -1169,6 +1205,10 @@ class _AutoplayVideoState extends State<_AutoplayVideo> {
 
   void _onVisibilityChanged(VisibilityInfo info) {
     if (!mounted) return;
+    if (_fullscreenRefresh != null) {
+      _fullscreenVisibility = info;
+      return;
+    }
     final fraction = info.visibleFraction;
     _manager.updateVisibility(this, fraction,
         position: _feedPosition,
@@ -1226,7 +1266,7 @@ class _AutoplayVideoState extends State<_AutoplayVideo> {
     _firstFrameReported = false;
     controller?.removeListener(_onPlayerChanged);
     controller?.dispose();
-    if (mounted) setState(() {});
+    _updatePlayerView(() {});
   }
 
   Future<void> _ensureController() async {
@@ -1234,7 +1274,7 @@ class _AutoplayVideoState extends State<_AutoplayVideo> {
     _initializing = true;
     _failed = false;
     _tracker.videoInitializeStarted(_mediaId);
-    if (mounted) setState(() {});
+    _updatePlayerView(() {});
     final epoch = ++_initializationEpoch;
     final remote = _usingFallback ? widget.uri : widget.playbackUri;
     final source = widget.useVideoCache && !_bypassCache
@@ -1267,7 +1307,7 @@ class _AutoplayVideoState extends State<_AutoplayVideo> {
         widget.onVideoDuration?.call(duration);
       }
       if (!mounted || !identical(_controller, controller)) return;
-      setState(() {
+      _updatePlayerView(() {
         _initializing = false;
         _ready = true;
       });
@@ -1291,7 +1331,7 @@ class _AutoplayVideoState extends State<_AutoplayVideo> {
         await _ensureController();
         return;
       }
-      setState(() {
+      _updatePlayerView(() {
         _initializing = false;
         _ready = false;
         _failed = true;
@@ -1352,7 +1392,7 @@ class _AutoplayVideoState extends State<_AutoplayVideo> {
       _ensureController();
     } else {
       _releaseController();
-      setState(() => _failed = true);
+      _updatePlayerView(() => _failed = true);
     }
   }
 
@@ -1399,15 +1439,116 @@ class _AutoplayVideoState extends State<_AutoplayVideo> {
     }
   }
 
+  Future<void> _openFullscreen() async {
+    if (_fullscreenRefresh != null) return;
+    final navigator = Navigator.of(context, rootNavigator: true);
+    final refresh = ValueNotifier<int>(0);
+    _fullscreenVisibility = null;
+    _playTimer?.cancel();
+    _disposeTimer?.cancel();
+    setState(() => _fullscreenRefresh = refresh);
+    _manager._enterFullscreen(this);
+    final route = MaterialPageRoute<void>(
+      fullscreenDialog: true,
+      builder: (context) => Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          backgroundColor: Colors.black,
+          foregroundColor: Colors.white,
+          surfaceTintColor: Colors.transparent,
+          leading: IconButton(
+            tooltip: communityText('Close'),
+            onPressed: () => Navigator.of(context).pop(),
+            icon: const Icon(Icons.close_rounded, color: Colors.white),
+          ),
+          title: Text(communityText('Video'),
+              style: const TextStyle(color: Colors.white)),
+        ),
+        body: SafeArea(
+          top: false,
+          child: ValueListenableBuilder<int>(
+            valueListenable: refresh,
+            builder: (context, _, __) {
+              if (!mounted) {
+                return Center(
+                    child: Text(
+                        communityText('This media link is unavailable.'),
+                        style: const TextStyle(color: Colors.white)));
+              }
+              final controller = _ready ? _controller : null;
+              return Column(
+                children: [
+                  Expanded(
+                    child: controller == null
+                        ? Stack(fit: StackFit.expand, children: [
+                            _thumbnailLayer(),
+                            _statusOverlay(),
+                          ])
+                        : GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: _togglePlay,
+                            child: Stack(fit: StackFit.expand, children: [
+                              _playerLayer(fit: BoxFit.contain),
+                              _pausedOverlay(),
+                            ]),
+                          ),
+                  ),
+                  if (controller != null)
+                    _FullscreenVideoControls(
+                      key: ObjectKey(controller),
+                      controller: controller,
+                      onTogglePlay: _togglePlay,
+                      onToggleMute: _toggleMute,
+                    ),
+                ],
+              );
+            },
+          ),
+        ),
+      ),
+    );
+    try {
+      await navigator.push(route);
+      await route.completed;
+    } finally {
+      _manager._leaveFullscreen(this);
+      _fullscreenRefresh = null;
+      refresh.dispose();
+      if (mounted) {
+        _rememberPosition(force: true);
+        setState(() {});
+        final visibility = _fullscreenVisibility;
+        if (visibility != null) _onVisibilityChanged(visibility);
+        if (!_visible) {
+          if (_manager.isActive(this)) _manager.deactivate(this);
+          _scheduleDispose();
+        }
+      }
+    }
+  }
+
+  void _toggleMute() {
+    final controller = widget.muteController;
+    if (controller != null) {
+      controller.toggle();
+    } else {
+      _manager.toggleMuted();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final aspectRatio = communityMediaAspectRatio(widget.aspectRatio);
     return LayoutBuilder(builder: (context, constraints) {
-      final height = widget.compact
+      final contentHeight = widget.compact
           ? (constraints.hasBoundedHeight
               ? constraints.maxHeight
               : constraints.maxWidth)
           : math.max(180.0, constraints.maxWidth / aspectRatio);
+      final height = widget.allowFullscreen && !widget.compact
+          ? math.min(contentHeight,
+              math.max(180.0, MediaQuery.sizeOf(context).height * .64))
+          : contentHeight;
       return SizedBox(
           height: height,
           child: ClipRRect(
@@ -1419,10 +1560,13 @@ class _AutoplayVideoState extends State<_AutoplayVideo> {
                       onTap: widget.videoTapEnabled ? _togglePlay : null,
                       child: Stack(fit: StackFit.expand, children: [
                         _thumbnailLayer(),
-                        if (_ready && _controller != null) _playerLayer(),
+                        if (_ready &&
+                            _controller != null &&
+                            _fullscreenRefresh == null)
+                          _playerLayer(),
                         if (!_ready) _statusOverlay(),
                         if (_ready) _pausedOverlay(),
-                        if (_ready) _topControls(),
+                        if (_ready || widget.allowFullscreen) _topControls(),
                         if (_ready && _controller != null) _progressLayer(),
                       ])))));
     });
@@ -1453,12 +1597,12 @@ class _AutoplayVideoState extends State<_AutoplayVideo> {
                 errorWidget: (_, __, ___) => const SizedBox.expand()));
   }
 
-  Widget _playerLayer() {
+  Widget _playerLayer({BoxFit fit = BoxFit.cover}) {
     final controller = _controller!;
     final size = controller.value.size;
     if (size.width <= 0 || size.height <= 0) return const SizedBox.shrink();
     return FittedBox(
-        fit: BoxFit.cover,
+        fit: fit,
         clipBehavior: Clip.hardEdge,
         child: SizedBox(
             width: size.width,
@@ -1539,31 +1683,34 @@ class _AutoplayVideoState extends State<_AutoplayVideo> {
         left: 10,
         right: 10,
         child: Row(children: [
-          if (duration != null)
+          if (_ready && !widget.compact && duration != null)
             _MediaBadge(icon: Icons.play_circle_fill_rounded, label: duration),
           const Spacer(),
-          if (widget.showMuteControl)
+          if (widget.showMuteControl && _ready)
             Material(
                 color: Colors.black.withValues(alpha: .5),
                 shape: const CircleBorder(),
-                child: InkWell(
-                    customBorder: const CircleBorder(),
-                    onTap: () {
-                      final controller = widget.muteController;
-                      if (controller != null) {
-                        controller.toggle();
-                      } else {
-                        _manager.toggleMuted();
-                      }
-                    },
-                    child: Padding(
-                        padding: const EdgeInsets.all(7),
-                        child: Icon(
-                            _muted
-                                ? Icons.volume_off_rounded
-                                : Icons.volume_up_rounded,
-                            color: Colors.white,
-                            size: 18))))
+                child: IconButton(
+                    tooltip: communityText(_muted ? 'Unmute' : 'Mute'),
+                    onPressed: _toggleMute,
+                    icon: Icon(
+                        _muted
+                            ? Icons.volume_off_rounded
+                            : Icons.volume_up_rounded,
+                        color: Colors.white,
+                        size: 18))),
+          if (widget.allowFullscreen) ...[
+            const SizedBox(width: 4),
+            Material(
+                color: Colors.black.withValues(alpha: .5),
+                shape: const CircleBorder(),
+                child: IconButton(
+                  tooltip: communityText('Full screen'),
+                  onPressed: _openFullscreen,
+                  icon: const Icon(Icons.fullscreen_rounded,
+                      color: Colors.white, size: 22),
+                )),
+          ],
         ]));
   }
 
@@ -1580,4 +1727,115 @@ class _AutoplayVideoState extends State<_AutoplayVideo> {
                 bufferedColor: Colors.white24,
                 backgroundColor: Colors.white54)));
   }
+}
+
+class _FullscreenVideoControls extends StatefulWidget {
+  const _FullscreenVideoControls({
+    super.key,
+    required this.controller,
+    required this.onTogglePlay,
+    required this.onToggleMute,
+  });
+
+  final VideoPlayerController controller;
+  final VoidCallback onTogglePlay;
+  final VoidCallback onToggleMute;
+
+  @override
+  State<_FullscreenVideoControls> createState() =>
+      _FullscreenVideoControlsState();
+}
+
+class _FullscreenVideoControlsState extends State<_FullscreenVideoControls> {
+  double? _dragPosition;
+
+  void _seek(double milliseconds) {
+    final duration = widget.controller.value.duration.inMilliseconds;
+    final position = milliseconds.round().clamp(0, duration).toInt();
+    unawaited(widget.controller.seekTo(Duration(milliseconds: position)));
+  }
+
+  String _time(double milliseconds) =>
+      communityMediaDurationLabel(milliseconds ~/ 1000)!;
+
+  @override
+  Widget build(BuildContext context) =>
+      ValueListenableBuilder<VideoPlayerValue>(
+        valueListenable: widget.controller,
+        builder: (context, value, _) {
+          final total = value.duration.inMilliseconds.toDouble();
+          final position = (_dragPosition ?? value.position.inMilliseconds)
+              .clamp(0, total)
+              .toDouble();
+          final canSeek = total > 0;
+          final muted = value.volume == 0;
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Text(_time(position),
+                        style: const TextStyle(color: Colors.white)),
+                    Expanded(
+                      child: Slider(
+                        value: position,
+                        max: canSeek ? total : 1,
+                        activeColor: Colors.white,
+                        inactiveColor: Colors.white30,
+                        label: _time(position),
+                        semanticFormatterCallback: _time,
+                        onChanged: canSeek
+                            ? (value) => setState(() => _dragPosition = value)
+                            : null,
+                        onChangeEnd: (value) {
+                          _seek(value);
+                          setState(() => _dragPosition = null);
+                        },
+                      ),
+                    ),
+                    Text(_time(total),
+                        style: const TextStyle(color: Colors.white)),
+                  ],
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      tooltip: communityText('Back 10 seconds'),
+                      onPressed: canSeek ? () => _seek(position - 10000) : null,
+                      icon: const Icon(Icons.replay_10_rounded),
+                      color: Colors.white,
+                    ),
+                    IconButton(
+                      tooltip: communityText(
+                          value.isPlaying ? 'Pause video' : 'Play video'),
+                      onPressed: widget.onTogglePlay,
+                      icon: Icon(value.isPlaying
+                          ? Icons.pause_rounded
+                          : Icons.play_arrow_rounded),
+                      color: Colors.white,
+                    ),
+                    IconButton(
+                      tooltip: communityText('Forward 10 seconds'),
+                      onPressed: canSeek ? () => _seek(position + 10000) : null,
+                      icon: const Icon(Icons.forward_10_rounded),
+                      color: Colors.white,
+                    ),
+                    IconButton(
+                      tooltip: communityText(muted ? 'Unmute' : 'Mute'),
+                      onPressed: widget.onToggleMute,
+                      icon: Icon(muted
+                          ? Icons.volume_off_rounded
+                          : Icons.volume_up_rounded),
+                      color: Colors.white,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
+      );
 }

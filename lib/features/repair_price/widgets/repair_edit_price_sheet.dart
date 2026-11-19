@@ -54,15 +54,13 @@ class _RepairEditPriceSheetState extends State<RepairEditPriceSheet> {
     _availabilityStatus = widget.service.availabilityStatus;
 
     _sellingPriceController =
-        TextEditingController(text: _sellingPrice.toStringAsFixed(0));
-    _partCostController =
-        TextEditingController(text: _partCost.toStringAsFixed(0));
-    _serviceFeeController =
-        TextEditingController(text: _serviceFee.toStringAsFixed(0));
+        TextEditingController(text: _sellingPrice.toString());
+    _partCostController = TextEditingController(text: _partCost.toString());
+    _serviceFeeController = TextEditingController(text: _serviceFee.toString());
     _warrantyController =
-        TextEditingController(text: '${widget.service.warrantyDays ?? 90}');
+        TextEditingController(text: '${widget.service.warrantyDays ?? ''}');
     _timeController =
-        TextEditingController(text: '${widget.service.estimatedMinutes ?? 30}');
+        TextEditingController(text: '${widget.service.estimatedMinutes ?? ''}');
 
     _sellingPriceController.addListener(_updateCalc);
     _partCostController.addListener(_updateCalc);
@@ -91,6 +89,19 @@ class _RepairEditPriceSheetState extends State<RepairEditPriceSheet> {
 
   Future<void> _save() async {
     if (_isSaving) return;
+    final amounts = [
+      _sellingPriceController,
+      _partCostController,
+      _serviceFeeController,
+    ].map((controller) => double.tryParse(controller.text.trim()));
+    if (amounts
+        .any((amount) => amount == null || !amount.isFinite || amount < 0)) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(translate('repair_screen.invalid_price_amount')),
+        backgroundColor: RepairPriceConfig.error,
+      ));
+      return;
+    }
     setState(() => _isSaving = true);
 
     final updated = RepairService(
@@ -219,7 +230,9 @@ class _RepairEditPriceSheetState extends State<RepairEditPriceSheet> {
                         RepairPriceConfig.mainText),
                     Container(
                         width: 1, height: 28, color: RepairPriceConfig.border),
-                    _previewItem(translate('repair_screen.profit'), RepairPriceHelper.currency(_profit),
+                    _previewItem(
+                        translate('repair_screen.profit'),
+                        RepairPriceHelper.currency(_profit),
                         RepairPriceConfig.success,
                         isBold: true),
                   ],
@@ -307,16 +320,22 @@ class _RepairEditPriceSheetState extends State<RepairEditPriceSheet> {
                         const BorderSide(color: RepairPriceConfig.border),
                   ),
                 ),
-                items: const [
-                  DropdownMenuItem(
+                items: [
+                  const DropdownMenuItem(
                       value: 'available',
                       child: Text('Available / មានក្នុងស្តុក')),
-                  DropdownMenuItem(
+                  const DropdownMenuItem(
                       value: 'limited_stock',
                       child: Text('Limited Stock / ស្តុកមានកំណត់')),
-                  DropdownMenuItem(
+                  const DropdownMenuItem(
                       value: 'out_of_stock',
                       child: Text('Out of Stock / អស់ស្តុក')),
+                  if (!{'available', 'limited_stock', 'out_of_stock'}
+                      .contains(_availabilityStatus))
+                    DropdownMenuItem(
+                      value: _availabilityStatus,
+                      child: Text(_availabilityStatus),
+                    ),
                 ],
                 onChanged: (val) {
                   if (val != null) setState(() => _availabilityStatus = val);

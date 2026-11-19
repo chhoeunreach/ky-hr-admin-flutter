@@ -89,6 +89,13 @@ void main() {
       expect(infoForce.isForceUpdate, isTrue);
     });
 
+    test('AppVersionInfo parses forced update flags sent as strings', () {
+      expect(AppVersionInfo.fromJson({'force_update': '1'}).isForceUpdate,
+          isTrue);
+      expect(AppVersionInfo.fromJson({'force_update': '0'}).isForceUpdate,
+          isFalse);
+    });
+
     test('Push notification update payload detection correctly identifies update alerts', () {
       final fcmPayload = {
         'type': 'app_update',

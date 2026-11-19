@@ -339,11 +339,6 @@ bool getAppTheme() {
   return box.read('theme') ?? true;
 }
 
-bool getAnimation() {
-  final box = GetStorage();
-  return box.read('animation') ?? true;
-}
-
 const String appTheme = "#011754";
 const String appAlternateTheme = "#041033";
 const String radialBoxTheme = "#041033";

@@ -1,5 +1,5 @@
 import 'package:cnattendance/provider/leaveprovider.dart';
-import 'package:cnattendance/widget/radialDecorationbox.dart';
+import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:provider/provider.dart';
@@ -7,12 +7,12 @@ import 'package:toggle_switch/toggle_switch.dart';
 
 class ToggleLeaveTime extends StatelessWidget {
   @override
-  Widget build(BuildContext context,[bool mounted = true]) {
+  Widget build(BuildContext context, [bool mounted = true]) {
     final provider = Provider.of<LeaveProvider>(context);
+    final enterprise = EnterpriseTheme.of(context);
 
     void onToggleChanged() async {
-      final detailResponse =
-          await provider.getLeaveTypeDetail();
+      final detailResponse = await provider.getLeaveTypeDetail();
 
       if (!mounted) return;
       if (detailResponse.statusCode == 200) {
@@ -22,19 +22,27 @@ class ToggleLeaveTime extends StatelessWidget {
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            padding: const EdgeInsets.all(20), content: Text(detailResponse.message)));
+            padding: const EdgeInsets.all(20),
+            content: Text(detailResponse.message)));
       }
     }
 
     return Container(
-      decoration: RadialDecorationBox(),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        color: enterprise.isDark
+            ? const Color(0xFF0F172A)
+            : const Color(0xFFF1F5F9),
+        border: Border.all(color: enterprise.cardBorder),
+      ),
       child: Card(
         elevation: 0,
         color: Colors.transparent,
+        margin: EdgeInsets.zero,
         child: ToggleSwitch(
-          activeBgColor: const [Colors.white12],
+          activeBgColor: [enterprise.accent],
           activeFgColor: Colors.white,
-          inactiveFgColor: Colors.white,
+          inactiveFgColor: enterprise.text,
           inactiveBgColor: Colors.transparent,
           minWidth: 88,
           minHeight: 34,
@@ -51,7 +59,10 @@ class ToggleLeaveTime extends StatelessWidget {
               onToggleChanged();
             }
           },
-          labels: [translate('leave_screen.this_month'), translate('leave_screen.this_year')],
+          labels: [
+            translate('leave_screen.this_month'),
+            translate('leave_screen.this_year')
+          ],
         ),
       ),
     );

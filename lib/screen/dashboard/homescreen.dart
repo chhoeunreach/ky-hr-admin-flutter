@@ -1,32 +1,21 @@
 import 'package:cnattendance/features/community/flash_view_presenter.dart';
 import 'dart:async';
-import 'dart:io';
 
 import 'package:cnattendance/data/source/datastore/preferences.dart';
 import 'package:cnattendance/data/source/network/model/login/User.dart';
 import 'package:cnattendance/provider/dashboardprovider.dart';
-import 'package:cnattendance/provider/notificationcontroller.dart';
 import 'package:cnattendance/provider/prefprovider.dart';
 import 'package:cnattendance/screen/auth/login_screen.dart';
-import 'package:cnattendance/screen/general/generalscreen.dart';
+import 'package:cnattendance/services/push_notification_service.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:cnattendance/utils/locationstatus.dart';
-import 'package:cnattendance/utils/notification_history.dart';
 import 'package:cnattendance/widget/customalertdialog.dart';
 import 'package:cnattendance/widget/homescreen/checkattendance.dart';
-import 'package:cnattendance/widget/homescreen/myteam.dart';
 import 'package:cnattendance/widget/homescreen/overviewdashboard.dart';
-import 'package:cnattendance/widget/homescreen/recentAward.dart';
-import 'package:cnattendance/widget/homescreen/recentEvent.dart';
-import 'package:cnattendance/widget/homescreen/recentTraining.dart';
-import 'package:cnattendance/widget/homescreen/upcomingholiday.dart';
-import 'package:cnattendance/widget/homescreen/weeklyreportchart.dart';
 import 'package:cnattendance/widget/premium_background.dart';
 import 'package:cnattendance/theme/enterprise_theme.dart';
-import 'package:cnattendance/theme/app_theme_mode.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:cnattendance/theme/theme_layout.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:focus_detector/focus_detector.dart';
@@ -38,10 +27,9 @@ import 'package:cnattendance/data/source/network/model/dashboard/Dashboard.dart'
 import 'package:cnattendance/utils/app_device_info.dart';
 import 'package:cnattendance/widget/app_update_dialog.dart';
 import 'package:cnattendance/widget/headerprofile.dart';
+import 'package:cnattendance/widget/homescreen/myteam.dart';
+import 'package:cnattendance/widget/homescreen/weeklyreportchart.dart';
 import 'package:quick_actions/quick_actions.dart';
-
-const String _iosTestFlightUpdateUrl =
-    'https://testflight.apple.com/join/hPG4ZA38';
 
 class HomeScreen extends StatefulWidget {
   final PersistentTabController controller;
@@ -58,7 +46,7 @@ class HomeScreenState extends State<HomeScreen> {
   bool isLoading = false;
   bool _dashboardLoadedOnce = false;
   bool _dashboardRefreshInFlight = false;
-  bool _updateDialogShown = false;
+  bool _dashboardLoadFailed = false;
   DateTime? _lastDashboardRefreshAt;
 
   PersistentTabController controller;
@@ -69,7 +57,7 @@ class HomeScreenState extends State<HomeScreen> {
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback(
       (timeStamp) async {
-        checkNotificationState();
+        unawaited(PushNotificationService.openInitialNotification());
 
         quickActions.initialize((type) async {
           if (type == "actionCheckIn") {
@@ -96,84 +84,6 @@ class HomeScreenState extends State<HomeScreen> {
       },
     );
     super.initState();
-  }
-
-  String _initialMessageTitle(RemoteMessage message) {
-    return message.notification?.title ??
-        message.data["notification_title"] ??
-        message.data["sender_name"] ??
-        message.data["title"] ??
-        message.data["subject"] ??
-        "Notification";
-  }
-
-  String _initialMessageBody(RemoteMessage message) {
-    return message.notification?.body ??
-        message.data["message"] ??
-        message.data["body"] ??
-        message.data["description"] ??
-        message.data["content"] ??
-        "";
-  }
-
-  void checkNotificationState() {
-    FirebaseMessaging.instance.getInitialMessage().then((message) async {
-      print("FirebaseMessaging.getInitialMessage $message");
-      if (message == null) {
-        return;
-      }
-      final localKey = await NotificationHistory.saveRemoteMessage(
-        message,
-        title: _initialMessageTitle(message),
-        body: _initialMessageBody(message),
-      );
-      if (localKey != null && localKey.isNotEmpty) {
-        if (Get.isRegistered<NotificationController>()) {
-          await Get.find<NotificationController>().markLocalNotificationAsRead(
-            localKey,
-          );
-        } else {
-          await NotificationHistory.markAsRead(localKey);
-        }
-      }
-
-      final title = _initialMessageTitle(message);
-      final body = _initialMessageBody(message);
-      final isUpdate = message.data['type'] == 'app_update' ||
-          message.data.containsKey('target_version') ||
-          title.contains('អាប់ដេត') ||
-          title.toLowerCase().contains('update') ||
-          body.contains('អាប់ដេត') ||
-          body.toLowerCase().contains('update');
-
-      if (isUpdate && mounted) {
-        final details = await AppDeviceInfo.getDetails();
-        final targetVersion = message.data['target_version']?.toString() ?? '';
-        final downloadUrl = _platformDownloadUrl(message.data);
-        final forceUpdate = message.data['force_update'] == '1' ||
-            message.data['force_update'] == true;
-
-        await showAppUpdateDialog(
-          context: context,
-          currentVersion: details.appVersion,
-          latestVersion:
-              targetVersion.isNotEmpty ? targetVersion : details.appVersion,
-          downloadUrl: downloadUrl,
-          releaseNotes: body,
-          alertTitle: title,
-          isForceUpdate: forceUpdate,
-        );
-        return;
-      }
-
-      Get.to(GeneralScreen(), arguments: {
-        "title": title,
-        "message": body,
-        "date": "",
-        "type": message.data['type']?.toString() ?? '',
-        "download_url": _platformDownloadUrl(message.data),
-      });
-    });
   }
 
   void locationStatus() async {
@@ -337,7 +247,12 @@ class HomeScreenState extends State<HomeScreen> {
               .getDashboard();
       if (!mounted) return 'loaded';
       _lastDashboardRefreshAt = DateTime.now();
-      _dashboardLoadedOnce = true;
+      if (!_dashboardLoadedOnce || _dashboardLoadFailed) {
+        setState(() {
+          _dashboardLoadedOnce = true;
+          _dashboardLoadFailed = false;
+        });
+      }
 
       final user = dashboardResponse.data.user;
 
@@ -366,6 +281,9 @@ class HomeScreenState extends State<HomeScreen> {
       }
       return 'loaded';
     } catch (_) {
+      if (mounted && !_dashboardLoadFailed) {
+        setState(() => _dashboardLoadFailed = true);
+      }
       return 'loaded';
     } finally {
       _dashboardRefreshInFlight = false;
@@ -374,20 +292,19 @@ class HomeScreenState extends State<HomeScreen> {
 
   Future<void> _checkAppVersion(AppVersionInfo? versionInfo) async {
     if (versionInfo == null || !mounted) return;
-    if (_updateDialogShown && !versionInfo.isForceUpdate) return;
 
     final details = await AppDeviceInfo.getDetails();
     final currentVersion = details.appVersion;
     final latestVersion = versionInfo.latestVersion;
 
-    final shouldShow = versionInfo.showAlert ||
-        (latestVersion.isNotEmpty &&
-            AppDeviceInfo.isVersionOlder(currentVersion, latestVersion));
+    final shouldShow = latestVersion.isEmpty
+        ? versionInfo.showAlert
+        : AppDeviceInfo.isVersionOlder(currentVersion, latestVersion);
 
     if (shouldShow) {
-      _updateDialogShown = true;
       if (!mounted) return;
       await showAppUpdateDialog(
+        automatic: true,
         context: context,
         currentVersion: currentVersion,
         latestVersion:
@@ -398,35 +315,6 @@ class HomeScreenState extends State<HomeScreen> {
         isForceUpdate: versionInfo.isForceUpdate,
       );
     }
-  }
-
-  String _platformDownloadUrl(Map<String, dynamic> data) {
-    String read(List<String> keys) {
-      for (final key in keys) {
-        final value = data[key]?.toString().trim() ?? '';
-        if (value.isNotEmpty) return value;
-      }
-      return '';
-    }
-
-    final platformUrl = Platform.isIOS
-        ? read([
-            'ios_url',
-            'app_store_url',
-            'apple_store_url',
-            'ios_download_url',
-          ])
-        : read([
-            'android_url',
-            'play_store_url',
-            'android_download_url',
-          ]);
-
-    if (platformUrl.isNotEmpty) return platformUrl;
-    if (Platform.isIOS) return _iosTestFlightUpdateUrl;
-
-    final fallbackUrl = read(['download_url', 'url']);
-    return fallbackUrl.isNotEmpty ? fallbackUrl : 'https://hr.kneayerng.com';
   }
 
   Future<void> showBirthdayWish() async {
@@ -456,37 +344,41 @@ class HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final showMenuInset = MediaQuery.sizeOf(context).width < 720;
-    final sections = context.select<DashboardProvider,
-            ({bool attendance, bool holiday, bool award, bool event, bool training, bool team})>(
-        (provider) => (
-              attendance: provider.features['attendance'] == '1',
-              holiday: provider.features['holiday'] == '1',
-              award: provider.features['award'] == '1',
-              event: provider.features['event'] == '1',
-              training: provider.features['training'] == '1',
-              team: provider.features['team-sheet'] == '1',
-            ));
+    final showAttendance = context.select<DashboardProvider, bool>(
+        (provider) => provider.features['attendance'] == '1');
     final enterprise = EnterpriseTheme.of(context);
-    final bgAsset = enterprise.isDark
-        ? 'assets/images/home_bg_dark.svg'
-        : 'assets/images/home_bg.svg';
+    final showMenuInset = enterprise.layout.showMenuButton &&
+        MediaQuery.sizeOf(context).width < 720;
+    final menuOnRight = enterprise.layout.menuOnRight;
+    final firstSection = enterprise.layout.visible(LayoutArea.home).firstOrNull;
+    final profileFirst = firstSection == LayoutItem.profile;
+    final royal = enterprise.isRoyalBlueGold;
+    final menuInset = showMenuInset && profileFirst ? 48.0 : 0.0;
+    final sections = <LayoutItem, Widget>{
+      LayoutItem.profile: RepaintBoundary(
+        child: Padding(
+          padding: EdgeInsets.only(
+            left: menuOnRight ? 0 : menuInset,
+            right: menuOnRight ? menuInset : 0,
+          ),
+          child: HeaderProfile(
+              showServerTest: true,
+              showMenuButton: false,
+              royalOnline: context.select<DashboardProvider, bool>(
+                  (value) => value.employeeOnline)),
+        ),
+      ),
+      LayoutItem.quickServices: OverviewDashboard(controller),
+      if (showAttendance) ...{
+        LayoutItem.weeklyReport: WeeklyReportChart(),
+        LayoutItem.team: MyTeam(),
+      },
+    };
     return Stack(
       children: [
-        Positioned.fill(
-          child: SvgPicture.asset(
-            bgAsset,
-            fit: BoxFit.cover,
-            alignment: Alignment.topCenter,
-          ),
+        const Positioned.fill(
+          child: PremiumBackground(child: SizedBox.expand()),
         ),
-        if (enterprise.mode != AppThemeMode.light &&
-            enterprise.mode != AppThemeMode.dark)
-          Positioned.fill(
-            child: Container(
-              color: enterprise.primary.withValues(alpha: 0.08),
-            ),
-          ),
         Scaffold(
           backgroundColor: Colors.transparent,
           body: FocusDetector(
@@ -497,8 +389,8 @@ class HomeScreenState extends State<HomeScreen> {
             },
             child: RefreshIndicator(
               triggerMode: RefreshIndicatorTriggerMode.onEdge,
-              color: Colors.white,
-              backgroundColor: Colors.blueGrey,
+              color: enterprise.accent,
+              backgroundColor: enterprise.cardBackground,
               edgeOffset: 50,
               onRefresh: () {
                 return loadDashboard(force: true);
@@ -506,38 +398,34 @@ class HomeScreenState extends State<HomeScreen> {
               child: SafeArea(
                   child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.only(
+                    top: showMenuInset && !profileFirst ? 54 : 0),
                 child: Center(
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 760),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        RepaintBoundary(
-                          child: Padding(
-                            padding: EdgeInsets.only(
-                              left: showMenuInset ? 48 : 0,
+                    child: showAttendance || royal
+                        ? RepaintBoundary(
+                            child: CheckAttendance(
+                              controller: controller,
+                              otherSections: sections,
+                              dashboardLoading: !_dashboardLoadedOnce &&
+                                  !_dashboardLoadFailed,
+                              dashboardError: _dashboardLoadFailed,
+                              onRetryDashboard: () =>
+                                  loadDashboard(force: true),
                             ),
-                            child: const HeaderProfile(
-                              showServerTest: true,
-                              showMenuButton: false,
-                            ),
+                          )
+                        : Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              for (final item
+                                  in enterprise.layout.visible(LayoutArea.home))
+                                if (sections[item] case final Widget section)
+                                  KeyedSubtree(
+                                      key: ValueKey(item), child: section),
+                              const SizedBox(height: 6),
+                            ],
                           ),
-                        ),
-                        if (sections.attendance)
-                          RepaintBoundary(
-                            child: CheckAttendance(controller: controller),
-                          ),
-                        OverviewDashboard(controller),
-                        if (sections.holiday) UpcomingHoliday(),
-                        if (sections.award) RecentAward(),
-                        if (sections.event) RecentEvent(),
-                        if (sections.training) RecentTraining(),
-                        if (sections.attendance)
-                          RepaintBoundary(child: WeeklyReportChart()),
-                        if (sections.team) MyTeam(),
-                        const SizedBox(height: 12),
-                      ],
-                    ),
                   ),
                 ),
               )),

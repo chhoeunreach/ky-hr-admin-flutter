@@ -16,11 +16,13 @@ class NoteBottomSheet extends StatefulWidget {
   final String identifier;
   final String type;
   final File? attendanceSelfie;
+  final bool returnNote;
 
   NoteBottomSheet(
     this.identifier,
     this.type, {
     this.attendanceSelfie,
+    this.returnNote = false,
   });
 
   @override
@@ -207,6 +209,11 @@ class NoteBottomSheetState extends State<NoteBottomSheet> {
                                 backgroundColor: HexColor("#036eb7"),
                                 shape: ButtonBorder()),
                             onPressed: () async {
+                              if (widget.returnNote) {
+                                Navigator.pop(
+                                    context, provider.noteController.text);
+                                return;
+                              }
                               final syncService = AttendanceSyncService();
                               final offlineRequestId =
                                   syncService.createOfflineRequestId();

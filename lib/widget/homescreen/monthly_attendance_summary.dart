@@ -8,6 +8,7 @@ import 'package:cnattendance/models/home_highlight.dart';
 import 'package:cnattendance/models/monthly_attendance_summary.dart';
 import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/widget/homescreen/home_highlights_card.dart';
+import 'package:cnattendance/widget/homescreen/monthly_attendance_details.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 
@@ -378,30 +379,7 @@ class HomeMonthlyAttendanceSummary extends StatelessWidget {
         .replaceAll('{total}', '${data?.totalLateCount ?? '—'}')
         .replaceAll('{excused}', '${data?.excusedLateCount ?? '—'}')
         .replaceAll('{deductible}', '${data?.lateCount ?? '—'}');
-    void openDetails() => showDialog<void>(
-          context: context,
-          builder: (context) => AlertDialog(
-            scrollable: true,
-            title: Text(tr('details_title')),
-            content: Text(data == null
-                ? tr('unavailable')
-                : '${tr('month')}: ${data.month}\n\n'
-                    '${tr('total_late')}: ${data.totalLateCount ?? '—'}\n'
-                    '$lateFormula\n'
-                    '${tr('late_formula_explanation')}\n\n'
-                    '${tr('approved_late')}: ${data.approvedLateCount ?? '—'}\n'
-                    '${tr('approved_time_leave')}: ${data.approvedTimeLeaveCount ?? '—'}\n'
-                    '${tr('deduction')}: \$${data.deduction.toStringAsFixed(2)}\n\n'
-                    '${tr('bonus')}: $amount · $percentage\n'
-                    '${tr('days').replaceAll('{completed}', '${data.completedDays}').replaceAll('{total}', '${data.workingDays}')}\n\n'
-                    '${tr('explanation')}'),
-            actions: [
-              TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(tr('close')))
-            ],
-          ),
-        );
+    void openDetails() => showMonthlyAttendanceDetails(context, data);
     final content = Padding(
       padding: const EdgeInsets.all(10),
       child: DefaultTextStyle(

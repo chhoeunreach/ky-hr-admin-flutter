@@ -59,6 +59,10 @@ class PrefProvider with ChangeNotifier {
   void saveBasicUser(User user) async {
     Preferences preferences = Preferences();
     preferences.saveBasicUser(user);
+    _userId = user.id.toString();
+    _userName = user.username;
+    _fullname = user.name;
+    _avatar = user.avatar;
     notifyListeners();
   }
 

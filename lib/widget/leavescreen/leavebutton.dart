@@ -1,27 +1,28 @@
 import 'package:cnattendance/provider/dashboardprovider.dart';
-import 'package:cnattendance/widget/buttonborder.dart';
+import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/widget/leavescreen/earlyleavesheet.dart';
 import 'package:cnattendance/widget/leavescreen/issueleavesheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
-import 'package:hexcolor/hexcolor.dart';
 import 'package:provider/provider.dart';
 
 class LeaveButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<DashboardProvider>(context);
+    final enterprise = EnterpriseTheme.of(context);
     return Row(
       children: [
         if (provider.features['mobile.function.Leave.saveLeaveRequestDetail'] ==
             '1')
           Expanded(
               child: Padding(
-            padding: EdgeInsets.only(right: 4),
+            padding: const EdgeInsets.only(right: 4),
             child: TextButton(
                 style: TextButton.styleFrom(
-                    backgroundColor: HexColor("#036eb7"),
-                    shape: ButtonBorder(),
+                    backgroundColor: enterprise.primary,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
                     minimumSize: const Size(0, 38),
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 7)),
@@ -46,7 +47,8 @@ class LeaveButton extends StatelessWidget {
                   padding: EdgeInsets.zero,
                   child: Text(
                     translate('leave_screen.issue_leave'),
-                    style: TextStyle(color: Colors.white),
+                    style: const TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.w800),
                   ),
                 )),
           )),
@@ -54,11 +56,12 @@ class LeaveButton extends StatelessWidget {
             '1')
           Expanded(
               child: Padding(
-            padding: EdgeInsets.only(left: 4),
+            padding: const EdgeInsets.only(left: 4),
             child: TextButton(
                 style: TextButton.styleFrom(
-                    backgroundColor: HexColor("#036eb7"),
-                    shape: ButtonBorder(),
+                    backgroundColor: enterprise.accent,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
                     minimumSize: const Size(0, 38),
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 7)),

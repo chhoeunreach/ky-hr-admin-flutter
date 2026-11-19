@@ -1,5 +1,4 @@
 import 'package:cnattendance/provider/dashboardprovider.dart';
-import 'package:cnattendance/widget/buttonborder.dart';
 import 'package:flutter/material.dart';
 import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -30,171 +29,179 @@ class WeeklyReportChartState extends State<WeeklyReportChart> {
     final provider = Provider.of<DashboardProvider>(context);
     final hasWeeklyData = provider.weeklyReport.any((value) => value > 0);
     final enterprise = EnterpriseTheme.of(context);
+    final chartColor =
+        enterprise.isDark ? enterprise.accent : enterprise.primary;
+    final chartHeight = MediaQuery.sizeOf(context).width < 400 ? 208.0 : 226.0;
+    final themedGroups = provider.showingBarGroups
+        .map((group) => group.copyWith(
+              barRods: group.barRods
+                  .map((rod) => rod.copyWith(color: chartColor))
+                  .toList(),
+            ))
+        .toList();
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      child: AspectRatio(
-        aspectRatio: 1.18,
-        child: Card(
-          elevation: 0,
-          shape: ButtonBorder(),
-          color: enterprise.isDark ? const Color(0xFF1E293B).withValues(alpha: 0.90) : Colors.white.withValues(alpha: 0.90),
-          child: Padding(
-            padding: const EdgeInsets.all(10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisAlignment: MainAxisAlignment.start,
-              mainAxisSize: MainAxisSize.max,
-              children: <Widget>[
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: <Widget>[
-                    makeTransactionsIcon(),
-                    const SizedBox(
-                      width: 24,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+      child: SizedBox(
+        height: chartHeight,
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: enterprise.cardGradient,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: enterprise.accent.withValues(
+                alpha: enterprise.isDark ? 0.36 : 0.28,
+              ),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: enterprise.primary.withValues(alpha: 0.10),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 7),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  makeTransactionsIcon(chartColor),
+                  const SizedBox(width: 9),
+                  Text(
+                    translate('home_screen.weekly'),
+                    style: TextStyle(
+                      color: enterprise.text,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w900,
                     ),
-                    Text(
-                      translate('home_screen.weekly'),
-                      style: TextStyle(color: enterprise.text, fontSize: 16, fontWeight: FontWeight.w900),
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    translate('home_screen.reports'),
+                    style: TextStyle(
+                      color: enterprise.mutedText,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
                     ),
-                    const SizedBox(
-                      width: 4,
-                    ),
-                    Text(
-                      translate('home_screen.reports'),
-                      style: TextStyle(color: enterprise.mutedText, fontSize: 12, fontWeight: FontWeight.w700),
-                    ),
-                  ],
-                ),
-                const SizedBox(
-                  height: 14,
-                ),
-                Expanded(
-                  child: hasWeeklyData
-                      ? BarChart(
-                          BarChartData(
-                            maxY: 16,
-                            barTouchData: BarTouchData(
-                                touchTooltipData: BarTouchTooltipData(
+                  ),
+                ],
+              ),
+              const SizedBox(height: 5),
+              Expanded(
+                child: hasWeeklyData
+                    ? BarChart(
+                        BarChartData(
+                          maxY: 16,
+                          barTouchData: BarTouchData(
+                            touchTooltipData: BarTouchTooltipData(
                               getTooltipItem:
                                   (group, groupIndex, rod, rodIndex) {
                                 return BarTooltipItem(
                                   'Worked: ${rod.toY.toStringAsFixed(2)} Hr',
-                                  TextStyle(color: Colors.white),
+                                  const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                  ),
                                 );
                               },
-                            ), touchCallback: (FlTouchEvent event, response) {
-                              if (response == null || response.spot == null) {
-                                setState(() {
-                                  touchedGroupIndex = -1;
-                                  provider.showingBarGroups =
-                                      List.of(provider.rawBarGroups);
-                                });
+                            ),
+                            touchCallback: (event, response) {
+                              if (response?.spot == null ||
+                                  !event.isInterestedForInteractions) {
+                                setState(() => touchedGroupIndex = -1);
+                                provider.showingBarGroups =
+                                    List.of(provider.rawBarGroups);
                                 return;
                               }
 
                               touchedGroupIndex =
-                                  response.spot!.touchedBarGroupIndex;
-
-                              setState(() {
-                                if (!event.isInterestedForInteractions) {
-                                  touchedGroupIndex = -1;
-                                  provider.showingBarGroups =
-                                      List.of(provider.rawBarGroups);
-                                  return;
-                                }
-                                provider.showingBarGroups =
-                                    List.of(provider.rawBarGroups);
-                                if (touchedGroupIndex != -1) {
-                                  var sum = 0.0;
-                                  for (var rod in provider
-                                      .showingBarGroups[touchedGroupIndex]
-                                      .barRods) {
-                                    sum += rod.toY;
-                                  }
-                                  final avg = sum /
-                                      provider
-                                          .showingBarGroups[touchedGroupIndex]
-                                          .barRods
-                                          .length;
-
-                                  provider.showingBarGroups[touchedGroupIndex] =
-                                      provider
-                                          .showingBarGroups[touchedGroupIndex]
-                                          .copyWith(
-                                    barRods: provider
-                                        .showingBarGroups[touchedGroupIndex]
-                                        .barRods
-                                        .map((rod) {
-                                      return rod.copyWith(toY: avg);
-                                    }).toList(),
-                                  );
-                                }
-                              });
-                            }),
-                            titlesData: FlTitlesData(
-                              show: true,
-                              rightTitles: AxisTitles(
-                                sideTitles: SideTitles(showTitles: false),
-                              ),
-                              topTitles: AxisTitles(
-                                sideTitles: SideTitles(showTitles: false),
-                              ),
-                              bottomTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  getTitlesWidget: bottomTitles,
-                                  reservedSize: 42,
-                                ),
-                              ),
-                              leftTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  reservedSize: 28,
-                                  interval: 1,
-                                  getTitlesWidget: leftTitles,
-                                ),
-                              ),
-                            ),
-                            borderData: FlBorderData(
-                              show: false,
-                            ),
-                            barGroups: provider.showingBarGroups,
-                            gridData: FlGridData(
-                                show: false,
-                                horizontalInterval: 2,
-                                verticalInterval: 2),
+                                  response!.spot!.touchedBarGroupIndex;
+                              provider.showingBarGroups =
+                                  List.of(provider.rawBarGroups);
+                              if (touchedGroupIndex != -1) {
+                                final bars = provider
+                                    .showingBarGroups[touchedGroupIndex]
+                                    .barRods;
+                                final average = bars.fold<double>(
+                                        0, (sum, bar) => sum + bar.toY) /
+                                    bars.length;
+                                provider.showingBarGroups[touchedGroupIndex] =
+                                    provider.showingBarGroups[touchedGroupIndex]
+                                        .copyWith(
+                                  barRods: bars
+                                      .map((bar) => bar.copyWith(toY: average))
+                                      .toList(),
+                                );
+                              }
+                              setState(() {});
+                            },
                           ),
-                        )
-                      : Center(
-                          child: Text(
-                            translate('home_screen.no_weekly_report'),
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Color(0xff7589a2),
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
+                          titlesData: FlTitlesData(
+                            show: true,
+                            rightTitles: const AxisTitles(
+                              sideTitles: SideTitles(showTitles: false),
+                            ),
+                            topTitles: const AxisTitles(
+                              sideTitles: SideTitles(showTitles: false),
+                            ),
+                            bottomTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                getTitlesWidget: (value, meta) =>
+                                    bottomTitles(value, meta, enterprise),
+                                reservedSize: 25,
+                              ),
+                            ),
+                            leftTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                reservedSize: 27,
+                                interval: 4,
+                                getTitlesWidget: (value, meta) =>
+                                    leftTitles(value, meta, enterprise),
+                              ),
+                            ),
+                          ),
+                          borderData: FlBorderData(show: false),
+                          barGroups: themedGroups,
+                          gridData: FlGridData(
+                            show: true,
+                            drawVerticalLine: false,
+                            horizontalInterval: 4,
+                            getDrawingHorizontalLine: (_) => FlLine(
+                              color:
+                                  enterprise.cardBorder.withValues(alpha: 0.40),
+                              strokeWidth: 0.7,
                             ),
                           ),
                         ),
-                ),
-                const SizedBox(
-                  height: 12,
-                ),
-              ],
-            ),
+                      )
+                    : Center(
+                        child: Text(
+                          translate('home_screen.no_weekly_report'),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: enterprise.mutedText,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget leftTitles(double value, TitleMeta meta) {
-    const style = TextStyle(
-      color: Color(0xff7589a2),
-      fontWeight: FontWeight.bold,
-      fontSize: 10,
+  Widget leftTitles(double value, TitleMeta meta, EnterpriseTheme enterprise) {
+    final style = TextStyle(
+      color: enterprise.mutedText,
+      fontWeight: FontWeight.w600,
+      fontSize: 9,
     );
     String text;
     if (value == 2) {
@@ -223,7 +230,8 @@ class WeeklyReportChartState extends State<WeeklyReportChart> {
     );
   }
 
-  Widget bottomTitles(double value, TitleMeta meta) {
+  Widget bottomTitles(
+      double value, TitleMeta meta, EnterpriseTheme enterprise) {
     final titles = [
       translate('home_screen.sun'),
       translate('home_screen.mon'),
@@ -236,21 +244,21 @@ class WeeklyReportChartState extends State<WeeklyReportChart> {
 
     final text = Text(
       titles[value.toInt()],
-      style: const TextStyle(
-        color: Color(0xff7589a2),
-        fontWeight: FontWeight.bold,
-        fontSize: 11,
+      style: TextStyle(
+        color: enterprise.mutedText,
+        fontWeight: FontWeight.w600,
+        fontSize: 10,
       ),
     );
 
     return SideTitleWidget(
       axisSide: meta.axisSide,
-      space: 8, //margin top
+      space: 3,
       child: text,
     );
   }
 
-  Widget makeTransactionsIcon() {
+  Widget makeTransactionsIcon(Color color) {
     const width = 4.5;
     const space = 3.5;
     return Row(
@@ -260,7 +268,7 @@ class WeeklyReportChartState extends State<WeeklyReportChart> {
         Container(
           width: width,
           height: 10,
-          color: Colors.white.withValues(alpha: 0.4),
+          color: color.withValues(alpha: 0.38),
         ),
         const SizedBox(
           width: space,
@@ -268,7 +276,7 @@ class WeeklyReportChartState extends State<WeeklyReportChart> {
         Container(
           width: width,
           height: 15,
-          color: Colors.white.withValues(alpha: 0.8),
+          color: color.withValues(alpha: 0.72),
         ),
         const SizedBox(
           width: space,
@@ -276,7 +284,7 @@ class WeeklyReportChartState extends State<WeeklyReportChart> {
         Container(
           width: width,
           height: 25,
-          color: Colors.white.withValues(alpha: 1),
+          color: color,
         ),
         const SizedBox(
           width: space,
@@ -284,7 +292,7 @@ class WeeklyReportChartState extends State<WeeklyReportChart> {
         Container(
           width: width,
           height: 15,
-          color: Colors.white.withValues(alpha: 0.8),
+          color: color.withValues(alpha: 0.72),
         ),
         const SizedBox(
           width: space,

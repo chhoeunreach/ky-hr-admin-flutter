@@ -7,40 +7,29 @@ import '../models/repair_device.dart';
 class RepairEditDeviceSheet extends StatefulWidget {
   final List<RepairBrand> brands;
   final List<RepairDeviceType> deviceTypes;
-  final List<RepairDeviceSeries> series;
   final List<RepairDevice> existingDevices;
   final RepairDevice? device;
-  final ValueChanged<RepairDevice> onSave;
-  final ValueChanged<int>? onDelete;
-  final Future<RepairBrand?> Function(RepairBrand brand)? onAddBrand;
-  final Future<RepairDeviceType?> Function(RepairDeviceType deviceType)?
-      onAddDeviceType;
+  final Future<bool> Function(RepairDevice) onSave;
+  final Future<bool> Function(int)? onDelete;
 
   const RepairEditDeviceSheet({
     super.key,
     required this.brands,
     required this.deviceTypes,
-    required this.series,
     this.existingDevices = const [],
     this.device,
     required this.onSave,
     this.onDelete,
-    this.onAddBrand,
-    this.onAddDeviceType,
   });
 
   static Future<void> show(
     BuildContext context, {
     required List<RepairBrand> brands,
     required List<RepairDeviceType> deviceTypes,
-    required List<RepairDeviceSeries> series,
     List<RepairDevice> existingDevices = const [],
     RepairDevice? device,
-    required ValueChanged<RepairDevice> onSave,
-    ValueChanged<int>? onDelete,
-    Future<RepairBrand?> Function(RepairBrand brand)? onAddBrand,
-    Future<RepairDeviceType?> Function(RepairDeviceType deviceType)?
-        onAddDeviceType,
+    required Future<bool> Function(RepairDevice) onSave,
+    Future<bool> Function(int)? onDelete,
   }) {
     return showModalBottomSheet(
       context: context,
@@ -49,13 +38,10 @@ class RepairEditDeviceSheet extends StatefulWidget {
       builder: (_) => RepairEditDeviceSheet(
         brands: brands,
         deviceTypes: deviceTypes,
-        series: series,
         existingDevices: existingDevices,
         device: device,
         onSave: onSave,
         onDelete: onDelete,
-        onAddBrand: onAddBrand,
-        onAddDeviceType: onAddDeviceType,
       ),
     );
   }
@@ -73,7 +59,7 @@ class _RepairEditDeviceSheetState extends State<RepairEditDeviceSheet> {
 
   RepairBrand? _selectedBrand;
   RepairDeviceType? _selectedDeviceType;
-  RepairDeviceSeries? _selectedSeries;
+  bool _saving = false;
 
   @override
   void initState() {
@@ -106,15 +92,6 @@ class _RepairEditDeviceSheetState extends State<RepairEditDeviceSheet> {
     } else if (_availableDeviceTypes.isNotEmpty) {
       _selectedDeviceType = _availableDeviceTypes.first;
     }
-
-    if (widget.device?.series != null) {
-      _selectedSeries = widget.series.firstWhere(
-        (s) => s.id == widget.device!.series!.id,
-        orElse: () => widget.series.isNotEmpty
-            ? widget.series.first
-            : widget.device!.series!,
-      );
-    }
   }
 
   @override
@@ -124,14 +101,11 @@ class _RepairEditDeviceSheetState extends State<RepairEditDeviceSheet> {
     super.dispose();
   }
 
-  void _save() {
+  Future<void> _save() async {
+    if (_saving) return;
     final name = _nameController.text.trim();
-    if (name.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('សូមបញ្ចូលឈ្មោះឧបករណ៍ / Please enter device name'),
-        ),
-      );
+    if (name.isEmpty || _selectedBrand == null || _selectedDeviceType == null) {
+      _showResult('device_required_fields', false);
       return;
     }
 
@@ -145,7 +119,7 @@ class _RepairEditDeviceSheetState extends State<RepairEditDeviceSheet> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'ម៉ូឌែល "" មានរួចហើយសម្រាប់ម៉ាកនេះ / Model "" already exists for this brand',
+            'ម៉ូឌែល "$name" មានរួចហើយសម្រាប់ម៉ាកនេះ / Model "$name" already exists for this brand',
           ),
           backgroundColor: Colors.redAccent,
         ),
@@ -153,6 +127,7 @@ class _RepairEditDeviceSheetState extends State<RepairEditDeviceSheet> {
       return;
     }
 
+    final series = widget.device?.series;
     final newDevice = RepairDevice(
       id: widget.device?.id ?? DateTime.now().millisecondsSinceEpoch % 100000,
       name: name,
@@ -160,18 +135,30 @@ class _RepairEditDeviceSheetState extends State<RepairEditDeviceSheet> {
       image: widget.device?.image ?? '',
       brand: _selectedBrand,
       deviceType: _selectedDeviceType,
-      series: _selectedSeries,
+      series: series?.brandId == brandId &&
+              series?.deviceTypeId == _selectedDeviceType?.id
+          ? series
+          : null,
     );
 
-    widget.onSave(newDevice);
-    Navigator.pop(context);
+    setState(() => _saving = true);
+    final saved = await widget.onSave(newDevice);
+    if (!mounted) return;
+    if (saved) {
+      _showResult(
+          widget.device == null ? 'device_created' : 'device_updated', true);
+      Navigator.pop(context);
+    } else {
+      setState(() => _saving = false);
+      _showResult('device_save_failed', false);
+    }
+  }
 
+  void _showResult(String key, bool success) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(widget.device == null
-            ? 'បានបន្ថែមឧបករណ៍ថ្មីដោយជោគជ័យ! / Device created!'
-            : 'បានកែប្រែឧបករណ៍ដោយជោគជ័យ! / Device updated!'),
-        backgroundColor: const Color(0xFF10B981),
+        content: Text(translate('repair_screen.$key')),
+        backgroundColor: success ? const Color(0xFF10B981) : Colors.redAccent,
       ),
     );
   }
@@ -220,255 +207,21 @@ class _RepairEditDeviceSheetState extends State<RepairEditDeviceSheet> {
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(ctx);
-              Navigator.pop(context);
-              widget.onDelete!(widget.device!.id);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    'បានលុបឧបករណ៍ "${widget.device!.name}" ជោគជ័យ!',
-                  ),
-                  backgroundColor: Colors.redAccent,
-                ),
-              );
+              if (_saving) return;
+              setState(() => _saving = true);
+              final deleted = await widget.onDelete!(widget.device!.id);
+              if (!mounted) return;
+              if (deleted) {
+                _showResult('device_deleted', true);
+                Navigator.pop(context);
+              } else {
+                setState(() => _saving = false);
+                _showResult('device_delete_failed', false);
+              }
             },
             child: const Text('លុប / Delete'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _openAddBrandDialog() {
-    final nameCtrl = TextEditingController();
-    final slugCtrl = TextEditingController();
-    final enterprise = EnterpriseTheme.of(context);
-
-    nameCtrl.addListener(() {
-      slugCtrl.text =
-          nameCtrl.text.trim().toLowerCase().replaceAll(RegExp(r'\s+'), '-');
-    });
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: enterprise.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: enterprise.primary.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(Icons.branding_watermark_rounded,
-                  color: enterprise.accent, size: 20),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                'បន្ថែមម៉ាក / Add Brand',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: enterprise.text,
-                ),
-              ),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _dialogTextField(
-              'ឈ្មោះម៉ាក / Brand Name *',
-              nameCtrl,
-              'e.g. Google, Sony, OnePlus',
-              enterprise,
-              icon: Icons.branding_watermark_outlined,
-            ),
-            const SizedBox(height: 12),
-            _dialogTextField(
-              'Slug / សម្គាល់',
-              slugCtrl,
-              'e.g. google',
-              enterprise,
-              icon: Icons.link_rounded,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('បោះបង់ / Cancel',
-                style: TextStyle(color: enterprise.mutedText)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: enterprise.primary,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            onPressed: () async {
-              final name = nameCtrl.text.trim();
-              if (name.isEmpty) return;
-              final slug = slugCtrl.text.trim().isNotEmpty
-                  ? slugCtrl.text.trim()
-                  : name.toLowerCase().replaceAll(RegExp(r'\s+'), '-');
-              final newBrand = RepairBrand(
-                id: DateTime.now().millisecondsSinceEpoch % 100000,
-                name: name,
-                slug: slug,
-                status: true,
-              );
-              Navigator.pop(ctx);
-
-              RepairBrand? created = newBrand;
-              if (widget.onAddBrand != null) {
-                created = await widget.onAddBrand!(newBrand) ?? newBrand;
-              }
-
-              setState(() {
-                final newBrand = created!;
-                _availableBrands = [
-                  newBrand,
-                  ..._availableBrands.where((b) => b.id != newBrand.id),
-                ];
-                _selectedBrand = newBrand;
-              });
-
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('បានបន្ថែមម៉ាក "$name" ជោគជ័យ!'),
-                    backgroundColor: const Color(0xFF10B981),
-                  ),
-                );
-              }
-            },
-            child: const Text('បង្កើត / Add'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _openAddDeviceTypeDialog() {
-    final nameCtrl = TextEditingController();
-    final slugCtrl = TextEditingController();
-    final enterprise = EnterpriseTheme.of(context);
-
-    nameCtrl.addListener(() {
-      slugCtrl.text =
-          nameCtrl.text.trim().toLowerCase().replaceAll(RegExp(r'\s+'), '-');
-    });
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: enterprise.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: enterprise.primary.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(Icons.category_rounded,
-                  color: enterprise.accent, size: 20),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                'បន្ថែមប្រភេទឧបករណ៍ / Add Type',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: enterprise.text,
-                ),
-              ),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _dialogTextField(
-              'ឈ្មោះប្រភេទ / Type Name *',
-              nameCtrl,
-              'e.g. Smartwatch, Console, Drone',
-              enterprise,
-              icon: Icons.category_outlined,
-            ),
-            const SizedBox(height: 12),
-            _dialogTextField(
-              'Slug / សម្គាល់',
-              slugCtrl,
-              'e.g. smartwatch',
-              enterprise,
-              icon: Icons.link_rounded,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('បោះបង់ / Cancel',
-                style: TextStyle(color: enterprise.mutedText)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: enterprise.primary,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            onPressed: () async {
-              final name = nameCtrl.text.trim();
-              if (name.isEmpty) return;
-              final slug = slugCtrl.text.trim().isNotEmpty
-                  ? slugCtrl.text.trim()
-                  : name.toLowerCase().replaceAll(RegExp(r'\s+'), '-');
-              final newType = RepairDeviceType(
-                id: DateTime.now().millisecondsSinceEpoch % 100000,
-                name: name,
-                slug: slug,
-              );
-              Navigator.pop(ctx);
-
-              RepairDeviceType? created = newType;
-              if (widget.onAddDeviceType != null) {
-                created = await widget.onAddDeviceType!(newType) ?? newType;
-              }
-
-              setState(() {
-                final newType = created!;
-                _availableDeviceTypes = [
-                  ..._availableDeviceTypes.where((t) => t.id != newType.id),
-                  newType,
-                ];
-                _selectedDeviceType = newType;
-              });
-
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('បានបន្ថែមប្រភេទ "$name" ជោគជ័យ!'),
-                    backgroundColor: const Color(0xFF10B981),
-                  ),
-                );
-              }
-            },
-            child: const Text('បង្កើត / Add'),
           ),
         ],
       ),
@@ -601,43 +354,13 @@ class _RepairEditDeviceSheetState extends State<RepairEditDeviceSheet> {
               ),
               const SizedBox(height: 14),
 
-              // Brand Section Header with "+" Button
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    translate('repair_screen.brand'),
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: enterprise.text,
-                    ),
-                  ),
-                  InkWell(
-                    onTap: _openAddBrandDialog,
-                    borderRadius: BorderRadius.circular(6),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.add_circle_outline_rounded,
-                              size: 14, color: enterprise.accent),
-                          const SizedBox(width: 4),
-                          Text(
-                            translate('repair_screen.add_brand'),
-                            style: TextStyle(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w700,
-                              color: enterprise.accent,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+              Text(
+                translate('repair_screen.brand'),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: enterprise.text,
+                ),
               ),
               const SizedBox(height: 6),
               DropdownButtonFormField<RepairBrand>(
@@ -660,43 +383,13 @@ class _RepairEditDeviceSheetState extends State<RepairEditDeviceSheet> {
               ),
               const SizedBox(height: 14),
 
-              // Device Type Section Header with "+" Button
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'ប្រភេទឧបករណ៍ / Device Type',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: enterprise.text,
-                    ),
-                  ),
-                  InkWell(
-                    onTap: _openAddDeviceTypeDialog,
-                    borderRadius: BorderRadius.circular(6),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.add_circle_outline_rounded,
-                              size: 14, color: enterprise.accent),
-                          const SizedBox(width: 4),
-                          Text(
-                            translate('repair_screen.add_device_type'),
-                            style: TextStyle(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w700,
-                              color: enterprise.accent,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+              Text(
+                translate('repair_screen.device_type'),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: enterprise.text,
+                ),
               ),
               const SizedBox(height: 6),
               DropdownButtonFormField<RepairDeviceType>(
@@ -743,7 +436,7 @@ class _RepairEditDeviceSheetState extends State<RepairEditDeviceSheet> {
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  onPressed: _save,
+                  onPressed: _saving ? null : _save,
                 ),
               ),
 
@@ -769,7 +462,7 @@ class _RepairEditDeviceSheetState extends State<RepairEditDeviceSheet> {
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    onPressed: _confirmDelete,
+                    onPressed: _saving ? null : _confirmDelete,
                   ),
                 ),
               ],
@@ -854,62 +547,6 @@ class _RepairEditDeviceSheetState extends State<RepairEditDeviceSheet> {
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
               borderSide: BorderSide(color: enterprise.accent, width: 1.5),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _dialogTextField(
-    String label,
-    TextEditingController controller,
-    String hint,
-    EnterpriseTheme enterprise, {
-    IconData? icon,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 11.5,
-            fontWeight: FontWeight.w600,
-            color: enterprise.text,
-          ),
-        ),
-        const SizedBox(height: 4),
-        TextField(
-          controller: controller,
-          style: TextStyle(fontSize: 13, color: enterprise.text),
-          decoration: InputDecoration(
-            prefixIcon: icon != null
-                ? Icon(icon,
-                    size: 16,
-                    color: enterprise.mutedText.withValues(alpha: 0.8))
-                : null,
-            hintText: hint,
-            hintStyle: TextStyle(
-              fontSize: 12,
-              color: enterprise.mutedText.withValues(alpha: 0.6),
-            ),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            filled: true,
-            fillColor:
-                Colors.white.withValues(alpha: enterprise.isDark ? 0.06 : 0.4),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: enterprise.glassStroke),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: enterprise.glassStroke),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: enterprise.accent, width: 1.2),
             ),
           ),
         ),

@@ -5,7 +5,25 @@ class ChatUnreadStore {
 
   static const String _storageKey = 'chat_unread_conversations';
 
+  static bool _storageReady = false;
+
+  static bool get isStorageReady => _storageReady;
+
+  /// Marks [GetStorage] as initialized for the current isolate so that reads
+  /// and writes are safe to perform. Call this once right after
+  /// [GetStorage.init] completes (main isolate and background push isolate).
+  /// Until then every call is a harmless no-op, which keeps widget tests and
+  /// other storage-less environments from constructing GetStorage (its
+  /// constructor starts an eager init future that fails outside the app).
+  static void markStorageReady() {
+    _storageReady = true;
+  }
+
   static Future<int> getTotalUnreadCount() async {
+    if (!_storageReady) {
+      return 0;
+    }
+
     final conversations = _readConversations();
     return conversations.values.fold<int>(
       0,
@@ -14,8 +32,24 @@ class ChatUnreadStore {
   }
 
   static Future<int> getConversationUnreadCount(String conversationId) async {
+    if (!_storageReady) {
+      return 0;
+    }
+
     final conversations = _readConversations();
     return _readCount(conversations[conversationId]);
+  }
+
+  static Future<Map<String, int>> getAllCounts() async {
+    if (!_storageReady) {
+      return <String, int>{};
+    }
+
+    final conversations = _readConversations();
+    return <String, int>{
+      for (final entry in conversations.entries)
+        entry.key: _readCount(entry.value),
+    };
   }
 
   static Future<bool> addUnreadMessage({
@@ -23,6 +57,10 @@ class ChatUnreadStore {
     required String messageKey,
     String? title,
   }) async {
+    if (!_storageReady) {
+      return false;
+    }
+
     if (conversationId.trim().isEmpty || messageKey.trim().isEmpty) {
       return false;
     }
@@ -62,6 +100,10 @@ class ChatUnreadStore {
     required String conversationId,
     required Iterable<String> messageKeys,
   }) async {
+    if (!_storageReady) {
+      return 0;
+    }
+
     final trimmedConversationId = conversationId.trim();
     if (trimmedConversationId.isEmpty) {
       return 0;
@@ -98,6 +140,10 @@ class ChatUnreadStore {
   }
 
   static Future<int> markConversationAsRead(String conversationId) async {
+    if (!_storageReady) {
+      return 0;
+    }
+
     final trimmedConversationId = conversationId.trim();
     if (trimmedConversationId.isEmpty) {
       return 0;
@@ -116,6 +162,10 @@ class ChatUnreadStore {
   }
 
   static Future<void> clearAll() async {
+    if (!_storageReady) {
+      return;
+    }
+
     final box = GetStorage();
     await box.write(_storageKey, <String, dynamic>{});
   }

@@ -3,15 +3,30 @@ import 'dart:ui';
 import 'package:cnattendance/theme/app_theme_data.dart';
 import 'package:cnattendance/theme/app_theme_mode.dart';
 import 'package:cnattendance/theme/theme_colors.dart';
+import 'package:cnattendance/theme/theme_provider.dart';
+import 'package:cnattendance/theme/theme_layout.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class EnterpriseTheme {
   final AppThemeMode mode;
   final ThemeColors colors;
 
-  EnterpriseTheme._(this.mode, this.colors);
+  EnterpriseTheme._(this.mode, this.colors,
+      [this.layout = const ThemeLayout.defaults()]);
+
+  final ThemeLayout layout;
 
   factory EnterpriseTheme.of(BuildContext context) {
+    try {
+      final provider = Provider.of<ThemeProvider>(context);
+      return EnterpriseTheme._(
+        provider.mode,
+        provider.colors,
+        provider.layout,
+      );
+    } catch (_) {}
+
     final theme = Theme.of(context);
     final match = AppThemeData.themes.entries.where((entry) {
       final info = entry.value;
@@ -19,25 +34,58 @@ class EnterpriseTheme {
           info.colors.secondaryColor == theme.colorScheme.secondary;
     });
     if (match.isEmpty) {
+      final isDark = theme.brightness == Brightness.dark;
+      final fallbackMode = isDark ? AppThemeMode.dark : AppThemeMode.light;
       return EnterpriseTheme._(
-        AppThemeMode.light,
-        AppThemeData.info(AppThemeMode.light).colors,
+        fallbackMode,
+        AppThemeData.info(fallbackMode).colors,
       );
     }
     return EnterpriseTheme._(match.first.key, match.first.value.colors);
   }
 
   bool get isDark => colors.isDark;
+  bool get isRoyalBlueGold => mode == AppThemeMode.royalBlueGold;
+  bool get isKhmerHeritage => mode == AppThemeMode.khmerHeritage;
   Color get primary => colors.primaryColor;
   Color get secondary => colors.secondaryColor;
   Color get accent => colors.accentColor;
   Color get text => colors.textColor;
   Color get surface => colors.cardColor;
 
+  Color get contentSurface =>
+      mode == AppThemeMode.light && layout.background == null
+          ? Colors.white
+          : Color.alphaBlend(surface, colors.backgroundColor);
+
+  Color get cardBackground => isKhmerHeritage || layout.background != null
+      ? surface
+      : mode == AppThemeMode.rosePink
+          ? const Color(0xFF9D124D).withValues(alpha: 0.96)
+          : isDark
+              ? const Color(0xFF1E293B).withValues(alpha: 0.90)
+              : Colors.white;
+  Color get cardBorder => isKhmerHeritage || layout.background != null
+      ? accent.withValues(alpha: .5)
+      : mode == AppThemeMode.rosePink
+          ? const Color(0xFFFF80AB).withValues(alpha: 0.52)
+          : isDark
+              ? const Color(0xFF334155)
+              : const Color(0xFFE2E8F0);
+
   Color get mutedText => text.withValues(alpha: isDark ? 0.74 : 0.68);
-  Color get glassFill => Colors.white.withValues(alpha: isDark ? 0.12 : 0.58);
-  Color get glassStroke => Colors.white.withValues(alpha: isDark ? 0.18 : 0.74);
+  Color get glassFill => Colors.white.withValues(
+        alpha: mode == AppThemeMode.rosePink ? 0.14 : (isDark ? 0.12 : 0.58),
+      );
+  Color get glassStroke => isKhmerHeritage
+      ? cardBorder
+      : Colors.white.withValues(
+          alpha: mode == AppThemeMode.rosePink ? 0.34 : (isDark ? 0.18 : 0.74),
+        );
   Color get glow => accent.withValues(alpha: isDark ? 0.34 : 0.28);
+
+  /// Electric-blue edge used for glowing card borders.
+  Color get glowEdge => accent.withValues(alpha: isDark ? 0.55 : 0.45);
 
   LinearGradient get pageGradient => LinearGradient(
         begin: Alignment.topLeft,
@@ -48,23 +96,36 @@ class EnterpriseTheme {
   LinearGradient get cardGradient => LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [
-          Colors.white.withValues(alpha: isDark ? 0.17 : 0.76),
-          primary.withValues(alpha: isDark ? 0.14 : 0.10),
-          secondary.withValues(alpha: isDark ? 0.16 : 0.08),
-        ],
+        colors: isKhmerHeritage
+            ? [surface, secondary]
+            : [
+                Colors.white.withValues(alpha: isDark ? 0.17 : 0.76),
+                primary.withValues(alpha: isDark ? 0.14 : 0.10),
+                secondary.withValues(alpha: isDark ? 0.16 : 0.08),
+              ],
       );
 
   BoxDecoration glassDecoration({
     double radius = 24,
     Color? glowColor,
     double glowOpacity = 0.16,
+    bool glowingBorder = false,
   }) {
     return BoxDecoration(
       gradient: cardGradient,
       borderRadius: BorderRadius.circular(radius),
-      border: Border.all(color: glassStroke),
+      border: Border.all(
+        color: glowingBorder ? glowEdge : glassStroke,
+        width: glowingBorder ? 1.2 : 1,
+      ),
       boxShadow: [
+        if (glowingBorder)
+          BoxShadow(
+            color: (glowColor ?? primary).withValues(alpha: 0.30),
+            blurRadius: 16,
+            spreadRadius: 0.5,
+            offset: const Offset(0, 0),
+          ),
         BoxShadow(
           color: (glowColor ?? accent).withValues(alpha: glowOpacity),
           blurRadius: 28,
@@ -72,7 +133,7 @@ class EnterpriseTheme {
           offset: const Offset(0, 14),
         ),
         BoxShadow(
-          color: Colors.black.withValues(alpha: isDark ? 0.24 : 0.08),
+          color: Colors.black.withValues(alpha: isDark ? 0.24 : 0.10),
           blurRadius: 22,
           offset: const Offset(0, 12),
         ),
@@ -87,6 +148,7 @@ class EnterpriseGlass extends StatelessWidget {
   final double radius;
   final Color? glowColor;
   final double glowOpacity;
+  final bool glowingBorder;
 
   const EnterpriseGlass({
     Key? key,
@@ -95,6 +157,7 @@ class EnterpriseGlass extends StatelessWidget {
     this.radius = 24,
     this.glowColor,
     this.glowOpacity = 0.14,
+    this.glowingBorder = false,
   }) : super(key: key);
 
   @override
@@ -110,6 +173,7 @@ class EnterpriseGlass extends StatelessWidget {
             radius: radius,
             glowColor: glowColor,
             glowOpacity: glowOpacity,
+            glowingBorder: glowingBorder,
           ),
           child: child,
         ),

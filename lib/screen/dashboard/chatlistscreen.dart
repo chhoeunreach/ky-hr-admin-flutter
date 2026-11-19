@@ -7,7 +7,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cnattendance/data/source/datastore/preferences.dart';
 import 'package:cnattendance/model/chat_contact.dart';
 import 'package:cnattendance/model/group_chat.dart';
+import 'package:cnattendance/provider/chatbadgecontroller.dart';
 import 'package:cnattendance/provider/groupchatcontroller.dart';
+import 'package:cnattendance/utils/chat/direct_conversation_id.dart';
 import 'package:cnattendance/provider/teamsheetprovider.dart';
 import 'package:cnattendance/screen/profile/admin_chat_thread_screen.dart';
 import 'package:cnattendance/screen/profile/chatscreen.dart';
@@ -22,6 +24,8 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 class ChatListScreen extends StatelessWidget {
+  const ChatListScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
@@ -62,6 +66,7 @@ class _ChatListState extends State<ChatList> {
     super.didChangeDependencies();
     if (_initialState) {
       _initialState = false;
+      unawaited(ChatBadgeController.ensureRegistered().refreshUnreadCount());
       _loadTeam();
       _loadGroups();
     }
@@ -360,6 +365,29 @@ class _ChatListState extends State<ChatList> {
     return contact.username.trim();
   }
 
+  List<String> _unreadKeysFor(ChatContact contact) {
+    if (contact.usesAdminThread) {
+      return <String>{
+        contact.conversationId.trim(),
+        contact.internalConversationId.trim(),
+        if (contact.resolvedAdminId.trim().isNotEmpty)
+          'admin:${contact.resolvedAdminId.trim()}',
+        if (contact.resolvedAdminUsername.trim().isNotEmpty)
+          'admin:${contact.resolvedAdminUsername.trim()}',
+      }.where((key) => key.isNotEmpty).toList();
+    }
+
+    final other = contact.username.trim();
+    final me = _currentUsername.trim();
+    if (other.isEmpty || me.isEmpty) {
+      return const <String>[];
+    }
+
+    // Same sorted pairing ChatScreen uses to build the Firestore conversation id.
+    final conversationId = directConversationId(me, other);
+    return <String>[conversationId];
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<TeamSheetProvider>(context);
@@ -556,6 +584,7 @@ class _ChatListState extends State<ChatList> {
             return _ChatListTile(
               key: ValueKey('contact_${contact.id}_${contact.username}'),
               contact: contact,
+              unreadKeys: _unreadKeysFor(contact),
               onTap: () => _openChat(contact),
             );
           },
@@ -575,6 +604,7 @@ class _Header extends StatelessWidget {
     final enterprise = EnterpriseTheme.of(context);
     return Row(
       children: [
+        if (Navigator.canPop(context)) BackButton(color: enterprise.text),
         Expanded(
           child: Text(
             translate('dashboard_screen.chat'),
@@ -762,11 +792,13 @@ class _FilterChip extends StatelessWidget {
 
 class _ChatListTile extends StatelessWidget {
   final ChatContact contact;
+  final List<String> unreadKeys;
   final VoidCallback onTap;
 
   const _ChatListTile({
     super.key,
     required this.contact,
+    required this.unreadKeys,
     required this.onTap,
   });
 
@@ -811,12 +843,56 @@ class _ChatListTile extends StatelessWidget {
                   ],
                 ),
               ),
+              _UnreadCountBadge(conversationIds: unreadKeys),
+              const SizedBox(width: 6),
               Icon(Icons.chevron_right, color: enterprise.mutedText),
             ],
           ),
         ),
       ),
     );
+  }
+}
+
+class _UnreadCountBadge extends StatelessWidget {
+  final List<String> conversationIds;
+
+  const _UnreadCountBadge({required this.conversationIds});
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final count = ChatBadgeController.ensureRegistered()
+          .conversationUnread(conversationIds);
+      if (count <= 0) {
+        return const SizedBox.shrink();
+      }
+
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6.5, vertical: 2),
+        constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
+        decoration: BoxDecoration(
+          color: const Color(0xFFEF4444),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFEF4444).withValues(alpha: 0.4),
+              blurRadius: 6,
+            ),
+          ],
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          count > 99 ? '99+' : count.toString(),
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 11,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      );
+    });
   }
 }
 
@@ -975,6 +1051,7 @@ class _GroupChatTile extends StatelessWidget {
                   ],
                 ),
               ),
+              _UnreadCountBadge(conversationIds: ['group_${group.id}']),
               if (group.lastMessageAt != null)
                 Padding(
                   padding: const EdgeInsets.only(left: 8),

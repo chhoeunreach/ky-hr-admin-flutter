@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 
+import 'package:cnattendance/theme/enterprise_theme.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'community_strings.dart';
@@ -71,7 +73,7 @@ class CommunityReactionButton extends StatelessWidget {
                 elevation: 12,
                 shadowColor: Colors.black26,
                 borderRadius: BorderRadius.circular(40),
-                color: Theme.of(context).colorScheme.surface,
+                color: EnterpriseTheme.of(context).contentSurface,
                 child: Padding(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 5, vertical: 8),

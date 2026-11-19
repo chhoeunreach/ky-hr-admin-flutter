@@ -10,6 +10,7 @@ import 'package:cnattendance/services/chat_media_upload_service.dart';
 import 'package:cnattendance/services/voice_recorder_service.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:cnattendance/utils/chat_background_store.dart';
+import 'package:cnattendance/utils/chat/direct_conversation_id.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
@@ -68,14 +69,7 @@ class ChatController extends GetxController {
 
   Future<void> setConversationDetail(String user1, String user2) async {
     if (!await _allowsChatFunction('view_employee_chat')) return;
-    int result = user1.compareTo(user2);
-    if (result < 0) {
-      convoId = user1 + user2;
-    } else if (result > 0) {
-      convoId = user2 + user1;
-    } else {
-      convoId = user1 + user2;
-    }
+    convoId = directConversationId(user1, user2);
 
     await FirebaseFirestore.instance
         .collection('conversations')

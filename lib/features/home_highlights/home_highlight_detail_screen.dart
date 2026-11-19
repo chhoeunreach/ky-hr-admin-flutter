@@ -32,18 +32,23 @@ class HomeHighlightDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = EnterpriseTheme.of(context);
+    final colors = Theme.of(context).colorScheme;
     final date = highlight.startsAt ?? highlight.createdAt;
     return Scaffold(
-      backgroundColor: theme.surface,
+      backgroundColor: theme.contentSurface,
       appBar: AppBar(
-        backgroundColor: theme.surface,
+        backgroundColor: theme.contentSurface,
         foregroundColor: theme.text,
+        surfaceTintColor: Colors.transparent,
         iconTheme: IconThemeData(color: theme.text),
         elevation: 0,
         leading: Navigator.of(context).canPop()
             ? BackButton(color: theme.text)
             : null,
-        title: Text(homeHighlightsText('Highlight')),
+        title: Text(
+          homeHighlightsText('Highlight'),
+          style: TextStyle(color: theme.text),
+        ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -65,7 +70,7 @@ class HomeHighlightDetailScreen extends StatelessWidget {
                       child: Center(
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: theme.secondary,
+                          color: theme.text,
                         ),
                       ),
                     ),
@@ -119,7 +124,10 @@ class HomeHighlightDetailScreen extends StatelessWidget {
                         fontSize: FontSize(15),
                         lineHeight: LineHeight(1.6),
                       ),
-                      'a': Style(color: theme.secondary),
+                      'a': Style(
+                        color: theme.text,
+                        textDecoration: TextDecoration.underline,
+                      ),
                       'img': Style(width: Width(100, Unit.percent)),
                     },
                     onLinkTap: (url, attributes, element) =>
@@ -141,8 +149,8 @@ class HomeHighlightDetailScreen extends StatelessWidget {
                   width: double.infinity,
                   child: FilledButton.icon(
                     style: FilledButton.styleFrom(
-                      backgroundColor: theme.secondary,
-                      foregroundColor: Colors.white,
+                      backgroundColor: colors.primaryContainer,
+                      foregroundColor: colors.onPrimaryContainer,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),

@@ -23,6 +23,7 @@ class Auth with ChangeNotifier {
         showToast(result.message);
         return;
       }
+      await preferences.setCompanyVerifyRequired(false);
       appUrl = await preferences.getAppUrl();
       notifyListeners();
     } catch (e) {
@@ -32,17 +33,24 @@ class Auth with ChangeNotifier {
 
   Future<void> resetAppUrl() async {
     await preferences.saveAppUrl("");
+    await preferences.setCompanyVerifyRequired(true);
     appUrl = "";
     notifyListeners();
   }
 
   Future<void> skipAppUrl() async {
     await preferences.saveAppUrl(Constant.appUrl);
+    await preferences.setCompanyVerifyRequired(false);
     appUrl = await preferences.getAppUrl();
     notifyListeners();
   }
 
   Future<void> getAppUrl() async {
+    if (await preferences.getCompanyVerifyRequired()) {
+      appUrl = "";
+      notifyListeners();
+      return;
+    }
     appUrl = await preferences.getAppUrl();
     notifyListeners();
   }

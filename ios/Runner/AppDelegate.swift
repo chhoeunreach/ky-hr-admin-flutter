@@ -16,16 +16,6 @@ import workmanager_apple
         print("[PUSH][iOS] \(message)")
     }
 
-    private func syncBadgeIfMissing(from userInfo: [AnyHashable: Any]) {
-        guard let aps = userInfo["aps"] as? [String: Any], aps["badge"] == nil else {
-            return
-        }
-
-        DispatchQueue.main.async {
-            UIApplication.shared.applicationIconBadgeNumber += 1
-        }
-    }
-    
     override func application(
       _ application: UIApplication,
       didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
@@ -93,8 +83,7 @@ import workmanager_apple
       didReceiveRemoteNotification userInfo: [AnyHashable : Any],
       fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
     ) {
-        logPush("Received remote notification: \(userInfo)")
-        syncBadgeIfMissing(from: userInfo)
+        logPush("Received remote notification")
         super.application(
           application,
           didReceiveRemoteNotification: userInfo,
@@ -107,8 +96,14 @@ import workmanager_apple
       willPresent notification: UNNotification,
       withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
-        logPush("Will present foreground notification: \(notification.request.content.userInfo)")
-        syncBadgeIfMissing(from: notification.request.content.userInfo)
+        if notification.request.trigger is UNPushNotificationTrigger {
+            // Let FlutterFire record the delivery. Complete native presentation once.
+            super.userNotificationCenter(
+                center,
+                willPresent: notification,
+                withCompletionHandler: { _ in }
+            )
+        }
 
         if #available(iOS 14.0, *) {
             completionHandler([.banner, .list, .sound, .badge])

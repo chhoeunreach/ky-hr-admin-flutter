@@ -14,7 +14,6 @@ import 'package:cnattendance/provider/payslipprovider.dart';
 import 'package:cnattendance/provider/prefprovider.dart';
 import 'package:cnattendance/provider/profileprovider.dart';
 import 'package:cnattendance/provider/ssfprovider.dart';
-import 'package:cnattendance/features/repair_price/providers/repair_price_provider.dart';
 import 'package:cnattendance/services/background_sync_manager.dart';
 import 'package:cnattendance/services/connection_alert.dart';
 import 'package:cnattendance/services/database_helper.dart';
@@ -35,10 +34,12 @@ import 'package:cnattendance/theme/app_theme_mode.dart';
 import 'package:cnattendance/theme/theme_provider.dart';
 import 'package:cnattendance/provider/notificationcontroller.dart';
 import 'package:cnattendance/utils/app_badge_sync.dart';
+import 'package:cnattendance/utils/chat_unread_store.dart';
 import 'package:cnattendance/utils/incoming_chat_listener.dart';
 import 'package:cnattendance/utils/navigationservice.dart';
+import 'package:cnattendance/widget/enterprise/app_motion.dart';
+import 'package:cnattendance/widget/enterprise/rose_pink_effects.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -51,11 +52,6 @@ import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'package:in_app_notification/in_app_notification.dart';
 import 'package:flutter_translate/flutter_translate.dart';
-
-@pragma('vm:entry-point')
-Future<void> _messageHandler(RemoteMessage message) async {
-  await PushNotificationService.handleBackgroundMessage(message);
-}
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -113,6 +109,7 @@ Future<void> main() async {
     await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform);
     await GetStorage.init();
+    ChatUnreadStore.markStorageReady();
     final initialStorage = GetStorage();
     if (initialStorage.read("language") == null) {
       await initialStorage.write("language", "km");
@@ -259,18 +256,21 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           ChangeNotifierProvider(
             create: (ctx) => ThemeProvider()..load(),
           ),
-          ChangeNotifierProvider(
-            create: (ctx) => RepairPriceProvider(),
-          ),
         ],
         child: Portal(
           child: InAppNotification(
             child: LocalizationProvider(
               state: LocalizationProvider.of(context).state,
-              child: Consumer<ThemeProvider>(
-                builder: (context, themeProvider, _) {
+              child: Selector<ThemeProvider, (AppThemeMode, Color?, Color?)>(
+                selector: (_, settings) => (
+                  settings.mode,
+                  settings.layout.background,
+                  settings.layout.accent,
+                ),
+                builder: (context, settings, child) {
+                  final theme = context.read<ThemeProvider>().themeData;
                   return AnimatedTheme(
-                    data: themeProvider.themeData,
+                    data: theme,
                     duration: AppThemeData.animationDuration,
                     child: GetMaterialApp(
                       navigatorKey: NavigationService.navigatorKey,
@@ -283,9 +283,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                       ],
                       supportedLocales: localizationDelegate.supportedLocales,
                       locale: Locale(storage.read("language") ?? "km"),
-                      theme: themeProvider.themeData,
-                      darkTheme: themeProvider.darkTheme,
-                      themeMode: themeProvider.mode == AppThemeMode.dark
+                      theme: theme,
+                      darkTheme: theme,
+                      themeMode: theme.brightness == Brightness.dark
                           ? ThemeMode.dark
                           : ThemeMode.light,
                       initialRoute: '/',
@@ -307,7 +307,13 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                         SellOutReportScreen.routeName: (_) =>
                             const SellOutReportScreen(),
                       },
-                      builder: EasyLoading.init(),
+                      builder: EasyLoading.init(
+                        builder: (context, child) => AppMotion(
+                          child: RosePinkEffectsOverlay(
+                            child: child ?? const SizedBox.shrink(),
+                          ),
+                        ),
+                      ),
                     ),
                   );
                 },

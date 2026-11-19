@@ -1,9 +1,14 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cnattendance/provider/chatbadgecontroller.dart';
 import 'package:cnattendance/provider/notificationcontroller.dart';
 import 'package:cnattendance/provider/prefprovider.dart';
+import 'package:cnattendance/screen/dashboard/chatlistscreen.dart';
 import 'package:cnattendance/screen/profile/NotificationScreen.dart';
 import 'package:cnattendance/screen/profile/profilescreen.dart';
 import 'package:cnattendance/services/server_status_service.dart';
+import 'package:cnattendance/theme/enterprise_theme.dart';
+import 'package:cnattendance/theme/royal_colors.dart';
+import 'package:cnattendance/widget/homescreen/royal_dashboard_widgets.dart';
 import 'package:cnattendance/widget/dashboard_drawer_scope.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -20,10 +25,12 @@ class HeaderProfile extends StatefulWidget {
     super.key,
     this.showServerTest = false,
     this.showMenuButton = true,
+    this.royalOnline = false,
   });
 
   final bool showServerTest;
   final bool showMenuButton;
+  final bool royalOnline;
 
   @override
   State<StatefulWidget> createState() => HeaderState();
@@ -146,260 +153,390 @@ class HeaderState extends State<HeaderProfile> {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<PrefProvider>(context);
+    final theme = EnterpriseTheme.of(context);
+    final royal = theme.isRoyalBlueGold;
+    final initials = provider.fullname
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((word) => word.isNotEmpty)
+        .take(2)
+        .map((word) => word.characters.first)
+        .join();
+    final royalAvatar = SizedBox.square(
+      dimension: 44,
+      child: ColoredBox(
+        color: RoyalColors.deepBlue,
+        child: Center(
+          child: initials.isEmpty
+              ? const Icon(Icons.person, color: RoyalColors.lightGold)
+              : Text(initials.toUpperCase(),
+                  style: const TextStyle(fontWeight: FontWeight.w800)),
+        ),
+      ),
+    );
+    final labelColor =
+        theme.layout.background == null ? Colors.white : theme.text;
     final features = context.watch<DashboardProvider>().features;
     final isEnabledLocation =
         context.watch<DashboardProvider>().isLocationEnabled;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 8, 14, 4),
-      child: Row(
-        children: [
-          // 1. Menu Squircle Button
-          if (widget.showMenuButton) ...[
-            Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(13),
-                onTap: _openDashboardDrawer,
-                child: Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.95),
-                    borderRadius: BorderRadius.circular(13),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.08),
-                        blurRadius: 10,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+    final profile = <Widget>[
+      // 1. Menu Squircle Button
+      if (widget.showMenuButton) ...[
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(21),
+            onTap: _openDashboardDrawer,
+            child: Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFF0C2247).withValues(alpha: 0.78),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.18),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.22),
+                    blurRadius: 12,
+                    offset: const Offset(0, 3),
                   ),
-                  child: const Icon(
-                    Icons.menu_rounded,
-                    color: Color(0xFF0F172A),
-                    size: 22,
+                ],
+              ),
+              child: const Icon(
+                Icons.menu_rounded,
+                color: Colors.white,
+                size: 22,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+      ],
+
+      // 2. Avatar with Green Online Dot
+      InkWell(
+        borderRadius: BorderRadius.circular(28),
+        onTap: features["profile"] != "1"
+            ? null
+            : () {
+                pushScreen(context,
+                    screen: ProfileScreen(),
+                    withNavBar: false,
+                    pageTransitionAnimation: PageTransitionAnimation.fade);
+              },
+        child: Stack(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: royal
+                      ? [RoyalColors.lightGold, theme.accent]
+                      : theme.isKhmerHeritage
+                          ? [theme.text, theme.accent]
+                          : const [Color(0xFF0066FF), Color(0xFF5EB1FF)],
+                ),
+              ),
+              child: ClipOval(
+                child: royal && provider.avatar.trim().isEmpty
+                    ? royalAvatar
+                    : CachedNetworkImage(
+                        imageUrl: provider.avatar,
+                        memCacheWidth: royal ? 176 : null,
+                        width: 42,
+                        height: 42,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) {
+                          if (royal) return royalAvatar;
+                          return Image.asset(
+                            'assets/images/dummy_avatar.png',
+                            width: 42,
+                            height: 42,
+                            fit: BoxFit.cover,
+                          );
+                        },
+                        errorWidget: (context, url, error) {
+                          if (royal) return royalAvatar;
+                          return Image.asset(
+                            'assets/images/dummy_avatar.png',
+                            width: 42,
+                            height: 42,
+                            fit: BoxFit.cover,
+                          );
+                        },
+                      ),
+              ),
+            ),
+            if (!royal || widget.royalOnline)
+              Positioned(
+                bottom: 1,
+                right: 1,
+                child: Container(
+                  width: 11,
+                  height: 11,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF22C55E),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(width: 10),
           ],
+        ),
+      ),
+      const SizedBox(width: 10),
 
-          // 2. Avatar with Green Online Dot
-          InkWell(
-            borderRadius: BorderRadius.circular(28),
-            onTap: features["profile"] != "1"
-                ? null
-                : () {
-                    pushScreen(context,
-                        screen: ProfileScreen(),
-                        withNavBar: false,
-                        pageTransitionAnimation: PageTransitionAnimation.fade);
-                  },
-            child: Stack(
+      // 3. User Info Column: Hello There 👋, Name, Staff Code Pill
+      Expanded(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [
-                        Color(0xFF38BDF8),
-                        Color(0xFF2563EB),
-                      ],
-                    ),
-                  ),
-                  child: ClipOval(
-                    child: CachedNetworkImage(
-                      imageUrl: provider.avatar,
-                      width: 42,
-                      height: 42,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) {
-                        return Image.asset(
-                          'assets/images/dummy_avatar.png',
-                          width: 42,
-                          height: 42,
-                          fit: BoxFit.cover,
-                        );
-                      },
-                      errorWidget: (context, url, error) {
-                        return Image.asset(
-                          'assets/images/dummy_avatar.png',
-                          width: 42,
-                          height: 42,
-                          fit: BoxFit.cover,
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                Positioned(
-                  bottom: 1,
-                  right: 1,
-                  child: Container(
-                    width: 11,
-                    height: 11,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF22C55E),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 10),
-
-          // 3. User Info Column: Hello There 👋, Name, Staff Code Pill
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      translate('home_screen.hello_there'),
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.90),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(width: 3),
-                    const Text('👋', style: TextStyle(fontSize: 11)),
-                  ],
-                ),
-                Text(
-                  provider.fullname.isNotEmpty
-                      ? provider.fullname
-                      : "សៅរឿន រាជ",
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.22),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+                Flexible(
                   child: Text(
-                    "${provider.userName.isNotEmpty ? provider.userName : 'KY0021'} · Staff",
+                    translate(royal
+                        ? 'royal.${royalGreeting(royalLocalTime(DateTime.now()))}'
+                        : 'home_screen.hello_there'),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
+                    style: TextStyle(
+                      color: labelColor.withValues(alpha: 0.90),
+                      fontSize: 11,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
+                const SizedBox(width: 3),
+                const Text('👋', style: TextStyle(fontSize: 11)),
               ],
             ),
-          ),
-
-          // 4. Right Action Buttons: Location, Grid, Notifications
-          if (isEnabledLocation)
-            Tooltip(
-              message: "Send Location",
-              child: _HeaderIconButton(
-                icon: Icons.location_on_rounded,
-                color: Colors.white,
-                onPressed: sendLocation,
+            Text(
+              provider.fullname.isNotEmpty
+                  ? provider.fullname
+                  : royal
+                      ? translate('royal.employee')
+                      : "សៅរឿន រាជ",
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: labelColor,
+                fontSize: 17,
+                fontWeight: FontWeight.w900,
               ),
             ),
-          Tooltip(
-            message: "Shortcuts",
-            child: _HeaderIconButton(
-              icon: Icons.grid_view_rounded,
-              color: Colors.white,
-              onPressed: () {
-                if (widget.showServerTest) {
-                  testServerConnection();
-                } else {
-                  _openDashboardDrawer();
-                }
-              },
-            ),
-          ),
-          if (features["notifications"] == "1")
-            Tooltip(
-              message: "Notifications",
-              child: Obx(
-                () => Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    _HeaderIconButton(
-                      icon: Icons.notifications_rounded,
-                      color: Colors.white,
-                      onPressed: () {
-                        pushScreen(context,
-                            screen: NotificationScreen(),
-                            withNavBar: false,
-                            pageTransitionAnimation:
-                                PageTransitionAnimation.fade);
-                      },
-                    ),
-                    Positioned(
-                      right: 1,
-                      top: 1,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 4.5, vertical: 1.5),
-                        constraints: const BoxConstraints(
-                          minWidth: 17,
-                          minHeight: 17,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEF4444),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.white, width: 1.2),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFFEF4444)
-                                  .withValues(alpha: 0.45),
-                              blurRadius: 6,
-                            ),
-                          ],
-                        ),
-                        child: Text(
-                          notificationController.badgeCount > 0
-                              ? (notificationController.badgeCount > 99
-                                  ? '99+'
-                                  : notificationController.badgeCount
-                                      .toString())
-                              : '49',
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 9.5,
-                            fontWeight: FontWeight.w900,
+            const SizedBox(height: 2),
+            if (!royal ||
+                provider.userName.isNotEmpty ||
+                provider.userId.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                decoration: BoxDecoration(
+                  color: royal ||
+                          theme.isKhmerHeritage ||
+                          theme.layout.background != null
+                      ? theme.accent.withValues(alpha: .18)
+                      : Colors.white.withValues(alpha: 0.22),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  royal
+                      ? (provider.userName.isNotEmpty
+                          ? provider.userName
+                          : provider.userId)
+                      : "${provider.userName.isNotEmpty ? provider.userName : 'KY0021'} · Staff",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: labelColor,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    ];
+    final actions = <Widget>[
+      if (features['chat'] == '1')
+        Tooltip(
+          message: translate('dashboard_screen.chat'),
+          child: Obx(() {
+            final chatUnread =
+                ChatBadgeController.ensureRegistered().unreadCount.value;
+            return Stack(
+              clipBehavior: Clip.none,
+              children: [
+                _HeaderIconButton(
+                  icon: Icons.chat_bubble_rounded,
+                  color: Colors.white,
+                  onPressed: () => pushScreen(
+                    context,
+                    screen: const ChatListScreen(),
+                    withNavBar: false,
+                    pageTransitionAnimation: PageTransitionAnimation.fade,
+                  ),
+                ),
+                if (chatUnread > 0)
+                  Positioned(
+                    right: 1,
+                    top: 1,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 4.5, vertical: 1.5),
+                      constraints: const BoxConstraints(
+                        minWidth: 17,
+                        minHeight: 17,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEF4444),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.white, width: 1.2),
+                        boxShadow: [
+                          BoxShadow(
+                            color:
+                                const Color(0xFFEF4444).withValues(alpha: 0.45),
+                            blurRadius: 6,
                           ),
+                        ],
+                      ),
+                      child: Text(
+                        chatUnread > 99 ? '99+' : chatUnread.toString(),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w900,
                         ),
                       ),
                     ),
-                  ],
+                  ),
+              ],
+            );
+          }),
+        ),
+      if (isEnabledLocation)
+        Tooltip(
+          message: royal ? translate('royal.send_location') : 'Send Location',
+          child: _HeaderIconButton(
+            icon: Icons.location_on_rounded,
+            color: Colors.white,
+            onPressed: sendLocation,
+          ),
+        ),
+      Tooltip(
+        message: royal ? translate('royal.shortcuts') : 'Shortcuts',
+        child: _HeaderIconButton(
+          icon: Icons.grid_view_rounded,
+          color: Colors.white,
+          onPressed: () {
+            if (widget.showServerTest) {
+              testServerConnection();
+            } else {
+              _openDashboardDrawer();
+            }
+          },
+        ),
+      ),
+      if (features["notifications"] == "1")
+        Tooltip(
+          message: royal ? translate('royal.notifications') : 'Notifications',
+          child: Obx(
+            () => Stack(
+              clipBehavior: Clip.none,
+              children: [
+                _HeaderIconButton(
+                  icon: Icons.notifications_rounded,
+                  color: Colors.white,
+                  onPressed: () {
+                    pushScreen(context,
+                        screen: NotificationScreen(),
+                        withNavBar: false,
+                        pageTransitionAnimation: PageTransitionAnimation.fade);
+                  },
                 ),
-              ),
+                if (notificationController.badgeCount > 0)
+                  Positioned(
+                    right: 1,
+                    top: 1,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 4.5, vertical: 1.5),
+                      constraints: const BoxConstraints(
+                        minWidth: 17,
+                        minHeight: 17,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEF4444),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.white, width: 1.2),
+                        boxShadow: [
+                          BoxShadow(
+                            color:
+                                const Color(0xFFEF4444).withValues(alpha: 0.45),
+                            blurRadius: 6,
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        notificationController.badgeCount > 99
+                            ? '99+'
+                            : notificationController.badgeCount.toString(),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
-        ],
+          ),
+        ),
+    ];
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(royal ? 0 : 14, 8, royal ? 0 : 14, 4),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final minimumProfileWidth = widget.showMenuButton ? 184.0 : 132.0;
+          if (constraints.maxWidth >=
+              minimumProfileWidth +
+                  actions.length * (royal ? 48 : _HeaderIconButton.slotWidth)) {
+            return Row(children: [...profile, ...actions]);
+          }
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Row(children: profile),
+              const SizedBox(height: 4),
+              Wrap(
+                  alignment: WrapAlignment.end,
+                  runSpacing: 4,
+                  children: actions),
+            ],
+          );
+        },
       ),
     );
   }
 }
 
 class _HeaderIconButton extends StatelessWidget {
+  static const _size = 38.0;
+  static const _spacing = 6.0;
+  static const slotWidth = _size + _spacing;
+
   final IconData icon;
   final Color color;
   final VoidCallback onPressed;
@@ -412,18 +549,35 @@ class _HeaderIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = EnterpriseTheme.of(context);
     return Container(
-      width: 38,
-      height: 38,
-      margin: const EdgeInsets.only(left: 6),
+      width: theme.isRoyalBlueGold ? 48 : _size,
+      height: theme.isRoyalBlueGold ? 48 : _size,
+      margin: EdgeInsets.only(left: theme.isRoyalBlueGold ? 0 : _spacing),
       decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: Colors.white.withValues(alpha: 0.22),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
+        shape: theme.isKhmerHeritage ? BoxShape.rectangle : BoxShape.circle,
+        borderRadius: theme.isKhmerHeritage ? BorderRadius.circular(12) : null,
+        gradient: theme.isKhmerHeritage ? theme.cardGradient : null,
+        color: theme.isKhmerHeritage
+            ? null
+            : const Color(0xFF0C2247).withValues(alpha: 0.72),
+        border: Border.all(
+          color: theme.isKhmerHeritage
+              ? theme.cardBorder
+              : Colors.white.withValues(alpha: 0.20),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.18),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: IconButton(
         padding: EdgeInsets.zero,
-        icon: Icon(icon, color: color, size: 20),
+        icon: Icon(icon,
+            color: theme.isKhmerHeritage ? theme.text : color, size: 20),
         onPressed: onPressed,
       ),
     );

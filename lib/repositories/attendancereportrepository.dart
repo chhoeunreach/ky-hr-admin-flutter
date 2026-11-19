@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:developer';
 
 import 'package:cnattendance/data/source/datastore/preferences.dart';
 import 'package:cnattendance/data/source/network/connect.dart';
@@ -24,8 +23,6 @@ class AttendanceReportRepository {
 
       final responseData = json.decode(response.body);
       if (response.statusCode == 200) {
-        log(responseData.toString());
-
         final responseJson = AttendanceReportResponse.fromJson(responseData);
 
         return responseJson;

@@ -6,6 +6,7 @@ import 'dart:math' as math;
 
 import 'community_strings.dart';
 import 'package:cnattendance/data/source/datastore/preferences.dart';
+import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -21,6 +22,75 @@ import 'community_media_picker.dart';
 import 'community_media.dart';
 import 'feed_cache.dart';
 import 'feed_performance.dart';
+
+extension _CommunityTheme on BuildContext {
+  ColorScheme get _communityColors => Theme.of(this).colorScheme;
+
+  Color get _communitySurface => EnterpriseTheme.of(this).contentSurface;
+
+  Color get _communityPage {
+    final theme = EnterpriseTheme.of(this);
+    return theme.isDark
+        ? theme.colors.backgroundColor
+        : _communityColors.surfaceContainerLow;
+  }
+}
+
+AppBar _communityAppBar(BuildContext context, String title,
+    {bool automaticallyImplyLeading = true, List<Widget>? actions}) {
+  final colors = context._communityColors;
+  final foreground = colors.onPrimaryContainer;
+  return AppBar(
+    automaticallyImplyLeading: automaticallyImplyLeading,
+    backgroundColor: colors.primaryContainer,
+    foregroundColor: foreground,
+    iconTheme: IconThemeData(color: foreground),
+    actionsIconTheme: IconThemeData(color: foreground),
+    elevation: 0,
+    scrolledUnderElevation: 0,
+    title: Text(title,
+        style: TextStyle(color: foreground, fontWeight: FontWeight.w800)),
+    actions: actions,
+  );
+}
+
+Future<T?> _showCommunityDialog<T>({
+  required BuildContext context,
+  required WidgetBuilder builder,
+}) {
+  return showDialog<T>(
+    context: context,
+    builder: (context) {
+      final theme = Theme.of(context);
+      final colors = context._communityColors;
+      return Theme(
+        data: theme.copyWith(
+          dialogTheme: theme.dialogTheme.copyWith(
+            backgroundColor: context._communitySurface,
+            surfaceTintColor: Colors.transparent,
+          ),
+          inputDecorationTheme: theme.inputDecorationTheme.copyWith(
+            filled: true,
+            fillColor: colors.surfaceContainerHigh,
+            hintStyle: TextStyle(color: colors.onSurfaceVariant),
+          ),
+          textButtonTheme: TextButtonThemeData(
+            style: TextButton.styleFrom(
+              foregroundColor: colors.onPrimaryContainer,
+            ),
+          ),
+          filledButtonTheme: FilledButtonThemeData(
+            style: FilledButton.styleFrom(
+              backgroundColor: colors.primaryContainer,
+              foregroundColor: colors.onPrimaryContainer,
+            ),
+          ),
+        ),
+        child: Builder(builder: builder),
+      );
+    },
+  );
+}
 
 class SocialFeedScreen extends StatefulWidget {
   const SocialFeedScreen(
@@ -384,7 +454,7 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
   }
 
   Future<void> _delete(Map<String, dynamic> post) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await _showCommunityDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
                 title: Text(communityText('Delete your post?')),
@@ -402,7 +472,7 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
   }
 
   Future<void> _share(Map<String, dynamic> post) async {
-    final text = await showDialog<String>(
+    final text = await _showCommunityDialog<String>(
         context: context, builder: (_) => _ShareCaptionDialog());
     if (text != null && mounted)
       await _action(post, 'share', data: {'body': text});
@@ -496,7 +566,7 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
   }
 
   Future<void> _reportPost(Map<String, dynamic> post) async {
-    final reason = await showDialog<String>(
+    final reason = await _showCommunityDialog<String>(
         context: context, builder: (_) => const _ReportPostDialog());
     if (reason == null || !mounted) return;
     final id = post['id'] as int;
@@ -518,7 +588,7 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
       final response =
           await _api.request('GET', 'social-feed/${post['id']}/reactions');
       if (!mounted) return;
-      await showDialog<void>(
+      await _showCommunityDialog<void>(
           context: context,
           builder: (_) => AlertDialog(
                 title: Text(communityText('Reactions')),
@@ -584,20 +654,21 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
 
   Widget _composerCard() => Card(
       elevation: 0,
-      margin: const EdgeInsets.fromLTRB(12, 14, 12, 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      color: context._communitySurface,
+      margin: const EdgeInsets.fromLTRB(10, 6, 10, 6),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           child: Row(children: [
             CircleAvatar(
-                radius: 23,
+                radius: 18,
                 backgroundImage: _profileAvatar.isEmpty
                     ? null
                     : communityAvatarImage(_profileAvatar),
                 child: _profileAvatar.isEmpty
                     ? const Icon(Icons.person_outline)
                     : null),
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
             Expanded(
                 child: Material(
                     color: Theme.of(context).colorScheme.surfaceContainerLow,
@@ -607,7 +678,7 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
                         onTap: () => _compose(),
                         child: Padding(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: 15),
+                                horizontal: 12, vertical: 12),
                             child: Text(communityText("What's on your mind?"),
                                 style: TextStyle(
                                     color: Theme.of(context)
@@ -616,22 +687,22 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
             IconButton(
                 tooltip: communityText('Photo'),
                 onPressed: () => _compose(initialType: 'image'),
-                icon:
-                    const Icon(Icons.image_outlined, color: Color(0xff087bff))),
+                icon: Icon(Icons.image_outlined,
+                    color: context._communityColors.onPrimaryContainer)),
             IconButton(
                 tooltip: communityText('Video'),
                 onPressed: () => _compose(initialType: 'video'),
-                icon: const Icon(Icons.videocam_outlined,
-                    color: Color(0xff087bff))),
+                icon: Icon(Icons.videocam_outlined,
+                    color: context._communityColors.onPrimaryContainer)),
           ])));
 
   Widget _filters() => SizedBox(
-      height: 58,
+      height: 50,
       child: ListView.separated(
           scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.fromLTRB(12, 2, 12, 10),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
           itemCount: 4,
-          separatorBuilder: (_, __) => const SizedBox(width: 8),
+          separatorBuilder: (_, __) => const SizedBox(width: 6),
           itemBuilder: (context, index) {
             const labels = ['All Posts', 'Team', 'Announcement', 'Event'];
             const icons = [
@@ -641,26 +712,25 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
               Icons.calendar_today_outlined
             ];
             final selected = _filter == labels[index];
+            final colors = context._communityColors;
             return ChoiceChip(
                 selected: selected,
                 showCheckmark: false,
                 avatar: Icon(icons[index],
-                    size: 20,
+                    size: 18,
                     color: selected
-                        ? Colors.white
-                        : Theme.of(context).colorScheme.onSurfaceVariant),
+                        ? colors.onPrimaryContainer
+                        : colors.onSurfaceVariant),
                 label: Text(communityText(labels[index])),
                 labelStyle: TextStyle(
-                    color: selected
-                        ? Colors.white
-                        : Theme.of(context).colorScheme.onSurface,
+                    color:
+                        selected ? colors.onPrimaryContainer : colors.onSurface,
                     fontWeight: FontWeight.w600),
-                selectedColor: const Color(0xff087bff),
-                backgroundColor: Theme.of(context).colorScheme.surface,
+                selectedColor: colors.primaryContainer,
+                backgroundColor: context._communitySurface,
                 side: BorderSide.none,
                 shape: const StadiumBorder(),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
                 onSelected: (_) => setState(() => _filter = labels[index]));
           }));
 
@@ -669,13 +739,13 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
     final author = post['author'] as Map?;
     final avatar = '${author?['avatar'] ?? ''}';
     return Card(
-        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         elevation: 0,
-        color: Theme.of(context).colorScheme.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        color: context._communitySurface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         clipBehavior: Clip.antiAlias,
         child: Padding(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.fromLTRB(10, 8, 10, 4),
           child:
               Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             Row(children: [
@@ -696,10 +766,12 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
                               style: const TextStyle(
                                   fontSize: 16, fontWeight: FontWeight.w800))),
                       if (post['is_announcement'] == true)
-                        const Padding(
-                            padding: EdgeInsets.only(left: 6),
+                        Padding(
+                            padding: const EdgeInsets.only(left: 6),
                             child: Icon(Icons.verified,
-                                size: 16, color: Colors.blue))
+                                size: 16,
+                                color: context
+                                    ._communityColors.onPrimaryContainer))
                     ]),
                     Text(
                         '${author?['department'] ?? ''}${author?['department'] != null ? ' · ' : ''}${_date(post['created_at'])}',
@@ -785,10 +857,10 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
                                 child: Text(communityText('Hide post'))),
                         ]),
             ]),
-            SizedBox(height: 12),
+            const SizedBox(height: 8),
             _PostContent(post: post, feedPosition: feedPosition),
             if (post['poll'] is Map) _PollWidget(post: post, api: _api),
-            SizedBox(height: 12),
+            const SizedBox(height: 6),
             Row(children: [
               Expanded(
                   child: InkWell(
@@ -821,7 +893,7 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
               Text('${post['shares_count'] ?? 0} ${communityText('shares')}',
                   style: Theme.of(context).textTheme.bodySmall),
             ]),
-            const Divider(height: 24),
+            const Divider(height: 12),
             LayoutBuilder(builder: (context, constraints) {
               final actions = <Widget>[
                 if (_allows('social_feed.react'))
@@ -852,7 +924,7 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
                       textButtonTheme: TextButtonThemeData(
                           style: TextButton.styleFrom(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 4, vertical: 10),
+                                  horizontal: 4, vertical: 6),
                               foregroundColor: Theme.of(context)
                                   .colorScheme
                                   .onSurfaceVariant,
@@ -872,28 +944,21 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
   @override
   Widget build(BuildContext context) {
     final features = context.watch<DashboardProvider>().features;
+    final accent = context._communityColors.onPrimaryContainer;
+    final actionStyle = TextButton.styleFrom(foregroundColor: accent);
     final canViewStories =
         _allowsStory('social_feed.stories.view', 'social_feed.view');
     final canCreateStories =
         _allowsStory('social_feed.stories.create', 'social_feed.create');
     final visiblePosts = _visiblePosts;
     return Scaffold(
-      backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? const Color(0xff111827)
-          : const Color(0xffeef4ff),
+      backgroundColor: context._communityPage,
       appBar: _immersive
           ? null
-          : AppBar(
+          : _communityAppBar(
+              context,
+              communityText('Social Feed'),
               automaticallyImplyLeading: widget.showBackButton,
-              foregroundColor: Colors.white,
-              backgroundColor: const Color(0xff0869ed),
-              elevation: 0,
-              flexibleSpace: const DecoratedBox(
-                  decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                          colors: [Color(0xff078aff), Color(0xff034acb)]))),
-              title: Text(communityText('Social Feed'),
-                  style: const TextStyle(fontWeight: FontWeight.w800)),
               actions: [
                 if (features['social_feed.search'] == '1')
                   IconButton(
@@ -934,6 +999,8 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
                 child: Text(communityText(
                     'You do not have permission to view the feed.')))
             : RefreshIndicator(
+                color: accent,
+                backgroundColor: context._communitySurface,
                 onRefresh: () => _load(reset: true),
                 child: CustomScrollView(
                   key: const PageStorageKey('social-feed-scroll'),
@@ -941,57 +1008,46 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
                   physics: const AlwaysScrollableScrollPhysics(),
                   cacheExtent: 600,
                   slivers: [
-                    SliverPadding(
-                      padding: const EdgeInsets.only(top: 2),
-                      sliver: SliverList.list(children: [
-                        if (features['social_feed.create'] == '1')
-                          _composerCard(),
-                        if (canViewStories)
-                          SocialStoriesStrip(
-                              groups: _storyGroups,
-                              loading: _storiesLoading,
-                              error: null,
-                              canCreate: canCreateStories,
-                              onCreate: _composeStory,
-                              onRetry: _loadStories,
-                              onOpen: (index) async {
-                                FeedVideoAutoplayManager.instance.pauseAll();
-                                await Navigator.of(context, rootNavigator: true)
-                                    .push(MaterialPageRoute(
-                                        builder: (_) => SocialStoryViewer(
-                                            groups: _storyGroups,
-                                            initialGroup: index)));
-                                if (mounted) await _loadStories();
-                              }),
+                    SliverList.list(children: [
+                      if (features['social_feed.create'] == '1')
+                        _composerCard(),
+                      if (canViewStories)
+                        SocialStoriesStrip(
+                            groups: _storyGroups,
+                            loading: _storiesLoading,
+                            error: null,
+                            canCreate: canCreateStories,
+                            onCreate: _composeStory,
+                            onRetry: _loadStories,
+                            onOpen: (index) async {
+                              FeedVideoAutoplayManager.instance.pauseAll();
+                              await Navigator.of(context, rootNavigator: true)
+                                  .push(MaterialPageRoute(
+                                      builder: (_) => SocialStoryViewer(
+                                          groups: _storyGroups,
+                                          initialGroup: index)));
+                              if (mounted) await _loadStories();
+                            }),
+                      _filters(),
+                      if (_error != null)
                         Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 8),
-                            child: Text(communityText('Connect with your team'),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleLarge
-                                    ?.copyWith(fontWeight: FontWeight.w800))),
-                        _filters(),
-                        if (_error != null)
-                          Padding(
-                              padding: EdgeInsets.all(16),
-                              child: Column(children: [
-                                Text(_error!),
-                                TextButton(
-                                    onPressed: () =>
-                                        _load(reset: _posts.isEmpty),
-                                    child: Text(communityText('Try again')))
-                              ])),
-                        if (visiblePosts.isEmpty && !_loading && _error == null)
-                          Padding(
-                              padding: EdgeInsets.all(40),
-                              child: Text(
-                                  communityText(_filter == 'All Posts'
-                                      ? 'No posts yet. Start a conversation with your team.'
-                                      : 'No posts in this category yet.'),
-                                  textAlign: TextAlign.center)),
-                      ]),
-                    ),
+                            padding: EdgeInsets.all(16),
+                            child: Column(children: [
+                              Text(_error!),
+                              TextButton(
+                                  style: actionStyle,
+                                  onPressed: () => _load(reset: _posts.isEmpty),
+                                  child: Text(communityText('Try again')))
+                            ])),
+                      if (visiblePosts.isEmpty && !_loading && _error == null)
+                        Padding(
+                            padding: EdgeInsets.all(40),
+                            child: Text(
+                                communityText(_filter == 'All Posts'
+                                    ? 'No posts yet. Start a conversation with your team.'
+                                    : 'No posts in this category yet.'),
+                                textAlign: TextAlign.center)),
+                    ]),
                     SliverList.builder(
                       itemCount: visiblePosts.length,
                       itemBuilder: (context, index) {
@@ -1007,15 +1063,19 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
                         if (_loading)
                           Padding(
                               padding: EdgeInsets.all(24),
-                              child:
-                                  Center(child: CircularProgressIndicator())),
+                              child: Center(
+                                  child: CircularProgressIndicator(
+                                      color: accent))),
                         if (_hasMore && !_loading && _posts.isNotEmpty)
                           TextButton(
+                              style: actionStyle,
                               onPressed: _load,
                               child: Text(communityText('Load more posts'))),
                       ]),
                     ),
-                    const SliverToBoxAdapter(child: SizedBox(height: 100)),
+                    SliverToBoxAdapter(
+                        child: SizedBox(
+                            height: MediaQuery.paddingOf(context).bottom + 8)),
                   ],
                 )),
       ),
@@ -1047,7 +1107,7 @@ class SocialStoriesStrip extends StatelessWidget {
   Widget build(BuildContext context) {
     if (loading && groups.isEmpty) {
       return const SizedBox(
-          height: 148, child: Center(child: CircularProgressIndicator()));
+          height: 88, child: Center(child: CircularProgressIndicator()));
     }
     if (error != null && groups.isEmpty) {
       return Padding(
@@ -1059,12 +1119,12 @@ class SocialStoriesStrip extends StatelessWidget {
     }
     if (!canCreate && groups.isEmpty) return const SizedBox.shrink();
     return SizedBox(
-        height: 148,
+        height: 88,
         child: ListView.separated(
-            padding: const EdgeInsets.fromLTRB(12, 2, 12, 4),
+            padding: const EdgeInsets.fromLTRB(10, 2, 10, 4),
             scrollDirection: Axis.horizontal,
             itemCount: groups.length + (canCreate ? 1 : 0),
-            separatorBuilder: (_, __) => const SizedBox(width: 7),
+            separatorBuilder: (_, __) => const SizedBox(width: 5),
             itemBuilder: (context, index) {
               if (canCreate && index == 0) {
                 return _CreateStoryCard(onTap: onCreate);
@@ -1083,9 +1143,11 @@ class _CreateStoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context._communityColors;
     return SizedBox(
-        width: 100,
+        width: 62,
         child: Card(
+            color: context._communitySurface,
             clipBehavior: Clip.antiAlias,
             margin: EdgeInsets.zero,
             elevation: 0,
@@ -1097,23 +1159,24 @@ class _CreateStoryCard extends StatelessWidget {
                   Expanded(
                     child: Container(
                         width: double.infinity,
-                        decoration: const BoxDecoration(
+                        decoration: BoxDecoration(
                             gradient: LinearGradient(
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                                 colors: [
-                              Color(0xffeaf2ff),
-                              Color(0xffcfe0ff)
+                              colors.surfaceContainerHigh,
+                              colors.primaryContainer,
                             ])),
                         child: Center(
                             child: DecoratedBox(
-                                decoration: const BoxDecoration(
-                                    color: Color(0xff1769e8),
+                                decoration: BoxDecoration(
+                                    color: colors.primaryContainer,
                                     shape: BoxShape.circle),
-                                child: const Padding(
-                                    padding: EdgeInsets.all(7),
+                                child: Padding(
+                                    padding: const EdgeInsets.all(7),
                                     child: Icon(Icons.add_rounded,
-                                        color: Colors.white, size: 20))))),
+                                        color: colors.onPrimaryContainer,
+                                        size: 20))))),
                   ),
                   Padding(
                       padding: const EdgeInsets.symmetric(
@@ -1122,7 +1185,7 @@ class _CreateStoryCard extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                              fontWeight: FontWeight.w800, fontSize: 10.5)))
+                              fontWeight: FontWeight.w800, fontSize: 8.5)))
                 ]))));
   }
 }
@@ -1173,8 +1236,10 @@ class _StoryCard extends StatelessWidget {
     final duration = communityMediaDurationLabel(story['duration_seconds']);
     final avatar = '${author['avatar'] ?? ''}';
     final seen = group['has_unseen'] != true;
+    final colors = context._communityColors;
+    final ringColor = colors.onPrimaryContainer;
     return SizedBox(
-        width: 100,
+        width: 62,
         child: Card(
             clipBehavior: Clip.antiAlias,
             margin: EdgeInsets.zero,
@@ -1182,7 +1247,7 @@ class _StoryCard extends StatelessWidget {
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
                 side: BorderSide(
-                    color: seen ? Colors.transparent : const Color(0xff1769e8),
+                    color: seen ? Colors.transparent : ringColor,
                     width: seen ? 0 : 2)),
             child: InkWell(
                 onTap: onTap,
@@ -1194,9 +1259,10 @@ class _StoryCard extends StatelessWidget {
                         memCacheWidth: 300,
                         maxWidthDiskCache: 600,
                         fadeInDuration: const Duration(milliseconds: 120),
-                        errorWidget: (_, __, ___) => const ColoredBox(
-                            color: Color(0xffdbe7fa),
-                            child: Icon(Icons.image_not_supported_outlined)))
+                        errorWidget: (_, __, ___) => ColoredBox(
+                            color: colors.surfaceContainerHigh,
+                            child: Icon(Icons.image_not_supported_outlined,
+                                color: colors.onSurfaceVariant)))
                   else
                     DecoratedBox(
                         decoration: BoxDecoration(
@@ -1216,14 +1282,14 @@ class _StoryCard extends StatelessWidget {
                             child: type == 'text' && caption.isNotEmpty
                                 ? Padding(
                                     padding:
-                                        const EdgeInsets.fromLTRB(7, 32, 7, 24),
+                                        const EdgeInsets.fromLTRB(4, 24, 4, 18),
                                     child: Text(caption,
-                                        maxLines: 5,
+                                        maxLines: 3,
                                         overflow: TextOverflow.ellipsis,
                                         textAlign: TextAlign.center,
                                         style: const TextStyle(
                                             color: Colors.white,
-                                            fontSize: 11.5,
+                                            fontSize: 9,
                                             height: 1.2,
                                             fontWeight: FontWeight.w800,
                                             shadows: [
@@ -1235,11 +1301,11 @@ class _StoryCard extends StatelessWidget {
                   if (type == 'video') ...[
                     const Center(
                         child: Icon(Icons.play_circle_fill_rounded,
-                            color: Colors.white, size: 30)),
+                            color: Colors.white, size: 24)),
                     if (duration != null)
                       Positioned(
-                          top: 40,
-                          right: 6,
+                          top: 28,
+                          right: 4,
                           child: DecoratedBox(
                               decoration: BoxDecoration(
                                   color: Colors.black.withValues(alpha: .7),
@@ -1263,26 +1329,24 @@ class _StoryCard extends StatelessWidget {
                         Color(0xaa000000)
                       ]))),
                   Positioned(
-                      top: 7,
-                      left: 7,
+                      top: 5,
+                      left: 5,
                       child: Container(
                           padding: const EdgeInsets.all(2),
                           decoration: BoxDecoration(
-                              color: seen
-                                  ? Colors.white70
-                                  : const Color(0xff1769e8),
+                              color: seen ? Colors.white70 : ringColor,
                               shape: BoxShape.circle),
                           child: CircleAvatar(
-                              radius: 14,
+                              radius: 9,
                               backgroundImage:
                                   communityAvatarImage(avatar, pixels: 84),
                               child: avatar.isEmpty
-                                  ? const Icon(Icons.person, size: 15)
+                                  ? const Icon(Icons.person, size: 12)
                                   : null))),
                   Positioned(
-                      left: 7,
-                      right: 7,
-                      bottom: 6,
+                      left: 4,
+                      right: 4,
+                      bottom: 4,
                       child: Text(
                           group['is_mine'] == true
                               ? communityText('Your story')
@@ -1292,7 +1356,7 @@ class _StoryCard extends StatelessWidget {
                           style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.w800,
-                              fontSize: 11,
+                              fontSize: 8.5,
                               shadows: [
                                 Shadow(blurRadius: 3, color: Colors.black)
                               ])))
@@ -1527,6 +1591,7 @@ class _SocialStoryViewerState extends State<SocialStoryViewer> {
     await showModalBottomSheet<void>(
         context: context,
         showDragHandle: true,
+        backgroundColor: context._communitySurface,
         builder: (_) => _StoryReactionsSheet(api: _api, storyId: id));
     if (mounted && !wasPaused) _resumeProgress();
   }
@@ -1535,7 +1600,7 @@ class _SocialStoryViewerState extends State<SocialStoryViewer> {
     final story = _items[_index]['story'] as Map<String, dynamic>;
     final wasPaused = _paused;
     _pauseProgress();
-    final confirmed = await showDialog<bool>(
+    final confirmed = await _showCommunityDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
                 title: Text(communityText('Delete this story?')),
@@ -1993,6 +2058,7 @@ class _StoryReactionsSheetState extends State<_StoryReactionsSheet> {
                           separatorBuilder: (_, __) => const Divider(height: 1),
                           itemBuilder: (context, index) {
                             final item = _items[index];
+                            final colors = context._communityColors;
                             final user = Map<String, dynamic>.from(
                                 item['user'] as Map? ?? {});
                             final avatar = '${user['avatar'] ?? ''}';
@@ -2001,13 +2067,13 @@ class _StoryReactionsSheetState extends State<_StoryReactionsSheet> {
                                     '👍';
                             return ListTile(
                                 leading: CircleAvatar(
-                                    backgroundColor: const Color(0xffdbe7fa),
+                                    backgroundColor: colors.secondaryContainer,
                                     backgroundImage: avatar.isNotEmpty
                                         ? communityAvatarImage(avatar)
                                         : null,
                                     child: avatar.isEmpty
-                                        ? const Icon(Icons.person_outline,
-                                            color: Color(0xff5068a0))
+                                        ? Icon(Icons.person_outline,
+                                            color: colors.onSecondaryContainer)
                                         : null),
                                 title: Text(
                                     '${user['name'] ?? communityText('Employee')}',
@@ -2022,7 +2088,6 @@ class _StoryReactionsSheetState extends State<_StoryReactionsSheet> {
                           })));
 }
 
-const _storyInk = Color(0xff0b0f14);
 const _storySurface = Color(0xff161d27);
 
 void _requestTextKeyboard(BuildContext context, FocusNode focusNode,
@@ -2394,13 +2459,16 @@ class _SocialStoryComposerState extends State<SocialStoryComposer> {
 
   Widget _typeChip(String type, IconData icon, String label) {
     final selected = _type == type;
+    final colors = context._communityColors;
+    final foreground =
+        selected ? colors.onPrimaryContainer : colors.onSurfaceVariant;
     return Expanded(
         child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
             child: Material(
                 color: selected
-                    ? Colors.white
-                    : Colors.white.withValues(alpha: .08),
+                    ? colors.primaryContainer
+                    : colors.surfaceContainerHigh,
                 borderRadius: BorderRadius.circular(14),
                 child: InkWell(
                     borderRadius: BorderRadius.circular(14),
@@ -2427,16 +2495,11 @@ class _SocialStoryComposerState extends State<SocialStoryComposer> {
                         child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(icon,
-                                  size: 19,
-                                  color:
-                                      selected ? Colors.black : Colors.white70),
+                              Icon(icon, size: 19, color: foreground),
                               const SizedBox(width: 6),
                               Text(label,
                                   style: TextStyle(
-                                      color: selected
-                                          ? Colors.black
-                                          : Colors.white70,
+                                      color: foreground,
                                       fontWeight: FontWeight.w800,
                                       fontSize: 13))
                             ]))))));
@@ -2477,96 +2540,101 @@ class _SocialStoryComposerState extends State<SocialStoryComposer> {
                                         colors: _storyGradients[index]),
                                     border: Border.all(
                                         color: _gradient == index
-                                            ? Colors.white
+                                            ? context._communityColors.onSurface
                                             : Colors.transparent,
                                         width: 2))))))),
         ]));
   }
 
   Widget? _errorBanner() {
+    final color = context._communityColors.error;
     final error = _error;
     if (error == null) return null;
     return Padding(
         padding: const EdgeInsets.only(bottom: 8),
         child: Row(children: [
-          const Icon(Icons.error_outline_rounded,
-              color: Color(0xffff6b6b), size: 17),
+          Icon(Icons.error_outline_rounded, color: color, size: 17),
           const SizedBox(width: 6),
           Expanded(
               child: Text(error,
-                  style: const TextStyle(
-                      color: Color(0xffff9b9b),
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13)))
+                  style: TextStyle(
+                      color: color, fontWeight: FontWeight.w600, fontSize: 13)))
         ]));
   }
 
   @override
-  Widget build(BuildContext context) => PopScope(
-      canPop: !_saving,
-      child: Scaffold(
-          backgroundColor: _storyInk,
-          appBar: AppBar(
-              backgroundColor: _storyInk,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              scrolledUnderElevation: 0,
-              centerTitle: true,
-              leading: IconButton(
-                  tooltip: communityText('Close'),
-                  onPressed: _saving ? null : () => Navigator.maybePop(context),
-                  icon: const Icon(Icons.close_rounded)),
-              title: Text(communityText('Create story'),
-                  style: const TextStyle(
-                      fontWeight: FontWeight.w800, fontSize: 17))),
-          bottomNavigationBar: SafeArea(
-              minimum: const EdgeInsets.fromLTRB(16, 8, 16, 10),
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                if (_error != null) _errorBanner()!,
-                const SizedBox(height: 4),
-                FilledButton(
-                    onPressed: _saving ? null : _save,
-                    style: FilledButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.black,
-                        disabledBackgroundColor: Colors.white24,
-                        minimumSize: const Size.fromHeight(52),
-                        shape: const StadiumBorder(),
-                        textStyle: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w800)),
-                    child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (_saving)
-                            const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                    strokeWidth: 2, color: Colors.black54))
-                          else
-                            const Icon(Icons.arrow_forward_rounded, size: 20),
-                          const SizedBox(width: 8),
-                          Text(_saving
-                              ? communityText('Publishing…')
-                              : communityText('Share story'))
-                        ]))
-              ])),
-          body: SafeArea(
-              top: false,
-              child: LayoutBuilder(builder: (context, constraints) {
-                final previewHeight =
-                    (constraints.maxHeight * .66).clamp(220.0, 560.0);
-                return SingleChildScrollView(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Column(children: [
-                      Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 4, 16, 10),
-                          child: SizedBox(
-                              height: previewHeight, child: _preview())),
-                      _controls()
-                    ]));
-              }))));
+  Widget build(BuildContext context) {
+    final colors = context._communityColors;
+    final foreground = colors.onPrimaryContainer;
+    return PopScope(
+        canPop: !_saving,
+        child: Scaffold(
+            backgroundColor: context._communityPage,
+            appBar: AppBar(
+                backgroundColor: colors.primaryContainer,
+                foregroundColor: foreground,
+                iconTheme: IconThemeData(color: foreground),
+                elevation: 0,
+                scrolledUnderElevation: 0,
+                centerTitle: true,
+                leading: IconButton(
+                    tooltip: communityText('Close'),
+                    onPressed:
+                        _saving ? null : () => Navigator.maybePop(context),
+                    icon: const Icon(Icons.close_rounded)),
+                title: Text(communityText('Create story'),
+                    style: TextStyle(
+                        color: foreground,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 17))),
+            bottomNavigationBar: SafeArea(
+                minimum: const EdgeInsets.fromLTRB(16, 8, 16, 10),
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  if (_error != null) _errorBanner()!,
+                  const SizedBox(height: 4),
+                  FilledButton(
+                      onPressed: _saving ? null : _save,
+                      style: FilledButton.styleFrom(
+                          backgroundColor: colors.primaryContainer,
+                          foregroundColor: foreground,
+                          minimumSize: const Size.fromHeight(52),
+                          shape: const StadiumBorder(),
+                          textStyle: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.w800)),
+                      child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (_saving)
+                              SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2, color: foreground))
+                            else
+                              const Icon(Icons.arrow_forward_rounded, size: 20),
+                            const SizedBox(width: 8),
+                            Text(_saving
+                                ? communityText('Publishing…')
+                                : communityText('Share story'))
+                          ]))
+                ])),
+            body: SafeArea(
+                top: false,
+                child: LayoutBuilder(builder: (context, constraints) {
+                  final previewHeight =
+                      (constraints.maxHeight * .66).clamp(220.0, 560.0);
+                  return SingleChildScrollView(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Column(children: [
+                        Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 4, 16, 10),
+                            child: SizedBox(
+                                height: previewHeight, child: _preview())),
+                        _controls()
+                      ]));
+                }))));
+  }
 }
 
 class _ShareCaptionDialog extends StatefulWidget {
@@ -2684,7 +2752,8 @@ class _SocialSearchScreenState extends State<SocialSearchScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: Text(communityText('Search feed'))),
+        backgroundColor: context._communityPage,
+        appBar: _communityAppBar(context, communityText('Search feed')),
         body: Column(children: [
           Padding(
               padding: const EdgeInsets.all(12),
@@ -2693,6 +2762,10 @@ class _SocialSearchScreenState extends State<SocialSearchScreen> {
                   textInputAction: TextInputAction.search,
                   onSubmitted: (_) => _search(),
                   decoration: InputDecoration(
+                      filled: true,
+                      fillColor: context._communityColors.surfaceContainerHigh,
+                      hintStyle: TextStyle(
+                          color: context._communityColors.onSurfaceVariant),
                       hintText: communityText('Search posts or employees'),
                       suffixIcon: IconButton(
                           onPressed: _loading ? null : _search,
@@ -2708,6 +2781,7 @@ class _SocialSearchScreenState extends State<SocialSearchScreen> {
                   itemBuilder: (_, index) {
                     final post = _results[index];
                     return Card(
+                        color: context._communitySurface,
                         margin: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 6),
                         child: ListTile(
@@ -2937,14 +3011,19 @@ class _SocialNotificationsScreenState extends State<SocialNotificationsScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-      appBar: AppBar(
-          title: Text(_unreadCount > 0
+      backgroundColor: context._communityPage,
+      appBar: _communityAppBar(
+          context,
+          _unreadCount > 0
               ? '${communityText('Notifications')} ($_unreadCount)'
-              : communityText('Notifications')),
+              : communityText('Notifications'),
           actions: [
             if (_unreadCount > 0)
               TextButton(
                   onPressed: _markingAll ? null : _markAll,
+                  style: TextButton.styleFrom(
+                      foregroundColor:
+                          context._communityColors.onPrimaryContainer),
                   child: Text(communityText('Mark all read')))
           ]),
       body: _loading && _items.isEmpty
@@ -3066,7 +3145,8 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
     final author = post?['author'] as Map?;
     final avatar = '${author?['avatar'] ?? ''}';
     return Scaffold(
-        appBar: AppBar(title: Text(communityText('Post'))),
+        backgroundColor: context._communityPage,
+        appBar: _communityAppBar(context, communityText('Post')),
         body: _loading
             ? const Center(child: CircularProgressIndicator())
             : _error != null || post == null
@@ -3081,6 +3161,7 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
                         padding: const EdgeInsets.all(12),
                         children: [
                           Card(
+                              color: context._communitySurface,
                               child: Padding(
                                   padding: const EdgeInsets.all(14),
                                   child: Column(
@@ -3198,7 +3279,8 @@ class _SocialSavedPostsScreenState extends State<SocialSavedPostsScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-      appBar: AppBar(title: Text(communityText('Saved posts'))),
+      backgroundColor: context._communityPage,
+      appBar: _communityAppBar(context, communityText('Saved posts')),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
@@ -3216,6 +3298,7 @@ class _SocialSavedPostsScreenState extends State<SocialSavedPostsScreen> {
                                   textAlign: TextAlign.center)),
                         for (final post in _posts)
                           Card(
+                              color: context._communitySurface,
                               child: Padding(
                                   padding: const EdgeInsets.all(14),
                                   child: Column(
@@ -3396,8 +3479,7 @@ class _PostContent extends StatelessWidget {
       if (body.isNotEmpty)
         if (background != null && media.isEmpty)
           Container(
-              margin: const EdgeInsets.only(bottom: 10),
-              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 34),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 26),
               decoration: BoxDecoration(
                   gradient: LinearGradient(
                       colors: background.colors,
@@ -3423,7 +3505,7 @@ class _PostContent extends StatelessWidget {
                           fontWeight: FontWeight.w600)))
         else
           Padding(
-              padding: const EdgeInsets.only(bottom: 10),
+              padding: EdgeInsets.only(bottom: media.isEmpty ? 0 : 6),
               child: _communityFormatPattern.hasMatch(body)
                   ? SelectableText.rich(communityFormattedSpan(
                       body,
@@ -3440,6 +3522,7 @@ class _PostContent extends StatelessWidget {
             aspectRatio: media.first['aspect_ratio'],
             feedPosition: feedPosition,
             autoPlay: media.first['media_type'] == 'video',
+            allowFullscreen: true,
             onImageTap: media.first['media_type'] == 'image'
                 ? () => _openViewer(context, media, 0)
                 : null)
@@ -3493,6 +3576,7 @@ class _PostMediaGallery extends StatelessWidget {
           aspectRatio: item['aspect_ratio'],
           compact: true,
           autoPlay: item['media_type'] == 'video',
+          allowFullscreen: true,
           feedPosition: feedPosition == null ? null : feedPosition! * 4 + index,
           onImageTap:
               item['media_type'] == 'image' ? () => onImageTap(index) : null),
@@ -3543,12 +3627,13 @@ class _PostMediaGallery extends StatelessWidget {
       Padding(
           padding: const EdgeInsets.only(top: 7),
           child: Row(children: [
-            const Icon(Icons.collections_rounded,
-                size: 16, color: Colors.blueGrey),
+            Icon(Icons.collections_rounded,
+                size: 16, color: context._communityColors.onSurfaceVariant),
             const SizedBox(width: 5),
             Text('${items.length} ${communityText('media items')}',
-                style: const TextStyle(
-                    color: Colors.blueGrey, fontWeight: FontWeight.w600))
+                style: TextStyle(
+                    color: context._communityColors.onSurfaceVariant,
+                    fontWeight: FontWeight.w600))
           ]))
     ]);
   }
@@ -3631,6 +3716,7 @@ class _SocialMediaViewerState extends State<SocialMediaViewer> {
                     child: CommunityMedia(
                         type: type,
                         url: url,
+                        allowFullscreen: true,
                         playbackUrl: item['playback_url'] as String?,
                         thumbnailUrl: '${item['thumbnail_url'] ?? ''}',
                         durationSeconds: item['duration_seconds'],
@@ -3980,6 +4066,7 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
     final emoji = await showModalBottomSheet<String>(
         context: context,
         showDragHandle: true,
+        backgroundColor: context._communitySurface,
         builder: (context) => SafeArea(
               child: GridView.count(
                 crossAxisCount: 6,
@@ -3999,7 +4086,7 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
   }
 
   Future<void> _chooseLocation() async {
-    final value = await showDialog<String>(
+    final value = await _showCommunityDialog<String>(
         context: context,
         builder: (context) {
           final controller = TextEditingController(text: _location.text);
@@ -4273,10 +4360,10 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
     }
   }
 
-  static const _composerInk = Color(0xff101828);
-  static const _composerMuted = Color(0xff65676b);
-  static const _composerLine = Color(0xffe4e6eb);
-  static const _composerWash = Color(0xfff0f2f5);
+  Color get _composerInk => context._communityColors.onSurface;
+  Color get _composerMuted => context._communityColors.onSurfaceVariant;
+  Color get _composerLine => context._communityColors.outlineVariant;
+  Color get _composerWash => context._communityColors.surfaceContainerHigh;
 
   bool get _hasContent =>
       _body.text.trim().isNotEmpty ||
@@ -4294,7 +4381,7 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
       if (mounted) Navigator.maybePop(context);
       return;
     }
-    final discard = await showDialog<bool>(
+    final discard = await _showCommunityDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
                 title: Text(communityText('Discard post?')),
@@ -4453,21 +4540,22 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
   Widget _errorCard() {
     final error = _error;
     if (error == null) return const SizedBox.shrink();
+    final colors = context._communityColors;
     return Container(
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-            color: const Color(0xfffdecea),
+            color: colors.errorContainer,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xfff5c2c0))),
+            border: Border.all(color: colors.outlineVariant)),
         child: Row(children: [
-          const Icon(Icons.error_outline_rounded,
-              color: Color(0xffb42318), size: 20),
+          Icon(Icons.error_outline_rounded,
+              color: colors.onErrorContainer, size: 20),
           const SizedBox(width: 8),
           Expanded(
               child: Text(error,
-                  style: const TextStyle(
-                      color: Color(0xffb42318),
+                  style: TextStyle(
+                      color: colors.onErrorContainer,
                       fontWeight: FontWeight.w600,
                       fontSize: 13)))
         ]));
@@ -4476,11 +4564,11 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
   Widget _headerCard(String name, String avatar, Color primary) {
     return Card(
         elevation: 0,
-        color: Colors.white,
+        color: context._communitySurface,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
-            side: const BorderSide(color: _composerLine)),
+            side: BorderSide(color: _composerLine)),
         child: Padding(
             padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
             child: Row(children: [
@@ -4500,7 +4588,7 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
                     Text(name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontSize: 17,
                             fontWeight: FontWeight.w800,
                             color: _composerInk)),
@@ -4527,11 +4615,11 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
                                           child: Text(_visibilityLabel(),
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
-                                              style: const TextStyle(
+                                              style: TextStyle(
                                                   fontSize: 12,
                                                   fontWeight: FontWeight.w700,
                                                   color: _composerInk))),
-                                      const Icon(Icons.arrow_drop_down,
+                                      Icon(Icons.arrow_drop_down,
                                           size: 18, color: _composerInk)
                                     ]))))
                   ])),
@@ -4550,7 +4638,7 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
     final canSetBackground = _type == 'text' && _files.isEmpty;
     return Container(
         decoration: BoxDecoration(
-            color: background == null ? Colors.white : null,
+            color: background == null ? context._communitySurface : null,
             gradient: background == null
                 ? null
                 : LinearGradient(
@@ -4658,7 +4746,9 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
                         height: 34,
                         decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: background == null ? Colors.white : null,
+                            color: background == null
+                                ? context._communitySurface
+                                : null,
                             gradient: background == null
                                 ? null
                                 : LinearGradient(
@@ -4674,7 +4764,7 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
                                 width: selected ? 3 : 1)),
                         child: Center(
                             child: background == null
-                                ? const Icon(Icons.format_color_reset_outlined,
+                                ? Icon(Icons.format_color_reset_outlined,
                                     size: 15, color: _composerMuted)
                                 : selected
                                     ? Icon(Icons.check_rounded,
@@ -4692,18 +4782,18 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
     final media = isVideo && _thumbnailBytes != null
         ? Image.memory(_thumbnailBytes!,
             fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => const ColoredBox(
+            errorBuilder: (_, __, ___) => ColoredBox(
                 color: _composerWash,
                 child: Icon(Icons.videocam_outlined,
                     color: _composerMuted, size: 42)))
         : isImage
             ? Image.file(File(file.path!),
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const ColoredBox(
+                errorBuilder: (_, __, ___) => ColoredBox(
                     color: _composerWash,
                     child: Icon(Icons.image_outlined,
                         color: _composerMuted, size: 42)))
-            : const ColoredBox(
+            : ColoredBox(
                 color: _composerWash,
                 child: Icon(Icons.description_outlined,
                     color: _composerMuted, size: 42));
@@ -4768,7 +4858,7 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
               child: Stack(fit: StackFit.expand, children: [
                 Image.file(File(file.path!),
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => const ColoredBox(
+                    errorBuilder: (_, __, ___) => ColoredBox(
                         color: _composerWash,
                         child:
                             Icon(Icons.image_outlined, color: _composerMuted))),
@@ -4806,11 +4896,11 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
   Widget _mediaCard(Color primary) {
     return Card(
         elevation: 0,
-        color: Colors.white,
+        color: context._communitySurface,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
-            side: const BorderSide(color: _composerLine)),
+            side: BorderSide(color: _composerLine)),
         child: Padding(
             padding: const EdgeInsets.all(12),
             child: Column(children: [
@@ -4818,14 +4908,14 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
                 TextField(
                     controller: _url,
                     enabled: !_saving,
-                    style: const TextStyle(color: _composerInk, fontSize: 14),
+                    style: TextStyle(color: _composerInk, fontSize: 14),
                     onChanged: (_) {
                       setState(() {});
                       _scheduleDraftSave();
                     },
                     decoration: InputDecoration(
                         labelText: communityText('Paste a link or video URL'),
-                        labelStyle: const TextStyle(color: _composerMuted),
+                        labelStyle: TextStyle(color: _composerMuted),
                         prefixIcon: const Icon(Icons.link_rounded),
                         border: const OutlineInputBorder()))
               else if (_files.length == 1)
@@ -4849,17 +4939,17 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
   Widget _composeActionsCard(Color primary) {
     return Card(
         elevation: 0,
-        color: Colors.white,
+        color: context._communitySurface,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
-            side: const BorderSide(color: _composerLine)),
+            side: BorderSide(color: _composerLine)),
         child: Padding(
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
             child:
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(communityText('Add to your post'),
-                  style: const TextStyle(
+                  style: TextStyle(
                       color: _composerInk,
                       fontWeight: FontWeight.w800,
                       fontSize: 14)),
@@ -4914,32 +5004,31 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
   Widget _moreCard(Color primary) {
     return Card(
         elevation: 0,
-        color: Colors.white,
+        color: context._communitySurface,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
-            side: const BorderSide(color: _composerLine)),
+            side: BorderSide(color: _composerLine)),
         child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Column(children: [
               ListTile(
                   leading: Icon(Icons.attach_file_rounded, color: primary),
                   title: Text(communityText('Add a document'),
-                      style: const TextStyle(
+                      style: TextStyle(
                           color: _composerInk, fontWeight: FontWeight.w700)),
                   subtitle: Text(
                       communityText('PDF, Word or Excel up to 25 MB'),
-                      style:
-                          const TextStyle(color: _composerMuted, fontSize: 12)),
-                  trailing: const Icon(Icons.chevron_right_rounded,
-                      color: _composerMuted),
+                      style: TextStyle(color: _composerMuted, fontSize: 12)),
+                  trailing:
+                      Icon(Icons.chevron_right_rounded, color: _composerMuted),
                   onTap: _saving ? null : () => _pick('document')),
               if (_location.text.isNotEmpty)
                 ListTile(
                     leading: const Icon(Icons.location_on_outlined,
                         color: Color(0xfff5533d)),
                     title: Text(_location.text,
-                        style: const TextStyle(
+                        style: TextStyle(
                             color: _composerInk, fontWeight: FontWeight.w600)),
                     trailing: IconButton(
                         tooltip: communityText('Remove'),
@@ -4956,11 +5045,11 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
   Widget _pollCard(Color primary) {
     return Card(
         elevation: 0,
-        color: Colors.white,
+        color: context._communitySurface,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
-            side: const BorderSide(color: _composerLine)),
+            side: BorderSide(color: _composerLine)),
         child: Padding(
             padding: const EdgeInsets.all(12),
             child: Column(children: [
@@ -4969,28 +5058,27 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
                 const SizedBox(width: 8),
                 Expanded(
                     child: Text(communityText('Create a poll'),
-                        style: const TextStyle(
+                        style: TextStyle(
                             color: _composerInk, fontWeight: FontWeight.w800))),
                 IconButton(
                     tooltip: communityText('Remove'),
                     onPressed: _saving
                         ? null
                         : () => setState(() => _pollEnabled = false),
-                    icon:
-                        const Icon(Icons.close_rounded, color: _composerMuted))
+                    icon: Icon(Icons.close_rounded, color: _composerMuted))
               ]),
               TextField(
                   controller: _pollQuestion,
                   enabled: !_saving,
                   maxLength: 500,
-                  style: const TextStyle(color: _composerInk),
+                  style: TextStyle(color: _composerInk),
                   onChanged: (_) {
                     setState(() {});
                     _scheduleDraftSave();
                   },
                   decoration: InputDecoration(
                       labelText: communityText('Poll question'),
-                      labelStyle: const TextStyle(color: _composerMuted),
+                      labelStyle: TextStyle(color: _composerMuted),
                       counterText: '',
                       border: const OutlineInputBorder())),
               for (var index = 0; index < _pollOptions.length; index++)
@@ -5002,13 +5090,12 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
                               controller: _pollOptions[index],
                               enabled: !_saving,
                               maxLength: 160,
-                              style: const TextStyle(color: _composerInk),
+                              style: TextStyle(color: _composerInk),
                               onChanged: (_) => _scheduleDraftSave(),
                               decoration: InputDecoration(
                                   labelText:
                                       '${communityText('Option')} ${index + 1}',
-                                  labelStyle:
-                                      const TextStyle(color: _composerMuted),
+                                  labelStyle: TextStyle(color: _composerMuted),
                                   counterText: '',
                                   border: const OutlineInputBorder()))),
                       if (_pollOptions.length > 2)
@@ -5016,7 +5103,7 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
                             tooltip: communityText('Remove'),
                             onPressed:
                                 _saving ? null : () => _removePollOption(index),
-                            icon: const Icon(Icons.remove_circle_outline,
+                            icon: Icon(Icons.remove_circle_outline,
                                 color: _composerMuted))
                     ])),
               if (_pollOptions.length < 6)
@@ -5029,7 +5116,7 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
               SwitchListTile.adaptive(
                   contentPadding: EdgeInsets.zero,
                   title: Text(communityText('Allow multiple answers'),
-                      style: const TextStyle(
+                      style: TextStyle(
                           color: _composerInk, fontWeight: FontWeight.w600)),
                   value: _pollMultiple,
                   onChanged: _saving
@@ -5040,16 +5127,15 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
                   enabled: !_saving,
                   readOnly: true,
                   onTap: _saving ? null : _choosePollClose,
-                  style: const TextStyle(color: _composerInk, fontSize: 13),
+                  style: TextStyle(color: _composerInk, fontSize: 13),
                   decoration: InputDecoration(
                       labelText: communityText('Poll ends'),
                       hintText: communityText('Choose an end date and time'),
-                      labelStyle: const TextStyle(color: _composerMuted),
+                      labelStyle: TextStyle(color: _composerMuted),
                       helperText: communityText('Optional'),
-                      helperStyle: const TextStyle(color: _composerMuted),
+                      helperStyle: TextStyle(color: _composerMuted),
                       suffixIcon: _pollClosesAt.text.isEmpty
-                          ? const Icon(Icons.event_outlined,
-                              color: _composerMuted)
+                          ? Icon(Icons.event_outlined, color: _composerMuted)
                           : IconButton(
                               tooltip: communityText('Clear'),
                               onPressed: _saving
@@ -5058,7 +5144,7 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
                                       setState(() => _pollClosesAt.clear());
                                       _scheduleDraftSave();
                                     },
-                              icon: const Icon(Icons.close_rounded,
+                              icon: Icon(Icons.close_rounded,
                                   color: _composerMuted)),
                       border: const OutlineInputBorder()))
             ])));
@@ -5077,7 +5163,7 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
                 fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
                 fontSize: 14)),
         subtitle: Text(subtitle,
-            style: const TextStyle(color: _composerMuted, fontSize: 12)),
+            style: TextStyle(color: _composerMuted, fontSize: 12)),
         trailing: selected
             ? Icon(Icons.check_circle_rounded, color: primary, size: 20)
             : null,
@@ -5088,17 +5174,17 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
     if (!_showAudience) return const SizedBox.shrink();
     return Card(
         elevation: 0,
-        color: Colors.white,
+        color: context._communitySurface,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
-            side: const BorderSide(color: _composerLine)),
+            side: BorderSide(color: _composerLine)),
         child: Padding(
             padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
             child:
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(communityText('Who can see your post?'),
-                  style: const TextStyle(
+                  style: TextStyle(
                       color: _composerInk,
                       fontWeight: FontWeight.w800,
                       fontSize: 15)),
@@ -5140,12 +5226,12 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
                         controller: _audienceIds,
                         enabled: !_saving,
                         keyboardType: TextInputType.number,
-                        style: const TextStyle(color: _composerInk),
+                        style: TextStyle(color: _composerInk),
                         onChanged: (_) => _scheduleDraftSave(),
                         decoration: InputDecoration(
                             labelText:
                                 communityText('Audience IDs (comma separated)'),
-                            labelStyle: const TextStyle(color: _composerMuted),
+                            labelStyle: TextStyle(color: _composerMuted),
                             border: const OutlineInputBorder())))
             ])));
   }
@@ -5171,7 +5257,7 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
                       Text(label,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                               color: _composerInk,
                               fontWeight: FontWeight.w700,
                               fontSize: 12))
@@ -5180,25 +5266,22 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
 
   ThemeData _composerTheme(BuildContext context) {
     final base = Theme.of(context);
-    const ink = Color(0xff101828);
-    const muted = Color(0xff60708f);
-    final primary = base.colorScheme.primary;
+    final colors = base.colorScheme;
+    final primary = colors.onPrimaryContainer;
     return base.copyWith(
-        brightness: Brightness.light,
-        colorScheme: base.colorScheme.copyWith(
-            brightness: Brightness.light,
-            surface: Colors.white,
-            onSurface: ink,
-            onSurfaceVariant: muted),
-        textTheme: base.textTheme.apply(bodyColor: ink, displayColor: ink),
-        iconTheme: base.iconTheme.copyWith(color: ink),
-        inputDecorationTheme: const InputDecorationTheme(
-            labelStyle: TextStyle(color: muted),
-            hintStyle: TextStyle(color: muted),
-            helperStyle: TextStyle(color: muted),
-            counterStyle: TextStyle(color: muted),
-            prefixIconColor: muted,
-            suffixIconColor: muted),
+        textButtonTheme: TextButtonThemeData(
+            style: TextButton.styleFrom(foregroundColor: primary)),
+        outlinedButtonTheme: OutlinedButtonThemeData(
+            style: OutlinedButton.styleFrom(
+                foregroundColor: primary,
+                side: BorderSide(color: colors.outline))),
+        inputDecorationTheme: InputDecorationTheme(
+            labelStyle: TextStyle(color: _composerMuted),
+            hintStyle: TextStyle(color: _composerMuted),
+            helperStyle: TextStyle(color: _composerMuted),
+            counterStyle: TextStyle(color: _composerMuted),
+            prefixIconColor: _composerMuted,
+            suffixIconColor: _composerMuted),
         textSelectionTheme: TextSelectionThemeData(
             cursorColor: primary,
             selectionColor: primary.withValues(alpha: .22),
@@ -5207,17 +5290,18 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final primary = theme.colorScheme.primary;
+    final colors = context._communityColors;
+    final primary = colors.onPrimaryContainer;
     final name = '${_profile?['name'] ?? communityText('Your name')}';
     final avatar = '${_profile?['avatar'] ?? ''}';
     return PopScope(
         canPop: !_saving,
         child: Scaffold(
-            backgroundColor: _composerWash,
+            backgroundColor: context._communityPage,
             appBar: AppBar(
-                backgroundColor: primary,
-                foregroundColor: Colors.white,
+                backgroundColor: colors.primaryContainer,
+                foregroundColor: primary,
+                iconTheme: IconThemeData(color: primary),
                 elevation: 0,
                 scrolledUnderElevation: 0,
                 leading: IconButton(
@@ -5229,8 +5313,10 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
                     widget.post == null
                         ? communityText('Create post')
                         : communityText('Edit post'),
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w800, fontSize: 17)),
+                    style: TextStyle(
+                        color: primary,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 17)),
                 actions: [
                   Padding(
                       padding: const EdgeInsets.symmetric(
@@ -5238,19 +5324,18 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
                       child: TextButton(
                           onPressed: _saving ? null : _save,
                           style: TextButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              disabledForegroundColor: Colors.white60,
-                              backgroundColor:
-                                  Colors.white.withValues(alpha: .16),
+                              foregroundColor: colors.onSecondaryContainer,
+                              backgroundColor: colors.secondaryContainer,
                               shape: const StadiumBorder(),
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 16)),
                           child: _saving
-                              ? const SizedBox(
+                              ? SizedBox(
                                   width: 18,
                                   height: 18,
                                   child: CircularProgressIndicator(
-                                      strokeWidth: 2, color: Colors.white))
+                                      strokeWidth: 2,
+                                      color: colors.onSecondaryContainer))
                               : Text(
                                   widget.post == null
                                       ? communityText('Publish post')
@@ -5356,10 +5441,10 @@ class _ExpandableCommentTextState extends State<_ExpandableCommentText> {
                 _expanded
                     ? communityText('See less')
                     : communityText('See more'),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xff65707e),
+                  color: context._communityColors.onSurfaceVariant,
                 ),
               ),
             ),
@@ -5460,7 +5545,7 @@ class _SocialCommentsScreenState extends State<SocialCommentsScreen> {
 
   Future<void> _edit(Map<String, dynamic> comment) async {
     final controller = TextEditingController(text: '${comment['body'] ?? ''}');
-    final value = await showDialog<String>(
+    final value = await _showCommunityDialog<String>(
         context: context,
         builder: (_) => AlertDialog(
               title: Text(communityText('Edit comment')),
@@ -5509,7 +5594,7 @@ class _SocialCommentsScreenState extends State<SocialCommentsScreen> {
   }
 
   Future<void> _delete(Map<String, dynamic> comment) async {
-    final confirm = await showDialog<bool>(
+    final confirm = await _showCommunityDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
                 title: Text(communityText('Delete your comment?')),
@@ -5557,6 +5642,7 @@ class _SocialCommentsScreenState extends State<SocialCommentsScreen> {
     final reaction = await showModalBottomSheet<String>(
         context: context,
         showDragHandle: true,
+        backgroundColor: context._communitySurface,
         builder: (context) => SafeArea(
               child:
                   Wrap(alignment: WrapAlignment.center, spacing: 8, children: [
@@ -5588,16 +5674,19 @@ class _SocialCommentsScreenState extends State<SocialCommentsScreen> {
     final avatar = '${author?['avatar'] ?? ''}';
     return CircleAvatar(
         radius: radius,
-        backgroundColor: const Color(0xffdbe7fa),
+        backgroundColor: context._communityColors.secondaryContainer,
         backgroundImage:
             avatar.isNotEmpty ? communityAvatarImage(avatar) : null,
         child: avatar.isEmpty
-            ? const Icon(Icons.person_outline_rounded, color: Color(0xff5068a0))
+            ? Icon(Icons.person_outline_rounded,
+                color: context._communityColors.onSecondaryContainer)
             : null);
   }
 
   @override
   Widget build(BuildContext context) {
+    final colors = context._communityColors;
+    final surface = context._communitySurface;
     final canComment =
         context.watch<DashboardProvider>().features['social_feed.comment'] ==
             '1';
@@ -5609,7 +5698,7 @@ class _SocialCommentsScreenState extends State<SocialCommentsScreen> {
           curve: Curves.easeOut,
           transform: Matrix4.translationValues(0, _dragOffset, 0),
           child: Scaffold(
-              backgroundColor: Colors.white,
+              backgroundColor: surface,
               appBar: PreferredSize(
                   preferredSize: const Size.fromHeight(kToolbarHeight + 22),
                   child: GestureDetector(
@@ -5636,8 +5725,9 @@ class _SocialCommentsScreenState extends State<SocialCommentsScreen> {
                             _dragOffset = 0;
                           }),
                       child: AppBar(
-                          backgroundColor: Colors.white,
-                          foregroundColor: const Color(0xff182230),
+                          backgroundColor: surface,
+                          foregroundColor: colors.onSurface,
+                          iconTheme: IconThemeData(color: colors.onSurface),
                           elevation: 0,
                           centerTitle: true,
                           leading: IconButton(
@@ -5645,8 +5735,9 @@ class _SocialCommentsScreenState extends State<SocialCommentsScreen> {
                               onPressed: () => Navigator.maybePop(context),
                               icon: const Icon(Icons.close_rounded)),
                           title: Text(communityText('Comments'),
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.w800)),
+                              style: TextStyle(
+                                  color: colors.onSurface,
+                                  fontWeight: FontWeight.w800)),
                           bottom: PreferredSize(
                               preferredSize: const Size.fromHeight(22),
                               child: GestureDetector(
@@ -5660,7 +5751,7 @@ class _SocialCommentsScreenState extends State<SocialCommentsScreen> {
                                           margin:
                                               const EdgeInsets.only(bottom: 10),
                                           decoration: BoxDecoration(
-                                              color: const Color(0xffc3cbd6),
+                                              color: colors.outline,
                                               borderRadius:
                                                   BorderRadius.circular(
                                                       4))))))))),
@@ -5750,9 +5841,9 @@ class _SocialCommentsScreenState extends State<SocialCommentsScreen> {
                                                                     .w800))),
                                                 Text(
                                                     ' · ${_date(comment['created_at'])}',
-                                                    style: const TextStyle(
-                                                        color:
-                                                            Color(0xff75808d),
+                                                    style: TextStyle(
+                                                        color: colors
+                                                            .onSurfaceVariant,
                                                         fontSize: 12))
                                               ]),
                                               const SizedBox(height: 4),
@@ -5763,8 +5854,8 @@ class _SocialCommentsScreenState extends State<SocialCommentsScreen> {
                                                       horizontal: 12,
                                                       vertical: 9),
                                                   decoration: BoxDecoration(
-                                                      color: const Color(
-                                                          0xfff0f2f5),
+                                                      color: colors
+                                                          .surfaceContainerHigh,
                                                       borderRadius:
                                                           BorderRadius.circular(
                                                               16)),
@@ -5838,9 +5929,9 @@ class _SocialCommentsScreenState extends State<SocialCommentsScreen> {
                                                                             3),
                                                                 child: Text(
                                                                     '${comment['reactions_count']}',
-                                                                    style: const TextStyle(
-                                                                        color: Color(
-                                                                            0xff65707e),
+                                                                    style: TextStyle(
+                                                                        color: colors
+                                                                            .onSurfaceVariant,
                                                                         fontWeight:
                                                                             FontWeight.w700)))
                                                         ]))),
@@ -5950,7 +6041,7 @@ class _SocialCommentsScreenState extends State<SocialCommentsScreen> {
                                     : communityText('Write a reply…'),
                                 counterText: '',
                                 filled: true,
-                                fillColor: const Color(0xfff0f2f5),
+                                fillColor: colors.surfaceContainerHigh,
                                 contentPadding: const EdgeInsets.symmetric(
                                     horizontal: 18, vertical: 12),
                                 border: OutlineInputBorder(
@@ -5963,8 +6054,8 @@ class _SocialCommentsScreenState extends State<SocialCommentsScreen> {
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(24),
-                                  borderSide: const BorderSide(
-                                      color: Color(0xff1769e8)),
+                                  borderSide: BorderSide(
+                                      color: colors.onPrimaryContainer),
                                 ),
                               ),
                             ),
@@ -5979,15 +6070,16 @@ class _SocialCommentsScreenState extends State<SocialCommentsScreen> {
                             ),
                           IconButton(
                             style: IconButton.styleFrom(
-                              backgroundColor: const Color(0xff1769e8),
-                              foregroundColor: Colors.white,
+                              backgroundColor: colors.primaryContainer,
+                              foregroundColor: colors.onPrimaryContainer,
                             ),
                             onPressed: _sending ? null : _send,
                             icon: _sending
-                                ? const SizedBox(
+                                ? SizedBox(
                                     width: 20,
                                     height: 20,
-                                    child: CircularProgressIndicator(),
+                                    child: CircularProgressIndicator(
+                                        color: colors.onPrimaryContainer),
                                   )
                                 : const Icon(Icons.send),
                           ),

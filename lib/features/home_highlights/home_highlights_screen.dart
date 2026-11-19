@@ -118,21 +118,25 @@ class _HomeHighlightsScreenState extends State<HomeHighlightsScreen> {
   Widget build(BuildContext context) {
     final theme = EnterpriseTheme.of(context);
     return Scaffold(
-      backgroundColor: theme.surface,
+      backgroundColor: theme.contentSurface,
       appBar: AppBar(
-        backgroundColor: theme.surface,
+        backgroundColor: theme.contentSurface,
         foregroundColor: theme.text,
+        surfaceTintColor: Colors.transparent,
         iconTheme: IconThemeData(color: theme.text),
         elevation: 0,
         leading: Navigator.of(context).canPop()
             ? BackButton(color: theme.text)
             : null,
-        title: Text(homeHighlightsText('Home Highlights')),
+        title: Text(
+          homeHighlightsText('Home Highlights'),
+          style: TextStyle(color: theme.text),
+        ),
       ),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _load,
-          color: theme.secondary,
+          color: theme.text,
           child: _buildBody(theme),
         ),
       ),
@@ -141,7 +145,9 @@ class _HomeHighlightsScreenState extends State<HomeHighlightsScreen> {
 
   Widget _buildBody(EnterpriseTheme theme) {
     if (_loading) {
-      return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+      return Center(
+        child: CircularProgressIndicator(strokeWidth: 2, color: theme.text),
+      );
     }
     if (_error != null && _items.isEmpty) {
       return ListView(
@@ -167,6 +173,7 @@ class _HomeHighlightsScreenState extends State<HomeHighlightsScreen> {
           Center(
             child: OutlinedButton.icon(
               onPressed: _load,
+              style: OutlinedButton.styleFrom(foregroundColor: theme.text),
               icon: const Icon(Icons.refresh_rounded, size: 18),
               label: Text(homeHighlightsText('Retry')),
             ),
@@ -213,6 +220,7 @@ class _HomeHighlightsScreenState extends State<HomeHighlightsScreen> {
                 Text(_loadMoreError!, textAlign: TextAlign.center),
               TextButton.icon(
                   onPressed: _loadMore,
+                  style: TextButton.styleFrom(foregroundColor: theme.text),
                   icon: const Icon(Icons.expand_more),
                   label: Text(homeHighlightsText(
                       _loadMoreError == null ? 'Load more' : 'Retry'))),
@@ -224,7 +232,7 @@ class _HomeHighlightsScreenState extends State<HomeHighlightsScreen> {
                 width: 20,
                 height: 20,
                 child: CircularProgressIndicator(
-                    strokeWidth: 2, color: theme.secondary),
+                    strokeWidth: 2, color: theme.text),
               ),
             ),
           );
@@ -256,7 +264,7 @@ class _HistoryTile extends StatelessWidget {
     final hasImage = item.imageUrl != null;
     final body = hasImage ? item.snippet : item.plainBody;
     return Material(
-      color: theme.surface.withValues(alpha: .86),
+      color: theme.contentSurface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14),
         side: BorderSide(color: theme.text.withValues(alpha: .09)),
@@ -320,7 +328,7 @@ class _HistoryTile extends StatelessWidget {
                       Text(
                         DateFormat('MMM d, yyyy').format(date.toLocal()),
                         style: TextStyle(
-                          color: theme.secondary,
+                          color: theme.mutedText,
                           fontSize: 10.5,
                           fontWeight: FontWeight.w700,
                         ),
@@ -354,7 +362,7 @@ class _HistoryTile extends StatelessWidget {
           end: Alignment.bottomRight,
         ),
       ),
-      child: Icon(Icons.auto_awesome_rounded, color: theme.secondary, size: 26),
+      child: Icon(Icons.auto_awesome_rounded, color: theme.text, size: 26),
     );
   }
 }

@@ -1,16 +1,21 @@
-import 'package:cnattendance/widget/radialDecoration.dart';
+import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 
-class ShowLanguage extends StatelessWidget{
+class ShowLanguage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final enterprise = EnterpriseTheme.of(context);
     return Container(
-      decoration: RadialDecoration(),
+      decoration: BoxDecoration(
+        color: enterprise.cardBackground,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        border: Border.all(color: enterprise.cardBorder),
+      ),
       height: 500,
-      padding: EdgeInsets.all(20),
+      padding: const EdgeInsets.all(20),
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -21,121 +26,130 @@ class ShowLanguage extends StatelessWidget{
                 children: [
                   Text(
                     translate('common.select_language'),
-                    style: TextStyle(fontSize: 18, color: Colors.white),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: enterprise.text,
+                    ),
                   ),
-                  Spacer(),
+                  const Spacer(),
                   GestureDetector(
-                      onTap: () {
-                        Get.back();
-                      },
-                      child: Icon(Icons.close,color: Colors.white,))
+                    onTap: () {
+                      Get.back();
+                    },
+                    child: Icon(Icons.close, color: enterprise.text),
+                  )
                 ],
               ),
             ),
-            languageCard(context, "ខ្មែរ", "🇰🇭", "km"),
+            languageCard(context, enterprise, "ខ្មែរ", "🇰🇭", "km"),
             Divider(
               endIndent: 10,
               indent: 10,
               height: 1,
-              color: Colors.white30,
+              color: enterprise.cardBorder,
             ),
-            languageCard(context, "English", "🇺🇸", "en"),
+            languageCard(context, enterprise, "English", "🇺🇸", "en"),
             Divider(
               endIndent: 10,
               indent: 10,
               height: 1,
-              color: Colors.white30,
+              color: enterprise.cardBorder,
             ),
-            languageCard(context, "русский", "🇷🇺", "ru"),
+            languageCard(context, enterprise, "русский", "🇷🇺", "ru"),
             Divider(
               endIndent: 10,
               indent: 10,
               height: 1,
-              color: Colors.white30,
+              color: enterprise.cardBorder,
             ),
-            languageCard(context, "Española", "🇪🇸", "es"),
+            languageCard(context, enterprise, "Española", "🇪🇸", "es"),
             Divider(
               endIndent: 10,
               indent: 10,
               height: 1,
-              color: Colors.white30,
+              color: enterprise.cardBorder,
             ),
-            languageCard(context, "فارسی", "🇮🇷", "fa"),
+            languageCard(context, enterprise, "فារسی", "🇮🇷", "fa"),
             Divider(
               endIndent: 10,
               indent: 10,
               height: 1,
-              color: Colors.white30,
+              color: enterprise.cardBorder,
             ),
-            languageCard(context, "हिंदी", "🇮🇳", "in"),
+            languageCard(context, enterprise, "हिंदी", "🇮🇳", "in"),
             Divider(
               endIndent: 10,
               indent: 10,
               height: 1,
-              color: Colors.white30,
+              color: enterprise.cardBorder,
             ),
-            languageCard(context, "Turkish", "🇹🇷", "tr"),
+            languageCard(context, enterprise, "Turkish", "🇹🇷", "tr"),
             Divider(
               endIndent: 10,
               indent: 10,
               height: 1,
-              color: Colors.white30,
+              color: enterprise.cardBorder,
             ),
-            languageCard(context, "Deutsch", "🇩🇪", "de"),
+            languageCard(context, enterprise, "Deutsch", "🇩🇪", "de"),
             Divider(
               endIndent: 10,
               indent: 10,
               height: 1,
-              color: Colors.white30,
+              color: enterprise.cardBorder,
             ),
-            languageCard(context, "Français", "🇫🇷", "fr"),
+            languageCard(context, enterprise, "Français", "🇫🇷", "fr"),
             Divider(
               endIndent: 10,
               indent: 10,
               height: 1,
-              color: Colors.white30,
+              color: enterprise.cardBorder,
             ),
-            languageCard(context, "नेपाली", "🇳🇵", "ne"),
+            languageCard(context, enterprise, "नेपाली", "🇳🇵", "ne"),
             Divider(
               endIndent: 10,
               indent: 10,
               height: 1,
-              color: Colors.white30,
+              color: enterprise.cardBorder,
             ),
-            languageCard(context, "عربي", "🇦🇪", "ar"),
+            languageCard(context, enterprise, "عربي", "🇦🇪", "ar"),
             Divider(
               endIndent: 10,
               indent: 10,
               height: 1,
-              color: Colors.white30,
+              color: enterprise.cardBorder,
             ),
-            languageCard(context, "Português", "🇵🇹", "pt"),
+            languageCard(context, enterprise, "Português", "🇵🇹", "pt"),
           ],
         ),
       ),
     );
   }
 
-  Widget languageCard(BuildContext context, String title, String flag, String language) {
+  Widget languageCard(BuildContext context, EnterpriseTheme enterprise,
+      String title, String flag, String language) {
     final storage = GetStorage();
     final currentLang = storage.read("language") ?? "km";
     return ListTile(
-      contentPadding: EdgeInsets.symmetric(horizontal: 5),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 5),
       dense: false,
       visualDensity: VisualDensity.compact,
       leading: Text(
         flag,
-        style: TextStyle(fontSize: 20),
+        style: const TextStyle(fontSize: 20),
       ),
       trailing: language == currentLang
           ? Icon(
-        Icons.check,
-        color: Colors.white,
-      )
-          : SizedBox.shrink(),
+              Icons.check,
+              color: enterprise.accent,
+            )
+          : const SizedBox.shrink(),
       title: Text(
         title,
-        style: TextStyle(color: Colors.white),
+        style: TextStyle(
+          color: enterprise.text,
+          fontWeight: language == currentLang ? FontWeight.bold : FontWeight.normal,
+        ),
       ),
       onTap: () {
         final storage = GetStorage();

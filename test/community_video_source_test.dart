@@ -26,6 +26,7 @@ class FakeVideoPlatform extends VideoPlayerPlatform {
   final streams = <int, StreamController<VideoEvent>>{};
   final seeks = <Duration>[];
   final plays = <int>[];
+  final volumes = <int, double>{};
   final loopings = <int, bool>{};
   bool failHls = false;
   bool failAll = false;
@@ -67,7 +68,10 @@ class FakeVideoPlatform extends VideoPlayerPlatform {
   }
 
   @override
-  Future<void> setVolume(int playerId, double volume) async {}
+  Future<void> setVolume(int playerId, double volume) async {
+    volumes[playerId] = volume;
+  }
+
   @override
   Future<void> setMixWithOthers(bool mixWithOthers) async {}
   @override
@@ -133,13 +137,15 @@ void main() {
       VideoPlayerPlatform.instance = previous;
       VisibilityDetectorController.instance.updateInterval = visibilityInterval;
     });
-    Future<void> open(WidgetTester tester) async {
-      await tester.pumpWidget(const MaterialApp(
+    Future<void> open(WidgetTester tester,
+        {bool allowFullscreen = false}) async {
+      await tester.pumpWidget(MaterialApp(
           home: Scaffold(
               body: SizedBox(
                   width: 300,
                   child: CommunityMedia(
                       type: 'video',
+                      allowFullscreen: allowFullscreen,
                       useVideoCache: false,
                       url: 'https://example.test/storage/community/clip.mp4',
                       playbackUrl:
@@ -148,6 +154,63 @@ void main() {
         await tester.pump(const Duration(milliseconds: 100));
       }
     }
+
+    testWidgets('fullscreen keeps the native player and adds playback controls',
+        (tester) async {
+      tester.view.physicalSize = const Size(320, 568);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final manager = FeedVideoAutoplayManager.instance..setMuted(true);
+      addTearDown(() => manager.setMuted(true));
+      await open(tester, allowFullscreen: true);
+      final controller =
+          tester.widget<VideoPlayer>(find.byType(VideoPlayer)).controller;
+      expect(platform.sources, hasLength(1));
+      await controller.seekTo(const Duration(seconds: 12));
+
+      await tester.tap(find.byTooltip('Full screen'));
+      await tester.pumpAndSettle();
+      final fullscreen = tester.widget<VideoPlayer>(find.byType(VideoPlayer));
+      expect(fullscreen.controller, same(controller));
+      expect(controller.value.position, const Duration(seconds: 12));
+      expect(
+          find.ancestor(
+              of: find.byType(VideoPlayer),
+              matching: find.byWidgetPredicate((widget) =>
+                  widget is FittedBox && widget.fit == BoxFit.contain)),
+          findsOneWidget);
+
+      manager.activate(Object());
+      await tester.pump();
+      expect(controller.value.isPlaying, isTrue);
+      await tester.tap(find.byTooltip('Pause video'));
+      await tester.pump();
+      expect(controller.value.isPlaying, isFalse);
+      await tester.tap(find.byTooltip('Forward 10 seconds'));
+      await tester.pump();
+      expect(platform.seeks.last, const Duration(seconds: 22));
+      await tester.tap(find.byTooltip('Back 10 seconds'));
+      await tester.pump();
+      expect(platform.seeks.last, const Duration(seconds: 12));
+      await tester.tap(find.byTooltip('Unmute'));
+      await tester.pump();
+      expect(platform.volumes[0], 1);
+      await tester.tap(find.byType(Slider));
+      await tester.pump();
+      expect(platform.seeks.last.inSeconds, inInclusiveRange(25, 35));
+      final position = platform.seeks.last;
+
+      await tester.tap(find.byTooltip('Close'));
+      await tester.pumpAndSettle();
+      expect(platform.sources, hasLength(1));
+      expect(tester.widget<VideoPlayer>(find.byType(VideoPlayer)).controller,
+          same(controller));
+      expect(controller.value.position, position);
+      expect(controller.value.isPlaying, isFalse);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump();
+    });
 
     testWidgets('uses HLS and falls back if initialization fails',
         (tester) async {

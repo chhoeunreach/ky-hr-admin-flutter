@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:cnattendance/models/monthly_attendance_summary.dart';
+import 'package:cnattendance/models/top_bonus_employee.dart';
 
 import 'package:cnattendance/data/source/network/model/dashboard/Feature.dart';
 import 'package:cnattendance/data/source/network/model/dashboard/RecentAward.dart';
@@ -44,13 +45,20 @@ class Dashboard {
     this.recentEvent,
     this.appVersionInfo,
     this.monthlyAttendanceSummary,
+    this.topBonusEmployees = const [],
   });
 
   factory Dashboard.fromJson(dynamic json) {
     return Dashboard(
       user: User.fromJson(json['user']),
-      monthlyAttendanceSummary: MonthlyAttendanceSummary.fromJson(
-          json['monthly_attendance_summary']),
+      monthlyAttendanceSummary:
+          MonthlyAttendanceSummary.fromJson(json['monthly_attendance_summary']),
+      topBonusEmployees: json['top_bonus_employees'] is List
+          ? (json['top_bonus_employees'] as List)
+              .map(TopBonusEmployee.fromJson)
+              .whereType<TopBonusEmployee>()
+              .toList(growable: false)
+          : const [],
       employeeTodayAttendance:
           EmployeeTodayAttendance.fromJson(json['employee_today_attendance']),
       overview: Overview.fromJson(json['overview']),
@@ -120,6 +128,7 @@ class Dashboard {
   EventApi? recentEvent;
   AppVersionInfo? appVersionInfo;
   MonthlyAttendanceSummary? monthlyAttendanceSummary;
+  final List<TopBonusEmployee> topBonusEmployees;
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{};
@@ -189,6 +198,7 @@ class AppVersionInfo {
           json['force_update'] == true ||
           json['is_update_required'] == true ||
           json['force_update'] == 1 ||
+          json['force_update'] == '1' ||
           json['is_force_update'] == 1 ||
           json['is_force_update'] == '1',
       showAlert: json['show_alert'] == true ||

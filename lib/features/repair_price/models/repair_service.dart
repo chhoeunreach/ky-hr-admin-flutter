@@ -19,6 +19,8 @@ class RepairService {
   final String availabilityStatus;
   final bool canViewCost;
 
+  Object get priceKey => repairPriceId ?? (id, partType);
+
   const RepairService({
     required this.id,
     required this.name,
@@ -80,8 +82,8 @@ class RepairService {
       'repair_service_id': id,
       'part_name': partName,
       'part_type': partType,
-      'part_cost': partCost ?? 0,
-      'service_fee': serviceFee ?? 0,
+      if (partCost != null) 'part_cost': partCost,
+      if (serviceFee != null) 'service_fee': serviceFee,
       'selling_price': sellingPrice,
       'warranty_days': warrantyDays,
       'estimated_minutes': estimatedMinutes,

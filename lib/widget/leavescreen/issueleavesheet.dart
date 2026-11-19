@@ -1,5 +1,6 @@
 import 'package:cnattendance/model/leave.dart';
 import 'package:cnattendance/provider/leaveprovider.dart';
+import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/utils/navigationservice.dart';
 import 'package:cnattendance/widget/buttonborder.dart';
 import 'package:cnattendance/widget/customalertdialog.dart';
@@ -103,12 +104,17 @@ class IssueLeaveSheetState extends State<IssueLeaveSheet> {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<LeaveProvider>(context);
+    final enterprise = EnterpriseTheme.of(context);
     return WillPopScope(
       onWillPop: () async {
         return !isLoading;
       },
       child: Container(
-        decoration: RadialDecoration(),
+        decoration: BoxDecoration(
+          color: enterprise.cardBackground,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          border: Border.all(color: enterprise.cardBorder),
+        ),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         child: SafeArea(
           child: Column(
@@ -117,18 +123,22 @@ class IssueLeaveSheetState extends State<IssueLeaveSheet> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'Apply Leave',
-                    style: TextStyle(fontSize: 18, color: Colors.white),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: enterprise.text,
+                    ),
                   ),
                   IconButton(
                       onPressed: () {
                         Navigator.pop(context);
                       },
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.close,
                         size: 20,
-                        color: Colors.white,
+                        color: enterprise.text,
                       )),
                 ],
               ),
@@ -138,14 +148,14 @@ class IssueLeaveSheetState extends State<IssueLeaveSheet> {
                     child: DropdownButton2(
                       isExpanded: true,
                       hint: Row(
-                        children: const [
+                        children: [
                           Expanded(
                             child: Text(
                               'Select Leave Type',
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.black,
+                                color: enterprise.mutedText,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -158,10 +168,10 @@ class IssueLeaveSheetState extends State<IssueLeaveSheet> {
                                 value: item,
                                 child: Text(
                                   item.name,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.black,
+                                    color: enterprise.text,
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -175,11 +185,12 @@ class IssueLeaveSheetState extends State<IssueLeaveSheet> {
                         }
                       },
                       iconStyleData: IconStyleData(
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.arrow_forward_ios_outlined,
+                          color: enterprise.mutedText,
                         ),
                         iconSize: 14,
-                        iconEnabledColor: Colors.black,
+                        iconEnabledColor: enterprise.mutedText,
                         iconDisabledColor: Colors.grey,
                       ),
                       buttonStyleData: ButtonStyleData(
@@ -187,12 +198,11 @@ class IssueLeaveSheetState extends State<IssueLeaveSheet> {
                         width: 160,
                         padding: const EdgeInsets.only(left: 14, right: 14),
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(10),
-                              topRight: Radius.circular(0),
-                              bottomLeft: Radius.circular(0),
-                              bottomRight: Radius.circular(10)),
-                          color: HexColor("#FFFFFF"),
+                          borderRadius: BorderRadius.circular(10),
+                          color: enterprise.isDark
+                              ? const Color(0xFF0F172A)
+                              : const Color(0xFFF8FAFC),
+                          border: Border.all(color: enterprise.cardBorder),
                         ),
                         elevation: 0,
                       ),
@@ -200,58 +210,45 @@ class IssueLeaveSheetState extends State<IssueLeaveSheet> {
                         maxHeight: 200,
                         padding: null,
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(0),
-                              topRight: Radius.circular(10),
-                              bottomLeft: Radius.circular(10),
-                              bottomRight: Radius.circular(10)),
-                          color: HexColor("#FFFFFF"),
+                          borderRadius: BorderRadius.circular(10),
+                          color: enterprise.cardBackground,
+                          border: Border.all(color: enterprise.cardBorder),
                         ),
                         elevation: 8,
                       ),
-                      menuItemStyleData: MenuItemStyleData(
+                      menuItemStyleData: const MenuItemStyleData(
                         height: 40,
-                        padding: const EdgeInsets.only(left: 14, right: 14),
+                        padding: EdgeInsets.only(left: 14, right: 14),
                       ),
                     ),
                   )),
               gaps(10),
               TextField(
                 controller: startDate,
-                style: TextStyle(color: Colors.white),
-                //editing controller of this TextField
-                cursorColor: Colors.white,
+                style: TextStyle(color: enterprise.text),
+                cursorColor: enterprise.accent,
                 decoration: InputDecoration(
                   hintText: 'Select Start Date',
-                  hintStyle: TextStyle(color: Colors.white),
-                  prefixIcon: Icon(Icons.calendar_month, color: Colors.white),
-                  labelStyle: TextStyle(color: Colors.white),
-                  fillColor: Colors.white24,
+                  hintStyle: TextStyle(color: enterprise.mutedText),
+                  prefixIcon:
+                      Icon(Icons.calendar_month, color: enterprise.accent),
+                  labelStyle: TextStyle(color: enterprise.text),
+                  fillColor: enterprise.isDark
+                      ? const Color(0xFF0F172A)
+                      : const Color(0xFFF8FAFC),
                   filled: true,
                   enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(10),
-                          topRight: Radius.circular(0),
-                          bottomLeft: Radius.circular(0),
-                          bottomRight: Radius.circular(10))),
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: enterprise.cardBorder)),
                   focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(10),
-                          topRight: Radius.circular(0),
-                          bottomLeft: Radius.circular(0),
-                          bottomRight: Radius.circular(10))),
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: enterprise.accent)),
                   focusedErrorBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(10),
-                          topRight: Radius.circular(0),
-                          bottomLeft: Radius.circular(0),
-                          bottomRight: Radius.circular(10))),
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: Colors.red)),
                   errorBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(10),
-                          topRight: Radius.circular(0),
-                          bottomLeft: Radius.circular(0),
-                          bottomRight: Radius.circular(10))),
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: Colors.red)),
                 ),
                 readOnly: true,
                 //set it true, so that user will not able to edit text
@@ -296,40 +293,30 @@ class IssueLeaveSheetState extends State<IssueLeaveSheet> {
               gaps(10),
               TextField(
                 controller: endDate,
-                style: TextStyle(color: Colors.white),
-                //editing controller of this TextField
-                cursorColor: Colors.white,
+                style: TextStyle(color: enterprise.text),
+                cursorColor: enterprise.accent,
                 decoration: InputDecoration(
                   hintText: 'Select End Date',
-                  hintStyle: TextStyle(color: Colors.white),
-                  prefixIcon: Icon(Icons.calendar_month, color: Colors.white),
-                  labelStyle: TextStyle(color: Colors.white),
-                  fillColor: Colors.white24,
+                  hintStyle: TextStyle(color: enterprise.mutedText),
+                  prefixIcon:
+                      Icon(Icons.calendar_month, color: enterprise.accent),
+                  labelStyle: TextStyle(color: enterprise.text),
+                  fillColor: enterprise.isDark
+                      ? const Color(0xFF0F172A)
+                      : const Color(0xFFF8FAFC),
                   filled: true,
                   enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(10),
-                          topRight: Radius.circular(0),
-                          bottomLeft: Radius.circular(0),
-                          bottomRight: Radius.circular(10))),
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: enterprise.cardBorder)),
                   focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(10),
-                          topRight: Radius.circular(0),
-                          bottomLeft: Radius.circular(0),
-                          bottomRight: Radius.circular(10))),
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: enterprise.accent)),
                   focusedErrorBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(10),
-                          topRight: Radius.circular(0),
-                          bottomLeft: Radius.circular(0),
-                          bottomRight: Radius.circular(10))),
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: Colors.red)),
                   errorBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(10),
-                          topRight: Radius.circular(0),
-                          bottomLeft: Radius.circular(0),
-                          bottomRight: Radius.circular(10))),
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: Colors.red)),
                 ),
                 readOnly: true,
                 //set it true, so that user will not able to edit text
@@ -388,7 +375,7 @@ class IssueLeaveSheetState extends State<IssueLeaveSheet> {
                     children: [
                       Text(
                         "Total Leave Days: ",
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(color: enterprise.text),
                       ),
                       Text(
                         (DateFormat("yyyy-MM-dd hh:mm:ss")
@@ -400,7 +387,7 @@ class IssueLeaveSheetState extends State<IssueLeaveSheet> {
                                 1)
                             .toString(),
                         style: TextStyle(
-                            color: Colors.white,
+                            color: enterprise.accent,
                             fontWeight: FontWeight.bold,
                             fontSize: 15),
                       ),
@@ -419,61 +406,53 @@ class IssueLeaveSheetState extends State<IssueLeaveSheet> {
                     FocusManager.instance.primaryFocus?.unfocus();
                   }
                 },
-                style: TextStyle(color: Colors.white),
-                //editing controller of this TextField
-                cursorColor: Colors.white,
+                style: TextStyle(color: enterprise.text),
+                cursorColor: enterprise.accent,
                 keyboardType: TextInputType.multiline,
                 decoration: InputDecoration(
                   hintText: 'Reason',
-                  hintStyle: TextStyle(color: Colors.white),
-                  prefixIcon: Icon(Icons.edit_note, color: Colors.white),
-                  labelStyle: TextStyle(color: Colors.white),
-                  fillColor: Colors.white24,
+                  hintStyle: TextStyle(color: enterprise.mutedText),
+                  prefixIcon: Icon(Icons.edit_note, color: enterprise.accent),
+                  labelStyle: TextStyle(color: enterprise.text),
+                  fillColor: enterprise.isDark
+                      ? const Color(0xFF0F172A)
+                      : const Color(0xFFF8FAFC),
                   filled: true,
                   enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(10),
-                          topRight: Radius.circular(0),
-                          bottomLeft: Radius.circular(0),
-                          bottomRight: Radius.circular(10))),
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: enterprise.cardBorder)),
                   focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(10),
-                          topRight: Radius.circular(0),
-                          bottomLeft: Radius.circular(0),
-                          bottomRight: Radius.circular(10))),
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: enterprise.accent)),
                   focusedErrorBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(10),
-                          topRight: Radius.circular(0),
-                          bottomLeft: Radius.circular(0),
-                          bottomRight: Radius.circular(10))),
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: Colors.red)),
                   errorBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(10),
-                          topRight: Radius.circular(0),
-                          bottomLeft: Radius.circular(0),
-                          bottomRight: Radius.circular(10))),
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: Colors.red)),
                 ),
               ),
               gaps(20),
               Container(
                 width: MediaQuery.of(context).size.width,
-                padding: EdgeInsets.only(left: 5),
+                padding: const EdgeInsets.only(left: 5),
                 child: TextButton(
                     style: TextButton.styleFrom(
-                      backgroundColor: HexColor("#036eb7"),
+                      backgroundColor: enterprise.primary,
                       padding: EdgeInsets.zero,
                       shape: ButtonBorder(),
                     ),
                     onPressed: () {
                       issueLeave();
                     },
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
+                    child: const Padding(
+                      padding: EdgeInsets.all(20.0),
                       child: Text(
                         'Request Leave',
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     )),
               ),

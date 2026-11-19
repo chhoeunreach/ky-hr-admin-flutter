@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:get_storage/get_storage.dart';
 import '../config/repair_price_config.dart';
 import '../models/repair_brand.dart';
 import '../models/repair_category.dart';
@@ -21,72 +20,53 @@ enum RepairLoadingState {
 
 class RepairPriceProvider extends ChangeNotifier {
   final RepairPriceRepository _repository;
-  static final _storage = GetStorage();
-  static const _canViewKey = 'repair_can_view';
+  Map<String, dynamic> _permissions = const {};
+  bool _checkingPermissions = false;
+  bool _disposed = false;
 
   RepairPriceProvider({RepairPriceRepository? repository})
       : _repository = repository ?? RepairPriceRepository();
 
-  // Permissions are server controlled. Initialize from local cache if available.
-  bool _canView = _storage.read<bool>(_canViewKey) ?? false;
-  bool _canViewCost = false;
-  bool _canManageDevices = false;
-  bool _canManageServices = false;
-  bool _canManagePrices = false;
-  bool _canCreatePrices = false;
-  bool _canUpdatePrices = false;
-  bool _canDeletePrices = false;
+  String? get backendRoleName => _permissions['role_name']?.toString();
 
-  String? _backendRoleName;
-  String? get backendRoleName => _backendRoleName;
+  bool get canView => !_checkingPermissions && _permissions['can_view'] == true;
+  bool get canViewCost => canView && _permissions['can_view_cost'] == true;
+  bool get canManageDevices =>
+      canView && _permissions['can_manage_devices'] == true;
+  bool get canManageServices =>
+      canView && _permissions['can_manage_services'] == true;
+  bool get canManagePrices =>
+      canView && _permissions['can_manage_prices'] == true;
+  bool get canCreatePrices =>
+      canView && _permissions['can_create_prices'] == true;
+  bool get canUpdatePrices =>
+      canView && _permissions['can_update_prices'] == true;
+  bool get canDeletePrices =>
+      canView && _permissions['can_delete_prices'] == true;
 
-  bool get canView => _canView;
-  bool get canViewCost => _canViewCost;
-  bool get canManageDevices => _canManageDevices;
-  bool get canManageServices => _canManageServices;
-  bool get canManagePrices => _canManagePrices;
-  bool get canCreatePrices => _canCreatePrices;
-  bool get canUpdatePrices => _canUpdatePrices;
-  bool get canDeletePrices => _canDeletePrices;
+  bool canEditServicePrice(RepairService service) =>
+      canUpdatePrices &&
+      canViewCost &&
+      service.partCost != null &&
+      service.serviceFee != null &&
+      (service.repairPriceId ?? 0) > 0;
 
-  /// Loads the logged-in user's role and permissions directly from the web backend
+  /// Loads the permissions for the current authenticated repair session.
   Future<void> loadWebPermissions() async {
+    _checkingPermissions = true;
     try {
-      final perms = await _repository.fetchPermissions();
-      if (perms != null) {
-        _backendRoleName = perms['role_name']?.toString();
-
-        _canView = perms['can_view'] == true;
-        _storage.write(_canViewKey, _canView);
-        _canViewCost = perms['can_view_cost'] == true;
-        _canManagePrices = perms['can_manage_prices'] == true;
-        _canCreatePrices = perms['can_create_prices'] == true;
-        _canUpdatePrices = perms['can_update_prices'] == true;
-        _canDeletePrices = perms['can_delete_prices'] == true;
-        _canManageDevices = perms['can_manage_devices'] == true;
-        _canManageServices = perms['can_manage_services'] == true;
-
-        notifyListeners();
-
-        if (!_canView) {
-          _deviceLoadingState = RepairLoadingState.forbidden;
-          _deviceErrorMessage =
-              'លោកអ្នកគ្មានសិទ្ធិចូលមើលតម្លៃជួសជុលទេ\nYou do not have permission to view repair prices';
-        }
-      }
-    } catch (e) {
-      _canView = false;
-      _canViewCost = false;
-      _canManagePrices = false;
-      _canCreatePrices = false;
-      _canUpdatePrices = false;
-      _canDeletePrices = false;
-      _canManageDevices = false;
-      _canManageServices = false;
-      _deviceLoadingState = _stateForError(e);
-      _deviceErrorMessage = _messageForError(e);
-      notifyListeners();
+      _permissions = await _repository.fetchPermissions() ?? const {};
+      _checkingPermissions = false;
+      if (_disposed) return;
+      if (!canView) _deviceLoadingState = RepairLoadingState.forbidden;
+    } catch (error) {
+      _permissions = const {};
+      _checkingPermissions = false;
+      if (_disposed) return;
+      _deviceLoadingState = _stateForError(error);
+      _deviceErrorMessage = _messageForError(error);
     }
+    notifyListeners();
   }
 
   // --- Page 2: Device / Model Selection State ---
@@ -135,6 +115,7 @@ class RepairPriceProvider extends ChangeNotifier {
 
   RepairLoadingState _serviceLoadingState = RepairLoadingState.initial;
   RepairLoadingState get serviceLoadingState => _serviceLoadingState;
+  int _serviceRequest = 0;
 
   String? _serviceErrorMessage;
   String? get serviceErrorMessage => _serviceErrorMessage;
@@ -157,22 +138,16 @@ class RepairPriceProvider extends ChangeNotifier {
   // --- Page 2 Actions ---
 
   Future<void> initDevicePage() async {
-    // 1. First fetch latest role & permissions configured on the web backend
-    await loadWebPermissions();
-
-    if (!canView) {
-      _deviceLoadingState = RepairLoadingState.forbidden;
-      _deviceErrorMessage =
-          'លោកអ្នកគ្មានសិទ្ធិចូលមើលតម្លៃជួសជុលទេ\nYou do not have permission to view repair prices';
-      notifyListeners();
-      return;
-    }
-
+    if (_deviceLoadingState == RepairLoadingState.loading) return;
     _deviceLoadingState = RepairLoadingState.loading;
     _deviceErrorMessage = null;
+    notifyListeners();
+
+    await loadWebPermissions();
+    if (_disposed || !canView) return;
+
     _devicePage = 1;
     _hasMoreDevices = true;
-    notifyListeners();
 
     try {
       final results = await Future.wait([
@@ -392,6 +367,7 @@ class RepairPriceProvider extends ChangeNotifier {
 
   // --- Device Management Actions ---
   Future<bool> addDevice(RepairDevice device) async {
+    if (!canManageDevices) return false;
     final brandId = device.brand?.id;
     final isDuplicate = _devices.any((d) =>
         d.brand?.id == brandId &&
@@ -425,6 +401,7 @@ class RepairPriceProvider extends ChangeNotifier {
   }
 
   Future<bool> updateDevice(RepairDevice device) async {
+    if (!canManageDevices) return false;
     final brandId = device.brand?.id;
     final isDuplicate = _devices.any((d) =>
         d.brand?.id == brandId &&
@@ -463,6 +440,7 @@ class RepairPriceProvider extends ChangeNotifier {
   }
 
   Future<bool> deleteDevice(int deviceId) async {
+    if (!canManageDevices) return false;
     try {
       await _repository.deleteDevice(deviceId);
     } catch (e) {
@@ -527,10 +505,11 @@ class RepairPriceProvider extends ChangeNotifier {
   }
 
   void updateServicePrice(RepairService updatedService) {
-    final idx = _services.indexWhere((s) => s.id == updatedService.id);
+    final idx =
+        _services.indexWhere((s) => s.priceKey == updatedService.priceKey);
     if (idx != -1) {
       _services[idx] = updatedService;
-      if (_selectedService?.id == updatedService.id) {
+      if (_selectedService?.priceKey == updatedService.priceKey) {
         _selectedService = updatedService;
       }
       notifyListeners();
@@ -538,9 +517,9 @@ class RepairPriceProvider extends ChangeNotifier {
   }
 
   Future<void> saveServicePrice(RepairService updatedService) async {
-    if (!canUpdatePrices) {
+    if (!canEditServicePrice(updatedService)) {
       throw const RepairApiException(
-        'You do not have permission to update repair prices',
+        'Mobile price editing requires permission to update prices and view their costs.',
         statusCode: 403,
       );
     }
@@ -563,21 +542,33 @@ class RepairPriceProvider extends ChangeNotifier {
   // --- Page 3 Actions ---
 
   void setSelectedDevice(RepairDevice device) {
+    _searchDebounceTimer?.cancel();
     _selectedDevice = device;
     _selectedCategoryId = null;
     _serviceSearchQuery = '';
     _selectedService = null;
+    _services = [];
+    _categories = [];
+    _serviceLoadingState = RepairLoadingState.initial;
     notifyListeners();
     initServiceDetailPage();
   }
 
   Future<void> initServiceDetailPage() async {
-    if (_selectedDevice == null) return;
+    final device = _selectedDevice;
+    if (device == null || _serviceLoadingState == RepairLoadingState.loading) {
+      return;
+    }
+    final request = ++_serviceRequest;
+    _serviceLoadingState = RepairLoadingState.loading;
+    _serviceErrorMessage = null;
+    notifyListeners();
 
     if (!canView) {
       await loadWebPermissions();
     }
 
+    if (_disposed || request != _serviceRequest) return;
     if (!canView) {
       _serviceLoadingState = RepairLoadingState.forbidden;
       _serviceErrorMessage =
@@ -586,21 +577,22 @@ class RepairPriceProvider extends ChangeNotifier {
       return;
     }
 
-    _serviceLoadingState = RepairLoadingState.loading;
-    _serviceErrorMessage = null;
-    notifyListeners();
-
     try {
       final results = await Future.wait([
         _repository.fetchCategories(),
         _repository.fetchDeviceServices(
-          _selectedDevice!.id,
+          device.id,
           search: _serviceSearchQuery,
           categoryId: _selectedCategoryId,
         ),
       ]);
 
+      if (_disposed || !identical(_selectedDevice, device)) return;
       _categories = results[0] as List<RepairCategory>;
+      if (request != _serviceRequest) {
+        notifyListeners();
+        return;
+      }
       _services = results[1] as List<RepairService>;
 
       if (_services.isNotEmpty && _selectedService == null) {
@@ -611,6 +603,7 @@ class RepairPriceProvider extends ChangeNotifier {
           ? RepairLoadingState.empty
           : RepairLoadingState.loaded;
     } catch (e) {
+      if (_disposed || request != _serviceRequest) return;
       _serviceErrorMessage = _messageForError(e);
       _serviceLoadingState = _stateForError(e);
     }
@@ -641,28 +634,33 @@ class RepairPriceProvider extends ChangeNotifier {
   }
 
   Future<void> loadServices() async {
-    if (_selectedDevice == null) return;
+    final device = _selectedDevice;
+    if (device == null || !canView) return;
+    final request = ++_serviceRequest;
 
     _serviceLoadingState = RepairLoadingState.loading;
     _serviceErrorMessage = null;
     notifyListeners();
 
     try {
-      _services = await _repository.fetchDeviceServices(
-        _selectedDevice!.id,
+      final services = await _repository.fetchDeviceServices(
+        device.id,
         search: _serviceSearchQuery,
         categoryId: _selectedCategoryId,
       );
 
-      if (_selectedService != null &&
-          !_services.any((s) => s.id == _selectedService!.id)) {
-        _selectedService = _services.isNotEmpty ? _services.first : null;
-      }
+      if (_disposed || request != _serviceRequest) return;
+      _services = services;
+      final selectedKey = _selectedService?.priceKey;
+      final index =
+          _services.indexWhere((service) => service.priceKey == selectedKey);
+      _selectedService = index >= 0 ? _services[index] : _services.firstOrNull;
 
       _serviceLoadingState = _services.isEmpty
           ? RepairLoadingState.empty
           : RepairLoadingState.loaded;
     } catch (e) {
+      if (_disposed || request != _serviceRequest) return;
       _serviceErrorMessage = _messageForError(e);
       _serviceLoadingState = _stateForError(e);
     }
@@ -671,7 +669,13 @@ class RepairPriceProvider extends ChangeNotifier {
   }
 
   @override
+  void notifyListeners() {
+    if (!_disposed) super.notifyListeners();
+  }
+
+  @override
   void dispose() {
+    _disposed = true;
     _searchDebounceTimer?.cancel();
     super.dispose();
   }

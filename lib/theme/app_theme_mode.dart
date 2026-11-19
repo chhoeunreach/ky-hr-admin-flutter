@@ -11,6 +11,8 @@ enum AppThemeMode {
   royalPurple,
   copperBrown,
   rosePink,
+  khmerHeritage,
+  royalBlueGold,
 }
 
 extension AppThemeModeX on AppThemeMode {
@@ -40,6 +42,10 @@ extension AppThemeModeX on AppThemeMode {
         return 'copper_brown';
       case AppThemeMode.rosePink:
         return 'rose_pink';
+      case AppThemeMode.khmerHeritage:
+        return 'khmer_heritage';
+      case AppThemeMode.royalBlueGold:
+        return 'royal_blue_gold';
     }
   }
 

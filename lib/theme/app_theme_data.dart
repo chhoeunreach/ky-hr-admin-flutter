@@ -1,5 +1,6 @@
 import 'package:cnattendance/theme/app_theme_mode.dart';
 import 'package:cnattendance/theme/theme_colors.dart';
+import 'package:cnattendance/theme/royal_colors.dart';
 import 'package:flutter/material.dart';
 
 class AppThemeData {
@@ -10,19 +11,19 @@ class AppThemeData {
       id: AppThemeMode.light.id,
       name: 'Original Mode',
       icon: Icons.light_mode,
-      description: 'Original clean Digital HRS experience',
+      description: 'Deep Royal Navy with Electric Blue',
       colors: const ThemeColors(
-        primaryColor: Color(0xff2563eb),
-        secondaryColor: Color(0xff1d4ed8),
-        accentColor: Color(0xff60a5fa),
-        backgroundColor: Color(0xfff8fafc),
-        cardColor: Color(0xffffffff),
+        primaryColor: Color(0xff0b5fff),
+        secondaryColor: Color(0xff0a1f44),
+        accentColor: Color(0xff5eb1ff),
+        backgroundColor: Color(0xff071533),
+        cardColor: Color(0xff0c2247),
         textColor: Color(0xff0f172a),
         isDark: false,
         gradientColors: [
-          Color(0xfff8fafc),
-          Color(0xffdbeafe),
-          Color(0xff60a5fa),
+          Color(0xff04122e),
+          Color(0xff0a2a66),
+          Color(0xff123f8f),
         ],
       ),
     ),
@@ -174,25 +175,64 @@ class AppThemeData {
     ),
     AppThemeMode.rosePink: _theme(
       AppThemeMode.rosePink,
-      'Rose Pink',
+      'Rose Pink Love 💕',
       Icons.favorite,
-      'Confident rose and ruby palette',
-      const Color(0xffe11d48),
-      const Color(0xff9f1239),
-      const Color(0xfffda4af),
-      const Color(0xff881337),
-      const Color(0xff9f1239),
+      'Premium rose gradients with soft glass highlights',
+      const Color(0xffe91e63),
+      const Color(0xff880e4f),
+      const Color(0xffff80ab),
+      const Color(0xff880e4f),
+      const Color(0xffa31250),
       const Color(0xffffffff),
       true,
-      const [Color(0xff881337), Color(0xffbe123c), Color(0xffe11d48)],
+      const [
+        Color(0xff880e4f),
+        Color(0xffc2185b),
+        Color(0xffe91e63),
+        Color(0xfff06292),
+        Color(0xffad1457)
+      ],
+    ),
+    AppThemeMode.royalBlueGold: _theme(
+      AppThemeMode.royalBlueGold,
+      'Royal Blue & Gold',
+      Icons.account_balance_rounded,
+      'Angkor Wat, royal blue and metallic gold',
+      RoyalColors.royalBlue,
+      RoyalColors.deepBlue,
+      RoyalColors.gold,
+      RoyalColors.navy,
+      RoyalColors.panel,
+      Colors.white,
+      true,
+      RoyalColors.background,
+    ),
+    AppThemeMode.khmerHeritage: _theme(
+      AppThemeMode.khmerHeritage,
+      'Khmer Heritage',
+      Icons.account_balance_outlined,
+      'Burgundy, cream and gold inspired by Cambodian ornament',
+      const Color(0xff8a2844),
+      const Color(0xff421226),
+      const Color(0xffedc478),
+      const Color(0xff250b17),
+      const Color(0xff4a192e),
+      const Color(0xfffff2dc),
+      true,
+      const [Color(0xff290c1a), Color(0xff641d37), Color(0xff320e20)],
     ),
   };
 
   static AppThemeInfo info(AppThemeMode mode) => themes[mode]!;
 
-  static ThemeData themeData(AppThemeMode mode) {
-    final theme = info(mode);
-    final colors = theme.colors;
+  static ThemeData themeData(AppThemeMode mode, {ThemeColors? overrides}) {
+    final defaults = info(mode).colors;
+    final colors = overrides ?? defaults;
+    final appBarText = identical(defaults, colors) ||
+            ThemeData.estimateBrightnessForColor(colors.primaryColor) ==
+                Brightness.dark
+        ? Colors.white
+        : const Color(0xFF211720);
     final scheme = ColorScheme.fromSeed(
       seedColor: colors.primaryColor,
       brightness: colors.isDark ? Brightness.dark : Brightness.light,
@@ -207,6 +247,7 @@ class AppThemeData {
       brightness: colors.isDark ? Brightness.dark : Brightness.light,
       colorScheme: scheme.copyWith(
         primary: colors.primaryColor,
+        onPrimary: identical(defaults, colors) ? null : appBarText,
         secondary: colors.secondaryColor,
         tertiary: colors.accentColor,
         surface: colors.cardColor,
@@ -218,13 +259,13 @@ class AppThemeData {
       dividerColor: colors.textColor.withValues(alpha: 0.14),
       appBarTheme: AppBarTheme(
         backgroundColor: colors.primaryColor,
-        foregroundColor: Colors.white,
+        foregroundColor: appBarText,
         elevation: 0,
         centerTitle: true,
-        iconTheme: const IconThemeData(color: Colors.white),
-        actionsIconTheme: const IconThemeData(color: Colors.white),
-        titleTextStyle: const TextStyle(
-          color: Colors.white,
+        iconTheme: IconThemeData(color: appBarText),
+        actionsIconTheme: IconThemeData(color: appBarText),
+        titleTextStyle: TextStyle(
+          color: appBarText,
           fontSize: 20,
           fontFamily: 'GoogleSans',
           fontWeight: FontWeight.w700,
@@ -265,6 +306,38 @@ class AppThemeData {
           color: colors.textColor.withValues(alpha: 0.78),
           fontSize: 14,
           fontFamily: 'GoogleSans',
+        ),
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: colors.cardColor,
+        surfaceTintColor: Colors.transparent,
+        modalBackgroundColor: colors.cardColor,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor:
+            colors.cardColor.withValues(alpha: colors.isDark ? 0.76 : 0.92),
+        hintStyle: TextStyle(color: colors.textColor.withValues(alpha: 0.58)),
+        labelStyle: TextStyle(color: colors.textColor.withValues(alpha: 0.78)),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide:
+              BorderSide(color: colors.textColor.withValues(alpha: 0.20)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: colors.primaryColor, width: 1.6),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Color(0xffef4444)),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Color(0xffef4444), width: 1.6),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(

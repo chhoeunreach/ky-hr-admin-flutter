@@ -5,7 +5,6 @@ import 'package:cnattendance/data/source/network/model/hollidays/HolidayResponse
 import 'package:cnattendance/data/source/network/model/hollidays/Holidays.dart';
 import 'package:cnattendance/model/holiday.dart';
 import 'package:cnattendance/utils/constant.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
@@ -37,7 +36,7 @@ class HolidayController extends GetxController {
     }
   }
 
-  Future<HolidayResponse> getHolidays() async {
+  Future<HolidayResponse> getHolidays({bool showLoader = true}) async {
     Preferences preferences = Preferences();
     var uri = Uri.parse(await preferences.getAppUrl() + Constant.HOLIDAYS_API);
 
@@ -50,15 +49,14 @@ class HolidayController extends GetxController {
     };
 
     try {
-      EasyLoading.show(
-          status: translate('loader.loading'),
-          maskType: EasyLoadingMaskType.black);
+      if (showLoader)
+        EasyLoading.show(
+            status: translate('loader.loading'),
+            maskType: EasyLoadingMaskType.black);
       final response = await http.get(uri, headers: headers);
-      EasyLoading.dismiss(animation: true);
+      if (showLoader) EasyLoading.dismiss(animation: true);
       final responseData = json.decode(response.body);
       if (response.statusCode == 200) {
-        debugPrint(responseData.toString());
-
         final responseJson = HolidayResponse.fromJson(responseData);
 
         await makeHolidayList(responseJson.data);
@@ -70,7 +68,7 @@ class HolidayController extends GetxController {
         throw errorMessage;
       }
     } catch (error) {
-      EasyLoading.dismiss(animation: true);
+      if (showLoader) EasyLoading.dismiss(animation: true);
       rethrow;
     }
   }

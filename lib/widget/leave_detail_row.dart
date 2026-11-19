@@ -1,6 +1,6 @@
+import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/widget/cancel_leave_bottom_sheet.dart';
 import 'package:flutter/material.dart';
-import 'package:hexcolor/hexcolor.dart';
 
 class LeaveDetailRow extends StatelessWidget {
   final int id;
@@ -24,22 +24,27 @@ class LeaveDetailRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final enterprise = EnterpriseTheme.of(context);
 
-
-    void onLeaveCancelledClicked(int id){
-
-        showModalBottomSheet(
-            context: context,
-            useRootNavigator: true,
-            builder: (context) {
-              return CancelLeaveBottomSheet(id,leaveTypeId);
-            });
+    void onLeaveCancelledClicked(int id) {
+      showModalBottomSheet(
+          context: context,
+          useRootNavigator: true,
+          builder: (context) {
+            return CancelLeaveBottomSheet(id, leaveTypeId);
+          });
     }
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        color: Colors.white12,
+        decoration: BoxDecoration(
+          color: enterprise.isDark
+              ? const Color(0xFF0F172A).withValues(alpha: 0.60)
+              : const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: enterprise.cardBorder),
+        ),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -51,22 +56,30 @@ class LeaveDetailRow extends StatelessWidget {
                 children: [
                   Text(
                     name,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: enterprise.text,
                       fontSize: 14,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 3),
                     child: Text(
                       "$from - $to",
-                      style: const TextStyle(color: Colors.white, fontSize: 11),
+                      style: TextStyle(
+                        color: enterprise.mutedText,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                   Text(
                     authorization == '' ? "N/A" : "By: $authorization",
-                    style: TextStyle(color: HexColor("#036eb7"), fontSize: 11),
+                    style: TextStyle(
+                      color: enterprise.accent,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ],
               ),
@@ -80,7 +93,11 @@ class LeaveDetailRow extends StatelessWidget {
                     padding: const EdgeInsets.only(bottom: 4.0),
                     child: Text(
                       requestedAt,
-                      style: const TextStyle(color: Colors.white, fontSize: 11),
+                      style: TextStyle(
+                        color: enterprise.mutedText,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                   GestureDetector(
@@ -100,7 +117,7 @@ class LeaveDetailRow extends StatelessWidget {
                           style: const TextStyle(
                               color: Colors.white,
                               fontSize: 11,
-                              fontWeight: FontWeight.w600),
+                              fontWeight: FontWeight.w700),
                         ),
                       ),
                     ),

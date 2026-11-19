@@ -258,6 +258,10 @@ class AppUpdateDialog extends StatelessWidget {
   }
 }
 
+final _shownAutomaticUpdates = <String>{};
+Future<void>? _activeUpdateDialog;
+bool _activeUpdateIsRequired = false;
+
 Future<void> showAppUpdateDialog({
   required BuildContext context,
   required String currentVersion,
@@ -266,8 +270,18 @@ Future<void> showAppUpdateDialog({
   String? releaseNotes,
   String? alertTitle,
   bool isForceUpdate = false,
-}) {
-  return showDialog(
+  bool automatic = false,
+}) async {
+  final updateKey = '${latestVersion.trim()}|$isForceUpdate';
+  final activeDialog = _activeUpdateDialog;
+  if (automatic && activeDialog != null) {
+    if (!isForceUpdate || _activeUpdateIsRequired) return;
+    await activeDialog;
+    if (!context.mounted || _activeUpdateDialog != null) return;
+  }
+  if (automatic && !_shownAutomaticUpdates.add(updateKey)) return;
+
+  final dialog = showDialog<void>(
     context: context,
     barrierDismissible: !isForceUpdate,
     builder: (ctx) => AppUpdateDialog(
@@ -279,4 +293,16 @@ Future<void> showAppUpdateDialog({
       isForceUpdate: isForceUpdate,
     ),
   );
+  if (automatic) {
+    _activeUpdateDialog = dialog;
+    _activeUpdateIsRequired = isForceUpdate;
+  }
+  try {
+    await dialog;
+  } finally {
+    if (identical(_activeUpdateDialog, dialog)) {
+      _activeUpdateDialog = null;
+      _activeUpdateIsRequired = false;
+    }
+  }
 }

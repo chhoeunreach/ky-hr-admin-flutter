@@ -1,23 +1,42 @@
 import 'package:cnattendance/theme/app_theme_data.dart';
 import 'package:cnattendance/theme/app_theme_mode.dart';
+import 'package:cnattendance/theme/theme_colors.dart';
+import 'package:cnattendance/theme/theme_layout.dart';
 import 'package:flutter/material.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ThemeProvider extends ChangeNotifier {
   static const String storageKey = 'app_theme_mode';
+  static const String _animationKey = 'animation';
+  static const Map<String, bool> _effectDefaults = {
+    'floating_hearts': true,
+    'rose_petals': false,
+    'heart_glow': true,
+    'sparkle_effects': true,
+    'qr_pulse': true,
+    'reduce_animations': false,
+  };
 
   AppThemeMode _mode = AppThemeMode.light;
   bool _loaded = false;
+  bool _animationsEnabled = true;
+  final Map<String, bool> _effects = Map<String, bool>.from(_effectDefaults);
+  final Map<AppThemeMode, ThemeLayout> _layouts = {};
 
   AppThemeMode get mode => _mode;
   bool get loaded => _loaded;
-  ThemeData get themeData => AppThemeData.themeData(_mode);
+  bool get animationsEnabled => _animationsEnabled;
+  ThemeLayout get layout => _layouts[_mode] ?? const ThemeLayout.defaults();
+  ThemeColors get colors => layout.colorsFor(AppThemeData.info(_mode).colors);
+  ThemeData get themeData => AppThemeData.themeData(_mode, overrides: colors);
   ThemeData get lightTheme => AppThemeData.themeData(AppThemeMode.light);
   ThemeData get darkTheme => AppThemeData.themeData(AppThemeMode.dark);
-  bool get isDark => AppThemeData.info(_mode).colors.isDark;
+  bool get isDark => colors.isDark;
+  bool effectEnabled(String key) => _effects[key] ?? false;
 
   Future<void> load() async {
+    _animationsEnabled = GetStorage().read(_animationKey) != false;
     final prefs = await SharedPreferences.getInstance();
     final savedMode = prefs.getString(storageKey);
     if (savedMode == null) {
@@ -25,6 +44,13 @@ class ThemeProvider extends ChangeNotifier {
       _mode = legacyLightMode ? AppThemeMode.light : AppThemeMode.dark;
     } else {
       _mode = AppThemeModeX.fromId(savedMode);
+    }
+    for (final entry in _effectDefaults.entries) {
+      _effects[entry.key] =
+          prefs.getBool('rose_effect_${entry.key}') ?? entry.value;
+    }
+    for (final mode in AppThemeMode.values) {
+      _layouts[mode] = ThemeLayout.decode(prefs.getString(_layoutKey(mode)));
     }
     _syncLegacyStorage(_mode);
     _loaded = true;
@@ -39,6 +65,35 @@ class ThemeProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(storageKey, mode.id);
   }
+
+  Future<void> setEffect(String key, bool enabled) async {
+    if (!_effectDefaults.containsKey(key) || _effects[key] == enabled) return;
+    _effects[key] = enabled;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('rose_effect_$key', enabled);
+  }
+
+  Future<void> setAnimationsEnabled(bool enabled) async {
+    if (_animationsEnabled == enabled) return;
+    _animationsEnabled = enabled;
+    notifyListeners();
+    try {
+      await GetStorage().write(_animationKey, enabled);
+    } catch (error) {
+      debugPrint('Unable to save animation preference: $error');
+    }
+  }
+
+  Future<bool> saveLayout(AppThemeMode mode, ThemeLayout layout) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!await prefs.setString(_layoutKey(mode), layout.encode())) return false;
+    _layouts[mode] = layout;
+    notifyListeners();
+    return true;
+  }
+
+  static String _layoutKey(AppThemeMode mode) => 'theme_layout_${mode.id}';
 
   Future<void> resetToSystemMode() async {
     final brightness =

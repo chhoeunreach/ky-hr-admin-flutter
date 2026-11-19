@@ -4,6 +4,9 @@ import 'dart:io';
 import 'package:cnattendance/features/community/social_feed_screen.dart';
 import 'package:cnattendance/features/community/community_strings.dart';
 import 'package:cnattendance/provider/dashboardprovider.dart';
+import 'package:cnattendance/theme/app_theme_data.dart';
+import 'package:cnattendance/theme/app_theme_mode.dart';
+import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_translate/flutter_translate.dart';
@@ -168,4 +171,97 @@ void main() {
     expect(find.text(communityText('Send')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('feed keeps its posts and uses readable colors in each theme',
+      (tester) async {
+    final api = FakeCommunityApi()
+      ..responses['GET social-feed?page=1'] = {
+        'data': [postFixture()],
+        'next_page_url': null,
+      };
+    final theme = ValueNotifier(AppThemeMode.light);
+    addTearDown(theme.dispose);
+    await tester.pumpWidget(ChangeNotifierProvider(
+      create: (_) => DashboardProvider()..features = {'social_feed.view': '1'},
+      child: ValueListenableBuilder(
+        valueListenable: theme,
+        child: SocialFeedScreen(api: api),
+        builder: (_, mode, feed) =>
+            MaterialApp(theme: AppThemeData.themeData(mode), home: feed),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    final pageColors = <Color>{};
+    for (final mode in AppThemeMode.values) {
+      theme.value = mode;
+      await tester.pumpAndSettle();
+      final appBar = tester.widget<AppBar>(find.byType(AppBar));
+      final colors = AppThemeData.themeData(mode).colorScheme;
+      expect(appBar.backgroundColor, colors.primaryContainer);
+      expectContrast(
+          (appBar.title! as Text).style!.color!, appBar.backgroundColor!);
+      final chip = tester.widget<ChoiceChip>(find.byWidgetPredicate(
+          (widget) => widget is ChoiceChip && widget.selected));
+      expect(chip.selectedColor, colors.primaryContainer);
+      expectContrast(chip.labelStyle!.color!, chip.selectedColor!);
+      final postFinder = find.byKey(const ValueKey('post-1'));
+      final card = tester.widget<Card>(
+          find.descendant(of: postFinder, matching: find.byType(Card)));
+      expectContrast(colors.onSurface, card.color!);
+      pageColors
+          .add(tester.widget<Scaffold>(find.byType(Scaffold)).backgroundColor!);
+    }
+    expect(pageColors.length, AppThemeMode.values.length);
+    expect(api.calls.where((call) => call == 'GET social-feed?page=1'),
+        hasLength(1));
+  });
+
+  testWidgets('post composer and comments use the Rose Pink theme',
+      (tester) async {
+    final api = FakeCommunityApi();
+    final theme = AppThemeData.themeData(AppThemeMode.rosePink);
+    Widget app(Widget screen) => ChangeNotifierProvider(
+          create: (_) =>
+              DashboardProvider()..features = {'social_feed.comment': '1'},
+          child: MaterialApp(theme: theme, home: screen),
+        );
+
+    await tester.pumpWidget(app(SocialPostComposer(api: api)));
+    await tester.pumpAndSettle();
+    final editor = find.byType(TextField).first;
+    final editorContext = tester.element(editor);
+    expect(Theme.of(editorContext).brightness, Brightness.dark);
+    final editorSurface = EnterpriseTheme.of(editorContext).contentSurface;
+    expectContrast(
+        tester.widget<TextField>(editor).style!.color!, editorSurface);
+    expect(
+      find.ancestor(
+        of: editor,
+        matching: find.byWidgetPredicate((widget) =>
+            widget is DecoratedBox &&
+            widget.decoration is BoxDecoration &&
+            (widget.decoration as BoxDecoration).color == editorSurface),
+      ),
+      findsWidgets,
+    );
+
+    await tester.pumpWidget(app(SocialCommentsScreen(postId: 1, api: api)));
+    await tester.pumpAndSettle();
+    final toolbar = tester.widget<AppBar>(find.byType(AppBar));
+    expect(toolbar.backgroundColor, editorSurface);
+    expectContrast((toolbar.title! as Text).style!.color!, editorSurface);
+    final field = tester.widget<TextField>(find.byType(TextField));
+    expect(field.decoration!.fillColor, theme.colorScheme.surfaceContainerHigh);
+    expectContrast(theme.colorScheme.onSurface, field.decoration!.fillColor!);
+  });
+}
+
+void expectContrast(Color foreground, Color background) {
+  final luminances = [
+    Color.alphaBlend(foreground, background).computeLuminance(),
+    background.computeLuminance(),
+  ]..sort();
+  expect((luminances.last + 0.05) / (luminances.first + 0.05),
+      greaterThanOrEqualTo(4.5));
 }

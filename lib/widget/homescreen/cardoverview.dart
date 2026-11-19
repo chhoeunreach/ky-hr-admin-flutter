@@ -1,162 +1,96 @@
 import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:flutter/material.dart';
 
+/// Compact icon tile for the home quick-actions grid (screenshot style):
+/// colored squircle chip + centered label, no counts.
 class CardOverView extends StatelessWidget {
   final String type;
   final String value;
   final String? subtitle;
   final dynamic icon;
   final VoidCallback callback;
+  final Color? chipColor;
 
-  CardOverView(
-      {required this.type,
-      required this.value,
-      this.subtitle,
-      required this.icon,
-      required this.callback});
+  CardOverView({
+    required this.type,
+    required this.value,
+    this.subtitle,
+    required this.icon,
+    required this.callback,
+    this.chipColor,
+  });
 
   @override
   Widget build(BuildContext context) {
     final enterprise = EnterpriseTheme.of(context);
-    final parsedValue = int.tryParse(value);
+    final base = enterprise.isKhmerHeritage || enterprise.layout.accent != null
+        ? enterprise.primary
+        : chipColor ?? enterprise.primary;
+    final iconColor =
+        enterprise.isKhmerHeritage ? enterprise.accent : Colors.white;
+
     return RepaintBoundary(
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         onTap: callback,
-        child: EnterpriseGlass(
-          radius: 16,
-          padding: EdgeInsets.zero,
-          glowColor: enterprise.accent,
-          glowOpacity: 0.10,
-          child: Container(
-            constraints: const BoxConstraints(minHeight: 76),
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.white
-                      .withValues(alpha: enterprise.isDark ? 0.08 : 0.28),
-                  Colors.transparent,
-                ],
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        enterprise.primary.withValues(alpha: 0.98),
-                        enterprise.accent.withValues(alpha: 0.88),
-                      ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      base.withValues(alpha: 0.95),
+                      Color.lerp(
+                          base,
+                          enterprise.isKhmerHeritage
+                              ? enterprise.secondary
+                              : const Color(0xFF0A1F44),
+                          0.35)!,
+                    ],
+                  ),
+                  border: enterprise.isKhmerHeritage
+                      ? Border.all(color: enterprise.cardBorder)
+                      : null,
+                  boxShadow: [
+                    BoxShadow(
+                      color: base.withValues(alpha: 0.38),
+                      blurRadius: 14,
+                      spreadRadius: 0.5,
+                      offset: const Offset(0, 3),
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: enterprise.accent.withValues(alpha: 0.34),
-                        blurRadius: 22,
-                        spreadRadius: 1,
-                      ),
-                    ],
-                  ),
-                  child: Center(
-                    child: icon is String
-                        ? Image.asset(icon,
-                            width: 18, height: 18, color: Colors.white)
-                        : Icon(icon, size: 18, color: Colors.white),
-                  ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        type,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: enterprise.text,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                      TweenAnimationBuilder<double>(
-                        tween: Tween<double>(
-                          begin: 0,
-                          end: parsedValue?.toDouble() ?? 0,
-                        ),
-                        duration: const Duration(milliseconds: 700),
-                        curve: Curves.easeOutCubic,
-                        builder: (context, animatedValue, _) {
-                          return Text(
-                            parsedValue == null
-                                ? value
-                                : animatedValue.round().toString(),
-                            style: TextStyle(
-                              color: enterprise.accent,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w900,
-                              height: 1,
-                            ),
-                          );
-                        },
-                      ),
-                      if (subtitle != null) ...[
-                        const SizedBox(height: 2),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.payments_outlined,
-                              size: 10,
-                              color: enterprise.text.withValues(alpha: 0.65),
-                            ),
-                            const SizedBox(width: 3),
-                            Flexible(
-                              child: Text(
-                                subtitle!,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color:
-                                      enterprise.text.withValues(alpha: 0.65),
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ],
-                  ),
+                child: Center(
+                  child: icon is String
+                      ? Image.asset(icon,
+                          width: 20, height: 20, color: iconColor)
+                      : Icon(icon, size: 20, color: iconColor),
                 ),
-                Container(
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white
-                        .withValues(alpha: enterprise.isDark ? 0.08 : 0.50),
-                    border: Border.all(color: enterprise.glassStroke),
-                  ),
-                  child: Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    size: 11,
-                    color: enterprise.text.withValues(alpha: 0.70),
-                  ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                type,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: enterprise.isKhmerHeritage
+                      ? enterprise.text
+                      : Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  height: 1.15,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
