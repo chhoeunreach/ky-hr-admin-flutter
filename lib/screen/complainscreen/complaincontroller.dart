@@ -3,6 +3,7 @@ import 'package:cnattendance/data/source/network/model/complaintresponse/departm
 import 'package:cnattendance/repositories/complaintrepository.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:get/get.dart';
+import 'package:flutter/foundation.dart';
 
 class ComplainController extends GetxController {
   var complaintList = <Complaint>[].obs;
@@ -37,7 +38,7 @@ class ComplainController extends GetxController {
         page++;
       }
     } catch (e) {
-      print(e.toString());
+      if (kDebugMode) debugPrint(e.toString());
       showToast(e.toString());
     }
   }
@@ -48,7 +49,7 @@ class ComplainController extends GetxController {
 
       departments.value = response.data;
     } catch (e) {
-      print(e.toString());
+      if (kDebugMode) debugPrint(e.toString());
       showToast(e.toString());
     }
   }

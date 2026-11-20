@@ -15,6 +15,7 @@ import 'package:cnattendance/core/ky_security/ky_http.dart';
 import 'package:intl/intl.dart';
 import 'package:nepali_date_picker/nepali_date_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/foundation.dart';
 
 class ProjectDetailController extends GetxController {
   var project = Project(0, "", "","", "", "", "", 0, 0, [], [], []).obs;
@@ -97,7 +98,6 @@ class ProjectDetailController extends GetxController {
             attachments);
 
         final List<Task> taskList = [];
-        print(projectResponse.data.assigned_task_detail.length);
         for (var task in projectResponse.data.assigned_task_detail) {
           taskList.add(Task(
               task.task_id,
@@ -113,11 +113,11 @@ class ProjectDetailController extends GetxController {
         return "Loaded";
       } else {
         var errorMessage = responseData['message'];
-        print(errorMessage);
+        if (kDebugMode) debugPrint(errorMessage);
         throw errorMessage;
       }
     } catch (e) {
-      print(e);
+      if (kDebugMode) debugPrint(e.toString());
       throw e;
     }
   }

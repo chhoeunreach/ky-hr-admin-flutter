@@ -7,6 +7,7 @@ import 'package:cnattendance/data/source/network/model/advancesalarylist/adavanc
 import 'package:cnattendance/data/source/network/model/advanceslarydetail/advancesalarydetailresponse.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 class AdvanceSalaryRepository {
   Future<AdavanceSalaryResponse> getAdvanceList() async {
@@ -31,11 +32,11 @@ class AdvanceSalaryRepository {
         return adavanceSalary;
       } else {
         var errorMessage = responseData['message'];
-        print(errorMessage);
+        if (kDebugMode) debugPrint(errorMessage);
         throw errorMessage;
       }
     } catch (e) {
-      print(e);
+      if (kDebugMode) debugPrint(e.toString());
       throw e;
     }
   }
@@ -65,11 +66,11 @@ class AdvanceSalaryRepository {
         return AdavanceSalaryCreateResponse.fromJson(responseData);
       } else {
         var errorMessage = responseData['message'];
-        print(errorMessage);
+        if (kDebugMode) debugPrint(errorMessage);
         throw errorMessage;
       }
     } catch (e) {
-      print(e);
+      if (kDebugMode) debugPrint(e.toString());
       throw e;
     }
   }
@@ -100,7 +101,7 @@ class AdvanceSalaryRepository {
         return AdavanceSalaryCreateResponse.fromJson(responseData);
       } else {
         var errorMessage = responseData['message'];
-        print(errorMessage);
+        if (kDebugMode) debugPrint(errorMessage);
         throw errorMessage;
       }
     } catch (e) {
@@ -130,7 +131,7 @@ class AdvanceSalaryRepository {
         return advancesalarydetailresponse.fromJson(responseData);
       } else {
         var errorMessage = responseData['message'];
-        print(errorMessage);
+        if (kDebugMode) debugPrint(errorMessage);
         throw errorMessage;
       }
     } catch (e) {

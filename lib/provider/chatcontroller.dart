@@ -11,9 +11,9 @@ import 'package:cnattendance/services/voice_recorder_service.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:cnattendance/utils/chat_background_store.dart';
 import 'package:cnattendance/utils/chat/direct_conversation_id.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:http_interceptor_plus/http_interceptor_plus.dart';
@@ -87,9 +87,6 @@ class ChatController extends GetxController {
   Future<void> sendMessage(String message) async {
     if (!await _allowsChatFunction('send_employee_chat')) return;
     try {
-      var fcm = await FirebaseMessaging.instance.getToken();
-      print(fcm);
-
       final senderUsername = await pref.getUsername();
       final senderName = await _senderDisplayName(senderUsername);
 
@@ -422,7 +419,6 @@ class ChatController extends GetxController {
           }
         }
 
-        print("triiger");
         final chatDb = <Chat>[];
         for (var item in event.docs) {
           Timestamp firebaseTimestamp = item["date"];
@@ -451,7 +447,9 @@ class ChatController extends GetxController {
           );
         });
       },
-      onError: (error) => print("Listen failed: $error"),
+      onError: (error) {
+        if (kDebugMode) debugPrint("Listen failed: $error");
+      },
     );
   }
 
@@ -560,7 +558,7 @@ class ChatController extends GetxController {
 
     if (response.statusCode != 200 &&
         _isReservedMessageTypeError(responseMessage)) {
-      print("Push retry without reserved message_type: $responseMessage");
+      if (kDebugMode) debugPrint("Push retry without reserved message_type: $responseMessage");
       final retryBody = Map<String, String>.from(body)
         ..remove("message_type")
         ..["chat_message_type"] = messageType;
@@ -570,12 +568,11 @@ class ChatController extends GetxController {
     }
 
     if (response.statusCode == 200) {
-      print(response.body.toString());
     } else if (_isMissingRegistrationTokenError(responseMessage)) {
-      print("Push skipped: $responseMessage");
+      if (kDebugMode) debugPrint("Push skipped: $responseMessage");
     } else {
       var errorMessage = responseData['message'];
-      print(errorMessage);
+      if (kDebugMode) debugPrint(errorMessage);
       throw errorMessage;
     }
   }

@@ -6,11 +6,9 @@ import 'package:cnattendance/services/attendance_sync_service.dart';
 import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/utils/wifiinfo.dart';
 import 'package:cnattendance/widget/customalertdialog.dart';
-import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_translate/flutter_translate.dart';
-import 'package:hexcolor/hexcolor.dart';
 import 'package:provider/provider.dart';
 import 'package:cnattendance/widget/buttonborder.dart';
 
@@ -237,10 +235,8 @@ class AttendanceBottomSheetState extends State<AttedanceBottomSheet> {
   Widget build(BuildContext context) {
     final provider = Provider.of<DashboardProvider>(context, listen: false);
     final enterprise = EnterpriseTheme.of(context);
-    return WillPopScope(
-      onWillPop: () async {
-        return !isLoading;
-      },
+    return PopScope(
+      canPop: !isLoading,
       child: Container(
         decoration: BoxDecoration(
           color: enterprise.cardBackground,

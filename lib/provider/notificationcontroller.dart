@@ -12,6 +12,7 @@ import 'package:cnattendance/core/ky_security/ky_http.dart';
 import 'package:cnattendance/model/notification.dart' as Not;
 import 'package:intl/intl.dart';
 import 'package:nepali_date_picker/nepali_date_picker.dart';
+import 'package:flutter/foundation.dart';
 
 class NotificationController extends GetxController {
   static int per_page = 10;
@@ -135,7 +136,7 @@ class NotificationController extends GetxController {
       for (final item in data) {
         final tempDate = _parseNotificationDate(item.notificationPublishedDate);
         final nepaliDate = tempDate.toNepaliDateTime();
-        print(nepaliDate);
+        if (kDebugMode) debugPrint(nepaliDate.toString());
 
         _addNotificationIfMissing(
           Not.Notification(

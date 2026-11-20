@@ -1,4 +1,3 @@
-import 'dart:io';
 
 import 'package:cnattendance/data/source/network/model/trainingresponse/trainingresponse.dart';
 import 'package:cnattendance/repositories/trainingrepository.dart';
@@ -27,9 +26,7 @@ class TrainingDetailController extends GetxController {
   }
 
   Future<void> saveFileLocally(String url) async {
-    Directory? directory = await getApplicationDocumentsDirectory();
-    String path = directory.path;
-    print(path);
+    await getApplicationDocumentsDirectory();
   }
 
   Future<void> getTrainings(bool isUpcoming) async {

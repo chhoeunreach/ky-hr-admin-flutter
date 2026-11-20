@@ -19,6 +19,7 @@ import 'package:cnattendance/core/ky_security/ky_http.dart';
 import 'package:intl/intl.dart';
 import 'package:nepali_date_picker/nepali_date_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/foundation.dart';
 
 class GeneralScreen extends StatefulWidget {
   @override
@@ -59,7 +60,7 @@ class _GeneralScreenState extends State<GeneralScreen> {
           settings = payload['data'] as Map;
         }
       }
-    } catch (_) {}
+    } catch (error) { if (kDebugMode) debugPrint('General: failed to load legacy update settings: $error'); }
     if (mounted) setState(() => _legacyUpdateSettings = settings);
   }
 
@@ -75,7 +76,7 @@ class _GeneralScreenState extends State<GeneralScreen> {
   Future<void> _openDownload(Uri uri) async {
     try {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } catch (_) {}
+    } catch (error) { if (kDebugMode) debugPrint('General: failed to launch external URL: $error'); }
   }
 
   Future<void> _loadFullDescription(
@@ -194,7 +195,7 @@ class _GeneralScreenState extends State<GeneralScreen> {
         final outputFormat = DateFormat('MM-dd-yyyy');
         outputDate.value = outputFormat.format(tempDate);
         checkAd(tempDate);
-      } catch (_) {}
+      } catch (error) { if (kDebugMode) debugPrint('General: failed to parse notice date: $error'); }
     }
 
     return Scaffold(

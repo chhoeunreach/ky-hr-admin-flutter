@@ -12,6 +12,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:cnattendance/core/ky_security/ky_http.dart';
 import 'package:cnattendance/core/ky_security/ky_security_manager.dart';
 import 'package:cnattendance/core/ky_security/ky_pairing_message.dart';
+import 'package:flutter/foundation.dart';
 
 class Auth with ChangeNotifier {
   String appUrl = "";
@@ -97,7 +98,7 @@ class Auth with ChangeNotifier {
           body['latitude'] = position.latitude.toString();
           body['longitude'] = position.longitude.toString();
         }
-      } catch (_) {}
+      } catch (error) { if (kDebugMode) debugPrint('Login: failed to resolve device location: $error'); }
 
       // Resolve immediately before sending credentials so an unavailable primary
       // does not prevent login through the company's configured backup.

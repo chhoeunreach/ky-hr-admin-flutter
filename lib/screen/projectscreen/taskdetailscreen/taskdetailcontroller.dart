@@ -17,6 +17,7 @@ import 'package:nepali_date_picker/nepali_date_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../model/attachment.dart';
+import 'package:flutter/foundation.dart';
 
 class TaskDetailController extends GetxController {
   var taskDetail =
@@ -108,11 +109,11 @@ class TaskDetailController extends GetxController {
         return taskResponse;
       } else {
         var errorMessage = responseData['message'];
-        print(errorMessage);
+        if (kDebugMode) debugPrint(errorMessage);
         throw errorMessage;
       }
     } catch (e) {
-      print(e);
+      if (kDebugMode) debugPrint(e.toString());
       throw e;
     }
   }
@@ -151,11 +152,11 @@ class TaskDetailController extends GetxController {
         return true;
       } else {
         var errorMessage = responseData['message'];
-        print(errorMessage);
+        if (kDebugMode) debugPrint(errorMessage);
         return false;
       }
     } catch (e) {
-      print(e);
+      if (kDebugMode) debugPrint(e.toString());
       return false;
     }
   }
@@ -194,11 +195,11 @@ class TaskDetailController extends GetxController {
         return true;
       } else {
         var errorMessage = responseData['message'];
-        print(errorMessage);
+        if (kDebugMode) debugPrint(errorMessage);
         return false;
       }
     } catch (e) {
-      print(e);
+      if (kDebugMode) debugPrint(e.toString());
       return false;
     }
   }

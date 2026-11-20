@@ -1,4 +1,5 @@
 import 'package:cnattendance/utils/app_update_payload.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:hexcolor/hexcolor.dart';
@@ -28,7 +29,7 @@ class AppUpdateDialog extends StatelessWidget {
     try {
       await launchUrl(appUpdateDownloadUri(downloadUrl),
           mode: LaunchMode.externalApplication);
-    } catch (_) {}
+    } catch (error) { if (kDebugMode) debugPrint('App update: failed to open download URL: $error'); }
   }
 
   @override

@@ -1,6 +1,7 @@
 import 'package:cnattendance/data/source/network/model/asssetlistresponse/assetlistresponse.dart';
 import 'package:cnattendance/repositories/assetrepository.dart';
 import 'package:get/get.dart';
+import 'package:flutter/foundation.dart';
 
 class AssetController extends GetxController {
   final repository = AssetRepository();
@@ -18,7 +19,7 @@ class AssetController extends GetxController {
       final response = await repository.getAssets(1);
       assets.value = response.data;
     } catch (e) {
-      print(e.toString());
+      if (kDebugMode) debugPrint(e.toString());
     }
   }
 

@@ -73,7 +73,7 @@ class AssetBottomSheetState extends State<AssetBottomSheet> {
                   ),
                   Spacer(),
                   Switch(
-                    activeColor: Colors.blue,
+                    activeThumbColor: Colors.blue,
                     value: isWorking,
                     onChanged: (value) {
                       setState(() {

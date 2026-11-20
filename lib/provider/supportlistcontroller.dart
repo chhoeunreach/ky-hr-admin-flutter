@@ -12,6 +12,7 @@ import 'package:get/get.dart';
 import 'package:cnattendance/core/ky_security/ky_http.dart';
 import 'package:intl/intl.dart';
 import 'package:nepali_date_picker/nepali_date_picker.dart';
+import 'package:flutter/foundation.dart';
 
 class SupportListController extends GetxController {
   var supportList = <Support>[].obs;
@@ -39,7 +40,6 @@ class SupportListController extends GetxController {
       EasyLoading.dismiss(animation: true);
 
       final responseData = json.decode(response.body);
-      print(responseData);
 
       if (response.statusCode == 200) {
         final supportResponse = supportlistresponse.fromJson(responseData);
@@ -77,7 +77,7 @@ class SupportListController extends GetxController {
       }
     } catch (e) {
       EasyLoading.dismiss(animation: true);
-      print(e.toString());
+      if (kDebugMode) debugPrint(e.toString());
       throw unknownError(e);
     }
   }

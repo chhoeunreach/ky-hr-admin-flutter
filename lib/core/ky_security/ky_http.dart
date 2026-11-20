@@ -5,6 +5,7 @@ import 'package:cnattendance/core/ky_security/ky_security_manager.dart';
 import 'package:crypto/crypto.dart';
 import 'package:cnattendance/core/ky_security/ky_certificate_pinning.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 
 /// Drop-in top-level HTTP helpers for authenticated, buffered API calls.
 /// Multipart streaming must use a separate streaming-signing implementation.
@@ -175,7 +176,7 @@ class KyHttp {
         if (await temporaryDirectory.exists()) {
           await temporaryDirectory.delete(recursive: true);
         }
-      } catch (_) {}
+      } catch (error) { if (kDebugMode) debugPrint('KyHttp: failed to clean up temp request files: $error'); }
     }
   }
 

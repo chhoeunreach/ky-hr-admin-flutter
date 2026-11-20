@@ -5,6 +5,7 @@ import 'package:cnattendance/screen/advancesalary/admin/admin_create_advancesala
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
+import 'package:flutter/foundation.dart';
 
 class AdminAdvanceSalaryController extends GetxController {
   final salaryList = <AdvanceSalary>[].obs;
@@ -43,7 +44,7 @@ class AdminAdvanceSalaryController extends GetxController {
       salaryList.value = list;
     } catch (e) {
       EasyLoading.dismiss(animation: true);
-      print(e.toString());
+      if (kDebugMode) debugPrint(e.toString());
     } finally {
       isLoading.value = false;
     }

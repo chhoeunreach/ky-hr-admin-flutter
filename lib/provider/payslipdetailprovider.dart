@@ -7,6 +7,7 @@ import 'package:cnattendance/data/source/network/model/payslipdetail/payslipdeta
 import 'package:cnattendance/utils/constant.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:cnattendance/core/ky_security/ky_http.dart';
+import 'package:flutter/foundation.dart';
 
 class PaySlipDetailProvider with ChangeNotifier {
   String currency = "";
@@ -80,7 +81,6 @@ class PaySlipDetailProvider with ChangeNotifier {
 
       final responseData = json.decode(response.body);
       if (response.statusCode == 200) {
-        print(responseData.toString());
 
         final responseJson = PayslipDetailResponse.fromJson(responseData);
         currency = responseJson.data.currency;
@@ -138,7 +138,7 @@ class PaySlipDetailProvider with ChangeNotifier {
         throw errorMessage;
       }
     } catch (error) {
-      print(error.toString());
+      if (kDebugMode) debugPrint(error.toString());
       throw unknownError(error);
     }
   }

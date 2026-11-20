@@ -13,6 +13,7 @@ import 'package:toggle_switch/toggle_switch.dart';
 import 'package:cnattendance/provider/profileprovider.dart';
 import 'package:hexcolor/hexcolor.dart';
 import 'package:nepali_date_picker/nepali_date_picker.dart' as picker;
+import 'package:flutter/foundation.dart';
 
 class EditProfileScreen extends StatefulWidget {
   static const String routeName = '/editprofile';
@@ -166,10 +167,8 @@ class EditProfileScreenState extends State<EditProfileScreen> {
   Widget build(BuildContext context) {
     final provider = Provider.of<ProfileProvider>(context);
     final profile = Provider.of<ProfileProvider>(context).profile;
-    return WillPopScope(
-      onWillPop: () async {
-        return !isLoading;
-      },
+    return PopScope(
+      canPop: !isLoading,
       child: Container(
         decoration: RadialDecoration(),
         child: Scaffold(
@@ -219,7 +218,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
                             await provider.updateProfile(
                                 '', '', '', '', '', '', File(image.path));
                           } catch (e) {
-                            print(e);
+                            if (kDebugMode) debugPrint(e.toString());
                           }
                           setState(() {
                             isLoading = false;
@@ -513,9 +512,6 @@ class EditProfileScreenState extends State<EditProfileScreen> {
                               );
 
                         if (pickedDate != null) {
-                          print(
-                              pickedDate); //pickedDate output format => 2021-03-10 00:00:00.000
-
                           if (!(await provider.isAd())) {
                             String formattedDate =
                                 NepaliDateFormat('yyyy-MM-dd')

@@ -15,6 +15,7 @@ import 'package:html/parser.dart';
 import 'package:http/http.dart' as http;
 import 'package:cnattendance/core/ky_security/ky_http.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/foundation.dart';
 
 class EditTadaController extends GetxController {
   var fileList = <PlatformFile>[].obs;
@@ -87,11 +88,11 @@ class EditTadaController extends GetxController {
         return "Loaded";
       } else {
         var errorMessage = responseData['message'];
-        print(errorMessage);
+        if (kDebugMode) debugPrint(errorMessage);
         throw errorMessage;
       }
     } catch (e) {
-      print(e);
+      if (kDebugMode) debugPrint(e.toString());
       showToast(e.toString());
       throw e;
     }
@@ -150,7 +151,7 @@ class EditTadaController extends GetxController {
         return "Loaded";
       } else {
         var errorMessage = responseData['message'];
-        print(errorMessage);
+        if (kDebugMode) debugPrint(errorMessage);
         throw errorMessage;
       }
     }catch(e){
@@ -195,11 +196,11 @@ class EditTadaController extends GetxController {
       } else {
         EasyLoading.dismiss(animation: true);
         var errorMessage = responseData['message'];
-        print(errorMessage);
+        if (kDebugMode) debugPrint(errorMessage);
         throw errorMessage;
       }
     } catch (e) {
-      print(e);
+      if (kDebugMode) debugPrint(e.toString());
       throw e;
     }
   }

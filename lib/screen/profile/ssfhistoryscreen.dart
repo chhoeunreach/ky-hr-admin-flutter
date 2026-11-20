@@ -93,7 +93,6 @@ class SsfHistoryScreenState extends State<SsfHistoryScreen> {
                                               value: selectedYear,
                                               onChanged: (value) {
                                                 setState(() {
-                                                  print(value);
                                                   context
                                                           .read<SSFProvider>()
                                                           .selectedYear =

@@ -39,6 +39,7 @@ import 'package:hexcolor/hexcolor.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:nepali_date_picker/nepali_date_picker.dart';
+import 'package:flutter/foundation.dart';
 
 class DashboardProvider with ChangeNotifier {
   DashboardProvider({
@@ -249,7 +250,7 @@ class DashboardProvider with ChangeNotifier {
         headers['X-App-Version'] = appDetails.appVersion;
         headers['App-Version'] = appDetails.appVersion;
       }
-    } catch (_) {}
+    } catch (error) { if (kDebugMode) debugPrint('Dashboard: failed to read app version details: $error'); }
 
     final signedHeaders = await KySecurityManager.shared.authorizeRequest(
       method: 'GET', uri: uri, body: '', existingHeaders: headers,
@@ -811,7 +812,7 @@ class DashboardProvider with ChangeNotifier {
     int minGone = (min % 60).toInt();
     int hour = min ~/ 60;
 
-    print("$hour hr $minGone min");
+    if (kDebugMode) debugPrint("$hour hr $minGone min");
     return "$hour hr $minGone min";
   }
 

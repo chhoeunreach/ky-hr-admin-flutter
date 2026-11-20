@@ -11,6 +11,7 @@ import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter/foundation.dart';
 
 class CreateGroupScreen extends StatefulWidget {
   @override
@@ -76,7 +77,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
           }
         }
       }
-    } catch (_) {}
+    } catch (error) { if (kDebugMode) debugPrint('Create group: failed to load contacts: $error'); }
     setState(() => _loading = false);
   }
 

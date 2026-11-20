@@ -12,6 +12,7 @@ import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter/foundation.dart';
 
 class GroupInfoScreen extends StatefulWidget {
   final int groupId;
@@ -233,7 +234,7 @@ class _AddMembersDialogState extends State<AddMembersDialog> {
           }
         }
       }
-    } catch (_) {}
+    } catch (error) { if (kDebugMode) debugPrint('Group info: failed to load contacts: $error'); }
     setState(() => _loading = false);
   }
 

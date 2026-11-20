@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:nepali_date_picker/nepali_date_picker.dart';
+import 'package:flutter/foundation.dart';
 
 class ProjectListScreenController extends GetxController {
   final projectList = <Project>[].obs;
@@ -83,11 +84,11 @@ class ProjectListScreenController extends GetxController {
         return "loaded";
       } else {
         var errorMessage = responseData['message'];
-        print(errorMessage);
+        if (kDebugMode) debugPrint(errorMessage);
         throw errorMessage;
       }
     } catch (e) {
-      print(e);
+      if (kDebugMode) debugPrint(e.toString());
       throw e;
     }
   }

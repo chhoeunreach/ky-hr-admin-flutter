@@ -75,8 +75,6 @@ class ComplaintRepository {
     Map<String, String> headers = {'Authorization': 'Bearer $token'};
 
     try {
-      print(userResponse);
-      print(id);
       final response = await Connect().postResponse(
           "${Constant.COMPLAINT_RESPONSE_URL}$id",
           headers,

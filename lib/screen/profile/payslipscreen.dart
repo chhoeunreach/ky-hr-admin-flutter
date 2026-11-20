@@ -75,7 +75,7 @@ class PaySlipScreenState extends State<PaySlipScreen> {
                       ),
                       Spacer(),
                       Switch(
-                        activeColor: Colors.blueAccent,
+                        activeThumbColor: Colors.blueAccent,
                         padding: EdgeInsets.zero,
                         value: showAll,
                         onChanged: (value) {
@@ -133,7 +133,6 @@ class PaySlipScreenState extends State<PaySlipScreen> {
                                             value: selectedYear,
                                             onChanged: (value) {
                                               setState(() {
-                                                print(value);
                                                 context
                                                         .read<PaySlipProvider>()
                                                         .selectedYear =
@@ -226,12 +225,11 @@ class PaySlipScreenState extends State<PaySlipScreen> {
                                                 .toList(),
                                             value: month[selectedMonth],
                                             onChanged: (value) {
-                                              print((value as Month).index);
                                               setState(() {
                                                 context
                                                         .read<PaySlipProvider>()
                                                         .selectedMonth =
-                                                    (value).index;
+                                                    (value!).index;
                                               });
                                             },
                                             iconStyleData: IconStyleData(

@@ -30,6 +30,7 @@ import 'package:cnattendance/widget/headerprofile.dart';
 import 'package:cnattendance/widget/homescreen/myteam.dart';
 import 'package:cnattendance/widget/homescreen/weeklyreportchart.dart';
 import 'package:quick_actions/quick_actions.dart';
+import 'package:flutter/foundation.dart';
 
 class HomeScreen extends StatefulWidget {
   final PersistentTabController controller;
@@ -101,7 +102,7 @@ class HomeScreenState extends State<HomeScreen> {
       location.update('latitude', (value) => position.latitude);
       location.update('longitude', (value) => position.longitude);
     } catch (e) {
-      print(e);
+      if (kDebugMode) debugPrint(e.toString());
       showToast(e.toString());
     }
   }
@@ -145,7 +146,7 @@ class HomeScreenState extends State<HomeScreen> {
           });
         }
       } catch (e) {
-        print(e);
+        if (kDebugMode) debugPrint(e.toString());
         final message = e.toString();
         final extra =
             await provider.buildWorkspaceDistanceInfoIfNeeded(message);
@@ -207,7 +208,7 @@ class HomeScreenState extends State<HomeScreen> {
           });
         }
       } catch (e) {
-        print(e);
+        if (kDebugMode) debugPrint(e.toString());
         final message = e.toString();
         final extra =
             await provider.buildWorkspaceDistanceInfoIfNeeded(message);

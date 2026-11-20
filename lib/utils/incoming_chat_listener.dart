@@ -77,7 +77,6 @@ class IncomingChatListener {
           );
         }
 
-        print('Incoming chat toast: $sender -> $message');
 
         showToast(
           message.isEmpty ? sender : '$sender\n$message',

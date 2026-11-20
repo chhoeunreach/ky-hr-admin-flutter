@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:nepali_date_picker/nepali_date_picker.dart';
+import 'package:flutter/foundation.dart';
 
 class ProjectDashboardController extends GetxController {
   var overview = {
@@ -118,7 +119,7 @@ class ProjectDashboardController extends GetxController {
       return "Loaded";
     } else {
       var errorMessage = responseData['message'];
-      print(errorMessage);
+      if (kDebugMode) debugPrint(errorMessage);
       throw errorMessage;
     }
   }

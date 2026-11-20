@@ -13,6 +13,7 @@ import 'package:cnattendance/services/server_configuration.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart';
 
 class Preferences with ChangeNotifier {
   Preferences({ServerUrlResolver? serverUrlResolver})
@@ -582,7 +583,7 @@ class Preferences with ChangeNotifier {
       if (decoded is Map<String, dynamic>) {
         return QuoteStyle.fromJson(decoded);
       }
-    } catch (_) {}
+    } catch (error) { if (kDebugMode) debugPrint('Preferences: failed to parse saved quote style: $error'); }
     return null;
   }
 

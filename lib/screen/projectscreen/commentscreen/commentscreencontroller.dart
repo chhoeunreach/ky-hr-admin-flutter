@@ -17,6 +17,7 @@ import 'package:flutter_mentions/flutter_mentions.dart' as FM;
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
 import 'package:cnattendance/core/ky_security/ky_http.dart';
+import 'package:flutter/foundation.dart';
 
 class CommentScreenController extends GetxController {
   TextEditingController commentEdit = new TextEditingController();
@@ -132,7 +133,7 @@ class CommentScreenController extends GetxController {
       scrollController.jumpTo(position);
     } else {
       var errorMessage = responseData['message'];
-      print(errorMessage);
+      if (kDebugMode) debugPrint(errorMessage);
       throw errorMessage;
     }
   }
@@ -250,7 +251,7 @@ class CommentScreenController extends GetxController {
       commentList.refresh();
     } else {
       var errorMessage = responseData['message'];
-      print(errorMessage);
+      if (kDebugMode) debugPrint(errorMessage);
       throw errorMessage;
     }
   }
@@ -288,7 +289,7 @@ class CommentScreenController extends GetxController {
       getComments();
     } else {
       var errorMessage = responseData['message'];
-      print(errorMessage);
+      if (kDebugMode) debugPrint(errorMessage);
       throw errorMessage;
     }
   }
@@ -317,7 +318,7 @@ class CommentScreenController extends GetxController {
       getComments();
     } else {
       var errorMessage = responseData['message'];
-      print(errorMessage);
+      if (kDebugMode) debugPrint(errorMessage);
       throw errorMessage;
     }
   }

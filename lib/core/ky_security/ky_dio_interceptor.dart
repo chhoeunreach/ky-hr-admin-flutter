@@ -6,6 +6,7 @@ import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 
 import 'ky_security_manager.dart';
+import 'package:flutter/foundation.dart';
 
 /// Adds signed device-session headers to Dio requests. FormData is cloned,
 /// serialized to temporary disk storage, and hashed before its exact bytes are
@@ -110,6 +111,6 @@ class KyDioSecurityInterceptor extends Interceptor {
     try {
       final directory = Directory(path);
       if (await directory.exists()) await directory.delete(recursive: true);
-    } catch (_) {}
+    } catch (error) { if (kDebugMode) debugPrint('KyDioInterceptor: failed to delete temp directory: $error'); }
   }
 }

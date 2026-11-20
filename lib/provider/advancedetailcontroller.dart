@@ -5,6 +5,7 @@ import 'package:cnattendance/utils/constant.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
+import 'package:flutter/foundation.dart';
 
 class AdvanceDetailController extends GetxController {
   var advanceSalary = AdvanceSalary(0, "", "", "", "", false, "", "", "","","").obs;
@@ -38,7 +39,7 @@ class AdvanceDetailController extends GetxController {
 
       advanceSalary.value = salary;
     } catch (e) {
-      print(e.toString());
+      if (kDebugMode) debugPrint(e.toString());
       EasyLoading.dismiss(animation: true);
       Get.back();
     }

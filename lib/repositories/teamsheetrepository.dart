@@ -32,7 +32,6 @@ class TeamSheetRepository{
 
     try {
       final response = await Connect().getResponse(Constant.TEAM_SHEET_URL, headers);
-      print(response.body);
 
       final responseData = json.decode(response.body);
       if (response.statusCode == 200) {

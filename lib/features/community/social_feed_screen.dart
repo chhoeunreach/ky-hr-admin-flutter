@@ -25,6 +25,7 @@ import 'feed_cache.dart';
 import 'feed_performance.dart';
 import 'mention_directory.dart';
 import 'mention_field.dart';
+import 'package:flutter/foundation.dart';
 
 extension _CommunityTheme on BuildContext {
   ColorScheme get _communityColors => Theme.of(this).colorScheme;
@@ -4407,7 +4408,7 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
                 department.isNotEmpty ? department : communityText('Employee'),
           });
       await _restoreDraft();
-    } catch (_) {}
+    } catch (error) { if (kDebugMode) debugPrint('Social feed: failed to restore draft: $error'); }
   }
 
   String get _draftKey => 'social_feed_draft_${widget.post?['id'] ?? 'new'}';

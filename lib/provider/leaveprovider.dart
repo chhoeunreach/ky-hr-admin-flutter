@@ -13,6 +13,7 @@ import 'package:cnattendance/utils/constant.dart';
 import 'package:flutter/material.dart';
 import 'package:cnattendance/core/ky_security/ky_http.dart';
 import 'package:cnattendance/data/source/datastore/preferences.dart';
+import 'package:flutter/foundation.dart';
 
 class LeaveProvider with ChangeNotifier {
   final List<Leave> _leaveList = [];
@@ -147,11 +148,11 @@ class LeaveProvider with ChangeNotifier {
         return responseJson;
       } else {
         var errorMessage = responseData['message'];
-        print(errorMessage.toString());
+        if (kDebugMode) debugPrint(errorMessage.toString());
         throw errorMessage;
       }
     } catch (error) {
-      print(error.toString());
+      if (kDebugMode) debugPrint(error.toString());
       throw unknownError(error);
     }
   }
@@ -267,7 +268,6 @@ class LeaveProvider with ChangeNotifier {
         'reason': reason,
       });
 
-      print(response.body);
       final responseData = json.decode(response.body);
 
       if (response.statusCode == 200) {
@@ -299,7 +299,6 @@ class LeaveProvider with ChangeNotifier {
     try {
       final response = await KyHttp.get(uri, headers: headers);
 
-      print(response.body);
       final responseData = json.decode(response.body);
 
       if (response.statusCode == 200) {

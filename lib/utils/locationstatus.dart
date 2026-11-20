@@ -1,4 +1,5 @@
 import 'package:geolocator/geolocator.dart';
+import 'package:flutter/foundation.dart';
 
 class LocationStatus {
   Future<Position> determinePosition(String workspace,
@@ -76,7 +77,7 @@ class LocationStatus {
       return await Geolocator.getCurrentPosition(
           locationSettings: locationSettings);
     } catch (e) {
-      print(e.toString());
+      if (kDebugMode) debugPrint(e.toString());
       return Future.error('Location can not be found');
     }
   }

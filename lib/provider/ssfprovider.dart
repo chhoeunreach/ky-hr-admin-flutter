@@ -6,6 +6,7 @@ import 'package:cnattendance/utils/constant.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:nepali_date_picker/nepali_date_picker.dart';
 import 'package:cnattendance/core/ky_security/ky_http.dart';
+import 'package:flutter/foundation.dart';
 
 class SSFProvider with ChangeNotifier {
   bool isAD = true;
@@ -65,7 +66,6 @@ class SSFProvider with ChangeNotifier {
 
       final responseData = json.decode(response.body);
       if (response.statusCode == 200) {
-        print(responseData.toString());
 
         final responseJson = SsfListResponse.fromJson(responseData);
         currency = responseJson.data.currency;
@@ -76,7 +76,7 @@ class SSFProvider with ChangeNotifier {
         throw errorMessage;
       }
     } catch (error) {
-      print(error.toString());
+      if (kDebugMode) debugPrint(error.toString());
       throw unknownError(error);
     }
   }

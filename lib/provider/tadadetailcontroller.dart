@@ -7,6 +7,7 @@ import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:nepali_date_picker/nepali_date_picker.dart';
+import 'package:flutter/foundation.dart';
 
 class TadaDetailController extends GetxController {
   var tada = Tada(0, "", "", "", "", "", "", "", []).obs;
@@ -56,7 +57,7 @@ class TadaDetailController extends GetxController {
       isLoading.value = false;
       return "Loaded";
     } catch (e) {
-      print(e);
+      if (kDebugMode) debugPrint(e.toString());
       throw e;
     }
   }

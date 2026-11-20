@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hexcolor/hexcolor.dart';
 import 'package:in_app_notification/in_app_notification.dart';
+import 'package:flutter/foundation.dart';
 
 class NavigationService {
   static GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -34,7 +35,7 @@ class NavigationService {
         context: NavigationService.navigatorKey.currentState!.context,
       );
     } catch (e) {
-      print(e);
+      if (kDebugMode) debugPrint(e.toString());
     }
   }
 }

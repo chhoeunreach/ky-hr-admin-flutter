@@ -421,7 +421,6 @@ class TrainingDetailScreen extends StatelessWidget {
                               if (value) {
                                 model.saveFileLocally(training.certificate);
                               }
-                              print(value);
                             },
                             child: Icon(
                               Icons.download,

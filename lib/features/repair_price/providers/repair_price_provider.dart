@@ -227,7 +227,7 @@ class RepairPriceProvider extends ChangeNotifier {
         brandId: _selectedBrandId,
         deviceTypeId: _selectedDeviceTypeId,
       );
-    } catch (_) {}
+    } catch (error) { if (kDebugMode) debugPrint('Repair: failed to reload series: $error'); }
     loadDevices();
   }
 
@@ -311,7 +311,7 @@ class RepairPriceProvider extends ChangeNotifier {
       notifyListeners();
       return created;
     } catch (e) {
-      if (kDebugMode) print('addBrand error: $e');
+      if (kDebugMode) debugPrint('addBrand error: $e');
       _brands.insert(0, brand);
       notifyListeners();
       return brand;
@@ -326,7 +326,7 @@ class RepairPriceProvider extends ChangeNotifier {
       notifyListeners();
       return created;
     } catch (e) {
-      if (kDebugMode) print('addDeviceType error: $e');
+      if (kDebugMode) debugPrint('addDeviceType error: $e');
       _deviceTypes.add(type);
       notifyListeners();
       return type;
@@ -343,7 +343,7 @@ class RepairPriceProvider extends ChangeNotifier {
       }
       return true;
     } catch (e) {
-      if (kDebugMode) print('updateBrand error: $e');
+      if (kDebugMode) debugPrint('updateBrand error: $e');
       return false;
     }
   }
@@ -352,7 +352,7 @@ class RepairPriceProvider extends ChangeNotifier {
     try {
       await _repository.deleteBrand(brandId);
     } catch (e) {
-      if (kDebugMode) print('deleteBrand error: $e');
+      if (kDebugMode) debugPrint('deleteBrand error: $e');
       return false;
     }
     _brands = _brands.where((b) => b.id != brandId).toList();
@@ -374,7 +374,7 @@ class RepairPriceProvider extends ChangeNotifier {
         d.name.trim().toLowerCase() == device.name.trim().toLowerCase());
     if (isDuplicate) {
       if (kDebugMode) {
-        print('addDevice error: Duplicate device model name for this brand');
+        if (kDebugMode) debugPrint('addDevice error: Duplicate device model name for this brand');
       }
       return false;
     }
@@ -395,7 +395,7 @@ class RepairPriceProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      if (kDebugMode) print('addDevice error: ');
+      if (kDebugMode) debugPrint('addDevice error: ');
       return false;
     }
   }
@@ -409,7 +409,7 @@ class RepairPriceProvider extends ChangeNotifier {
         d.name.trim().toLowerCase() == device.name.trim().toLowerCase());
     if (isDuplicate) {
       if (kDebugMode) {
-        print('updateDevice error: Duplicate device model name for this brand');
+        if (kDebugMode) debugPrint('updateDevice error: Duplicate device model name for this brand');
       }
       return false;
     }
@@ -434,7 +434,7 @@ class RepairPriceProvider extends ChangeNotifier {
       }
       return true;
     } catch (e) {
-      if (kDebugMode) print('updateDevice error: ');
+      if (kDebugMode) debugPrint('updateDevice error: ');
       return false;
     }
   }
@@ -444,7 +444,7 @@ class RepairPriceProvider extends ChangeNotifier {
     try {
       await _repository.deleteDevice(deviceId);
     } catch (e) {
-      if (kDebugMode) print('deleteDevice error: $e');
+      if (kDebugMode) debugPrint('deleteDevice error: $e');
       return false;
     }
     _devices = _devices.where((d) => d.id != deviceId).toList();
@@ -466,7 +466,7 @@ class RepairPriceProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      if (kDebugMode) print('addCategory error: $e');
+      if (kDebugMode) debugPrint('addCategory error: $e');
       return false;
     }
   }
@@ -482,7 +482,7 @@ class RepairPriceProvider extends ChangeNotifier {
       }
       return true;
     } catch (e) {
-      if (kDebugMode) print('updateCategory error: $e');
+      if (kDebugMode) debugPrint('updateCategory error: $e');
       return false;
     }
   }
@@ -491,7 +491,7 @@ class RepairPriceProvider extends ChangeNotifier {
     try {
       await _repository.deleteCategory(categoryId);
     } catch (e) {
-      if (kDebugMode) print('deleteCategory error: $e');
+      if (kDebugMode) debugPrint('deleteCategory error: $e');
       return false;
     }
     _categories = _categories.where((c) => c.id != categoryId).toList();

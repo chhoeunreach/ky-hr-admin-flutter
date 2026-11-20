@@ -43,7 +43,7 @@ class SecurityCheckState extends State<SecurityCheck> {
 
                     },
                     activeTrackColor: Colors.blueAccent,
-                    activeColor: Colors.lightBlue,
+                    activeThumbColor: Colors.lightBlue,
                   ),
                   selected: true,
                 ),

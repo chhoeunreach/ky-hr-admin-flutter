@@ -90,7 +90,6 @@ class PushNotificationService {
     details.forEach((key, value) {
       buffer.write(' | $key=$value');
     });
-    print(buffer.toString());
   }
 
   static String _authorizationStatusLabel(AuthorizationStatus status) {

@@ -4,11 +4,9 @@ import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/utils/navigationservice.dart';
 import 'package:cnattendance/widget/buttonborder.dart';
 import 'package:cnattendance/widget/customalertdialog.dart';
-import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
-import 'package:hexcolor/hexcolor.dart';
 import 'package:intl/intl.dart';
 import 'package:nepali_date_picker/nepali_date_picker.dart' as picker;
 import 'package:nepali_date_picker/nepali_date_picker.dart';
@@ -105,10 +103,8 @@ class IssueLeaveSheetState extends State<IssueLeaveSheet> {
   Widget build(BuildContext context) {
     final provider = Provider.of<LeaveProvider>(context);
     final enterprise = EnterpriseTheme.of(context);
-    return WillPopScope(
-      onWillPop: () async {
-        return !isLoading;
-      },
+    return PopScope(
+      canPop: !isLoading,
       child: Container(
         decoration: BoxDecoration(
           color: enterprise.cardBackground,
@@ -339,9 +335,6 @@ class IssueLeaveSheetState extends State<IssueLeaveSheet> {
                         );
 
                   if (pickedDate != null) {
-                    print(
-                        pickedDate); //pickedDate output format => 2021-03-10 00:00:00.000
-
                     if (!(await provider.isAd())) {
                       String formattedDate =
                           NepaliDateFormat('yyyy-MM-dd hh:mm:ss')

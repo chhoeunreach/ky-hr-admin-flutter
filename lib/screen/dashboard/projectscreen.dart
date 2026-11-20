@@ -417,7 +417,6 @@ class ProjectScreen extends StatelessWidget {
                     List<String> members = [];
                     for (var member in item.members) {
                       members.add(member.image);
-                      print(member.image);
                     }
 
                     return InkWell(

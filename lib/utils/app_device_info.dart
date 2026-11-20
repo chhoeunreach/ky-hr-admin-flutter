@@ -4,6 +4,7 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import 'deviceuuid.dart';
+import 'package:flutter/foundation.dart';
 
 class AppDeviceDetails {
   final String appName;
@@ -63,7 +64,7 @@ class AppDeviceInfo {
       if (packageInfo.buildNumber.trim().isNotEmpty) {
         appBuild = packageInfo.buildNumber.trim();
       }
-    } catch (_) {}
+    } catch (error) { if (kDebugMode) debugPrint('DeviceInfo: failed to read package info: $error'); }
 
     String deviceModel = 'Unknown Model';
     String osVersion = 'Unknown OS';
@@ -89,12 +90,12 @@ class AppDeviceInfo {
         osVersion = '${iosInfo.systemName} ${iosInfo.systemVersion}';
         deviceName = iosInfo.name.isNotEmpty ? iosInfo.name : deviceModel;
       }
-    } catch (_) {}
+    } catch (error) { if (kDebugMode) debugPrint('DeviceInfo: failed to read platform info: $error'); }
 
     String uuid = '';
     try {
       uuid = await DeviceUUid().getUniqueDeviceId();
-    } catch (_) {}
+    } catch (error) { if (kDebugMode) debugPrint('DeviceInfo: failed to read device uuid: $error'); }
 
     _cachedDetails = AppDeviceDetails(
       appName: appName,

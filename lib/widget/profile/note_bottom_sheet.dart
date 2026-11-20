@@ -12,6 +12,7 @@ import 'package:flutter_translate/flutter_translate.dart';
 import 'package:hexcolor/hexcolor.dart';
 import 'package:provider/provider.dart';
 import 'package:cnattendance/widget/buttonborder.dart';
+import 'package:flutter/foundation.dart';
 
 class NoteBottomSheet extends StatefulWidget {
   final String identifier;
@@ -119,10 +120,8 @@ class NoteBottomSheetState extends State<NoteBottomSheet> {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<DashboardProvider>(context, listen: false);
-    return WillPopScope(
-      onWillPop: () async {
-        return !isLoading;
-      },
+    return PopScope(
+      canPop: !isLoading,
       child: Container(
         decoration: RadialDecoration(),
         padding: EdgeInsets.only(
@@ -267,7 +266,7 @@ class NoteBottomSheetState extends State<NoteBottomSheet> {
                                   });
                                 }
                               } catch (e) {
-                                print(e);
+                                if (kDebugMode) debugPrint(e.toString());
                                 final message = e.toString();
                                 if (_isOfflineQueueableError(e)) {
                                   await _queueOfflineAttendance(

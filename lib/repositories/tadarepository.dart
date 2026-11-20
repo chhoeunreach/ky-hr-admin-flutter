@@ -11,6 +11,7 @@ import 'package:cnattendance/utils/constant.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 
 class TadaRepository {
   Future<TadaListResponse> getTadaList() async {
@@ -35,7 +36,7 @@ class TadaRepository {
         return tadaResponse;
       } else {
         var errorMessage = responseData['message'];
-        print(errorMessage);
+        if (kDebugMode) debugPrint(errorMessage);
         throw errorMessage;
       }
     } catch (e) {
@@ -65,7 +66,7 @@ class TadaRepository {
         return tadaResponse;
       } else {
         var errorMessage = responseData['message'];
-        print(errorMessage);
+        if (kDebugMode) debugPrint(errorMessage);
         throw errorMessage;
       }
     } catch (e) {
@@ -115,7 +116,7 @@ class TadaRepository {
       return tadaResponse;
     } else {
       var errorMessage = responseData['message'];
-      print(errorMessage);
+      if (kDebugMode) debugPrint(errorMessage);
       throw errorMessage;
     }
   }

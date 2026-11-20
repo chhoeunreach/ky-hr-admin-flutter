@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
+import 'package:flutter/foundation.dart';
 
 class CreateTadaController extends GetxController {
   var fileList = <PlatformFile>[].obs;
@@ -49,7 +50,7 @@ class CreateTadaController extends GetxController {
       return "Loaded";
     } else {
       var errorMessage = response.message;
-      print(errorMessage);
+      if (kDebugMode) debugPrint(errorMessage);
       throw errorMessage;
     }
   }

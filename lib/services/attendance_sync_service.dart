@@ -13,6 +13,7 @@ import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
+import 'package:flutter/foundation.dart';
 
 class QueuedAttendanceException implements Exception {
   final String message;
@@ -185,7 +186,7 @@ class AttendanceSyncService {
       if (await file.exists()) {
         await file.delete();
       }
-    } catch (_) {}
+    } catch (error) { if (kDebugMode) debugPrint('Attendance sync: failed to delete local file: $error'); }
   }
 
   String _messageFromResponse(String body) {
@@ -194,7 +195,7 @@ class AttendanceSyncService {
       if (decoded is Map && decoded['message'] != null) {
         return decoded['message'].toString();
       }
-    } catch (_) {}
+    } catch (error) { if (kDebugMode) debugPrint('Attendance sync: failed to parse error message: $error'); }
     return body.trim().isEmpty ? 'Attendance sync failed' : body;
   }
 }

@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
 import 'package:cnattendance/core/ky_security/ky_http.dart';
+import 'package:flutter/foundation.dart';
 
 class SupportController extends GetxController {
   final titleController = TextEditingController();
@@ -100,7 +101,6 @@ class SupportController extends GetxController {
       debugPrint(response.body.toString());
 
       final responseData = json.decode(response.body);
-      print(responseData);
 
       if (response.statusCode == 200) {
         final departmentResponse =
@@ -120,7 +120,7 @@ class SupportController extends GetxController {
       }
     } catch (e) {
       EasyLoading.dismiss(animation: true);
-      print(e.toString());
+      if (kDebugMode) debugPrint(e.toString());
       throw unknownError(e);
     }
   }

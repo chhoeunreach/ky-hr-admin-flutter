@@ -30,7 +30,6 @@ class ItemListBottom extends StatelessWidget{
                 showImageViewer(context, imageProvider,
                     swipeDismissible: true,
                     onViewerDismissed: () {
-                      print("dismissed");
                     });
               },
               child: Stack(children: [

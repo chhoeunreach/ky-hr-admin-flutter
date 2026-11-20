@@ -2,6 +2,7 @@ import 'package:cnattendance/data/source/network/model/warningresponse/warningre
 import 'package:cnattendance/repositories/warningrepository.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:get/get.dart';
+import 'package:flutter/foundation.dart';
 
 class WarningController extends GetxController {
   var warningList = <Warning>[].obs;
@@ -21,7 +22,7 @@ class WarningController extends GetxController {
         page++;
       }
     } catch (e) {
-      print(e.toString());
+      if (kDebugMode) debugPrint(e.toString());
       showToast(e.toString());
     }
   }

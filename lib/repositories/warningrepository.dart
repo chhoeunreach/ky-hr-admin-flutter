@@ -45,8 +45,6 @@ class WarningRepository {
     };
 
     try {
-      print(userResponse);
-      print(id);
       final response = await Connect().postResponse(
           "${Constant.WARNING_RESPONSE_URL}$id",
           headers,

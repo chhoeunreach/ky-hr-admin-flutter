@@ -7,21 +7,9 @@ import 'package:get_storage/get_storage.dart';
 import 'package:overlay_support/overlay_support.dart';
 
 class Constant {
-  static const production = "https://cnattendancev2.cyclonenepal.com/";
-  static const keonUrl = "https://digitalhr.bosathemes.com/";
-  static const staging = "https://attendance.cyclonenepal.com/";
-  static const localhost = "http://192.168.1.66:8000/";
-  static const codecanyon = "https://digitalhr.cyclonenepal.com/";
-
   static const appUrl = BackendServerDefaults.primaryUrl;
 
-  /**
-   * Change value based on your need.
-   */
-  static const MAIN_URL = production;
-
   static const API_URL = "api";
-  static const PRIVACY_POLICY_URL = MAIN_URL + "privacy";
 
   static const LOGIN_URL = "$API_URL/login";
   static const LOGOUT_URL = "$API_URL/logout";

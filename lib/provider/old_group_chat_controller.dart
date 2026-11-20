@@ -13,6 +13,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:http_interceptor_plus/http_interceptor_plus.dart';
 import 'package:uuid/uuid.dart';
+import 'package:flutter/foundation.dart';
 
 class OldGroupChatController extends GetxController {
   var host = "".obs;
@@ -108,7 +109,9 @@ class OldGroupChatController extends GetxController {
           );
         });
       },
-      onError: (error) => print("Listen failed: $error"),
+      onError: (error) {
+        if (kDebugMode) debugPrint("Listen failed: $error");
+      },
     );
   }
 
@@ -146,7 +149,7 @@ class OldGroupChatController extends GetxController {
 
     if (response.statusCode == 200) {
     } else if (_isMissingRegistrationTokenError(responseMessage)) {
-      print("Push skipped: $responseMessage");
+      if (kDebugMode) debugPrint("Push skipped: $responseMessage");
     } else {
       var errorMessage = responseData['message'];
       throw errorMessage;
