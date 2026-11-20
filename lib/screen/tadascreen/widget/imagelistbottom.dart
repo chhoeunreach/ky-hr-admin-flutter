@@ -21,7 +21,7 @@ class ItemListBottom extends StatelessWidget{
         crossAxisSpacing: 5.0,
         mainAxisSpacing: 5.0,
         children: List.generate(attachList.length, (index) {
-          Attachment item = attachList[index];
+          final Attachment item = attachList[index];
           return GestureDetector(
               onTap: () {
                 final imageProvider = Image.network(

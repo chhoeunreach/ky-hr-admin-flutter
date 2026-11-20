@@ -9,10 +9,10 @@ import 'package:flutter/material.dart';
 
 class EventsRepository {
   Future<EventListRepsonse> getEvents(int page, int isUpcoming) async {
-    Preferences preferences = Preferences();
-    String token = await preferences.getToken();
+    final Preferences preferences = Preferences();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
@@ -30,7 +30,7 @@ class EventsRepository {
         final jsonResponse = EventListRepsonse.fromMap(responseData);
         return jsonResponse;
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         throw errorMessage;
       }
     } catch (e) {
@@ -39,10 +39,10 @@ class EventsRepository {
   }
 
   Future<EventDetailRepsonse> getEvent(String id) async {
-    Preferences preferences = Preferences();
-    String token = await preferences.getToken();
+    final Preferences preferences = Preferences();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
@@ -59,7 +59,7 @@ class EventsRepository {
         final jsonResponse = EventDetailRepsonse.fromMap(responseData);
         return jsonResponse;
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         throw errorMessage;
       }
     } catch (e) {

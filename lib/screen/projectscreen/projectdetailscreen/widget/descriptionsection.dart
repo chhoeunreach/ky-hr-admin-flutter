@@ -9,7 +9,7 @@ import 'package:readmore/readmore.dart';
 class DescriptionSection extends StatelessWidget{
   @override
   Widget build(BuildContext context) {
-    ProjectDetailController model = Get.find();
+    final ProjectDetailController model = Get.find();
     return Card(
       elevation: 0,
       color: Colors.white24,

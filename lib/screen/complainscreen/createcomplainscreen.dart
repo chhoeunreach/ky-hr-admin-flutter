@@ -34,7 +34,7 @@ class CreateComplainScreen extends StatelessWidget {
         EasyLoading.show(
             status: translate('loader.loading'),
             maskType: EasyLoadingMaskType.black);
-        var (status, body) =
+        final (status, body) =
             await model.applyComplaint(subject.text, message.text);
         EasyLoading.dismiss(animation: true);
         if (status) {
@@ -393,7 +393,7 @@ class CreateComplainScreen extends StatelessWidget {
                       },
                       maxLines: 1,
                       onTapOutside: (event) {
-                        FocusScopeNode currentFocus = FocusScope.of(context);
+                        final FocusScopeNode currentFocus = FocusScope.of(context);
                         if (!currentFocus.hasPrimaryFocus &&
                             currentFocus.focusedChild != null) {
                           FocusManager.instance.primaryFocus?.unfocus();
@@ -454,7 +454,7 @@ class CreateComplainScreen extends StatelessWidget {
                         return null;
                       },
                       onTapOutside: (event) {
-                        FocusScopeNode currentFocus = FocusScope.of(context);
+                        final FocusScopeNode currentFocus = FocusScope.of(context);
                         if (!currentFocus.hasPrimaryFocus &&
                             currentFocus.focusedChild != null) {
                           FocusManager.instance.primaryFocus?.unfocus();

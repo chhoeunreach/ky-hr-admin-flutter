@@ -8,10 +8,10 @@ import 'package:cnattendance/utils/constant.dart';
 class AttendanceReportRepository {
   Future<AttendanceReportResponse> getAttendanceReport(
       int selectedMonth) async {
-    Preferences preferences = Preferences();
-    String token = await preferences.getToken();
+    final Preferences preferences = Preferences();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
@@ -27,7 +27,7 @@ class AttendanceReportRepository {
 
         return responseJson;
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         throw errorMessage;
       }
     } catch (error) {
@@ -36,8 +36,8 @@ class AttendanceReportRepository {
   }
 
   Future<bool> getDateInAd() async {
-    Preferences preferences = Preferences();
-    bool value = await preferences.getEnglishDate();
+    final Preferences preferences = Preferences();
+    final bool value = await preferences.getEnglishDate();
 
     return value;
   }

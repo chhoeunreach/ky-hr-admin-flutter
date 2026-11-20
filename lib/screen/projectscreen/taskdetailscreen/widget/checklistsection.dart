@@ -49,9 +49,9 @@ class CheckListSection extends StatelessWidget {
                       shrinkWrap: true,
                       itemCount: controller.taskDetail.value.checkList.length,
                       itemBuilder: (context, index) {
-                        Checklist checklist =
+                        final Checklist checklist =
                             controller.taskDetail.value.checkList[index];
-                        var state = false.obs;
+                        final state = false.obs;
                         state.value =
                             checklist.isCompleted == "0" ? false : true;
                         return Card(

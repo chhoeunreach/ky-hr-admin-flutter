@@ -47,8 +47,8 @@ class PaySlipScreenState extends State<PaySlipScreen> {
     final month = context.watch<PaySlipProvider>().month;
     final year = context.watch<PaySlipProvider>().year;
 
-    var selectedMonth = context.watch<PaySlipProvider>().selectedMonth;
-    var selectedYear = context.watch<PaySlipProvider>().selectedYear;
+    final selectedMonth = context.watch<PaySlipProvider>().selectedMonth;
+    final selectedYear = context.watch<PaySlipProvider>().selectedYear;
     return Container(
       decoration: RadialDecoration(),
       child: Scaffold(

@@ -9,10 +9,10 @@ import 'package:flutter/material.dart';
 class AboutRepository{
   Future<Aboutresponse> getContent(String value) async {
 
-    Preferences preferences = Preferences();
-    String token = await preferences.getToken();
+    final Preferences preferences = Preferences();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
@@ -28,7 +28,7 @@ class AboutRepository{
         final dashboardResponse = Aboutresponse.fromJson(responseData);
         return dashboardResponse;
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         throw errorMessage;
       }
     } catch (e) {

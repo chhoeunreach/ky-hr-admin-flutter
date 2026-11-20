@@ -9,7 +9,6 @@ import 'package:cnattendance/utils/constant.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:cnattendance/core/ky_security/ky_http.dart';
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:nepali_date_picker/nepali_date_picker.dart';
@@ -21,13 +20,13 @@ class ProjectListScreenController extends GetxController {
   final selected = "All".obs;
 
   Future<String> getProjectOverview() async {
-    Preferences preferences = Preferences();
-    var uri = Uri.parse(await preferences.getAppUrl() +Constant.PROJECT_LIST_URL);
+    final Preferences preferences = Preferences();
+    final uri = Uri.parse(await preferences.getAppUrl() +Constant.PROJECT_LIST_URL);
 
-    String token = await preferences.getToken();
-    bool isAd = await preferences.getEnglishDate();
+    final String token = await preferences.getToken();
+    final bool isAd = await preferences.getEnglishDate();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
     };
@@ -48,21 +47,21 @@ class ProjectListScreenController extends GetxController {
         projectList.clear();
 
         for (var project in projectResponse.data) {
-          List<Member> members = [];
+          final List<Member> members = [];
           for (var member in project.assigned_member) {
             members.add(Member(member.id, member.name, member.avatar));
           }
 
-          List<Member> leaders = [];
+          final List<Member> leaders = [];
           for (var member in project.project_leader) {
             leaders.add(Member(member.id, member.name, member.avatar));
           }
 
-          DateTime tempDate =
+          final DateTime tempDate =
           DateFormat("yyyy-mm-dd").parse(project.start_date);
-          NepaliDateTime nepaliDate = tempDate.toNepaliDateTime();
+          final NepaliDateTime nepaliDate = tempDate.toNepaliDateTime();
 
-          String nepaliTempDate =
+          final String nepaliTempDate =
           NepaliDateFormat("MMMM dd yyyy").format(nepaliDate);
 
           projectList.add(Project(
@@ -83,7 +82,7 @@ class ProjectListScreenController extends GetxController {
 
         return "loaded";
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         if (kDebugMode) debugPrint(errorMessage);
         throw errorMessage;
       }

@@ -30,7 +30,7 @@ class WarningController extends GetxController {
   Future<(bool, String)> saveResponseWarining(
       String userResponse, int id) async {
     try {
-      var (status, message) =
+      final (status, message) =
           await repository.writeResponse(userResponse, id.toString());
       return (status, message);
     } catch (e) {

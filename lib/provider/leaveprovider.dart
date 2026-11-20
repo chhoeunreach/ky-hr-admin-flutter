@@ -10,7 +10,6 @@ import 'package:cnattendance/data/source/network/model/resignationresponse/resig
 import 'package:cnattendance/model/LeaveDetail.dart';
 import 'package:cnattendance/model/leave.dart';
 import 'package:cnattendance/utils/constant.dart';
-import 'package:flutter/material.dart';
 import 'package:cnattendance/core/ky_security/ky_http.dart';
 import 'package:cnattendance/data/source/datastore/preferences.dart';
 import 'package:flutter/foundation.dart';
@@ -48,20 +47,20 @@ class LeaveProvider with ChangeNotifier {
   }
 
   Future<bool> isAd() async {
-    Preferences preferences = Preferences();
+    final Preferences preferences = Preferences();
     final value = await preferences.getEnglishDate();
 
     return value;
   }
 
   Future<Leavetyperesponse> getLeaveType() async {
-    Preferences preferences = Preferences();
-    var uri =
+    final Preferences preferences = Preferences();
+    final uri =
         Uri.parse(await preferences.getAppUrl() + Constant.LEAVE_TYPE_URL);
 
-    String token = await preferences.getToken();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
@@ -112,7 +111,7 @@ class LeaveProvider with ChangeNotifier {
   }
 
   Future<Leavetypedetailreponse> getLeaveTypeDetail() async {
-    Preferences preferences = Preferences();
+    final Preferences preferences = Preferences();
     final queryParameters = <String, String>{};
     if (_selectedMonth != 0) {
       queryParameters['month'] = _selectedMonth.toString();
@@ -121,14 +120,14 @@ class LeaveProvider with ChangeNotifier {
       queryParameters['leave_type'] = _selectedType.toString();
     }
 
-    var uri = Uri.parse(
+    final uri = Uri.parse(
             await preferences.getAppUrl() + Constant.LEAVE_TYPE_DETAIL_URL)
         .replace(
             queryParameters: queryParameters.isEmpty ? null : queryParameters);
 
-    String token = await preferences.getToken();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
@@ -147,7 +146,7 @@ class LeaveProvider with ChangeNotifier {
 
         return responseJson;
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         if (kDebugMode) debugPrint(errorMessage.toString());
         throw errorMessage;
       }
@@ -177,12 +176,12 @@ class LeaveProvider with ChangeNotifier {
 
   Future<IssueLeaveResponse> issueLeave(String date, String from, String to,
       String reason, int leaveId, int earlyLeave) async {
-    Preferences preferences = Preferences();
-    var uri = Uri.parse(await preferences.getAppUrl() + Constant.ISSUE_LEAVE);
+    final Preferences preferences = Preferences();
+    final uri = Uri.parse(await preferences.getAppUrl() + Constant.ISSUE_LEAVE);
 
-    String token = await preferences.getToken();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
     };
@@ -204,7 +203,7 @@ class LeaveProvider with ChangeNotifier {
         debugPrint(responseJson.toString());
         return responseJson;
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         throw errorMessage;
       }
     } catch (error) {
@@ -214,13 +213,13 @@ class LeaveProvider with ChangeNotifier {
 
   Future<IssueLeaveResponse> issueTimeLeave(
       String date, String from, String to, String reason) async {
-    Preferences preferences = Preferences();
-    var uri =
+    final Preferences preferences = Preferences();
+    final uri =
         Uri.parse(await preferences.getAppUrl() + Constant.ISSUE_TIME_LEAVE);
 
-    String token = await preferences.getToken();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
     };
@@ -240,7 +239,7 @@ class LeaveProvider with ChangeNotifier {
         debugPrint(responseJson.toString());
         return responseJson;
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         debugPrint(errorMessage.toString());
         throw errorMessage;
       }
@@ -251,13 +250,13 @@ class LeaveProvider with ChangeNotifier {
   }
 
   Future<GeneralResponse> issueResignation(String from, String reason) async {
-    Preferences preferences = Preferences();
-    var uri = Uri.parse(
+    final Preferences preferences = Preferences();
+    final uri = Uri.parse(
         await preferences.getAppUrl() + Constant.APPLY_RESIGNATION_URL);
 
-    String token = await preferences.getToken();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
     };
@@ -276,7 +275,7 @@ class LeaveProvider with ChangeNotifier {
         debugPrint(responseJson.toString());
         return responseJson;
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         throw errorMessage;
       }
     } catch (error) {
@@ -285,13 +284,13 @@ class LeaveProvider with ChangeNotifier {
   }
 
   Future<ResignationRepsonse> getResignation() async {
-    Preferences preferences = Preferences();
-    var uri =
+    final Preferences preferences = Preferences();
+    final uri =
         Uri.parse(await preferences.getAppUrl() + Constant.RESIGNATION_URL);
 
-    String token = await preferences.getToken();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
     };
@@ -307,7 +306,7 @@ class LeaveProvider with ChangeNotifier {
         debugPrint(responseJson.toString());
         return responseJson;
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         throw errorMessage;
       }
     } catch (error) {
@@ -317,7 +316,7 @@ class LeaveProvider with ChangeNotifier {
 
   Future<IssueLeaveResponse> cancelLeave(
       int leaveId, String leaveTypeId) async {
-    Preferences preferences = Preferences();
+    final Preferences preferences = Preferences();
     late Uri uri;
 
     if (leaveTypeId == "0") {
@@ -329,9 +328,9 @@ class LeaveProvider with ChangeNotifier {
           await preferences.getAppUrl() + Constant.CANCEL_LEAVE + "/$leaveId");
     }
 
-    String token = await preferences.getToken();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
     };
@@ -346,7 +345,7 @@ class LeaveProvider with ChangeNotifier {
         debugPrint(responseJson.toString());
         return responseJson;
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         throw errorMessage;
       }
     } catch (error) {

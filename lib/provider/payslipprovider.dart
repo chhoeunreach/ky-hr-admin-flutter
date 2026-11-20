@@ -5,7 +5,6 @@ import 'package:cnattendance/data/source/network/model/paysliplist/Payslip.dart'
 import 'package:cnattendance/data/source/network/model/paysliplist/paysliplistresponse.dart';
 import 'package:cnattendance/model/month.dart';
 import 'package:cnattendance/utils/constant.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:nepali_date_picker/nepali_date_picker.dart';
 import 'package:cnattendance/core/ky_security/ky_http.dart';
 import 'package:flutter/foundation.dart';
@@ -22,7 +21,7 @@ class PaySlipProvider with ChangeNotifier {
   String currency = "";
 
   Future<void> getBS() async {
-    Preferences preferences = Preferences();
+    final Preferences preferences = Preferences();
     isAD = (await preferences.getEnglishDate()) ? true : false;
 
     month = isAD ? engMonth : nepaliMonth;
@@ -61,13 +60,13 @@ class PaySlipProvider with ChangeNotifier {
     payslips.clear();
     notifyListeners();
 
-    Preferences preferences = Preferences();
-    var uri =
+    final Preferences preferences = Preferences();
+    final uri =
         Uri.parse(await preferences.getAppUrl() + Constant.PAYSLIP_LIST_URL);
 
-    String token = await preferences.getToken();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
     };
@@ -86,7 +85,7 @@ class PaySlipProvider with ChangeNotifier {
         payslips = responseJson.data.payslip;
         notifyListeners();
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         throw errorMessage;
       }
     } catch (error) {

@@ -30,7 +30,7 @@ class EditTadaController extends GetxController {
   final key = GlobalKey<FormState>();
 
   void onFileClicked() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles();
+    final FilePickerResult? result = await FilePicker.platform.pickFiles();
     final platformFile = result?.files.single;
     if (platformFile != null) {
       fileList.add(platformFile);
@@ -45,13 +45,13 @@ class EditTadaController extends GetxController {
   }
 
   Future<String> getTadaDetail() async {
-    Preferences preferences = Preferences();
-    var uri =
+    final Preferences preferences = Preferences();
+    final uri =
     Uri.parse(await preferences.getAppUrl()+Constant.TADA_DETAIL_URL + "/${Get.arguments["tadaId"]}");
 
-    String token = await preferences.getToken();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
     };
@@ -87,7 +87,7 @@ class EditTadaController extends GetxController {
 
         return "Loaded";
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         if (kDebugMode) debugPrint(errorMessage);
         throw errorMessage;
       }
@@ -100,17 +100,17 @@ class EditTadaController extends GetxController {
 
   Future<String> editTada() async {
     try{
-      Preferences preferences = Preferences();
-      var uri = Uri.parse(await preferences.getAppUrl()+Constant.TADA_UPDATE_URL);
+      final Preferences preferences = Preferences();
+      final uri = Uri.parse(await preferences.getAppUrl()+Constant.TADA_UPDATE_URL);
 
-      String token = await preferences.getToken();
+      final String token = await preferences.getToken();
 
-      Map<String, String> headers = {
+      final Map<String, String> headers = {
         'Accept': 'application/json; charset=UTF-8',
         'Content-type': 'multipart/form-data',
         'Authorization': 'Bearer $token'
       };
-      var requests = http.MultipartRequest('POST', uri);
+      final requests = http.MultipartRequest('POST', uri);
       requests.headers.addAll(headers);
 
 
@@ -150,7 +150,7 @@ class EditTadaController extends GetxController {
         Get.back();
         return "Loaded";
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         if (kDebugMode) debugPrint(errorMessage);
         throw errorMessage;
       }
@@ -165,13 +165,13 @@ class EditTadaController extends GetxController {
   }
 
   Future<void> removeAttachment(int id,int index) async {
-    Preferences preferences = Preferences();
-    var uri =
+    final Preferences preferences = Preferences();
+    final uri =
     Uri.parse(await preferences.getAppUrl()+Constant.TADA_DELETE_ATTACHMENT_URL + "/$id");
 
-    String token = await preferences.getToken();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
     };
@@ -195,7 +195,7 @@ class EditTadaController extends GetxController {
 
       } else {
         EasyLoading.dismiss(animation: true);
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         if (kDebugMode) debugPrint(errorMessage);
         throw errorMessage;
       }

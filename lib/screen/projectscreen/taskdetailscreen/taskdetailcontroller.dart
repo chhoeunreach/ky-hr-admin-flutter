@@ -7,7 +7,6 @@ import 'package:cnattendance/model/checklist.dart';
 import 'package:cnattendance/model/member.dart';
 import 'package:cnattendance/model/task.dart';
 import 'package:cnattendance/utils/constant.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
@@ -28,16 +27,16 @@ class TaskDetailController extends GetxController {
   var leaderImages = [].obs;
 
   Future<TaskDetailResponse> getTaskOverview() async {
-    Preferences preferences = Preferences();
-    var uri = Uri.parse(await preferences.getAppUrl() +
+    final Preferences preferences = Preferences();
+    final uri = Uri.parse(await preferences.getAppUrl() +
         Constant.TASK_DETAIL_URL +
         "/" +
         Get.arguments["id"].toString());
 
-    String token = await preferences.getToken();
-    bool isAd = await preferences.getEnglishDate();
+    final String token = await preferences.getToken();
+    final bool isAd = await preferences.getEnglishDate();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
     };
@@ -58,7 +57,7 @@ class TaskDetailController extends GetxController {
       if (response.statusCode == 200) {
         final taskResponse = TaskDetailResponse.fromJson(responseData);
 
-        List<Member> members = [];
+        final List<Member> members = [];
         memberImages.clear();
         for (var member in taskResponse.data.assigned_member) {
           members.add(
@@ -66,13 +65,13 @@ class TaskDetailController extends GetxController {
           memberImages.add(member.avatar);
         }
 
-        List<Checklist> checkLists = [];
+        final List<Checklist> checkLists = [];
         for (var checkList in taskResponse.data.checklists) {
           checkLists.add(Checklist(checkList.id, checkList.task_id,
               checkList.name, checkList.is_completed));
         }
 
-        List<Attachment> attachments = [];
+        final List<Attachment> attachments = [];
         for (var attachment in taskResponse.data.attachments) {
           if (attachment.type == "image") {
             attachments.add(Attachment(0, attachment.attachment_url, "image"));
@@ -81,15 +80,15 @@ class TaskDetailController extends GetxController {
           }
         }
 
-        DateTime startDate =
+        final DateTime startDate =
             DateFormat("MMM dd yyyy").parse(taskResponse.data.start_date);
 
-        NepaliDateTime nepaliStartDate = startDate.toNepaliDateTime();
+        final NepaliDateTime nepaliStartDate = startDate.toNepaliDateTime();
 
-        String nepaliStartTempDate =
+        final String nepaliStartTempDate =
             NepaliDateFormat("MMM dd yyyy").format(nepaliStartDate);
 
-        var task = Task.all(
+        final task = Task.all(
             taskResponse.data.task_id,
             taskResponse.data.task_name,
             taskResponse.data.project_name,
@@ -108,7 +107,7 @@ class TaskDetailController extends GetxController {
         taskDetail.value = task;
         return taskResponse;
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         if (kDebugMode) debugPrint(errorMessage);
         throw errorMessage;
       }
@@ -119,15 +118,15 @@ class TaskDetailController extends GetxController {
   }
 
   Future<bool> checkListToggle(String checkListId) async {
-    Preferences preferences = Preferences();
-    var uri = Uri.parse(await preferences.getAppUrl() +
+    final Preferences preferences = Preferences();
+    final uri = Uri.parse(await preferences.getAppUrl() +
         Constant.UPDATE_CHECKLIST_TOGGLE_URL +
         "/" +
         checkListId);
 
-    String token = await preferences.getToken();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
     };
@@ -151,7 +150,7 @@ class TaskDetailController extends GetxController {
 
         return true;
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         if (kDebugMode) debugPrint(errorMessage);
         return false;
       }
@@ -162,15 +161,15 @@ class TaskDetailController extends GetxController {
   }
 
   Future<bool> checkListTaskToggle(String taskId) async {
-    Preferences preferences = Preferences();
-    var uri = Uri.parse(await preferences.getAppUrl() +
+    final Preferences preferences = Preferences();
+    final uri = Uri.parse(await preferences.getAppUrl() +
         Constant.UPDATE_TASK_TOGGLE_URL +
         "/" +
         taskId);
 
-    String token = await preferences.getToken();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
     };
@@ -194,7 +193,7 @@ class TaskDetailController extends GetxController {
         showToast("Task completed");
         return true;
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         if (kDebugMode) debugPrint(errorMessage);
         return false;
       }

@@ -24,15 +24,15 @@ class NoticeController extends GetxController {
   late ScrollController controller;
 
   Future<NoticeResponse> getNotice() async {
-    Preferences preferences = Preferences();
-    var uri = Uri.parse(await preferences.getAppUrl()+Constant.NOTICE_URL).replace(queryParameters: {
+    final Preferences preferences = Preferences();
+    final uri = Uri.parse(await preferences.getAppUrl()+Constant.NOTICE_URL).replace(queryParameters: {
       'page': page.toString(),
       'per_page': per_page.toString(),
     });
 
-    String token = await preferences.getToken();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
@@ -50,7 +50,7 @@ class NoticeController extends GetxController {
         makeNotificationList(jsonResponse.data);
         return jsonResponse;
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         throw errorMessage;
       }
     } catch (e) {
@@ -59,8 +59,8 @@ class NoticeController extends GetxController {
   }
 
   Future<void> makeNotificationList(List<NoticeDomain> data) async {
-    Preferences preferences = Preferences();
-    bool isAd = await preferences.getEnglishDate();
+    final Preferences preferences = Preferences();
+    final bool isAd = await preferences.getEnglishDate();
 
     if (page == 1) {
       _notificationList.clear();
@@ -68,9 +68,9 @@ class NoticeController extends GetxController {
 
     if (data.isNotEmpty) {
       for (var item in data) {
-        DateTime tempDate =
+        final DateTime tempDate =
             DateFormat("yyyy-MM-dd").parse(item.noticePublishedDate);
-        NepaliDateTime nepaliDate = tempDate.toNepaliDateTime();
+        final NepaliDateTime nepaliDate = tempDate.toNepaliDateTime();
         _notificationList.add(Not.Notification(
             id: item.id,
             title: item.noticeTitle,

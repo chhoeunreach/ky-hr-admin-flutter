@@ -59,7 +59,7 @@ class OldGroupChatController extends GetxController {
       });
 
       final currentUser = await pref.getUser();
-      var users = <int>[];
+      final users = <int>[];
       for (var member in members) {
         if (member.id != currentUser.id) {
           users.add(member.id);
@@ -86,7 +86,7 @@ class OldGroupChatController extends GetxController {
       (event) {
         final chatDb = <Chat>[];
         for (var item in event.docs) {
-          Timestamp firebaseTimestamp = item["date"];
+          final Timestamp firebaseTimestamp = item["date"];
           chatDb.add(Chat(
               item["id"],
               utf8.decode(base64.decode(item["message"])),
@@ -122,13 +122,13 @@ class OldGroupChatController extends GetxController {
       String type,
       String project_id,
       List<int> usernames) async {
-    Preferences preferences = Preferences();
-    var uri = Uri.parse(
+    final Preferences preferences = Preferences();
+    final uri = Uri.parse(
         await preferences.getAppUrl() + Constant.SEND_PUSH_NOTIFICATION);
 
-    String token = await preferences.getToken();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
     };
@@ -151,7 +151,7 @@ class OldGroupChatController extends GetxController {
     } else if (_isMissingRegistrationTokenError(responseMessage)) {
       if (kDebugMode) debugPrint("Push skipped: $responseMessage");
     } else {
-      var errorMessage = responseData['message'];
+      final errorMessage = responseData['message'];
       throw errorMessage;
     }
   }

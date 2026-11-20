@@ -8,10 +8,10 @@ import 'package:flutter/material.dart';
 
 class AssetRepository {
   Future<AssetListResponse> getAssets(int page) async {
-    Preferences preferences = Preferences();
-    String token = await preferences.getToken();
+    final Preferences preferences = Preferences();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
@@ -28,7 +28,7 @@ class AssetRepository {
         final dashboardResponse = AssetListResponse.fromJson(responseData);
         return dashboardResponse;
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         throw errorMessage;
       }
     } catch (e) {
@@ -38,10 +38,10 @@ class AssetRepository {
 
   Future<(bool, String)> writeResponse(
       String id, String userResponse, bool isWorking) async {
-    Preferences preferences = Preferences();
-    String token = await preferences.getToken();
+    final Preferences preferences = Preferences();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {'Authorization': 'Bearer $token'};
+    final Map<String, String> headers = {'Authorization': 'Bearer $token'};
 
     try {
       final response = await Connect().postResponse(

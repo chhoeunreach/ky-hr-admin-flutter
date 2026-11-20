@@ -62,14 +62,14 @@ class CommentScreenController extends GetxController {
   }
 
   Future<void> getComments([double position = 0]) async {
-    Preferences preferences = Preferences();
-    var uri = Uri.parse(await preferences.getAppUrl() + Constant.GET_COMMENT_URL +
+    final Preferences preferences = Preferences();
+    final uri = Uri.parse(await preferences.getAppUrl() + Constant.GET_COMMENT_URL +
         "?per_page=$PER_PAGE&page=$PAGE&task_id=" +
         Get.arguments["taskId"]);
 
-    String token = await preferences.getToken();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
     };
@@ -89,15 +89,15 @@ class CommentScreenController extends GetxController {
     if (response.statusCode == 200) {
       final value = CommentListResponse.fromJson(responseData);
 
-      var comments = <Comment>[];
+      final comments = <Comment>[];
       for (var comment in value.data) {
-        var commentMentions = <Mention>[];
+        final commentMentions = <Mention>[];
         for (var mention in comment.mentioned) {
           commentMentions.add(Mention(mention.id.toString(), mention.name));
         }
-        var replies = <Reply>[];
+        final replies = <Reply>[];
         for (var reply in comment.replies) {
-          var mentions = <Mention>[];
+          final mentions = <Mention>[];
           for (var mention in reply.mentioned) {
             mentions.add(Mention(mention.id.toString(), mention.name));
           }
@@ -132,7 +132,7 @@ class CommentScreenController extends GetxController {
 
       scrollController.jumpTo(position);
     } else {
-      var errorMessage = responseData['message'];
+      final errorMessage = responseData['message'];
       if (kDebugMode) debugPrint(errorMessage);
       throw errorMessage;
     }
@@ -142,12 +142,12 @@ class CommentScreenController extends GetxController {
     if (commentController.text.isEmpty) {
       return;
     }
-    Preferences preferences = Preferences();
-    var uri = Uri.parse(await preferences.getAppUrl() +Constant.SAVE_COMMENT_URL);
+    final Preferences preferences = Preferences();
+    final uri = Uri.parse(await preferences.getAppUrl() +Constant.SAVE_COMMENT_URL);
 
-    String token = await preferences.getToken();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
     };
@@ -182,13 +182,13 @@ class CommentScreenController extends GetxController {
       if(hasComment(comment.data.id)){
         for (var oldComment in commentList) {
           if (oldComment.id == comment.data.id) {
-            var commentMentions = <Mention>[];
+            final commentMentions = <Mention>[];
             for (var mention in comment.data.mentioned) {
               commentMentions.add(Mention(mention.id.toString(), mention.name));
             }
-            var replies = <Reply>[];
+            final replies = <Reply>[];
             for (var reply in comment.data.replies) {
-              var mentions = <Mention>[];
+              final mentions = <Mention>[];
               for (var mention in reply.mentioned) {
                 mentions.add(Mention(mention.id.toString(), mention.name));
               }
@@ -217,13 +217,13 @@ class CommentScreenController extends GetxController {
           }
         }
       }else{
-        var commentMentions = <Mention>[];
+        final commentMentions = <Mention>[];
         for (var mention in comment.data.mentioned) {
           commentMentions.add(Mention(mention.id.toString(), mention.name));
         }
-        var replies = <Reply>[];
+        final replies = <Reply>[];
         for (var reply in comment.data.replies) {
-          var mentions = <Mention>[];
+          final mentions = <Mention>[];
           for (var mention in reply.mentioned) {
             mentions.add(Mention(mention.id.toString(), mention.name));
           }
@@ -250,7 +250,7 @@ class CommentScreenController extends GetxController {
 
       commentList.refresh();
     } else {
-      var errorMessage = responseData['message'];
+      final errorMessage = responseData['message'];
       if (kDebugMode) debugPrint(errorMessage);
       throw errorMessage;
     }
@@ -266,12 +266,12 @@ class CommentScreenController extends GetxController {
   }
 
   Future<void> deleteComment(String id) async {
-    Preferences preferences = Preferences();
-    var uri = Uri.parse(await preferences.getAppUrl() +Constant.DELETE_COMMENT_URL + "/$id");
+    final Preferences preferences = Preferences();
+    final uri = Uri.parse(await preferences.getAppUrl() +Constant.DELETE_COMMENT_URL + "/$id");
 
-    String token = await preferences.getToken();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
     };
@@ -288,19 +288,19 @@ class CommentScreenController extends GetxController {
       PAGE = 1;
       getComments();
     } else {
-      var errorMessage = responseData['message'];
+      final errorMessage = responseData['message'];
       if (kDebugMode) debugPrint(errorMessage);
       throw errorMessage;
     }
   }
 
   Future<void> deleteReply(String id) async {
-    Preferences preferences = Preferences();
-    var uri = Uri.parse(await preferences.getAppUrl() +Constant.DELETE_REPLY_URL + "/$id");
+    final Preferences preferences = Preferences();
+    final uri = Uri.parse(await preferences.getAppUrl() +Constant.DELETE_REPLY_URL + "/$id");
 
-    String token = await preferences.getToken();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
     };
@@ -317,7 +317,7 @@ class CommentScreenController extends GetxController {
       PAGE = 1;
       getComments();
     } else {
-      var errorMessage = responseData['message'];
+      final errorMessage = responseData['message'];
       if (kDebugMode) debugPrint(errorMessage);
       throw errorMessage;
     }

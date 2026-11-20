@@ -9,10 +9,10 @@ import 'package:flutter/material.dart';
 
 class AdminAdvanceSalaryRepository {
   Future<AdavanceSalaryResponse> getAdminAdvanceList() async {
-    Preferences preferences = Preferences();
-    String token = await preferences.getToken();
+    final Preferences preferences = Preferences();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
     };
@@ -27,7 +27,7 @@ class AdminAdvanceSalaryRepository {
       if (response.statusCode == 200) {
         return AdavanceSalaryResponse.fromJson(responseData);
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         throw errorMessage;
       }
     } catch (e) {
@@ -39,10 +39,10 @@ class AdminAdvanceSalaryRepository {
     required String reqAmt,
     required String desc,
   }) async {
-    Preferences preferences = Preferences();
-    String token = await preferences.getToken();
+    final Preferences preferences = Preferences();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
     };
@@ -60,7 +60,7 @@ class AdminAdvanceSalaryRepository {
       if (response.statusCode == 200) {
         return AdavanceSalaryCreateResponse.fromJson(responseData);
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         throw errorMessage;
       }
     } catch (e) {

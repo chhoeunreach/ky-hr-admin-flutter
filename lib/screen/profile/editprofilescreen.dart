@@ -513,12 +513,12 @@ class EditProfileScreenState extends State<EditProfileScreen> {
 
                         if (pickedDate != null) {
                           if (!(await provider.isAd())) {
-                            String formattedDate =
+                            final String formattedDate =
                                 NepaliDateFormat('yyyy-MM-dd')
                                     .format((pickedDate as NepaliDateTime));
                             _dobController.text = formattedDate;
                           } else {
-                            String formattedDate =
+                            final String formattedDate =
                                 DateFormat('yyyy-MM-dd').format(pickedDate);
                             setState(() {
                               _dobController.text =

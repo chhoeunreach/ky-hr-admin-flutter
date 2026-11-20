@@ -191,8 +191,8 @@ class ProjectScreen extends StatelessWidget {
                 scrollDirection: Axis.horizontal,
                 itemCount: model.projectList.length,
                 itemBuilder: (context, index) {
-                  Project item = model.projectList[index];
-                  var memberImages = [];
+                  final Project item = model.projectList[index];
+                  final memberImages = [];
 
                   for (var member in item.members) {
                     memberImages.add(member.image);
@@ -412,9 +412,9 @@ class ProjectScreen extends StatelessWidget {
                   itemCount: model.taskList.length,
                   physics: NeverScrollableScrollPhysics(),
                   itemBuilder: (context, index) {
-                    Task item = model.taskList[index];
+                    final Task item = model.taskList[index];
 
-                    List<String> members = [];
+                    final List<String> members = [];
                     for (var member in item.members) {
                       members.add(member.image);
                     }

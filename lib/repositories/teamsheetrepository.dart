@@ -20,11 +20,11 @@ class ChatContactsPayload {
 
 class TeamSheetRepository{
   Future<Teamsheetresponse> getTeam() async {
-    Preferences preferences = Preferences();
+    final Preferences preferences = Preferences();
 
-    String token = await preferences.getToken();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
@@ -40,7 +40,7 @@ class TeamSheetRepository{
         final responseJson = Teamsheetresponse.fromJson(responseData);
         return responseJson;
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         throw errorMessage;
       }
     } catch (error) {
@@ -49,11 +49,11 @@ class TeamSheetRepository{
   }
 
   Future<ChatContactsPayload> getChatContacts() async {
-    Preferences preferences = Preferences();
+    final Preferences preferences = Preferences();
 
-    String token = await preferences.getToken();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
@@ -86,7 +86,7 @@ class TeamSheetRepository{
           onlineContacts: onlineContacts,
         );
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         throw errorMessage;
       }
     } catch (error) {

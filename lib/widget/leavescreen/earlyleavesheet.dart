@@ -193,12 +193,12 @@ class EarlyLeaveSheetState extends State<EarlyLeaveSheet> {
 
                       if (pickedDate != null) {
                         if (!(await provider.isAd())) {
-                          String formattedDate = NepaliDateFormat('yyyy-MM-dd')
+                          final String formattedDate = NepaliDateFormat('yyyy-MM-dd')
                               .format((pickedDate as NepaliDateTime));
                           startDate = (pickedDate).toDateTime();
                           issueDate.text = formattedDate;
                         } else {
-                          String formattedDate =
+                          final String formattedDate =
                               DateFormat('yyyy-MM-dd').format(pickedDate);
                           setState(() {
                             issueDate.text =
@@ -299,7 +299,7 @@ class EarlyLeaveSheetState extends State<EarlyLeaveSheet> {
                 controller: reason,
                 maxLines: 3,
                 onTapOutside: (event) {
-                  FocusScopeNode currentFocus = FocusScope.of(context);
+                  final FocusScopeNode currentFocus = FocusScope.of(context);
                   if (!currentFocus.hasPrimaryFocus &&
                       currentFocus.focusedChild != null) {
                     FocusManager.instance.primaryFocus?.unfocus();

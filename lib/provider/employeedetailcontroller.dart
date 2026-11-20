@@ -36,15 +36,15 @@ class EmployeeDetailController extends GetxController{
   var awardsList = <String>[].obs;
   
   Future<employeedetailresponse> getEmployeeDetail(String id) async {
-    Preferences preferences = Preferences();
+    final Preferences preferences = Preferences();
     canViewPrivateDetails.value =
         (await preferences.getUserId()).toString() == id;
-    var uri = Uri.parse(await preferences.getAppUrl()+Constant.EMPLOYEE_PROFILE_URL+"/$id");
+    final uri = Uri.parse(await preferences.getAppUrl()+Constant.EMPLOYEE_PROFILE_URL+"/$id");
 
 
-    String token = await preferences.getToken();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
@@ -64,7 +64,7 @@ class EmployeeDetailController extends GetxController{
 
         return responseJson;
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         throw errorMessage;
       }
     } catch (error) {
@@ -85,7 +85,7 @@ class EmployeeDetailController extends GetxController{
     profile.value.department = rprofile.department;
     profile.value.employment_type = rprofile.employment_type;
 
-    var awards = <String>[];
+    final awards = <String>[];
     for(var award in rprofile.all_awards){
       awards.add(award.award_name);
     }

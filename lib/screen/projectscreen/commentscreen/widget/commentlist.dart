@@ -19,7 +19,7 @@ class CommentList extends StatelessWidget {
         primary: false,
         shrinkWrap: true,
         itemBuilder: (context, index) {
-          Comment comment = model.commentList[index];
+          final Comment comment = model.commentList[index];
           return Card(
             margin: EdgeInsets.symmetric(vertical: 8, horizontal: 10),
             elevation: 0,
@@ -165,7 +165,7 @@ class CommentList extends StatelessWidget {
                           primary: false,
                           shrinkWrap: true,
                           itemBuilder: (context, index) {
-                            Reply reply = comment.replies[index];
+                            final Reply reply = comment.replies[index];
                             return Card(
                               elevation: 0,
                               color: Colors.transparent,

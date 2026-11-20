@@ -93,7 +93,7 @@ class AssetBottomSheetState extends State<AssetBottomSheet> {
                 controller: reason,
                 maxLines: 3,
                 onTapOutside: (event) {
-                  FocusScopeNode currentFocus = FocusScope.of(context);
+                  final FocusScopeNode currentFocus = FocusScope.of(context);
                   if (!currentFocus.hasPrimaryFocus &&
                       currentFocus.focusedChild != null) {
                     FocusManager.instance.primaryFocus?.unfocus();
@@ -196,7 +196,7 @@ class AssetBottomSheetState extends State<AssetBottomSheet> {
     }
     try {
       showLoader();
-      var (status, message) =
+      final (status, message) =
           await model.sendResponse(widget.asset.id, reason.text,isWorking);
       dismissLoader();
       model.getAssets();

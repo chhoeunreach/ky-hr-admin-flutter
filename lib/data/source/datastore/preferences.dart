@@ -10,7 +10,6 @@ import 'package:cnattendance/utils/chat_unread_store.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:cnattendance/services/server_url_resolver.dart';
 import 'package:cnattendance/services/server_configuration.dart';
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';

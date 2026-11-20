@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:cnattendance/data/source/datastore/preferences.dart';
 import 'package:cnattendance/data/source/network/model/ssflistresponse/ssflistresponse.dart';
 import 'package:cnattendance/utils/constant.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:nepali_date_picker/nepali_date_picker.dart';
 import 'package:cnattendance/core/ky_security/ky_http.dart';
 import 'package:flutter/foundation.dart';
@@ -17,7 +16,7 @@ class SSFProvider with ChangeNotifier {
   String currency = "";
 
   Future<void> getBS() async {
-    Preferences preferences = Preferences();
+    final Preferences preferences = Preferences();
     isAD = (await preferences.getEnglishDate()) ? true : false;
 
     makeYear();
@@ -50,13 +49,13 @@ class SSFProvider with ChangeNotifier {
     ssfList.clear();
     notifyListeners();
 
-    Preferences preferences = Preferences();
-    var uri =
+    final Preferences preferences = Preferences();
+    final uri =
         Uri.parse(await preferences.getAppUrl() + Constant.SSF_HISTORY_URL +"?year=$year");
 
-    String token = await preferences.getToken();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
     };
@@ -72,7 +71,7 @@ class SSFProvider with ChangeNotifier {
         ssfList = responseJson.data.history;
         notifyListeners();
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         throw errorMessage;
       }
     } catch (error) {

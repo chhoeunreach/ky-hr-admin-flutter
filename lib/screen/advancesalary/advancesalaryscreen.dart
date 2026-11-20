@@ -23,8 +23,8 @@ class AdvanceSalaryScreen extends StatelessWidget {
             onPressed: () {
               model.onAdvanceSalaryCreateClicked();
             },
-            child: Icon(Icons.add,color: Colors.white,),
-            backgroundColor: Colors.blue),
+            backgroundColor: Colors.blue,
+            child: Icon(Icons.add,color: Colors.white,)),
         body: Obx(
           () => SafeArea(
             child: Padding(
@@ -36,7 +36,7 @@ class AdvanceSalaryScreen extends StatelessWidget {
                 child: ListView.builder(
                   itemCount: model.salaryList.length,
                   itemBuilder: (context, index) {
-                    AdvanceSalary item = model.salaryList[index];
+                    final AdvanceSalary item = model.salaryList[index];
                     return Container(
                       margin: EdgeInsets.symmetric(vertical: 8),
                       child: ListTile(

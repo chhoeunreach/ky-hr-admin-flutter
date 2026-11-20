@@ -8,10 +8,10 @@ import 'package:flutter/material.dart';
 
 class CompanyRuleRepository{
   Future<CompanyRulesReponse> getContent() async {
-    Preferences preferences = Preferences();
-    String token = await preferences.getToken();
+    final Preferences preferences = Preferences();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
@@ -27,7 +27,7 @@ class CompanyRuleRepository{
         final rulesResponse = CompanyRulesReponse.fromJson(responseData);
         return rulesResponse;
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         throw errorMessage;
       }
     } catch (e) {

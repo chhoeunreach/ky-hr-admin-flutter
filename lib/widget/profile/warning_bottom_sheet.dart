@@ -75,7 +75,7 @@ class WarningBottomSheetState extends State<WarningBottomSheet> {
                 controller: reason,
                 maxLines: 3,
                 onTapOutside: (event) {
-                  FocusScopeNode currentFocus = FocusScope.of(context);
+                  final FocusScopeNode currentFocus = FocusScope.of(context);
                   if (!currentFocus.hasPrimaryFocus &&
                       currentFocus.focusedChild != null) {
                     FocusManager.instance.primaryFocus?.unfocus();
@@ -178,7 +178,7 @@ class WarningBottomSheetState extends State<WarningBottomSheet> {
     }
     try {
       showLoader();
-      var (status, message) =
+      final (status, message) =
           await model.saveResponseWarining(reason.text, widget.warning.id);
       dismissLoader();
       model.page = 1;

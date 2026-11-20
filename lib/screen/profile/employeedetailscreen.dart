@@ -88,10 +88,10 @@ class EmployeeDetailScreen extends StatelessWidget {
                                   width: 180,
                                   height: 180,
                                   color: Colors.transparent,
+                                  alignment: Alignment.bottomCenter,
                                   child: _buildProfileAvatar(
                                     model.profile.value.avatar,
                                   ),
-                                  alignment: Alignment.bottomCenter,
                                 )),
                           ],
                         ),

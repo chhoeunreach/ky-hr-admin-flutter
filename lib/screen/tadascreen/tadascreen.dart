@@ -27,8 +27,8 @@ class TadaScreen extends StatelessWidget {
             onPressed: () {
               model.onTadaCreateClicked();
             },
-            child: Icon(Icons.add),
-            backgroundColor: Colors.blue),
+            backgroundColor: Colors.blue,
+            child: Icon(Icons.add)),
         body: Obx(
           () => SafeArea(
             child: Padding(
@@ -40,7 +40,7 @@ class TadaScreen extends StatelessWidget {
                 child: ListView.builder(
                   itemCount: model.tadaList.length,
                   itemBuilder: (context, index) {
-                    Tada item = model.tadaList[index];
+                    final Tada item = model.tadaList[index];
                     return Container(
                       margin: EdgeInsets.symmetric(vertical: 8),
                       child: ListTile(

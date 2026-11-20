@@ -86,62 +86,58 @@ class TeamSheetProvider with ChangeNotifier {
   }
 
   Future<void> getTeam() async {
-    try {
-      final response = await repository.getTeam();
-      if (_disposed) return;
-      makeTeamSheet(response.data.companyDetail.employee);
-      makeChatContacts(response.data.chatContacts.isNotEmpty
-          ? response.data.chatContacts
-          : response.data.companyDetail.chatContacts);
-      createTeam(response.data.companyDetail.employee);
+    final response = await repository.getTeam();
+    if (_disposed) return;
+    makeTeamSheet(response.data.companyDetail.employee);
+    makeChatContacts(response.data.chatContacts.isNotEmpty
+        ? response.data.chatContacts
+        : response.data.companyDetail.chatContacts);
+    createTeam(response.data.companyDetail.employee);
 
-      _branches.clear();
-      _branches.addAll(response.data.branch);
+    _branches.clear();
+    _branches.addAll(response.data.branch);
 
-      if (_branches.isNotEmpty) {
-        setDepartment(_branches.first.department);
-      } else {
-        setDepartment([]);
-      }
+    if (_branches.isNotEmpty) {
+      setDepartment(_branches.first.department);
+    } else {
+      setDepartment([]);
+    }
 
-      if (_branches.isEmpty) {
-        selectedDepartment = _department.isNotEmpty ? _department.first.id : 0;
-        selectedBranch = 0;
-        makeTeamList();
-        notifyListeners();
-        return;
-      }
+    if (_branches.isEmpty) {
+      selectedDepartment = _department.isNotEmpty ? _department.first.id : 0;
+      selectedBranch = 0;
+      makeTeamList();
+      notifyListeners();
+      return;
+    }
 
-      final arguments = Get.arguments;
-      if (arguments is Map) {
-        final argumentBranch = (arguments["branch"] ?? '').toString();
-        final argumentDepartment = (arguments["department"] ?? '').toString();
-        final branch = _firstWhereOrNull(
-          _branches,
-          (element) => element.name == argumentBranch,
+    final arguments = Get.arguments;
+    if (arguments is Map) {
+      final argumentBranch = (arguments["branch"] ?? '').toString();
+      final argumentDepartment = (arguments["department"] ?? '').toString();
+      final branch = _firstWhereOrNull(
+        _branches,
+        (element) => element.name == argumentBranch,
+      );
+      if (branch != null && argumentDepartment.isNotEmpty) {
+        selectedBranch = branch.id;
+        setDepartment(branch.department);
+        final department = _firstWhereOrNull(
+          _department,
+          (element) => element.name == argumentDepartment,
         );
-        if (branch != null && argumentDepartment.isNotEmpty) {
-          selectedBranch = branch.id;
-          setDepartment(branch.department);
-          final department = _firstWhereOrNull(
-            _department,
-            (element) => element.name == argumentDepartment,
-          );
-          selectedDepartment =
-              department?.id ?? (_department.isNotEmpty ? _department.first.id : 0);
-        } else {
-          selectedDepartment = _department.isNotEmpty ? _department.first.id : 0;
-          selectedBranch = _branches.first.id;
-        }
+        selectedDepartment =
+            department?.id ?? (_department.isNotEmpty ? _department.first.id : 0);
       } else {
         selectedDepartment = _department.isNotEmpty ? _department.first.id : 0;
         selectedBranch = _branches.first.id;
       }
-      makeTeamList();
-      notifyListeners();
-    } catch (error) {
-      rethrow;
+    } else {
+      selectedDepartment = _department.isNotEmpty ? _department.first.id : 0;
+      selectedBranch = _branches.first.id;
     }
+    makeTeamList();
+    notifyListeners();
   }
 
   Future<void> getChatContacts() => _contactsFuture ??=

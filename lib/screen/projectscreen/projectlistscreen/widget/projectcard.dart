@@ -15,7 +15,7 @@ class ProjectCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final ProjectListScreenController model = Get.find();
 
-    List<String> members = [];
+    final List<String> members = [];
     for (var member in item.members) {
       members.add(member.image);
     }

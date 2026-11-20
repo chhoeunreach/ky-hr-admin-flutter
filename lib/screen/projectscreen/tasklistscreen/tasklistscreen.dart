@@ -212,9 +212,9 @@ class TaskListScreen extends StatelessWidget {
                                 primary: false,
                                 itemCount: model.filteredList.length,
                                 itemBuilder: (context, index) {
-                                  Task item = model.filteredList[index];
+                                  final Task item = model.filteredList[index];
 
-                                  List<String> members = [];
+                                  final List<String> members = [];
                                   for (var member in item.members) {
                                     members.add(member.image);
                                   }

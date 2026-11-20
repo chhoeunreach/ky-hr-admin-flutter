@@ -23,11 +23,11 @@ class ComplainScreen extends StatelessWidget {
             onPressed: () {
               Get.to(CreateComplainScreen());
             },
+            backgroundColor: Colors.blue,
             child: Icon(
               Icons.add,
               color: Colors.white,
-            ),
-            backgroundColor: Colors.blue),
+            )),
         body: Obx(
           () => RefreshIndicator(
             onRefresh: () async {

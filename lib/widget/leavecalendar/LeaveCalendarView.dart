@@ -47,9 +47,9 @@ class LeaveCalendarView extends StatelessWidget {
               color: Colors.red,
               borderRadius: BorderRadius.all(Radius.circular(20)))),
       eventLoader: (day) {
-        var inputDate = day;
-        var outputFormat = DateFormat('yyyy-MM-dd');
-        var outputDate = outputFormat.format(inputDate);
+        final inputDate = day;
+        final outputFormat = DateFormat('yyyy-MM-dd');
+        final outputDate = outputFormat.format(inputDate);
         if (model.employeeLeaveList.containsKey(outputDate)) {
           return model.employeeLeaveList[outputDate] ?? [];
         } else {
@@ -93,9 +93,9 @@ class LeaveCalendarView extends StatelessWidget {
             model.getLeaveByDate(model.selected.value);
           },
           dayBuilder: (dayToBuild) {
-            var inputDate = dayToBuild.toDateTime();
-            var outputFormat = DateFormat('yyyy-MM-dd');
-            var outputDate = outputFormat.format(inputDate);
+            final inputDate = dayToBuild.toDateTime();
+            final outputFormat = DateFormat('yyyy-MM-dd');
+            final outputDate = outputFormat.format(inputDate);
             if (model.employeeLeaveList.containsKey(outputDate)) {
               return Stack(
                 children: <Widget>[

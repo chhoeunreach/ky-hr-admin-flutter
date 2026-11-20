@@ -6,7 +6,7 @@ import 'package:get/get.dart';
 class HeaderSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    ProjectDetailController model = Get.find();
+    final ProjectDetailController model = Get.find();
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,

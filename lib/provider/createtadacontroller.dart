@@ -20,7 +20,7 @@ class CreateTadaController extends GetxController {
   final key = GlobalKey<FormState>();
 
   void onFileClicked() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles();
+    final FilePickerResult? result = await FilePicker.platform.pickFiles();
     final platformFile = result?.files.single;
     if (platformFile != null) {
       fileList.add(platformFile);
@@ -49,7 +49,7 @@ class CreateTadaController extends GetxController {
       Get.back();
       return "Loaded";
     } else {
-      var errorMessage = response.message;
+      final errorMessage = response.message;
       if (kDebugMode) debugPrint(errorMessage);
       throw errorMessage;
     }

@@ -13,7 +13,7 @@ class CommentScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final model = Get.put(CommentScreenController());
-    List<Member> value = Get.arguments['members'];
+    final List<Member> value = Get.arguments['members'];
     return Container(
       decoration: RadialDecoration(),
       child: Scaffold(

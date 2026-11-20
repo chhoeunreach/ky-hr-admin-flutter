@@ -4,7 +4,6 @@ import 'package:cnattendance/data/source/datastore/preferences.dart';
 import 'package:cnattendance/data/source/network/model/tasklistresponse/tasklistresponse.dart';
 import 'package:cnattendance/model/task.dart';
 import 'package:cnattendance/utils/constant.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
@@ -32,13 +31,13 @@ class TaskListController extends GetxController {
   }
 
   Future<String> getTaskList() async {
-    Preferences preferences = Preferences();
-    var uri = Uri.parse(await preferences.getAppUrl() + Constant.TASK_LIST_URL);
+    final Preferences preferences = Preferences();
+    final uri = Uri.parse(await preferences.getAppUrl() + Constant.TASK_LIST_URL);
 
-    String token = await preferences.getToken();
-    bool isAd = await preferences.getEnglishDate();
+    final String token = await preferences.getToken();
+    final bool isAd = await preferences.getEnglishDate();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
     };
@@ -59,15 +58,15 @@ class TaskListController extends GetxController {
         final taskResponse = tasklistresponse.fromJson(responseData);
 
         for (var task in taskResponse.data) {
-          DateTime startDate = DateFormat("MMM dd yyyy").parse(task.start_date);
-          DateTime endDate = DateFormat("MMM dd yyyy").parse(task.end_date);
+          final DateTime startDate = DateFormat("MMM dd yyyy").parse(task.start_date);
+          final DateTime endDate = DateFormat("MMM dd yyyy").parse(task.end_date);
 
-          NepaliDateTime nepaliStartDate = startDate.toNepaliDateTime();
-          NepaliDateTime nepaliEndDate = endDate.toNepaliDateTime();
+          final NepaliDateTime nepaliStartDate = startDate.toNepaliDateTime();
+          final NepaliDateTime nepaliEndDate = endDate.toNepaliDateTime();
 
-          String nepaliStartTempDate =
+          final String nepaliStartTempDate =
               NepaliDateFormat("MMM dd yyyy").format(nepaliStartDate);
-          String nepaliEndTempDate =
+          final String nepaliEndTempDate =
               NepaliDateFormat("MMM dd yyyy").format(nepaliEndDate);
 
           taskList.add(Task(
@@ -83,7 +82,7 @@ class TaskListController extends GetxController {
         filterList();
         return "loaded";
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         if (kDebugMode) debugPrint(errorMessage);
         throw errorMessage;
       }

@@ -73,7 +73,7 @@ class ComplaintBottomSheetState extends State<ComplaintBottomSheet> {
                 controller: reason,
                 maxLines: 3,
                 onTapOutside: (event) {
-                  FocusScopeNode currentFocus = FocusScope.of(context);
+                  final FocusScopeNode currentFocus = FocusScope.of(context);
                   if (!currentFocus.hasPrimaryFocus &&
                       currentFocus.focusedChild != null) {
                     FocusManager.instance.primaryFocus?.unfocus();
@@ -177,7 +177,7 @@ class ComplaintBottomSheetState extends State<ComplaintBottomSheet> {
     }
     try {
       showLoader();
-      var (status, message) =
+      final (status, message) =
           await model.saveResponseComplaint(reason.text, widget.complaint.id);
       dismissLoader();
       model.page = 1;

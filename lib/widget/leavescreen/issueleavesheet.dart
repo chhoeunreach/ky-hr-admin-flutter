@@ -266,13 +266,13 @@ class IssueLeaveSheetState extends State<IssueLeaveSheet> {
 
                   if (pickedDate != null) {
                     if (!(await provider.isAd())) {
-                      String formattedDate =
+                      final String formattedDate =
                           NepaliDateFormat('yyyy-MM-dd hh:mm:ss')
                               .format((pickedDate as NepaliDateTime));
                       startNepaliDate = (pickedDate).toDateTime();
                       startDate.text = formattedDate;
                     } else {
-                      String formattedDate =
+                      final String formattedDate =
                           DateFormat('yyyy-MM-dd hh:mm:ss').format(pickedDate);
                       setState(() {
                         startDate.text =
@@ -336,13 +336,13 @@ class IssueLeaveSheetState extends State<IssueLeaveSheet> {
 
                   if (pickedDate != null) {
                     if (!(await provider.isAd())) {
-                      String formattedDate =
+                      final String formattedDate =
                           NepaliDateFormat('yyyy-MM-dd hh:mm:ss')
                               .format((pickedDate as NepaliDateTime));
                       endNepaliDate = (pickedDate).toDateTime();
                       endDate.text = formattedDate;
                     } else {
-                      String formattedDate =
+                      final String formattedDate =
                           DateFormat('yyyy-MM-dd hh:mm:ss').format(pickedDate);
                       setState(() {
                         endDate.text =
@@ -393,7 +393,7 @@ class IssueLeaveSheetState extends State<IssueLeaveSheet> {
                 controller: reason,
                 maxLines: 3,
                 onTapOutside: (event) {
-                  FocusScopeNode currentFocus = FocusScope.of(context);
+                  final FocusScopeNode currentFocus = FocusScope.of(context);
                   if (!currentFocus.hasPrimaryFocus &&
                       currentFocus.focusedChild != null) {
                     FocusManager.instance.primaryFocus?.unfocus();

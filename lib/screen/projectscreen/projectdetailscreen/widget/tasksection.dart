@@ -28,7 +28,7 @@ class TaskSection extends StatelessWidget {
             shrinkWrap: true,
             itemCount: model.project.value.tasks.length,
             itemBuilder: (context, index) {
-              Task task = model.project.value.tasks[index];
+              final Task task = model.project.value.tasks[index];
               return Card(
                 margin: EdgeInsets.symmetric(vertical: 5),
                 shape: RoundedRectangleBorder(

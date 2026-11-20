@@ -10,10 +10,10 @@ import 'package:flutter/material.dart';
 
 class ComplaintRepository {
   Future<DepartmentRepsonse> getDepartments() async {
-    Preferences preferences = Preferences();
-    String token = await preferences.getToken();
+    final Preferences preferences = Preferences();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
@@ -30,7 +30,7 @@ class ComplaintRepository {
         final dashboardResponse = DepartmentRepsonse.fromMap(responseData);
         return dashboardResponse;
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         throw errorMessage;
       }
     } catch (e) {
@@ -39,10 +39,10 @@ class ComplaintRepository {
   }
 
   Future<ComplaintRepsonse> getComplaints(int page) async {
-    Preferences preferences = Preferences();
-    String token = await preferences.getToken();
+    final Preferences preferences = Preferences();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
@@ -59,7 +59,7 @@ class ComplaintRepository {
         final dashboardResponse = ComplaintRepsonse.fromMap(responseData);
         return dashboardResponse;
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         throw errorMessage;
       }
     } catch (e) {
@@ -69,10 +69,10 @@ class ComplaintRepository {
 
   Future<(bool, String)> writeComplaintResponse(
       String userResponse, String id) async {
-    Preferences preferences = Preferences();
-    String token = await preferences.getToken();
+    final Preferences preferences = Preferences();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {'Authorization': 'Bearer $token'};
+    final Map<String, String> headers = {'Authorization': 'Bearer $token'};
 
     try {
       final response = await Connect().postResponse(
@@ -95,10 +95,10 @@ class ComplaintRepository {
 
   Future<(bool, String)> applyComplaint(List<int> departmentId,
       List<int> employeeId, String subject, String message) async {
-    Preferences preferences = Preferences();
-    String token = await preferences.getToken();
+    final Preferences preferences = Preferences();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Authorization': 'Bearer $token',
       HttpHeaders.contentTypeHeader: "application/json"
     };

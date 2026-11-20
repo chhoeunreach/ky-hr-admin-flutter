@@ -7,7 +7,6 @@ import 'package:cnattendance/model/project.dart';
 import 'package:cnattendance/model/task.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:cnattendance/core/ky_security/ky_http.dart';
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:nepali_date_picker/nepali_date_picker.dart';
@@ -24,15 +23,15 @@ class ProjectDashboardController extends GetxController {
   var projectList = [].obs;
 
   Future<String> getProjectOverview() async {
-    Preferences preferences = Preferences();
-    var uri = Uri.parse(await preferences.getAppUrl() +
+    final Preferences preferences = Preferences();
+    final uri = Uri.parse(await preferences.getAppUrl() +
         Constant.PROJECT_DASHBOARD_URL +
         "?tasks=10&projects=3");
 
-    String token = await preferences.getToken();
-    bool isAd = await preferences.getEnglishDate();
+    final String token = await preferences.getToken();
+    final bool isAd = await preferences.getEnglishDate();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
     };
@@ -61,19 +60,19 @@ class ProjectDashboardController extends GetxController {
       overview.refresh();
 
       for (var task in projectResponse.data.assigned_task) {
-        DateTime startDate =
+        final DateTime startDate =
             DateFormat("MMM dd yyyy", "en").parse(task.start_date);
-        DateTime endDate = DateFormat("MMM dd yyyy", "en").parse(task.end_date);
+        final DateTime endDate = DateFormat("MMM dd yyyy", "en").parse(task.end_date);
 
-        NepaliDateTime nepaliStartDate = startDate.toNepaliDateTime();
-        NepaliDateTime nepaliEndDate = endDate.toNepaliDateTime();
+        final NepaliDateTime nepaliStartDate = startDate.toNepaliDateTime();
+        final NepaliDateTime nepaliEndDate = endDate.toNepaliDateTime();
 
-        String nepaliStartTempDate =
+        final String nepaliStartTempDate =
             NepaliDateFormat("MMM dd yyyy").format(nepaliStartDate);
-        String nepaliEndTempDate =
+        final String nepaliEndTempDate =
             NepaliDateFormat("MMM dd yyyy").format(nepaliEndDate);
 
-        List<Member> taskMembers = [];
+        final List<Member> taskMembers = [];
 
         for (var member in task.assigned_member) {
           taskMembers.add(Member(member.id, member.name, member.avatar));
@@ -90,17 +89,17 @@ class ProjectDashboardController extends GetxController {
             priority: task.priority));
       }
 
-      List<Member> members = [];
+      final List<Member> members = [];
       for (var project in projectResponse.data.projects) {
         for (var member in project.assigned_member) {
           members.add(Member(member.id, member.name, member.avatar));
         }
 
-        DateTime tempDate =
+        final DateTime tempDate =
             DateFormat("MMM dd yyyy", "en").parse(project.start_date);
-        NepaliDateTime nepaliDate = tempDate.toNepaliDateTime();
+        final NepaliDateTime nepaliDate = tempDate.toNepaliDateTime();
 
-        String nepaliTempDate =
+        final String nepaliTempDate =
             NepaliDateFormat("MMM dd yyyy").format(nepaliDate);
 
         projectList.add(Project(
@@ -118,7 +117,7 @@ class ProjectDashboardController extends GetxController {
 
       return "Loaded";
     } else {
-      var errorMessage = responseData['message'];
+      final errorMessage = responseData['message'];
       if (kDebugMode) debugPrint(errorMessage);
       throw errorMessage;
     }

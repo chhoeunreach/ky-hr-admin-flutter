@@ -52,7 +52,7 @@ class AwardListController extends GetxController {
         recentAward.refresh();
       }
 
-      var list = <Award>[];
+      final list = <Award>[];
 
       for (var award in response.data.all_awards) {
         list.add(Award(

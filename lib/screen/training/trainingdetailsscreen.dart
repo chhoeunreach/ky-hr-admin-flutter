@@ -272,8 +272,8 @@ class TrainingDetailScreen extends StatelessWidget {
                           child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: training.trainer.asMap().entries.map((entry) {
-                                int index = entry.key; // Get the index
-                                var e = entry.value; // Get the trainer object
+                                final int index = entry.key; // Get the index
+                                final e = entry.value; // Get the trainer object
 
                                 return Column(
                                   children: [
@@ -347,8 +347,8 @@ class TrainingDetailScreen extends StatelessWidget {
                                   .asMap()
                                   .entries
                                   .map((entry) {
-                                int index = entry.key;
-                                var e = entry.value;
+                                final int index = entry.key;
+                                final e = entry.value;
                                 return Column(
                                   children: [
                                     Row(

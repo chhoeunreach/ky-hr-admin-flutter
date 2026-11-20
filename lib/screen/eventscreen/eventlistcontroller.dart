@@ -18,7 +18,7 @@ class EventListController extends GetxController {
       EasyLoading.show(
           status: translate('loader.loading'),
           maskType: EasyLoadingMaskType.black);
-      var events = <Event>[];
+      final events = <Event>[];
       final response = await repository.getEvents(
           isUpcoming ? upcomingPage : pastPage, isUpcoming ? 1 : 0);
       EasyLoading.dismiss(animation: true);

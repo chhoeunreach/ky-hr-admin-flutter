@@ -36,7 +36,7 @@ class PrefProvider with ChangeNotifier {
   }
 
   void getUser() async {
-    Preferences preferences = Preferences();
+    final Preferences preferences = Preferences();
 
     _userId = (await preferences.getUserId()).toString();
     _userName = await preferences.getUsername();
@@ -46,18 +46,18 @@ class PrefProvider with ChangeNotifier {
   }
 
   Future<bool> getUserAuth() async {
-    Preferences preferences = Preferences();
+    final Preferences preferences = Preferences();
     return await preferences.getUserAuth();
   }
 
   void saveUser(Login data) async {
-    Preferences preferences = Preferences();
+    final Preferences preferences = Preferences();
     preferences.saveUser(data);
     notifyListeners();
   }
 
   void saveBasicUser(User user) async {
-    Preferences preferences = Preferences();
+    final Preferences preferences = Preferences();
     preferences.saveBasicUser(user);
     _userId = user.id.toString();
     _userName = user.username;
@@ -67,17 +67,17 @@ class PrefProvider with ChangeNotifier {
   }
 
   void saveEngDateEnabled(bool value) async {
-    Preferences preferences = Preferences();
+    final Preferences preferences = Preferences();
     preferences.saveAppEng(value);
   }
 
   Future<bool> getIsAd() async {
-    Preferences preferences = Preferences();
+    final Preferences preferences = Preferences();
     return await preferences.getEnglishDate();
   }
 
   Future<String> getAttendanceType(List<String> attedanceMethod) async {
-    Preferences preferences = Preferences();
+    final Preferences preferences = Preferences();
     final storedType = await preferences.getAttendanceType();
     final available =
         attedanceMethod.map((method) => method.toLowerCase()).toList();
@@ -116,7 +116,7 @@ class PrefProvider with ChangeNotifier {
   }
 
   void saveAuth(bool value) async {
-    Preferences preferences = Preferences();
+    final Preferences preferences = Preferences();
     preferences.saveUserAuth(value);
 
     _auth = await preferences.getUserAuth();
@@ -124,7 +124,7 @@ class PrefProvider with ChangeNotifier {
   }
 
   void saveAttendanceType(String type) async {
-    Preferences preferences = Preferences();
+    final Preferences preferences = Preferences();
     await preferences.saveAttendanceTypeAsUserChoice(type);
 
     _attendanceType = await preferences.getAttendanceType();

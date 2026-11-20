@@ -8,10 +8,10 @@ import 'package:flutter/material.dart';
 
 class WarningRepository {
   Future<WarningRepsonse> getWarnings(int page) async {
-    Preferences preferences = Preferences();
-    String token = await preferences.getToken();
+    final Preferences preferences = Preferences();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
@@ -28,7 +28,7 @@ class WarningRepository {
         final dashboardResponse = WarningRepsonse.fromMap(responseData);
         return dashboardResponse;
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         throw errorMessage;
       }
     } catch (e) {
@@ -37,10 +37,10 @@ class WarningRepository {
   }
 
   Future<(bool, String)> writeResponse(String userResponse, String id) async {
-    Preferences preferences = Preferences();
-    String token = await preferences.getToken();
+    final Preferences preferences = Preferences();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Authorization': 'Bearer $token'
     };
 

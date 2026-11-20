@@ -37,12 +37,12 @@ class HolidayController extends GetxController {
   }
 
   Future<HolidayResponse> getHolidays({bool showLoader = true}) async {
-    Preferences preferences = Preferences();
-    var uri = Uri.parse(await preferences.getAppUrl() + Constant.HOLIDAYS_API);
+    final Preferences preferences = Preferences();
+    final uri = Uri.parse(await preferences.getAppUrl() + Constant.HOLIDAYS_API);
 
-    String token = await preferences.getToken();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
@@ -64,7 +64,7 @@ class HolidayController extends GetxController {
 
         return responseJson;
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         throw errorMessage;
       }
     } catch (error) {
@@ -74,14 +74,14 @@ class HolidayController extends GetxController {
   }
 
   Future<void> makeHolidayList(List<Holidays>? data) async {
-    Preferences preferences = Preferences();
-    bool isAd = await preferences.getEnglishDate();
+    final Preferences preferences = Preferences();
+    final bool isAd = await preferences.getEnglishDate();
 
     _holidayList.clear();
     for (var item in data ?? []) {
-      DateTime tempDate = DateFormat("yyyy-MM-dd").parse(item.eventDate);
+      final DateTime tempDate = DateFormat("yyyy-MM-dd").parse(item.eventDate);
 
-      NepaliDateTime nepaliDate = tempDate.toNepaliDateTime();
+      final NepaliDateTime nepaliDate = tempDate.toNepaliDateTime();
 
       _holidayList.add(Holiday(
           id: item.id,

@@ -11,7 +11,7 @@ class CustomAlertDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var message = title.toString().toLowerCase().contains("null")
+    final message = title.toString().toLowerCase().contains("null")
         ? "សូមបើកបិទរ៉ោតទ័រឡើងវិញ ហើយព្យាយាមម្តងទៀត។"
         : title;
     return Container(

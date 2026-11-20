@@ -35,12 +35,12 @@ class SupportController extends GetxController {
 
   Future<SupportResponse> sendSupportMessage(
       String title, String description) async {
-    Preferences preferences = Preferences();
-    var uri = Uri.parse(await preferences.getAppUrl()+Constant.SUPPORT_URL);
+    final Preferences preferences = Preferences();
+    final uri = Uri.parse(await preferences.getAppUrl()+Constant.SUPPORT_URL);
 
-    String token = await preferences.getToken();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
     };
@@ -76,7 +76,7 @@ class SupportController extends GetxController {
             barrierDismissible: false);
         return supportResponse;
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         throw errorMessage;
       }
     } catch (e) {
@@ -86,12 +86,12 @@ class SupportController extends GetxController {
   }
 
   Future<void> getDepartments() async {
-    Preferences preferences = Preferences();
-    var uri = Uri.parse(await preferences.getAppUrl()+Constant.DEPARTMENT_LIST_URL);
+    final Preferences preferences = Preferences();
+    final uri = Uri.parse(await preferences.getAppUrl()+Constant.DEPARTMENT_LIST_URL);
 
-    String token = await preferences.getToken();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
     };
@@ -115,7 +115,7 @@ class SupportController extends GetxController {
           }
         }
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         throw errorMessage;
       }
     } catch (e) {

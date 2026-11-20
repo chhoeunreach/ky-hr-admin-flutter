@@ -34,7 +34,7 @@ class AttendanceBottomSheetState extends State<AttedanceBottomSheet> {
             status: translate('loader.requesting'),
             maskType: EasyLoadingMaskType.black);
       });
-      var status = await provider.getCheckInStatus();
+      final status = await provider.getCheckInStatus();
       if (status) {
         final response = await provider.verifyAttendanceApi("wifi", note,
             attendanceStatus: "checkOut",
@@ -121,7 +121,7 @@ class AttendanceBottomSheetState extends State<AttedanceBottomSheet> {
             status: translate('loader.requesting'),
             maskType: EasyLoadingMaskType.black);
       });
-      var status = await provider.getCheckInStatus();
+      final status = await provider.getCheckInStatus();
       if (status) {
         final response = await provider.verifyAttendanceApi("wifi", note,
             attendanceStatus: "checkIn",
@@ -281,7 +281,7 @@ class AttendanceBottomSheetState extends State<AttedanceBottomSheet> {
                   textAlignVertical: TextAlignVertical.top,
                   maxLines: 3,
                   onTapOutside: (event) {
-                    FocusScopeNode currentFocus = FocusScope.of(context);
+                    final FocusScopeNode currentFocus = FocusScope.of(context);
                     if (!currentFocus.hasPrimaryFocus &&
                         currentFocus.focusedChild != null) {
                       FocusManager.instance.primaryFocus?.unfocus();

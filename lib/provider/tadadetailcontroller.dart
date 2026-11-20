@@ -39,7 +39,7 @@ class TadaDetailController extends GetxController {
 
       final nepaliDate = NepaliDateFormat("MMM dd yyyy").format(date);
 
-      Tada rTada = Tada(
+      final Tada rTada = Tada(
           data.id,
           data.title,
           data.description,

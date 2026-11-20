@@ -6,7 +6,6 @@ import 'package:cnattendance/utils/app_device_info.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:cnattendance/utils/fcm_token.dart';
 import 'package:cnattendance/services/server_status_service.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:cnattendance/core/ky_security/ky_http.dart';
@@ -59,7 +58,7 @@ class Auth with ChangeNotifier {
   }
 
   Future<Loginresponse> login(String username, String password) async {
-    Map<String, String> headers = {"Accept": "application/json; charset=UTF-8"};
+    final Map<String, String> headers = {"Accept": "application/json; charset=UTF-8"};
 
     try {
       final fcm = await FcmToken.get();
@@ -119,7 +118,7 @@ class Auth with ChangeNotifier {
 
         return responseJson;
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         throw errorMessage;
       }
     } catch (error) {

@@ -421,7 +421,7 @@ class ChatController extends GetxController {
 
         final chatDb = <Chat>[];
         for (var item in event.docs) {
-          Timestamp firebaseTimestamp = item["date"];
+          final Timestamp firebaseTimestamp = item["date"];
           final encodedMessage = _readString(item.data(), "message");
           chatDb.add(
             Chat.fromFirestore(
@@ -524,18 +524,18 @@ class ChatController extends GetxController {
   Future<void> sendPushNotifiation(String title, String message,
       String converstion_id, String type, String project_id, String username,
       {String messageType = "text", String mediaUrl = ""}) async {
-    Preferences preferences = Preferences();
+    final Preferences preferences = Preferences();
 
-    var uri = Uri.parse(
+    final uri = Uri.parse(
         "${await preferences.getAppUrl()}${Constant.SEND_PUSH_NOTIFICATION}");
 
-    String token = await preferences.getToken();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
     };
-    var users = <String>[];
+    final users = <String>[];
     users.add(username);
 
     final http.Client client = LoggingMiddleware(http.Client());
@@ -571,7 +571,7 @@ class ChatController extends GetxController {
     } else if (_isMissingRegistrationTokenError(responseMessage)) {
       if (kDebugMode) debugPrint("Push skipped: $responseMessage");
     } else {
-      var errorMessage = responseData['message'];
+      final errorMessage = responseData['message'];
       if (kDebugMode) debugPrint(errorMessage);
       throw errorMessage;
     }

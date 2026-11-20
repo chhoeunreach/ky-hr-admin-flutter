@@ -15,7 +15,7 @@ class MentionBottomSheet extends StatelessWidget {
   final model = Get.put(CommentScreenController());
   @override
   Widget build(BuildContext context) {
-    var filteredList = <Member>[];
+    final filteredList = <Member>[];
     for(var member in members){
       if(!model.mentionList.contains(member)){
         filteredList.add(member);

@@ -21,15 +21,15 @@ class MeetingController extends GetxController {
   }
 
   Future<MeetingReponse> getMeetingList() async {
-    Preferences preferences = Preferences();
-    var uri = Uri.parse(await preferences.getAppUrl()+Constant.MEETING_URL).replace(queryParameters: {
+    final Preferences preferences = Preferences();
+    final uri = Uri.parse(await preferences.getAppUrl()+Constant.MEETING_URL).replace(queryParameters: {
       'page': page.toString(),
       'per_page': per_page.toString(),
     });
 
-    String token = await preferences.getToken();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
@@ -48,7 +48,7 @@ class MeetingController extends GetxController {
         makeMeetingList(responseJson.data);
         return responseJson;
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         throw errorMessage;
       }
     } catch (error) {

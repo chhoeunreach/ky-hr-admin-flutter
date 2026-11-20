@@ -9,10 +9,10 @@ import 'package:flutter/material.dart';
 class ChangePasswordRepository{
   Future<ChangePasswordResponse> changePassword(
       String old, String newPassword, String confirm) async {
-    Preferences preferences = Preferences();
-    String token = await preferences.getToken();
+    final Preferences preferences = Preferences();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
     };
@@ -34,7 +34,7 @@ class ChangePasswordRepository{
 
         return jsonResponse;
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         throw errorMessage;
       }
     } catch (e) {

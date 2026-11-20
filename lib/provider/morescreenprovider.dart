@@ -15,14 +15,14 @@ class MoreScreenProvider with ChangeNotifier {
   bool showNfc = false;
 
   void changeAttendanceMethod(String type) {
-    Preferences preferences = Preferences();
+    final Preferences preferences = Preferences();
     preferences.saveAttendanceType(type);
     notifyListeners();
   }
 
   Future<void> getFeatures() async {
     try {
-      Preferences preferences = Preferences();
+      final Preferences preferences = Preferences();
       final loadedFeatures = await preferences.getFeatures();
       features = loadedFeatures;
       showNfc = await preferences.getShowNfc();
@@ -33,12 +33,12 @@ class MoreScreenProvider with ChangeNotifier {
   }
 
   Future<Logoutresponse> logout() async {
-    Preferences preferences = Preferences();
-    var uri = Uri.parse(await preferences.getAppUrl() + Constant.LOGOUT_URL);
+    final Preferences preferences = Preferences();
+    final uri = Uri.parse(await preferences.getAppUrl() + Constant.LOGOUT_URL);
 
-    String token = await preferences.getToken();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
     };
@@ -60,7 +60,7 @@ class MoreScreenProvider with ChangeNotifier {
         notifyListeners();
         return jsonResponse;
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         throw errorMessage;
       }
     } catch (e) {
@@ -69,21 +69,21 @@ class MoreScreenProvider with ChangeNotifier {
   }
 
   Future<String> getDeviceName() async {
-    Map deviceInfo = (await DeviceInfoPlugin().deviceInfo).data;
-    String? brand = deviceInfo['brand'];
-    String? model = deviceInfo['model'];
-    String? name = deviceInfo['name'];
+    final Map deviceInfo = (await DeviceInfoPlugin().deviceInfo).data;
+    final String? brand = deviceInfo['brand'];
+    final String? model = deviceInfo['model'];
+    final String? name = deviceInfo['name'];
 
     return ("${name ?? ""} ${brand ?? ""} ${model ?? ""}");
   }
 
   Future<void> addNfcApi(String title, String identifier) async {
-    Preferences preferences = Preferences();
-    var uri = Uri.parse(await preferences.getAppUrl() + Constant.ADD_NFC_URL);
+    final Preferences preferences = Preferences();
+    final uri = Uri.parse(await preferences.getAppUrl() + Constant.ADD_NFC_URL);
 
-    String token = await preferences.getToken();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
     };
@@ -99,7 +99,7 @@ class MoreScreenProvider with ChangeNotifier {
 
     if (response.statusCode == 200) {
     } else {
-      var errorMessage = responseData['message'];
+      final errorMessage = responseData['message'];
       throw errorMessage;
     }
   }

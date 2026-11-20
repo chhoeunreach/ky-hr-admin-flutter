@@ -55,7 +55,7 @@ void main() {
         'force_update': false,
       };
       final infoOld = AppVersionInfo.fromJson(apiResponseOld);
-      final currentVersionOld = '1.2.9';
+      const currentVersionOld = '1.2.9';
 
       final shouldShowOld = infoOld.showAlert ||
           (infoOld.latestVersion.isNotEmpty &&
@@ -71,7 +71,7 @@ void main() {
         'force_update': false,
       };
       final infoNew = AppVersionInfo.fromJson(apiResponseNew);
-      final currentVersionNew = '1.3.0';
+      const currentVersionNew = '1.3.0';
 
       final shouldShowNew = infoNew.showAlert ||
           (infoNew.latestVersion.isNotEmpty &&
@@ -103,8 +103,8 @@ void main() {
         'download_url': 'https://hr.kneayerng.com',
         'force_update': '0',
       };
-      final titleKm = 'មានកំណែអាប់ដេតថ្មី';
-      final bodyKm = 'មានកំណែថ្មីនៃកម្មវិធី (1.3.0)។ សូមធ្វើបច្ចុប្បន្នភាពដើម្បីរីករាយជាមួយមុខងារថ្មីៗ និងការកែលម្អ។';
+      const titleKm = 'មានកំណែអាប់ដេតថ្មី';
+      const bodyKm = 'មានកំណែថ្មីនៃកម្មវិធី (1.3.0)។ សូមធ្វើបច្ចុប្បន្នភាពដើម្បីរីករាយជាមួយមុខងារថ្មីៗ និងការកែលម្អ។';
 
       final isUpdate = fcmPayload['type'] == 'app_update' ||
           fcmPayload.containsKey('target_version') ||

@@ -23,8 +23,8 @@ class LoanListScreen extends StatelessWidget {
             onPressed: () {
               Get.to(CreateLoanScreen());
             },
-            child: Icon(Icons.add),
-            backgroundColor: Colors.blue),
+            backgroundColor: Colors.blue,
+            child: Icon(Icons.add)),
         body: SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(15.0),

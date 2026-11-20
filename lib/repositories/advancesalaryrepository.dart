@@ -6,15 +6,14 @@ import 'package:cnattendance/data/source/network/model/advancesalarycreate/adava
 import 'package:cnattendance/data/source/network/model/advancesalarylist/adavancesalaryresponse.dart';
 import 'package:cnattendance/data/source/network/model/advanceslarydetail/advancesalarydetailresponse.dart';
 import 'package:cnattendance/utils/constant.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 
 class AdvanceSalaryRepository {
   Future<AdavanceSalaryResponse> getAdvanceList() async {
-    Preferences preferences = Preferences();
-    String token = await preferences.getToken();
+    final Preferences preferences = Preferences();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
     };
@@ -31,7 +30,7 @@ class AdvanceSalaryRepository {
 
         return adavanceSalary;
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         if (kDebugMode) debugPrint(errorMessage);
         throw errorMessage;
       }
@@ -43,10 +42,10 @@ class AdvanceSalaryRepository {
 
   Future<AdavanceSalaryCreateResponse> createAdvanceSalary(
       String reqAmt, String desc) async {
-    Preferences preferences = Preferences();
-    String token = await preferences.getToken();
+    final Preferences preferences = Preferences();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
     };
@@ -65,7 +64,7 @@ class AdvanceSalaryRepository {
 
         return AdavanceSalaryCreateResponse.fromJson(responseData);
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         if (kDebugMode) debugPrint(errorMessage);
         throw errorMessage;
       }
@@ -77,10 +76,10 @@ class AdvanceSalaryRepository {
 
   Future<AdavanceSalaryCreateResponse> updateAdvanceSalary(
       String id,String reqAmt, String desc) async {
-    Preferences preferences = Preferences();
-    String token = await preferences.getToken();
+    final Preferences preferences = Preferences();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
     };
@@ -100,7 +99,7 @@ class AdvanceSalaryRepository {
 
         return AdavanceSalaryCreateResponse.fromJson(responseData);
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         if (kDebugMode) debugPrint(errorMessage);
         throw errorMessage;
       }
@@ -111,10 +110,10 @@ class AdvanceSalaryRepository {
 
   Future<advancesalarydetailresponse> getAdvanceSalaryDetail(
       String id) async {
-    Preferences preferences = Preferences();
-    String token = await preferences.getToken();
+    final Preferences preferences = Preferences();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
     };
@@ -130,7 +129,7 @@ class AdvanceSalaryRepository {
 
         return advancesalarydetailresponse.fromJson(responseData);
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         if (kDebugMode) debugPrint(errorMessage);
         throw errorMessage;
       }
@@ -144,10 +143,10 @@ class AdvanceSalaryRepository {
     required String releasedAmount,
     String? remark,
   }) async {
-    Preferences preferences = Preferences();
-    String token = await preferences.getToken();
+    final Preferences preferences = Preferences();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
     };
@@ -169,7 +168,7 @@ class AdvanceSalaryRepository {
       if (response.statusCode == 200) {
         return AdavanceSalaryCreateResponse.fromJson(responseData);
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         throw errorMessage;
       }
     } catch (e) {
@@ -181,10 +180,10 @@ class AdvanceSalaryRepository {
     required String id,
     String? remark,
   }) async {
-    Preferences preferences = Preferences();
-    String token = await preferences.getToken();
+    final Preferences preferences = Preferences();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
     };
@@ -205,7 +204,7 @@ class AdvanceSalaryRepository {
       if (response.statusCode == 200) {
         return AdavanceSalaryCreateResponse.fromJson(responseData);
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         throw errorMessage;
       }
     } catch (e) {
@@ -214,7 +213,7 @@ class AdvanceSalaryRepository {
   }
 
   Future<bool> getIsAd() async {
-    Preferences preferences = Preferences();
+    final Preferences preferences = Preferences();
     return await preferences.getEnglishDate();
   }
 }

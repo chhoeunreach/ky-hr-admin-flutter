@@ -186,13 +186,13 @@ class DashboardProvider with ChangeNotifier {
   }
 
   Future<void> checkAD() async {
-    Preferences preferences = Preferences();
+    final Preferences preferences = Preferences();
     isAD = await preferences.getEnglishDate();
     notifyListeners();
   }
 
   Future<void> getFeatures() async {
-    Preferences preferences = Preferences();
+    final Preferences preferences = Preferences();
     features = await preferences.getFeatures();
     notifyListeners();
   }
@@ -331,10 +331,10 @@ class DashboardProvider with ChangeNotifier {
       training = dashboardResponse.data.recentTraining;
 
       if (holidayResponse != null) {
-        DateTime tempDate =
+        final DateTime tempDate =
             DateFormat("yyyy-MM-dd").parse(holidayResponse.eventDate);
 
-        NepaliDateTime nepaliDate = tempDate.toNepaliDateTime();
+        final NepaliDateTime nepaliDate = tempDate.toNepaliDateTime();
         holiday = Holiday(
             id: holidayResponse.id,
             day: isAD
@@ -800,25 +800,25 @@ class DashboardProvider with ChangeNotifier {
   }
 
   double calculateProdHour(int value) {
-    double hour = value / 60;
-    double hr = hour / Constant.TOTAL_WORKING_HOUR;
+    final double hour = value / 60;
+    final double hr = hour / Constant.TOTAL_WORKING_HOUR;
 
     return hr > 1 ? 1 : hr;
   }
 
   String calculateHourText(int value) {
-    double second = value * 60.toDouble();
-    double min = second / 60;
-    int minGone = (min % 60).toInt();
-    int hour = min ~/ 60;
+    final double second = value * 60.toDouble();
+    final double min = second / 60;
+    final int minGone = (min % 60).toInt();
+    final int hour = min ~/ 60;
 
     if (kDebugMode) debugPrint("$hour hr $minGone min");
     return "$hour hr $minGone min";
   }
 
   Future<void> controlFeatures(List<Feature> features) async {
-    Preferences preferences = Preferences();
-    Map<String, String> featureList = <String, String>{};
+    final Preferences preferences = Preferences();
+    final Map<String, String> featureList = <String, String>{};
 
     for (var feature in features) {
       featureList[feature.key] = feature.status;
@@ -842,7 +842,7 @@ class DashboardProvider with ChangeNotifier {
         return true;
       }
 
-      Preferences preferences = Preferences();
+      final Preferences preferences = Preferences();
       final position = await LocationStatus().determinePosition(
         await preferences.getWorkSpace(),
         forceHighAccuracy: true,
@@ -972,7 +972,7 @@ class DashboardProvider with ChangeNotifier {
 
   Future<String> onSendLocation() async {
     try {
-      Preferences preferences = Preferences();
+      final Preferences preferences = Preferences();
       final position = await LocationStatus().determinePosition(
         await preferences.getWorkSpace(),
         forceHighAccuracy: true,
@@ -984,12 +984,12 @@ class DashboardProvider with ChangeNotifier {
       _lastLocationRefreshAt = DateTime.now();
 
       final deviceDetails = await AppDeviceInfo.getDetails();
-      var uri =
+      final uri =
           Uri.parse(await preferences.getAppUrl() + Constant.SEND_LOCATION);
 
-      String token = await preferences.getToken();
+      final String token = await preferences.getToken();
 
-      Map<String, String> headers = {
+      final Map<String, String> headers = {
         'Accept': 'application/json; charset=UTF-8',
         'Authorization': 'Bearer $token'
       };
@@ -1015,7 +1015,7 @@ class DashboardProvider with ChangeNotifier {
           preferences.clearPrefs();
           Get.offAll(LoginScreen());
         }
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         throw errorMessage;
       }
     } catch (e) {
@@ -1024,12 +1024,12 @@ class DashboardProvider with ChangeNotifier {
   }
 
   Future<AttendanceStatusResponse> checkInAttendance() async {
-    Preferences preferences = Preferences();
-    var uri = Uri.parse(await preferences.getAppUrl() + Constant.CHECK_IN_URL);
+    final Preferences preferences = Preferences();
+    final uri = Uri.parse(await preferences.getAppUrl() + Constant.CHECK_IN_URL);
 
-    String token = await preferences.getToken();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
     };
@@ -1066,7 +1066,7 @@ class DashboardProvider with ChangeNotifier {
         preferences.clearPrefs();
         Get.offAll(LoginScreen());
       }
-      var errorMessage = responseData['message'];
+      final errorMessage = responseData['message'];
       throw errorMessage;
     }
   }
@@ -1150,12 +1150,12 @@ class DashboardProvider with ChangeNotifier {
   }
 
   Future<AttendanceStatusResponse> checkOutAttendance() async {
-    Preferences preferences = Preferences();
-    var uri = Uri.parse(await preferences.getAppUrl() + Constant.CHECK_OUT_URL);
+    final Preferences preferences = Preferences();
+    final uri = Uri.parse(await preferences.getAppUrl() + Constant.CHECK_OUT_URL);
 
-    String token = await preferences.getToken();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
     };
@@ -1187,7 +1187,7 @@ class DashboardProvider with ChangeNotifier {
         preferences.clearPrefs();
         Get.offAll(LoginScreen());
       }
-      var errorMessage = responseData['message'];
+      final errorMessage = responseData['message'];
       throw errorMessage;
     }
   }
@@ -1206,13 +1206,13 @@ class DashboardProvider with ChangeNotifier {
       throw translate('device_clock.mismatch_message');
     }
 
-    Preferences preferences = Preferences();
-    var uri =
+    final Preferences preferences = Preferences();
+    final uri =
         Uri.parse(await preferences.getAppUrl() + Constant.ATTENDANCE_URL);
 
-    String token = await preferences.getToken();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
     };
@@ -1294,7 +1294,7 @@ class DashboardProvider with ChangeNotifier {
         preferences.clearPrefs();
         Get.offAll(LoginScreen());
       }
-      var errorMessage = responseData['message'];
+      final errorMessage = responseData['message'];
       throw errorMessage;
     }
   }

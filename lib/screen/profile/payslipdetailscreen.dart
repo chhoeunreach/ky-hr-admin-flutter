@@ -45,9 +45,9 @@ class PaySlipScreenState extends State<PaySlipDetailScreen> {
     final _flutterNativeHtmlToPdfPlugin = FlutterNativeHtmlToPdf();
 
     Future<void> generateExampleDocument() async {
-      Directory appDocDir = await getApplicationDocumentsDirectory();
+      final Directory appDocDir = await getApplicationDocumentsDirectory();
       final targetPath = appDocDir.path;
-      var targetFileName =
+      final targetFileName =
           context.read<PaySlipDetailProvider>().payslipDetail["salary_title"]!;
       final generatedPdfFile =
           await _flutterNativeHtmlToPdfPlugin.convertHtmlToPdf(

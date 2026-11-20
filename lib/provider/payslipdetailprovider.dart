@@ -5,7 +5,6 @@ import 'package:cnattendance/data/source/network/model/payslipdetail/Deduction.d
 import 'package:cnattendance/data/source/network/model/payslipdetail/Earning.dart';
 import 'package:cnattendance/data/source/network/model/payslipdetail/payslipdetailresponse.dart';
 import 'package:cnattendance/utils/constant.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:cnattendance/core/ky_security/ky_http.dart';
 import 'package:flutter/foundation.dart';
 
@@ -66,12 +65,12 @@ class PaySlipDetailProvider with ChangeNotifier {
   }
 
   Future<void> getPaySlipData(String id) async {
-    Preferences preferences = Preferences();
-    var uri = Uri.parse(await preferences.getAppUrl()+Constant.PAYSLIP_DETAIL_URL + id);
+    final Preferences preferences = Preferences();
+    final uri = Uri.parse(await preferences.getAppUrl()+Constant.PAYSLIP_DETAIL_URL + id);
 
-    String token = await preferences.getToken();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
     };
@@ -134,7 +133,7 @@ class PaySlipDetailProvider with ChangeNotifier {
 
         notifyListeners();
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         throw errorMessage;
       }
     } catch (error) {

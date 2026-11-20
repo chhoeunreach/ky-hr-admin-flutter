@@ -158,7 +158,7 @@ class NoteBottomSheetState extends State<NoteBottomSheet> {
                   textAlignVertical: TextAlignVertical.top,
                   maxLines: 3,
                   onTapOutside: (event) {
-                    FocusScopeNode currentFocus = FocusScope.of(context);
+                    final FocusScopeNode currentFocus = FocusScope.of(context);
                     if (!currentFocus.hasPrimaryFocus &&
                         currentFocus.focusedChild != null) {
                       FocusManager.instance.primaryFocus?.unfocus();
@@ -234,7 +234,7 @@ class NoteBottomSheetState extends State<NoteBottomSheet> {
                                           'attendance_messages.verifying'),
                                       maskType: EasyLoadingMaskType.black);
                                 });
-                                var status = await provider.getCheckInStatus();
+                                final status = await provider.getCheckInStatus();
                                 if (status) {
                                   final response =
                                       await provider.verifyAttendanceApi(

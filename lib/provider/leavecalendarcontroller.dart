@@ -53,19 +53,19 @@ class LeaveCalendarController extends GetxController {
   }
 
   Future<void> getIsAd() async {
-    Preferences preferences = Preferences();
+    final Preferences preferences = Preferences();
 
     isAd.value = await preferences.getEnglishDate();
   }
 
   Future<Employeeleavecalendarresponse> getLeaves() async {
-    Preferences preferences = Preferences();
-    var uri =
+    final Preferences preferences = Preferences();
+    final uri =
         Uri.parse(await preferences.getAppUrl() + Constant.LEAVE_CALENDAR_API);
 
-    String token = await preferences.getToken();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
@@ -82,7 +82,7 @@ class LeaveCalendarController extends GetxController {
         _employeeLeaveList.clear();
 
         for (var item in responseJson.data) {
-          List<int> list = [];
+          final List<int> list = [];
           for (int i = 0; i < int.parse(item.leaveCount); i++) {
             list.add(i);
           }
@@ -91,7 +91,7 @@ class LeaveCalendarController extends GetxController {
 
         return responseJson;
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         throw errorMessage;
       }
     } catch (error) {
@@ -100,14 +100,14 @@ class LeaveCalendarController extends GetxController {
   }
 
   Future<EmployeeLeavesByDayResponse> getLeavesByDay(String value) async {
-    Preferences preferences = Preferences();
-    var uri =
+    final Preferences preferences = Preferences();
+    final uri =
         Uri.parse(await preferences.getAppUrl() + Constant.OFFICE_CALENDAR_API)
             .replace(queryParameters: {'leave_date': value});
 
-    String token = await preferences.getToken();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
@@ -127,7 +127,7 @@ class LeaveCalendarController extends GetxController {
 
         return responseJson;
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         throw errorMessage;
       }
     } catch (error) {
@@ -149,12 +149,12 @@ class LeaveCalendarController extends GetxController {
 
   Future<void> makeHolidayList(holi.Holiday? item) async {
     if (item != null) {
-      Preferences preferences = Preferences();
-      bool isAd = await preferences.getEnglishDate();
+      final Preferences preferences = Preferences();
+      final bool isAd = await preferences.getEnglishDate();
 
-      DateTime tempDate = DateFormat("yyyy-MM-dd").parse(item.event_date);
+      final DateTime tempDate = DateFormat("yyyy-MM-dd").parse(item.event_date);
 
-      NepaliDateTime nepaliDate = tempDate.toNepaliDateTime();
+      final NepaliDateTime nepaliDate = tempDate.toNepaliDateTime();
 
       _employeeHoliday.value = Holiday(
           id: item.id,
@@ -174,8 +174,8 @@ class LeaveCalendarController extends GetxController {
   }
 
   void getLeaveByDate(DateTime value) async {
-    var outputFormat = DateFormat('yyyy-MM-dd');
-    var outputDate = outputFormat.format(value);
+    final outputFormat = DateFormat('yyyy-MM-dd');
+    final outputDate = outputFormat.format(value);
     getLeavesByDay(outputDate);
   }
 
@@ -184,9 +184,9 @@ class LeaveCalendarController extends GetxController {
     getIsAd();
     getLeaves();
 
-    var inputDate = DateTime.now();
-    var outputFormat = DateFormat('yyyy-MM-dd');
-    var outputDate = outputFormat.format(inputDate);
+    final inputDate = DateTime.now();
+    final outputFormat = DateFormat('yyyy-MM-dd');
+    final outputDate = outputFormat.format(inputDate);
     getLeavesByDay(outputDate);
 
     super.onReady();

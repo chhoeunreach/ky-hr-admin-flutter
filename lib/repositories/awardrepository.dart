@@ -8,10 +8,10 @@ import 'package:flutter/material.dart';
 
 class AwardRepository {
   Future<AwardListResponse> getAwards() async {
-    Preferences preferences = Preferences();
-    String token = await preferences.getToken();
+    final Preferences preferences = Preferences();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
@@ -28,7 +28,7 @@ class AwardRepository {
         final jsonResponse = AwardListResponse.fromJson(responseData);
         return jsonResponse;
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         throw errorMessage;
       }
     } catch (e) {

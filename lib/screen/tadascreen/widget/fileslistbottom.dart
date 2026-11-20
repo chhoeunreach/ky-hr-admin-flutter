@@ -21,7 +21,7 @@ class FilesListBottom extends StatelessWidget {
           shrinkWrap: true,
           physics: NeverScrollableScrollPhysics(),
           itemBuilder: (context, index) {
-            Attachment item = attachList[index];
+            final Attachment item = attachList[index];
             return Card(
                 elevation: 0,
                 color: Colors.white12,

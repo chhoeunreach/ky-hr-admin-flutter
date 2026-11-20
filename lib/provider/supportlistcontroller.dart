@@ -5,7 +5,6 @@ import 'package:cnattendance/data/source/network/model/supportlistresponse/suppo
 import 'package:cnattendance/model/support.dart';
 import 'package:cnattendance/screen/profile/supportdetailscreen.dart';
 import 'package:cnattendance/utils/constant.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
@@ -21,13 +20,13 @@ class SupportListController extends GetxController {
   final selected = "All".obs;
 
   Future<void> getSupportList() async {
-    Preferences preferences = Preferences();
-    var uri = Uri.parse(await preferences.getAppUrl()+Constant.SUPPORT_LIST_URL + "?per_page=50&page=1");
+    final Preferences preferences = Preferences();
+    final uri = Uri.parse(await preferences.getAppUrl()+Constant.SUPPORT_LIST_URL + "?per_page=50&page=1");
 
-    String token = await preferences.getToken();
-    bool isAd = await preferences.getEnglishDate();
+    final String token = await preferences.getToken();
+    final bool isAd = await preferences.getEnglishDate();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
     };
@@ -72,7 +71,7 @@ class SupportListController extends GetxController {
         supportList.value = list;
         filterList();
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         throw errorMessage;
       }
     } catch (e) {

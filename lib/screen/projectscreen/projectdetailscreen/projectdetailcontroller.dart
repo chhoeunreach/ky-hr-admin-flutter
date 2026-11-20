@@ -7,7 +7,6 @@ import 'package:cnattendance/model/member.dart';
 import 'package:cnattendance/model/project.dart';
 import 'package:cnattendance/model/task.dart';
 import 'package:cnattendance/utils/constant.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
@@ -24,14 +23,14 @@ class ProjectDetailController extends GetxController {
   var leaderImages = [].obs;
 
   Future<String> getProjectOverview() async {
-    Preferences preferences = Preferences();
-    var uri = Uri.parse(
+    final Preferences preferences = Preferences();
+    final uri = Uri.parse(
         await preferences.getAppUrl() +Constant.PROJECT_DETAIL_URL + "/" + Get.arguments["id"].toString());
 
-    String token = await preferences.getToken();
-    bool isAd = await preferences.getEnglishDate();
+    final String token = await preferences.getToken();
+    final bool isAd = await preferences.getEnglishDate();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
     };
@@ -51,7 +50,7 @@ class ProjectDetailController extends GetxController {
       if (response.statusCode == 200) {
         final projectResponse = ProjectDetailResponse.fromJson(responseData);
 
-        List<Member> members = [];
+        final List<Member> members = [];
         memberImages.clear();
         for (var member in projectResponse.data.assigned_member) {
           members.add(
@@ -59,7 +58,7 @@ class ProjectDetailController extends GetxController {
           memberImages.add(member.avatar);
         }
 
-        List<Member> leaders = [];
+        final List<Member> leaders = [];
         leaderImages.clear();
         for (var member in projectResponse.data.project_leader) {
           leaders.add(
@@ -67,7 +66,7 @@ class ProjectDetailController extends GetxController {
           leaderImages.add(member.avatar);
         }
 
-        List<Attachment> attachments = [];
+        final List<Attachment> attachments = [];
         for (var attachment in projectResponse.data.attachments) {
           if (attachment.type == "image") {
             attachments.add(Attachment(0, attachment.attachment_url, "image"));
@@ -76,14 +75,14 @@ class ProjectDetailController extends GetxController {
           }
         }
 
-        DateTime tempDate =
+        final DateTime tempDate =
             DateFormat("yyyy-mm-dd").parse(projectResponse.data.start_date);
-        NepaliDateTime nepaliDate = tempDate.toNepaliDateTime();
+        final NepaliDateTime nepaliDate = tempDate.toNepaliDateTime();
 
-        String nepaliTempDate =
+        final String nepaliTempDate =
             NepaliDateFormat("MMMM dd yyyy").format(nepaliDate);
 
-        Project response = Project(
+        final Project response = Project(
             projectResponse.data.id,
             projectResponse.data.name,
             projectResponse.data.slug,
@@ -112,7 +111,7 @@ class ProjectDetailController extends GetxController {
         project.value = response;
         return "Loaded";
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         if (kDebugMode) debugPrint(errorMessage);
         throw errorMessage;
       }

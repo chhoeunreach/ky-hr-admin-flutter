@@ -57,7 +57,7 @@ class ComplainController extends GetxController {
   Future<(bool, String)> saveResponseComplaint(
       String userResponse, int id) async {
     try {
-      var (status, message) =
+      final (status, message) =
           await repository.writeComplaintResponse(userResponse, id.toString());
       return (status, message);
     } catch (e) {
@@ -67,7 +67,7 @@ class ComplainController extends GetxController {
 
   Future<(bool, String)> applyComplaint(String subject, String body) async {
     try {
-      List<int> employeeIds =
+      final List<int> employeeIds =
           selectedEmployees.map((employee) => employee.id).toList();
       List<int> departmentIds = [];
 
@@ -83,7 +83,7 @@ class ComplainController extends GetxController {
 
       departmentIds = departmentIds.toSet().toList();
 
-      var (status, message) = await repository.applyComplaint(
+      final (status, message) = await repository.applyComplaint(
           departmentIds, employeeIds, subject, body);
       return (status, message);
     } catch (e) {
@@ -120,7 +120,7 @@ class ComplainController extends GetxController {
     );
 
     // Create a copy of selectedEmployees to avoid concurrent modification
-    var employeesToRemove = <Employee>[];
+    final employeesToRemove = <Employee>[];
 
     for (var empl in selectedEmployees) {
       if (department.employee.any((element) => element.id == empl.id)) {

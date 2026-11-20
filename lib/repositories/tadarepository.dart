@@ -9,16 +9,15 @@ import 'package:cnattendance/data/source/network/model/tadadetail/tadadetailresp
 import 'package:cnattendance/data/source/network/model/tadalist/tadalistresponse.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 
 class TadaRepository {
   Future<TadaListResponse> getTadaList() async {
-    Preferences preferences = Preferences();
-    String token = await preferences.getToken();
+    final Preferences preferences = Preferences();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
     };
@@ -35,7 +34,7 @@ class TadaRepository {
 
         return tadaResponse;
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         if (kDebugMode) debugPrint(errorMessage);
         throw errorMessage;
       }
@@ -45,10 +44,10 @@ class TadaRepository {
   }
 
   Future<TadaDetailResponse> getTadaDetail(String tadaId) async {
-    Preferences preferences = Preferences();
-    String token = await preferences.getToken();
+    final Preferences preferences = Preferences();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'
     };
@@ -65,7 +64,7 @@ class TadaRepository {
 
         return tadaResponse;
       } else {
-        var errorMessage = responseData['message'];
+        final errorMessage = responseData['message'];
         if (kDebugMode) debugPrint(errorMessage);
         throw errorMessage;
       }
@@ -76,18 +75,18 @@ class TadaRepository {
 
   Future<IssueLeaveResponse> createTada(String title, String description,
       String expenses, List<PlatformFile> fileList) async {
-    Preferences preferences = Preferences();
-    var uri = Uri.parse(await preferences.getAppUrl() + Constant.TADA_STORE_URL);
+    final Preferences preferences = Preferences();
+    final uri = Uri.parse(await preferences.getAppUrl() + Constant.TADA_STORE_URL);
 
-    String token = await preferences.getToken();
+    final String token = await preferences.getToken();
 
-    Map<String, String> headers = {
+    final Map<String, String> headers = {
       'Accept': 'application/json; charset=UTF-8',
       'Content-type': 'multipart/form-data',
       'Authorization': 'Bearer $token'
     };
 
-    var requests = http.MultipartRequest('POST', uri);
+    final requests = http.MultipartRequest('POST', uri);
     requests.headers.addAll(headers);
 
     requests.fields.addAll({
@@ -115,14 +114,14 @@ class TadaRepository {
       final tadaResponse = IssueLeaveResponse.fromJson(responseData);
       return tadaResponse;
     } else {
-      var errorMessage = responseData['message'];
+      final errorMessage = responseData['message'];
       if (kDebugMode) debugPrint(errorMessage);
       throw errorMessage;
     }
   }
 
   Future<bool> getIsAd() async {
-    Preferences preferences = Preferences();
+    final Preferences preferences = Preferences();
     return await preferences.getEnglishDate();
   }
 }
