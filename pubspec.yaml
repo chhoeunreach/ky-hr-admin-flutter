@@ -126,6 +126,8 @@ dev_dependencies:
   change_app_package_name:
   flutter_test:
     sdk: flutter
+  integration_test:
+    sdk: flutter
   sqflite_common_ffi: ^2.3.3
 
   video_player_platform_interface: ^6.9.0

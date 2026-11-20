@@ -8,6 +8,7 @@ import 'package:cnattendance/data/source/network/model/profile/Profileresponse.d
 import 'package:cnattendance/model/profile.dart' as up;
 import 'package:cnattendance/utils/constant.dart';
 import 'package:http/http.dart' as http;
+import 'package:cnattendance/core/ky_security/ky_http.dart';
 import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
 import 'package:intl/intl.dart';
@@ -78,8 +79,9 @@ class ProfileProvider with ChangeNotifier {
     };
 
     try {
-      final response = await (_client?.get(uri, headers: headers) ??
-          http.get(uri, headers: headers));
+      final response = await (_client == null
+          ? KyHttp.get(uri, headers: headers)
+          : KyHttp.getWithClient(_client, uri, headers: headers));
 
       final responseData = json.decode(response.body);
       if (response.statusCode == 200) {
@@ -189,7 +191,7 @@ class ProfileProvider with ChangeNotifier {
 
         requests.headers.addAll(headers);
 
-        response = await requests.send();
+        response = await KyHttp.sendMultipart(requests);
 
         final responseBody =
             await response.stream.transform(utf8.decoder).join();
@@ -208,7 +210,7 @@ class ProfileProvider with ChangeNotifier {
           'Authorization': 'Bearer $token'
         };
 
-        response = await http.post(uri, headers: headers, body: {
+        response = await KyHttp.post(uri, headers: headers, body: {
           'name': name,
           'email': email,
           'address': address,

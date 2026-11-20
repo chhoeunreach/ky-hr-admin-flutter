@@ -5,8 +5,9 @@ import 'package:hexcolor/hexcolor.dart';
 
 class CustomAlertDialog extends StatelessWidget {
   final String title;
+  final String? actionLabel;
 
-  CustomAlertDialog(this.title);
+  CustomAlertDialog(this.title, {this.actionLabel});
 
   @override
   Widget build(BuildContext context) {
@@ -36,6 +37,26 @@ class CustomAlertDialog extends StatelessWidget {
           SizedBox(
             height: 10,
           ),
+          if (actionLabel != null) ...[
+            Container(
+              width: double.infinity,
+              child: ElevatedButton(
+                  style: TextButton.styleFrom(
+                      backgroundColor: HexColor("#036eb7"),
+                      shape: ButtonBorder()),
+                  onPressed: () {
+                    Navigator.pop(context, true);
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    child: Text(actionLabel!,
+                        style: TextStyle(color: Colors.white)),
+                  )),
+            ),
+            SizedBox(
+              height: 10,
+            ),
+          ],
           Container(
             width: double.infinity,
             child: ElevatedButton(

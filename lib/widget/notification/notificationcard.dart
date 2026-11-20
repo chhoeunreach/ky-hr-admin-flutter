@@ -24,15 +24,8 @@ class NotificationCard extends StatelessWidget {
       child: InkWell(
         onTap: () async {
           await controller.markNotificationAsRead(notification);
-          final title = notification.title;
-          final desc = notification.description;
           final type = notification.type.trim().toLowerCase();
           final noticeId = notification.notificationForId;
-          final isUpdate = title.contains('អាប់ដេត') ||
-              title.toLowerCase().contains('update') ||
-              desc.contains('អាប់ដេត') ||
-              desc.toLowerCase().contains('update') ||
-              desc.contains('កំណែថ្មី');
 
           if (type == 'home_highlight' && noticeId > 0) {
             Get.to(() => HomeHighlightOpenScreen(id: noticeId));
@@ -62,8 +55,8 @@ class NotificationCard extends StatelessWidget {
             "title": notification.title,
             "message": notification.description,
             "date": notification.date.toIso8601String(),
-            "type": isUpdate ? "app_update" : "general",
-            "download_url": "https://hr.kneayerng.com",
+            "type": type,
+            ...notification.appUpdate,
           });
         },
         child: Padding(

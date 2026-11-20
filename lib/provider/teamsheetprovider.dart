@@ -127,13 +127,14 @@ class TeamSheetProvider with ChangeNotifier {
             _department,
             (element) => element.name == argumentDepartment,
           );
-          selectedDepartment = department?.id ?? _department.first.id;
+          selectedDepartment =
+              department?.id ?? (_department.isNotEmpty ? _department.first.id : 0);
         } else {
-          selectedDepartment = _department.first.id;
+          selectedDepartment = _department.isNotEmpty ? _department.first.id : 0;
           selectedBranch = _branches.first.id;
         }
       } else {
-        selectedDepartment = _department.first.id;
+        selectedDepartment = _department.isNotEmpty ? _department.first.id : 0;
         selectedBranch = _branches.first.id;
       }
       makeTeamList();

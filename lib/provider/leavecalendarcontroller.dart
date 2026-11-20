@@ -11,7 +11,7 @@ import 'package:cnattendance/model/LeaveByDay.dart';
 import 'package:cnattendance/model/holiday.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:get/get.dart';
-import 'package:http/http.dart' as http;
+import 'package:cnattendance/core/ky_security/ky_http.dart';
 import 'package:intl/intl.dart';
 import 'package:nepali_date_picker/nepali_date_picker.dart';
 
@@ -72,7 +72,7 @@ class LeaveCalendarController extends GetxController {
     };
 
     try {
-      final response = await http.get(uri, headers: headers);
+      final response = await KyHttp.get(uri, headers: headers);
 
       final responseData = json.decode(response.body);
       if (response.statusCode == 200) {
@@ -114,7 +114,7 @@ class LeaveCalendarController extends GetxController {
     };
 
     try {
-      final response = await http.get(uri, headers: headers);
+      final response = await KyHttp.get(uri, headers: headers);
 
       final responseData = json.decode(response.body);
       if (response.statusCode == 200) {

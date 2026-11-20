@@ -12,7 +12,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:hexcolor/hexcolor.dart';
-import 'package:http/http.dart' as http;
+import 'package:cnattendance/core/ky_security/ky_http.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
@@ -1257,7 +1257,7 @@ class _PhotoViewerScreenState extends State<_PhotoViewerScreen> {
     setState(() => _isDownloading = true);
     try {
       final url = widget.photoUrls[_currentIndex];
-      final response = await http.get(Uri.parse(url));
+      final response = await KyHttp.get(Uri.parse(url));
       if (response.statusCode != 200) {
         throw Exception(_sellOutTr('failed_to_download_photo'));
       }

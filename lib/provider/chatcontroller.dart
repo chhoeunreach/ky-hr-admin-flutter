@@ -20,6 +20,7 @@ import 'package:http_interceptor_plus/http_interceptor_plus.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 import 'package:http/http.dart' as http;
+import 'package:cnattendance/core/ky_security/ky_http.dart';
 
 class ChatController extends GetxController {
   var host = "".obs;
@@ -552,7 +553,7 @@ class ChatController extends GetxController {
       "media_url": mediaUrl,
     };
 
-    var response = await client.post(uri, headers: headers, body: body);
+    var response = await KyHttp.postWithClient(client, uri, headers: headers, body: body);
 
     var responseData = _decodeResponseBody(response.body);
     var responseMessage = responseData['message']?.toString() ?? "";
@@ -563,7 +564,7 @@ class ChatController extends GetxController {
       final retryBody = Map<String, String>.from(body)
         ..remove("message_type")
         ..["chat_message_type"] = messageType;
-      response = await client.post(uri, headers: headers, body: retryBody);
+      response = await KyHttp.postWithClient(client, uri, headers: headers, body: retryBody);
       responseData = _decodeResponseBody(response.body);
       responseMessage = responseData['message']?.toString() ?? "";
     }

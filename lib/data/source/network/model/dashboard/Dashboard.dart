@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'package:cnattendance/utils/app_update_payload.dart';
 import 'package:cnattendance/models/monthly_attendance_summary.dart';
 import 'package:cnattendance/models/top_bonus_employee.dart';
 
@@ -15,9 +15,6 @@ import 'EmployeeTodayAttendance.dart';
 import 'Overview.dart';
 import 'OfficeTime.dart';
 import 'Company.dart';
-
-const String _iosTestFlightUpdateUrl =
-    'https://testflight.apple.com/join/hPG4ZA38';
 
 class Dashboard {
   Dashboard({
@@ -73,7 +70,7 @@ class Dashboard {
       attendance_selfie: json['attendance_selfie'] ?? false,
       attendance_map: json['attendance_map'] ?? true,
       attendance_map_url: (json['attendance_map_url'] ?? '').toString(),
-      attendance_location_radius_enabled: _readRadiusEnabled(
+      attendance_location_radius_enabled: _readEnabled(
           json['attendance_location_radius_enabled'] ??
               json['workspace_location']?['radius_enabled'] ??
               json['workspace_location']
@@ -152,6 +149,7 @@ class AppVersionInfo {
   final bool isForceUpdate;
   final bool showAlert;
   final bool isUpdateAvailable;
+  final bool versionCheckEnabled;
 
   AppVersionInfo({
     required this.latestVersion,
@@ -162,6 +160,7 @@ class AppVersionInfo {
     required this.isForceUpdate,
     this.showAlert = false,
     this.isUpdateAvailable = false,
+    this.versionCheckEnabled = true,
   });
 
   factory AppVersionInfo.fromJson(dynamic json) {
@@ -169,9 +168,7 @@ class AppVersionInfo {
       return AppVersionInfo(
         latestVersion: '',
         minVersion: '',
-        downloadUrl: Platform.isIOS
-            ? _iosTestFlightUpdateUrl
-            : 'https://hr.kneayerng.com',
+        downloadUrl: appUpdateDownloadUri(null).toString(),
         releaseNotes: '',
         alertTitle: '',
         isForceUpdate: false,
@@ -187,7 +184,9 @@ class AppVersionInfo {
           .toString(),
       minVersion: (json['min_required_version'] ?? json['min_version'] ?? '')
           .toString(),
-      downloadUrl: _platformDownloadUrl(json),
+      downloadUrl:
+          appUpdateDownloadUri(configuredAppUpdateUri(json)?.toString())
+              .toString(),
       releaseNotes: (json['update_message'] ??
               json['alert_message'] ??
               json['release_notes'] ??
@@ -205,40 +204,12 @@ class AppVersionInfo {
           json['is_update_available'] == true ||
           json['is_update_required'] == true,
       isUpdateAvailable: json['is_update_available'] == true,
+      versionCheckEnabled: _readEnabled(json['version_check_enabled']),
     );
   }
 }
 
-String _platformDownloadUrl(Map json) {
-  String read(List<String> keys) {
-    for (final key in keys) {
-      final value = json[key]?.toString().trim() ?? '';
-      if (value.isNotEmpty) return value;
-    }
-    return '';
-  }
-
-  final platformUrl = Platform.isIOS
-      ? read([
-          'ios_url',
-          'app_store_url',
-          'apple_store_url',
-          'ios_download_url',
-        ])
-      : read([
-          'android_url',
-          'play_store_url',
-          'android_download_url',
-        ]);
-
-  if (platformUrl.isNotEmpty) return platformUrl;
-  if (Platform.isIOS) return _iosTestFlightUpdateUrl;
-
-  final fallbackUrl = read(['download_url', 'url']);
-  return fallbackUrl.isNotEmpty ? fallbackUrl : 'https://hr.kneayerng.com';
-}
-
-bool _readRadiusEnabled(dynamic value) {
+bool _readEnabled(dynamic value) {
   if (value == null) return true;
   if (value is bool) return value;
   if (value is num) return value != 0;

@@ -95,6 +95,8 @@
     "hello_there": "Hello There",
     "check_in": "Check In",
     "check_out": "Check Out",
+    "scan_in": "Scan In",
+    "scan_out": "Scan Out",
     "present": "Present",
     "holidays": "Holidays",
     "leave": "Leave",
@@ -221,7 +223,10 @@
     "front_camera_not_available": "Front camera is not available on this device.",
     "camera_not_ready": "Camera is not ready.",
     "nfc_not_present": "NFC is not present. Please enable NFC or try different method.",
-    "google_map": "Google Map"
+    "google_map": "Google Map",
+    "verifying": "Verifying attendance...",
+    "verify_please_check": "The scan could not be verified. Please check and try again.",
+    "check_again": "Check Again"
   },
   "more_screen": {
     "attendance_default_method": "Check In",
@@ -1114,6 +1119,12 @@
     "connect_with_your_team": "Connect with your team",
     "create_post": "Create post",
     "edit_post": "Edit post",
+    "everyone": "Everyone",
+    "no_matching_people": "No matching people",
+    "posts": "Posts",
+    "position": "Position",
+    "department": "Department",
+    "branch": "Branch",
     "delete_post": "Delete post",
     "delete_your_post": "Delete your post?",
     "cancel": "Cancel",
@@ -1184,17 +1195,14 @@
     "add_emoji": "Add emoji",
     "add_location": "Add location",
     "all_company_employees": "All company employees",
-
     "poll_ends": "Poll ends",
     "choose_an_end_date_and_time": "Choose an end date and time",
     "choose_an_end_date_and_time_in_the_future": "Choose an end date and time in the future.",
     "clear": "Clear",
     "optional": "Optional",
     "you_can_add_up_to_10_photos": "You can add up to 10 photos.",
-
     "background": "Background",
     "no_background": "No background",
-
     "add_to_your_post": "Add to your post",
     "add_a_document": "Add a document",
     "pdf_word_or_excel_up_to_25_mb": "PDF, Word or Excel up to 25 MB",

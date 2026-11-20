@@ -10,7 +10,7 @@ import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:html/parser.dart' as html_parser;
-import 'package:http/http.dart' as http;
+import 'package:cnattendance/core/ky_security/ky_http.dart';
 import 'package:intl/intl.dart';
 
 class NoticeDetailScreen extends StatefulWidget {
@@ -53,7 +53,7 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
         '$baseUrl${Constant.NOTICE_URL}/${widget.notice.id}',
       );
       final token = await preferences.getToken();
-      final response = await http.get(uri, headers: {
+      final response = await KyHttp.get(uri, headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json; charset=UTF-8',
         'Authorization': 'Bearer $token',

@@ -1,4 +1,7 @@
 import 'package:cnattendance/provider/dashboardprovider.dart';
+import 'package:cnattendance/core/ky_security/ky_security_manager.dart';
+import 'package:cnattendance/core/ky_security/ky_optional_update_prompt.dart';
+import 'package:cnattendance/core/ky_security/security_gate_screen.dart';
 import 'package:cnattendance/model/auth.dart';
 import 'package:cnattendance/screen/dashboard/dashboard_screen.dart';
 import 'package:cnattendance/widget/buttonborder.dart';
@@ -151,9 +154,30 @@ class loginScreenState extends State<LoginScreen> {
       final response = await Provider.of<Auth>(context, listen: false)
           .login(_usernameController.text, _passwordController.text);
 
+      final securityState = await KySecurityManager.shared.initialize();
       if (!mounted) return;
+      if (securityState['state'] != 'authorized' &&
+          securityState['state'] != 'offlineAuthorized' &&
+          securityState['state'] != 'disabled' &&
+          KySecurityManager.shared.securityApplies) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (_) => SecurityGateScreen(initialState: securityState),
+          ),
+          (route) => false,
+        );
+        return;
+      }
       await context.read<DashboardProvider>().getFeatures();
       if (!mounted) return;
+      final optionalUpdate = securityState['optional_update'];
+      if (optionalUpdate is Map) {
+        await KyOptionalUpdatePrompt.show(
+          context,
+          Map<String, dynamic>.from(optionalUpdate),
+        );
+        if (!mounted) return;
+      }
 
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(response.message)));
@@ -172,7 +196,7 @@ class loginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    bool hasUrl = context.watch<Auth>().appUrl.isNotEmpty;
+    final hasUrl = context.watch<Auth>().appUrl.isNotEmpty;
     return PremiumBackground(
       child: Scaffold(
         extendBody: true,

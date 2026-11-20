@@ -81,6 +81,31 @@ class _SubmissionProvider extends _AttendanceProvider {
   }
 }
 
+class _MismatchProvider extends _AttendanceProvider {
+  final attempts = <Completer<AttendanceStatusResponse>>[];
+  int submissions = 0;
+
+  @override
+  Future<AttendanceStatusResponse> verifyAttendanceApi(
+    String type,
+    String note, {
+    String attendanceStatus = '',
+    String identifier = '',
+    File? attendanceSelfie,
+    String offlineRequestId = '',
+    DateTime? recordedAt,
+  }) {
+    expect(type, 'qr');
+    expect(identifier, 'test attendance code');
+    expect(attendanceStatus, isEmpty);
+    expect(offlineRequestId, isNotEmpty);
+    submissions++;
+    final completer = Completer<AttendanceStatusResponse>();
+    attempts.add(completer);
+    return completer.future;
+  }
+}
+
 void _mockCameraPermission() {
   const scanner =
       MethodChannel('dev.steenbakker.mobile_scanner/scanner/method');
@@ -457,6 +482,76 @@ void main() {
       }
       expect(find.text('Recorded by server'), findsOneWidget);
       expect(dashboard.submissions, 1);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+    }, () => client);
+  });
+
+  testWidgets('attendance mismatch asks the user to check and rescans on retry',
+      (tester) async {
+    await _setSize(tester, 390);
+    _mockCameraPermission();
+    final dashboard = _MismatchProvider()..distance.complete(10);
+    addTearDown(dashboard.dispose);
+    final client = _api();
+    addTearDown(client.close);
+    await http.runWithClient(() async {
+      await tester
+          .pumpWidget(_app(const CheckAttendance(), dashboard: dashboard));
+      await tester.pump(const Duration(milliseconds: 500));
+      final action = find.byIcon(Icons.qr_code_scanner_rounded);
+      await tester.ensureVisible(action);
+      await tester.tap(action);
+      for (var i = 0; i < 3; i++) {
+        await tester.pump(const Duration(milliseconds: 500));
+      }
+      final cameraDialog = find.byType(AlertDialog);
+      expect(cameraDialog, findsOneWidget);
+      Navigator.of(tester.element(cameraDialog)).pop('test attendance code');
+      for (var i = 0; i < 3; i++) {
+        await tester.pump(const Duration(milliseconds: 500));
+      }
+      expect(dashboard.submissions, 1);
+
+      dashboard.attempts.single.completeError('QR code does not match');
+      for (var i = 0; i < 4; i++) {
+        await tester.pump(const Duration(milliseconds: 500));
+      }
+      expect(find.textContaining('QR code does not match'), findsOneWidget);
+      expect(
+          find.textContaining(
+              'The scan could not be verified. Please check and try again.'),
+          findsOneWidget);
+      expect(find.text('Check Again'), findsOneWidget);
+
+      await tester.tap(find.text('Check Again'));
+      for (var i = 0; i < 3; i++) {
+        await tester.pump(const Duration(milliseconds: 500));
+      }
+      final retryCameraDialog = find.byType(AlertDialog);
+      expect(retryCameraDialog, findsOneWidget);
+      Navigator.of(tester.element(retryCameraDialog))
+          .pop('test attendance code');
+      for (var i = 0; i < 3; i++) {
+        await tester.pump(const Duration(milliseconds: 500));
+      }
+      expect(dashboard.submissions, 2);
+
+      dashboard.attempts.last.complete(AttendanceStatusResponse(
+        status: true,
+        message: 'Recorded by server',
+        statusCode: 200,
+        data: AttendanceStatus(
+          checkInAt: '08:00',
+          checkOutAt: '-',
+          productiveTimeInMin: 0,
+        ),
+      ));
+      for (var i = 0; i < 3; i++) {
+        await tester.pump(const Duration(milliseconds: 500));
+      }
+      expect(find.text('Recorded by server'), findsOneWidget);
+      expect(find.text('Check Again'), findsNothing);
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox.shrink());
     }, () => client);

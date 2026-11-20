@@ -23,12 +23,10 @@ import 'customalertdialog.dart';
 class HeaderProfile extends StatefulWidget {
   const HeaderProfile({
     super.key,
-    this.showServerTest = false,
     this.showMenuButton = true,
     this.royalOnline = false,
   });
 
-  final bool showServerTest;
   final bool showMenuButton;
   final bool royalOnline;
 
@@ -108,7 +106,8 @@ class HeaderState extends State<HeaderProfile> {
     try {
       setState(() {
         EasyLoading.show(
-            status: 'Checking server', maskType: EasyLoadingMaskType.black);
+            status: translate('server_status.checking_server'),
+            maskType: EasyLoadingMaskType.black);
       });
 
       final result = await ServerStatusService().checkCurrentServer();
@@ -179,10 +178,16 @@ class HeaderState extends State<HeaderProfile> {
     final features = context.watch<DashboardProvider>().features;
     final isEnabledLocation =
         context.watch<DashboardProvider>().isLocationEnabled;
+    // On mobile the sidebar menu is a button pinned at the screen's top-left
+    // corner (see DashboardScreen), so the header keeps only the avatar row.
+    final isMobileLayout = MediaQuery.sizeOf(context).width < 720;
+    final showInlineMenu = widget.showMenuButton && !isMobileLayout;
+    final pinnedMenuClearance =
+        isMobileLayout && theme.layout.showMenuButton;
 
     final profile = <Widget>[
-      // 1. Menu Squircle Button
-      if (widget.showMenuButton) ...[
+      // 1. Menu Squircle Button (desktop rail only; mobile uses the pinned one)
+      if (showInlineMenu) ...[
         Material(
           color: Colors.transparent,
           child: InkWell(
@@ -432,17 +437,11 @@ class HeaderState extends State<HeaderProfile> {
           ),
         ),
       Tooltip(
-        message: royal ? translate('royal.shortcuts') : 'Shortcuts',
+        message: translate('server_status.title'),
         child: _HeaderIconButton(
           icon: Icons.grid_view_rounded,
           color: Colors.white,
-          onPressed: () {
-            if (widget.showServerTest) {
-              testServerConnection();
-            } else {
-              _openDashboardDrawer();
-            }
-          },
+          onPressed: testServerConnection,
         ),
       ),
       if (features["notifications"] == "1")
@@ -505,10 +504,15 @@ class HeaderState extends State<HeaderProfile> {
     ];
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(royal ? 0 : 14, 8, royal ? 0 : 14, 4),
+      padding: EdgeInsets.fromLTRB(
+        (royal ? 0 : 14) + (pinnedMenuClearance ? 48 : 0),
+        8,
+        royal ? 0 : 14,
+        4,
+      ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final minimumProfileWidth = widget.showMenuButton ? 184.0 : 132.0;
+          final minimumProfileWidth = showInlineMenu ? 184.0 : 132.0;
           if (constraints.maxWidth >=
               minimumProfileWidth +
                   actions.length * (royal ? 48 : _HeaderIconButton.slotWidth)) {

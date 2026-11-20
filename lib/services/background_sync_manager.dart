@@ -1,6 +1,7 @@
 import 'dart:developer' as developer;
 
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:cnattendance/security/app_integrity.dart';
 import 'package:flutter/services.dart';
 import 'package:workmanager/workmanager.dart';
 
@@ -18,6 +19,11 @@ const String kPeriodicUploadTaskName = 'offline_image_upload_periodic_task';
 void backgroundSyncCallbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
     try {
+      if (await AppIntegrity.isTampered()) {
+        developer.log('Integrity failed — background sync disabled',
+            name: 'BackgroundSync');
+        return false;
+      }
       final connectivity = await Connectivity().checkConnectivity();
       if (connectivity == ConnectivityResult.none) {
         developer.log('No connectivity, skipping upload pass',
@@ -52,6 +58,11 @@ class BackgroundSyncManager {
 
   Future<void> initialize() async {
     if (_initialized) return;
+    if (await AppIntegrity.isTampered()) {
+      developer.log('Integrity failed — background sync will not start',
+          name: 'BackgroundSync');
+      return;
+    }
     try {
       await Workmanager().initialize(backgroundSyncCallbackDispatcher);
       _initialized = true;

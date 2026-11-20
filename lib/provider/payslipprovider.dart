@@ -7,7 +7,7 @@ import 'package:cnattendance/model/month.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:nepali_date_picker/nepali_date_picker.dart';
-import 'package:http/http.dart' as http;
+import 'package:cnattendance/core/ky_security/ky_http.dart';
 
 class PaySlipProvider with ChangeNotifier {
   bool isAD = true;
@@ -72,7 +72,7 @@ class PaySlipProvider with ChangeNotifier {
     };
 
     try {
-      final response = await http.post(uri, headers: headers, body: {
+      final response = await KyHttp.post(uri, headers: headers, body: {
         "year": year == null ? "" : year.toString(),
         "month": month == null ? "" : month.toString()
       });

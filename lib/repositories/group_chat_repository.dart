@@ -9,6 +9,7 @@ import 'package:cnattendance/model/group_chat_message.dart';
 import 'package:cnattendance/services/chat_media_upload_service.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:http/http.dart' as http;
+import 'package:cnattendance/core/ky_security/ky_http.dart';
 import 'package:http_interceptor_plus/http_interceptor_plus.dart';
 
 class GroupChatRepository {
@@ -76,7 +77,7 @@ class GroupChatRepository {
       request.files.add(await http.MultipartFile.fromPath('avatar', avatarFile.path));
     }
 
-    final streamedResponse = await request.send();
+    final streamedResponse = await KyHttp.sendMultipart(request);
     final response = await http.Response.fromStream(streamedResponse);
     final data = _decodeBody(response.body);
 
@@ -100,7 +101,7 @@ class GroupChatRepository {
     request.headers['Authorization'] = 'Bearer $token';
     request.files.add(await http.MultipartFile.fromPath('avatar', avatarFile.path));
 
-    final streamedResponse = await request.send();
+    final streamedResponse = await KyHttp.sendMultipart(request);
     final response = await http.Response.fromStream(streamedResponse);
     final data = _decodeBody(response.body);
 
@@ -128,7 +129,7 @@ class GroupChatRepository {
     final uri = Uri.parse('$appUrl${Constant.GROUP_CHAT}/$groupId');
 
     final client = LoggingMiddleware(http.Client());
-    final response = await client.delete(uri, headers: await _headers());
+    final response = await KyHttp.deleteWithClient(client, uri, headers: await _headers());
     _checkResponse(response);
   }
 
@@ -147,7 +148,7 @@ class GroupChatRepository {
         Uri.parse('$appUrl${Constant.GROUP_CHAT}/$groupId/members/$userId');
 
     final client = LoggingMiddleware(http.Client());
-    final response = await client.delete(uri, headers: await _headers());
+    final response = await KyHttp.deleteWithClient(client, uri, headers: await _headers());
     _checkResponse(response);
   }
 
@@ -213,7 +214,7 @@ class GroupChatRepository {
         Uri.parse('$appUrl${Constant.GROUP_CHAT}/$groupId/messages/$messageId');
 
     final client = LoggingMiddleware(http.Client());
-    final response = await client.delete(uri, headers: await _headers());
+    final response = await KyHttp.deleteWithClient(client, uri, headers: await _headers());
     return _processSingleMessage(response);
   }
 

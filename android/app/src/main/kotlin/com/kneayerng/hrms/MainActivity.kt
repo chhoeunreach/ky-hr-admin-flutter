@@ -1,17 +1,20 @@
 package com.kneayerng.hrms
 
-import io.flutter.embedding.android.FlutterActivity
 import android.app.PendingIntent
 import android.content.Intent
 import android.nfc.NfcAdapter
 import android.provider.Settings
+import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import com.kneayerng.hrms.security.KySecurityMethodChannels
 
+/** Flutter activity and platform lifecycle wiring; security work lives in services. */
 class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "cnattendance/device_clock")
+        KySecurityMethodChannels(applicationContext).attach(flutterEngine)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, DEVICE_CLOCK_CHANNEL)
             .setMethodCallHandler { call, result ->
                 if (call.method == "openDateTimeSettings") {
                     try {
@@ -28,15 +31,17 @@ class MainActivity : FlutterActivity() {
 
     override fun onResume() {
         super.onResume()
-        val intent = Intent(context, javaClass).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
-        val pendingIntent =
-            PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE)
-        NfcAdapter.getDefaultAdapter(context)
-            ?.enableForegroundDispatch(this, pendingIntent, null, null)
+        val intent = Intent(this, javaClass).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        val pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE)
+        NfcAdapter.getDefaultAdapter(this)?.enableForegroundDispatch(this, pendingIntent, null, null)
     }
 
     override fun onPause() {
         super.onPause()
-        NfcAdapter.getDefaultAdapter(context)?.disableForegroundDispatch(this)
+        NfcAdapter.getDefaultAdapter(this)?.disableForegroundDispatch(this)
+    }
+
+    companion object {
+        private const val DEVICE_CLOCK_CHANNEL = "cnattendance/device_clock"
     }
 }

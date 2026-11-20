@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:cnattendance/core/ky_security/ky_http.dart';
 import 'dart:io';
 
 import 'package:cnattendance/data/source/datastore/preferences.dart';
@@ -103,7 +104,7 @@ class TadaRepository {
           filename: filed.name);
       requests.files.add(multipartFile);
     }
-    final responseStream = await requests.send();
+    final responseStream = await KyHttp.sendMultipart(requests);
 
     final response = await http.Response.fromStream(responseStream);
     debugPrint(response.toString());

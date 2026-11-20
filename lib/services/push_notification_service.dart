@@ -1,3 +1,4 @@
+import 'package:cnattendance/utils/app_update_payload.dart';
 import 'package:cnattendance/features/home_highlights/home_highlight_open_screen.dart';
 import 'dart:async';
 import 'dart:io';
@@ -10,6 +11,7 @@ import 'package:cnattendance/data/source/datastore/preferences.dart';
 import 'package:cnattendance/provider/chatbadgecontroller.dart';
 import 'package:cnattendance/provider/notificationcontroller.dart';
 import 'package:cnattendance/screen/general/generalscreen.dart';
+import 'package:cnattendance/security/app_integrity.dart';
 import 'package:cnattendance/screen/profile/admin_chat_thread_screen.dart';
 import 'package:cnattendance/screen/profile/chatscreen.dart';
 import 'package:cnattendance/screen/profile/group_chat_screen.dart';
@@ -24,15 +26,12 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:http/http.dart' as http;
+import 'package:cnattendance/core/ky_security/ky_http.dart';
 import 'package:in_app_notification/in_app_notification.dart';
 import 'package:cnattendance/utils/app_device_info.dart';
 import 'package:cnattendance/widget/app_update_dialog.dart';
 import '../firebase_options.dart';
 import '../utils/constant.dart';
-
-const String _iosTestFlightUpdateUrl =
-    'https://testflight.apple.com/join/hPG4ZA38';
 
 class PushNotificationService {
   static Future<void>? _initialization;
@@ -146,24 +145,10 @@ class PushNotificationService {
       title: _messageTitle(message),
       message: _messageBody(message),
     ).toMap(localKey: localKey ?? "");
-    for (final key in const [
-      'action',
-      'home_highlight_id',
-      'target_version',
-      'latest_version',
-      'download_url',
-      'url',
-      'android_url',
-      'android_download_url',
-      'play_store_url',
-      'ios_url',
-      'ios_download_url',
-      'app_store_url',
-      'apple_store_url',
-      'force_update',
-    ]) {
-      final value = message.data[key]?.toString().trim() ?? '';
-      if (value.isNotEmpty) payload[key] = value;
+    payload.addAll(appUpdateMetadata(message.data));
+    final highlightId = message.data['home_highlight_id']?.toString().trim();
+    if (highlightId != null && highlightId.isNotEmpty) {
+      payload['home_highlight_id'] = highlightId;
     }
     return payload;
   }
@@ -187,36 +172,26 @@ class PushNotificationService {
   }
 
   @visibleForTesting
-  static bool isAppUpdatePayload(Map<String, dynamic> data) {
-    final type = data['type']?.toString().toLowerCase().trim() ?? '';
-    if (type == 'app_update' || type == 'version_update') return true;
-    if (data['action']?.toString().toLowerCase().trim() == 'app_update') {
-      return true;
-    }
-    return ['target_version', 'latest_version'].any(
-      (key) => data[key]?.toString().trim().isNotEmpty ?? false,
-    );
-  }
+  static bool isAppUpdatePayload(Map<String, dynamic> data) =>
+      isAppUpdateNotification(data);
 
-  static Future<void> _showAppUpdatePrompt({
-    required String targetVersion,
-    required String downloadUrl,
+  static Future<void> _showAppUpdatePrompt(
+    Map<String, dynamic> data, {
     required String title,
     required String message,
-    required bool forceUpdate,
   }) async {
     final context =
         NavigationService.navigatorKey.currentContext ?? Get.context;
-    if (context == null) {
-      debugPrint('Unable to show app update prompt: no active BuildContext');
-      return;
-    }
+    if (context == null) return;
 
     try {
       final details = await AppDeviceInfo.getDetails();
       final currentVersion = details.appVersion;
+      final targetVersion = appUpdateTargetVersion(data);
+      final forceUpdate = isForcedAppUpdate(data, currentVersion);
       if (!context.mounted ||
-          (targetVersion.isNotEmpty &&
+          (!forceUpdate &&
+              targetVersion.isNotEmpty &&
               !AppDeviceInfo.isVersionOlder(currentVersion, targetVersion))) {
         return;
       }
@@ -226,11 +201,9 @@ class PushNotificationService {
         currentVersion: currentVersion,
         latestVersion:
             targetVersion.isNotEmpty ? targetVersion : currentVersion,
-        downloadUrl: downloadUrl.isNotEmpty
-            ? downloadUrl
-            : (Platform.isIOS
-                ? _iosTestFlightUpdateUrl
-                : 'https://hr.kneayerng.com'),
+        downloadUrl:
+            appUpdateDownloadUri(configuredAppUpdateUri(data)?.toString())
+                .toString(),
         releaseNotes: message,
         alertTitle: title,
         isForceUpdate: forceUpdate,
@@ -238,35 +211,6 @@ class PushNotificationService {
     } catch (e) {
       debugPrint('Failed to show AppUpdateDialog: $e');
     }
-  }
-
-  static String _platformDownloadUrl(Map<String, dynamic> data) {
-    String read(List<String> keys) {
-      for (final key in keys) {
-        final value = data[key]?.toString().trim() ?? '';
-        if (value.isNotEmpty) return value;
-      }
-      return '';
-    }
-
-    final platformUrl = Platform.isIOS
-        ? read([
-            'ios_url',
-            'app_store_url',
-            'apple_store_url',
-            'ios_download_url',
-          ])
-        : read([
-            'android_url',
-            'play_store_url',
-            'android_download_url',
-          ]);
-
-    if (platformUrl.isNotEmpty) return platformUrl;
-    if (Platform.isIOS) return _iosTestFlightUpdateUrl;
-
-    final fallbackUrl = read(['download_url', 'url']);
-    return fallbackUrl.isNotEmpty ? fallbackUrl : 'https://hr.kneayerng.com';
   }
 
   static NotificationContent _buildNotificationContent(
@@ -335,11 +279,9 @@ class PushNotificationService {
 
     if (isAppUpdatePayload(payload)) {
       await _showAppUpdatePrompt(
-        targetVersion: payload['target_version'] ?? payload['latest_version'] ?? '',
-        downloadUrl: _platformDownloadUrl(payload),
+        payload,
         title: payload['title'] ?? 'មានកំណែអាប់ដេតថ្មី',
         message: payload['message'] ?? '',
-        forceUpdate: _parseBoolLike(payload['force_update']),
       );
       return;
     }
@@ -395,7 +337,7 @@ class PushNotificationService {
       "notice_id": _noticeIdFromPayload(payload),
       "date": "",
       "type": payload["type"] ?? "",
-      "download_url": _platformDownloadUrl(Map<String, dynamic>.from(payload)),
+      ...appUpdateMetadata(payload),
     });
   }
 
@@ -703,6 +645,9 @@ class PushNotificationService {
 
   @pragma('vm:entry-point')
   static Future<void> _messageHandler(RemoteMessage message) async {
+    if (await AppIntegrity.isTampered()) {
+      return;
+    }
     await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform);
     await GetStorage.init();
@@ -736,7 +681,7 @@ class PushNotificationService {
     try {
       final uri = Uri.parse(
           await preferences.getAppUrl() + Constant.UPDATE_FCM_TOKEN_URL);
-      final response = await http.post(uri, headers: {
+      final response = await KyHttp.post(uri, headers: {
         'Accept': 'application/json; charset=UTF-8',
         'Authorization': 'Bearer $authToken',
       }, body: {
@@ -802,6 +747,10 @@ class PushNotificationService {
   static Future<void> initialize() => _initialization ??= _initialize();
 
   static Future<void> _initialize() async {
+    if (await AppIntegrity.isTampered()) {
+      debugPrint('Integrity failed — push notifications disabled');
+      return;
+    }
     FirebaseMessaging.onBackgroundMessage(_messageHandler);
     FirebaseFirestore.instance.settings =
         const Settings(persistenceEnabled: false);
@@ -864,16 +813,10 @@ class PushNotificationService {
       }
 
       if (isAppUpdatePayload(message.data)) {
-        final targetVersion =
-            message.data['target_version']?.toString().trim() ?? '';
         await _showAppUpdatePrompt(
-          targetVersion: targetVersion.isNotEmpty
-              ? targetVersion
-              : (message.data['latest_version']?.toString().trim() ?? ''),
-          downloadUrl: _platformDownloadUrl(message.data),
+          message.data,
           title: _messageTitle(message),
           message: _messageBody(message),
-          forceUpdate: _parseBoolLike(message.data['force_update']),
         );
       } else if (!_showMessengerAlert(message, localKey: entry.key)) {
         await _showSystemNotification(message, localKey: entry.key);

@@ -16,7 +16,7 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_mentions/flutter_mentions.dart' as FM;
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
-import 'package:http/http.dart' as http;
+import 'package:cnattendance/core/ky_security/ky_http.dart';
 
 class CommentScreenController extends GetxController {
   TextEditingController commentEdit = new TextEditingController();
@@ -76,7 +76,7 @@ class CommentScreenController extends GetxController {
     log(uri.toString());
 
     EasyLoading.show(status: translate('loader.loading'), maskType: EasyLoadingMaskType.black);
-    final response = await http.get(
+    final response = await KyHttp.get(
       uri,
       headers: headers,
     );
@@ -165,7 +165,7 @@ class CommentScreenController extends GetxController {
     commentController.clear();
     commentId.value = 0;
     mentionList.clear();
-    final response = await http.post(uri, headers: headers, body: body);
+    final response = await KyHttp.post(uri, headers: headers, body: body);
 
 
     log(response.body.toString());
@@ -276,7 +276,7 @@ class CommentScreenController extends GetxController {
     };
 
     EasyLoading.show(status: translate('loader.loading'), maskType: EasyLoadingMaskType.black);
-    final response = await http.get(uri, headers: headers);
+    final response = await KyHttp.get(uri, headers: headers);
     log(response.body.toString());
 
     final responseData = json.decode(response.body);
@@ -305,7 +305,7 @@ class CommentScreenController extends GetxController {
     };
 
     EasyLoading.show(status: translate('loader.loading'), maskType: EasyLoadingMaskType.black);
-    final response = await http.get(uri, headers: headers);
+    final response = await KyHttp.get(uri, headers: headers);
     log(response.body.toString());
 
     final responseData = json.decode(response.body);

@@ -1,4 +1,5 @@
 import 'community_media_urls.dart';
+import 'package:cnattendance/core/ky_security/ky_http.dart';
 import 'dart:convert';
 
 import 'package:cnattendance/data/source/datastore/preferences.dart';
@@ -101,8 +102,7 @@ class CommunityApi {
         ..headers.addAll({...headers, 'Content-Type': 'application/json'})
         ..body = jsonEncode(data ?? {});
     }
-    final response = await _client
-        .send(request)
+    final response = await KyHttp.sendRequest(request, client: _client)
         .then(http.Response.fromStream)
         .timeout(const Duration(seconds: 120));
     final rawBody = response.body.trim();

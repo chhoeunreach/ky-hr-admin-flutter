@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:cnattendance/core/ky_security/ky_certificate_pinning.dart';
 import 'package:cnattendance/data/source/datastore/preferences.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:cnattendance/services/server_url_resolver.dart';
@@ -84,7 +85,8 @@ class ServerStatusService {
       final normalizedUrl = normalizeScannedServer(serverUrl);
       final uri = Uri.parse('$normalizedUrl${Constant.APP_VERSION_URL}');
 
-      final response = await _client.get(uri, headers: const {
+      final client = KyCertificatePinning.clientFor(uri, _client);
+      final response = await client.get(uri, headers: const {
         'Accept': 'application/json; charset=UTF-8'
       }).timeout(const Duration(seconds: 15));
 

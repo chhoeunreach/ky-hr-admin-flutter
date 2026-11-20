@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cnattendance/models/monthly_attendance_summary.dart';
 import 'package:cnattendance/models/top_bonus_employee.dart';
@@ -613,6 +615,7 @@ class RoyalAttendanceScanner extends StatelessWidget {
         children: [
           Stack(
             alignment: Alignment.center,
+            clipBehavior: Clip.none,
             children: [
               Positioned(
                 bottom: 0,
@@ -643,18 +646,77 @@ class RoyalAttendanceScanner extends StatelessWidget {
                 child: AnimatedBuilder(
                   animation: animate ? animation : kAlwaysDismissedAnimation,
                   child: button,
-                  builder: (context, child) => DecoratedBox(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: RoyalColors.skyBlue.withValues(alpha: .42),
-                          blurRadius: 14 + (animate ? animation.value * 12 : 0),
-                        ),
-                      ],
-                    ),
-                    child: child,
-                  ),
+                  builder: (context, child) {
+                    final t = animate ? animation.value : 0.0;
+                    final breathe = animate
+                        ? 1 + 0.028 * (0.5 - 0.5 * math.cos(t * math.pi * 2))
+                        : 1.0;
+                    return SizedBox(
+                      width: diameter,
+                      height: diameter,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        clipBehavior: Clip.none,
+                        children: [
+                          if (animate)
+                            for (final phase in const [0.0, 0.5])
+                              IgnorePointer(
+                                child: Transform.scale(
+                                  scale: 1 + .45 * ((t + phase) % 1),
+                                  child: Opacity(
+                                    opacity: (1 - ((t + phase) % 1)) * .55,
+                                    child: Container(
+                                      width: diameter,
+                                      height: diameter,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: phase == 0
+                                              ? RoyalColors.gold
+                                              : RoyalColors.skyBlue,
+                                          width: 1.6,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          if (animate)
+                            IgnorePointer(
+                              child: Transform.rotate(
+                                angle: t * math.pi * 2,
+                                child: CustomPaint(
+                                  size: Size.square(diameter + 18),
+                                  painter: _GoldArcPainter(),
+                                ),
+                              ),
+                            ),
+                          Transform.scale(
+                            scale: breathe,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: RoyalColors.skyBlue
+                                        .withValues(alpha: .42),
+                                    blurRadius: 14 + t * 12,
+                                  ),
+                                  BoxShadow(
+                                    color: RoyalColors.gold
+                                        .withValues(alpha: .14 + .16 * t),
+                                    blurRadius: 22 + t * 14,
+                                    spreadRadius: t * 5,
+                                  ),
+                                ],
+                              ),
+                              child: child,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
               ),
             ],
@@ -687,4 +749,39 @@ class RoyalAttendanceScanner extends StatelessWidget {
       ),
     );
   }
+}
+
+class _GoldArcPainter extends CustomPainter {
+  const _GoldArcPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    final stroke = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.6
+      ..strokeCap = StrokeCap.round
+      ..shader = const SweepGradient(
+        transform: GradientRotation(-math.pi / 2),
+        colors: [
+          Colors.transparent,
+          RoyalColors.lightGold,
+          RoyalColors.gold,
+          RoyalColors.darkGold,
+          Colors.transparent,
+        ],
+        stops: [0.0, .2, .45, .7, 1.0],
+      ).createShader(rect);
+    canvas.drawArc(
+      rect.deflate(2),
+      -math.pi / 2,
+      math.pi * 1.15,
+      false,
+      stroke,
+    );
+    canvas.drawArc(rect.deflate(2), math.pi / 2, math.pi * .55, false, stroke);
+  }
+
+  @override
+  bool shouldRepaint(covariant _GoldArcPainter oldDelegate) => false;
 }

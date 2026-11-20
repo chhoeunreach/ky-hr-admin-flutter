@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:cnattendance/data/source/datastore/preferences.dart';
 import 'package:cnattendance/model/banner_slideshow_config.dart';
 import 'package:cnattendance/utils/constant.dart';
-import 'package:http/http.dart' as http;
+import 'package:cnattendance/core/ky_security/ky_http.dart';
 
 class BannerSlideshowApi {
   BannerSlideshowApi({Preferences? preferences})
@@ -41,9 +41,9 @@ class BannerSlideshowApi {
       'Authorization': 'Bearer $token',
     };
     final response = switch (method) {
-      'GET' => await http.get(uri, headers: headers),
-      'PUT' => await http.put(uri, headers: headers, body: jsonEncode(payload)),
-      'POST' => await http.post(uri, headers: headers),
+      'GET' => await KyHttp.get(uri, headers: headers),
+      'PUT' => await KyHttp.put(uri, headers: headers, body: jsonEncode(payload)),
+      'POST' => await KyHttp.post(uri, headers: headers),
       _ => throw ArgumentError.value(method, 'method'),
     };
     dynamic decoded;

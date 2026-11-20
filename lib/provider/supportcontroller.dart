@@ -10,7 +10,7 @@ import 'package:cnattendance/widget/customalertdialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
-import 'package:http/http.dart' as http;
+import 'package:cnattendance/core/ky_security/ky_http.dart';
 
 class SupportController extends GetxController {
   final titleController = TextEditingController();
@@ -48,7 +48,7 @@ class SupportController extends GetxController {
       EasyLoading.show(
           status: 'Submitting, Please Wait...',
           maskType: EasyLoadingMaskType.black);
-      final response = await http.post(uri, headers: headers, body: {
+      final response = await KyHttp.post(uri, headers: headers, body: {
         "title": title,
         "description": description,
         "department_id": selected.value.id.toString()
@@ -96,7 +96,7 @@ class SupportController extends GetxController {
     };
 
     try {
-      final response = await http.get(uri, headers: headers);
+      final response = await KyHttp.get(uri, headers: headers);
       debugPrint(response.body.toString());
 
       final responseData = json.decode(response.body);

@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:cnattendance/provider/dashboardprovider.dart';
 import 'package:cnattendance/services/attendance_sync_service.dart';
+import 'package:cnattendance/utils/attendance_verify_feedback.dart';
 import 'package:cnattendance/widget/customalertdialog.dart';
 import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
@@ -17,12 +18,15 @@ class NoteBottomSheet extends StatefulWidget {
   final String type;
   final File? attendanceSelfie;
   final bool returnNote;
+  /// `checkIn` / `checkOut` from home Scan In / Scan Out; empty = auto.
+  final String attendanceStatus;
 
   NoteBottomSheet(
     this.identifier,
     this.type, {
     this.attendanceSelfie,
     this.returnNote = false,
+    this.attendanceStatus = '',
   });
 
   @override
@@ -42,13 +46,14 @@ class NoteBottomSheetState extends State<NoteBottomSheet> {
     try {
       setState(() {
         EasyLoading.show(
-            status: translate('loader.requesting'),
+            status: translate('attendance_messages.verifying'),
             maskType: EasyLoadingMaskType.black);
       });
       final response = await provider.verifyAttendanceApi(
         type,
         "",
         identifier: identifier,
+        attendanceStatus: widget.attendanceStatus,
         attendanceSelfie: widget.attendanceSelfie,
         offlineRequestId: offlineRequestId,
         recordedAt: recordedAt,
@@ -74,6 +79,7 @@ class NoteBottomSheetState extends State<NoteBottomSheet> {
           type: type,
           identifier: identifier,
           note: "",
+          attendanceStatus: widget.attendanceStatus,
           offlineRequestId: offlineRequestId,
           recordedAt: recordedAt,
         );
@@ -101,8 +107,8 @@ class NoteBottomSheetState extends State<NoteBottomSheet> {
           context: rootContext,
           builder: (context) {
             return Dialog(
-              child: CustomAlertDialog(
-                  extra == null ? message : '$message\n\n$extra'),
+              child: CustomAlertDialog(attendanceVerifyFailureMessage(
+                  extra == null ? message : '$message\n\n$extra')),
             );
           },
         );
@@ -225,7 +231,8 @@ class NoteBottomSheetState extends State<NoteBottomSheet> {
                                 isLoading = true;
                                 setState(() {
                                   EasyLoading.show(
-                                      status: translate('loader.requesting'),
+                                      status: translate(
+                                          'attendance_messages.verifying'),
                                       maskType: EasyLoadingMaskType.black);
                                 });
                                 var status = await provider.getCheckInStatus();
@@ -235,6 +242,7 @@ class NoteBottomSheetState extends State<NoteBottomSheet> {
                                     widget.type,
                                     provider.noteController.text,
                                     identifier: widget.identifier,
+                                    attendanceStatus: widget.attendanceStatus,
                                     attendanceSelfie: widget.attendanceSelfie,
                                     offlineRequestId: offlineRequestId,
                                     recordedAt: recordedAt,
@@ -268,6 +276,7 @@ class NoteBottomSheetState extends State<NoteBottomSheet> {
                                     type: widget.type,
                                     identifier: widget.identifier,
                                     note: provider.noteController.text,
+                                    attendanceStatus: widget.attendanceStatus,
                                     offlineRequestId: offlineRequestId,
                                     recordedAt: recordedAt,
                                   );
@@ -304,9 +313,11 @@ class NoteBottomSheetState extends State<NoteBottomSheet> {
                                   context: rootContext,
                                   builder: (context) {
                                     return Dialog(
-                                      child: CustomAlertDialog(extra == null
-                                          ? message
-                                          : '$message\n\n$extra'),
+                                      child: CustomAlertDialog(
+                                          attendanceVerifyFailureMessage(
+                                              extra == null
+                                                  ? message
+                                                  : '$message\n\n$extra')),
                                     );
                                   },
                                 );
@@ -370,6 +381,7 @@ class NoteBottomSheetState extends State<NoteBottomSheet> {
     required String type,
     required String identifier,
     required String note,
+    String attendanceStatus = '',
     required String offlineRequestId,
     required DateTime recordedAt,
   }) async {
@@ -377,7 +389,7 @@ class NoteBottomSheetState extends State<NoteBottomSheet> {
     await syncService.queueAttendance(
       attendanceType: type,
       identifier: identifier,
-      attendanceStatusType: "",
+      attendanceStatusType: attendanceStatus,
       note: note,
       latitude: provider.locationStatus['latitude'].toString(),
       longitude: provider.locationStatus['longitude'].toString(),

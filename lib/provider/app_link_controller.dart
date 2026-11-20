@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
-import 'package:http/http.dart' as http;
+import 'package:cnattendance/core/ky_security/ky_http.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class AppLinkController extends GetxController {
@@ -64,7 +64,7 @@ class AppLinkController extends GetxController {
         if (token.isNotEmpty) 'Authorization': 'Bearer $token',
       };
 
-      final response = await http.get(uri, headers: headers);
+      final response = await KyHttp.get(uri, headers: headers);
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         if (responseData['status'] == true && responseData['data'] != null) {

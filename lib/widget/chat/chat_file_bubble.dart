@@ -1,6 +1,6 @@
 import 'package:cnattendance/utils/constant.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:cnattendance/core/ky_security/ky_http.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ChatFileBubble extends StatelessWidget {
@@ -92,7 +92,7 @@ class ChatFileBubble extends StatelessWidget {
     }
 
     try {
-      final response = await http.head(uri).timeout(const Duration(seconds: 8));
+      final response = await KyHttp.head(uri).timeout(const Duration(seconds: 8));
       final contentType =
           response.headers['content-type']?.toLowerCase().trim() ?? '';
       if (response.statusCode < 200 || response.statusCode >= 300) {

@@ -13,6 +13,7 @@ import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
 import 'package:html/parser.dart';
 import 'package:http/http.dart' as http;
+import 'package:cnattendance/core/ky_security/ky_http.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class EditTadaController extends GetxController {
@@ -56,7 +57,7 @@ class EditTadaController extends GetxController {
 
     try {
       EasyLoading.show(status: translate('loader.loading'),maskType: EasyLoadingMaskType.black);
-      final response = await http.get(
+      final response = await KyHttp.get(
         uri,
         headers: headers,
       );
@@ -134,7 +135,7 @@ class EditTadaController extends GetxController {
       }
 
       EasyLoading.show(status: translate('loader.loading'),maskType: EasyLoadingMaskType.black);
-      final responseStream = await requests.send();
+      final responseStream = await KyHttp.sendMultipart(requests);
 
       final response = await http.Response.fromStream(responseStream);
 
@@ -176,7 +177,7 @@ class EditTadaController extends GetxController {
 
     try {
       EasyLoading.show(status: translate('loader.loading'),maskType: EasyLoadingMaskType.black);
-      final response = await http.get(
+      final response = await KyHttp.get(
         uri,
         headers: headers,
       );

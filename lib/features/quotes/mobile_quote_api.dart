@@ -4,7 +4,7 @@ import 'package:cnattendance/data/source/datastore/preferences.dart';
 import 'package:cnattendance/model/banner_slideshow_config.dart';
 import 'package:cnattendance/model/home_banner_config.dart';
 import 'package:cnattendance/utils/constant.dart';
-import 'package:http/http.dart' as http;
+import 'package:cnattendance/core/ky_security/ky_http.dart';
 
 class MobileQuoteItem {
   final String id;
@@ -50,7 +50,7 @@ class MobileQuoteApi {
       'Authorization': 'Bearer $token',
     };
 
-    final response = await http.get(uri, headers: headers);
+    final response = await KyHttp.get(uri, headers: headers);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('Failed to fetch quotes: ${response.statusCode}');
     }

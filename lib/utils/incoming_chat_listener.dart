@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cnattendance/data/source/datastore/preferences.dart';
 import 'package:cnattendance/provider/chatbadgecontroller.dart';
 import 'package:cnattendance/screen/profile/chatscreen.dart';
+import 'package:cnattendance/security/app_integrity.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:cnattendance/utils/chat/chat_message_preview.dart';
 import 'package:cnattendance/utils/navigationservice.dart';
@@ -20,6 +21,9 @@ class IncomingChatListener {
   bool _isPrimed = false;
 
   Future<void> start() async {
+    if (await AppIntegrity.isTampered()) {
+      return;
+    }
     final preferences = Preferences();
     final username = (await preferences.getUsername()).trim();
 

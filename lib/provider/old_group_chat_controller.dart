@@ -7,6 +7,7 @@ import 'package:cnattendance/model/chat.dart';
 import 'package:cnattendance/model/member.dart';
 import 'package:cnattendance/provider/chatbadgecontroller.dart';
 import 'package:http/http.dart' as http;
+import 'package:cnattendance/core/ky_security/ky_http.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
@@ -131,7 +132,7 @@ class OldGroupChatController extends GetxController {
 
     final http.Client client = LoggingMiddleware(http.Client());
 
-    final response = await client.post(uri, headers: headers, body: {
+    final response = await KyHttp.postWithClient(client, uri, headers: headers, body: {
       "title": title,
       "message": message,
       "conversation_id": converstion_id,

@@ -1,5 +1,6 @@
 import 'package:cnattendance/features/community/social_feed_screen.dart';
 import 'dart:ui';
+import 'dart:async';
 
 import 'package:cnattendance/data/source/datastore/preferences.dart';
 import 'package:cnattendance/provider/dashboardprovider.dart';
@@ -20,6 +21,7 @@ import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
 import 'package:provider/provider.dart';
 import 'package:cnattendance/features/repair_price/pages/repair_device_page.dart';
 import 'package:cnattendance/features/repair_price/providers/repair_price_provider.dart';
+import 'package:cnattendance/features/daily_records/quick_create.dart';
 
 class DashboardScreen extends StatefulWidget {
   static const String routeName = '/dashboard';
@@ -28,7 +30,7 @@ class DashboardScreen extends StatefulWidget {
   State<StatefulWidget> createState() => DashboardScreenState();
 }
 
-class DashboardScreenState extends State<DashboardScreen> {
+class DashboardScreenState extends State<DashboardScreen> with WidgetsBindingObserver {
   final PersistentTabController _controller =
       PersistentTabController(initialIndex: 0);
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -43,6 +45,7 @@ class DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || _loadedUser) {
         return;
@@ -51,6 +54,19 @@ class DashboardScreenState extends State<DashboardScreen> {
       context.read<PrefProvider>().getUser();
     });
     _restoreRailState();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (mounted && state == AppLifecycleState.resumed) {
+      unawaited(context.read<DashboardProvider>().refreshMobileFeatures());
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   Future<void> _restoreRailState() async {
@@ -116,7 +132,9 @@ class DashboardScreenState extends State<DashboardScreen> {
     ];
     final visibleRail = enterprise.layout.visibleTabIndices(railItems);
     final selectedRail = visibleRail.indexOf(_selectedRailIndex);
-    final showDrawerButton = enterprise.layout.showMenuButton;
+    final showDrawerButton = enterprise.layout.showMenuButton &&
+        !(_selectedRailIndex == 0 &&
+            enterprise.layout.shows(LayoutItem.profile));
     final destinations = <NavigationRailDestination>[
       NavigationRailDestination(
         icon: const Icon(Icons.dashboard_outlined),
@@ -393,10 +411,17 @@ class DashboardScreenState extends State<DashboardScreen> {
     final immersive = isSocialFeedActive && _socialFeedImmersive;
     final socialDetailOpen =
         isSocialFeedActive && (activeNavigator?.canPop() ?? false);
+    final isRepairActive = tabIds[activeTabIndex] == LayoutItem.repair;
+    final repairDetailOpen =
+        isRepairActive && (activeNavigator?.canPop() ?? false);
     final hideMenuButton = immersive || (activeNavigator?.canPop() ?? false);
 
     final visibleTabs = enterprise.layout.visibleTabIndices(tabIds);
     final menuOnRight = enterprise.layout.menuOnRight;
+    final moreSlot = visibleTabs.indexOf(tabIds.indexOf(LayoutItem.more));
+    final showCreateRecord = moreSlot >= 0 &&
+        !hideMenuButton &&
+        MediaQuery.viewInsetsOf(context).bottom == 0;
 
     return Stack(
       children: [
@@ -418,7 +443,12 @@ class DashboardScreenState extends State<DashboardScreen> {
           handleAndroidBackButtonPress: true,
           resizeToAvoidBottomInset: true,
           stateManagement: true,
-          hideNavigationBar: immersive || socialDetailOpen,
+          hideNavigationBar: immersive || socialDetailOpen || repairDetailOpen,
+          floatingActionButton:
+              showCreateRecord ? const CreateRecordButton() : null,
+          floatingActionButtonLocation: showCreateRecord
+              ? AboveMoreLocation(slot: moreSlot, slots: visibleTabs.length)
+              : null,
           popAllScreensOnTapOfSelectedTab: true,
           popActionScreens: PopActionScreensType.all,
           tabs: tabs,
@@ -427,9 +457,8 @@ class DashboardScreenState extends State<DashboardScreen> {
                 navBarConfig: navBarConfig, visibleTabs: visibleTabs);
           },
         ),
-        if (!hideMenuButton &&
-            enterprise.layout.showMenuButton &&
-            tabIds[activeTabIndex] != LayoutItem.more)
+        // Sidebar menu button pinned at the top-left corner of every tab screen.
+        if (!hideMenuButton && enterprise.layout.showMenuButton)
           Positioned(
             top: 0,
             left: menuOnRight ? null : 12,
@@ -502,7 +531,7 @@ class DashboardNavigationBar extends StatelessWidget {
     return SafeArea(
       top: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+        padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(28),
           child: BackdropFilter(
@@ -607,11 +636,11 @@ class _EnterpriseNavItem extends StatelessWidget {
                 ? [
                     customAccent,
                     Color.lerp(
-                        customAccent,
-                        activeColor == Colors.white
-                            ? Colors.black
-                            : Colors.white,
-                        .16)!,
+                      customAccent,
+                      activeColor == Colors.white
+                          ? Colors.black
+                          : Colors.white,
+                      .16)!,
                   ]
                 : royal
                     ? RoyalColors.goldGradient.colors

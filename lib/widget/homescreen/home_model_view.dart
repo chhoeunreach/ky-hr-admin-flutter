@@ -802,7 +802,7 @@ class _HomeModelViewState extends State<HomeModelView>
                 ),
               if (theme.layout.shows(LayoutItem.stories))
                 _buildStoriesSection(context),
-              if (showScanner && theme.layout.shows(LayoutItem.scanner))
+              if (showScanner && theme.layout.shows(LayoutItem.scanner)) ...[
                 RoyalAttendanceScanner(
                   animation: widget.pulseController,
                   animate: widget.animated &&
@@ -818,6 +818,7 @@ class _HomeModelViewState extends State<HomeModelView>
                               : null,
                   onTap: widget.scannerBusy ? null : widget.onAttendanceTap,
                 ),
+              ],
               if (theme.layout.shows(LayoutItem.quickServices))
                 const RoyalQuickActions(),
             ],
@@ -2074,6 +2075,7 @@ class _HomeModelViewState extends State<HomeModelView>
   // ==========================================
   // 4. CLASSIC ATTENDANCE BUTTON SCAN QR
   // ==========================================
+
   Widget _buildOldAttendanceControl({
     required EnterpriseTheme enterprise,
     required String attandanceType,

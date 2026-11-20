@@ -17,6 +17,9 @@ class AttendanceCardView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (attendances.isEmpty) {
+      return const SizedBox.shrink();
+    }
     final enterprise = EnterpriseTheme.of(context);
     final rowColor = enterprise.isDark
         ? Colors.white.withValues(alpha: 0.10)

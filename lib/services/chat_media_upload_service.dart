@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:cnattendance/core/ky_security/ky_http.dart';
 import 'dart:io';
 
 import 'package:cnattendance/data/source/datastore/preferences.dart';
@@ -182,7 +183,7 @@ class ChatMediaUploadService {
       ));
 
     final streamedResponse =
-        await request.send().timeout(const Duration(seconds: 45));
+        await KyHttp.sendMultipart(request).timeout(const Duration(seconds: 45));
     final response = await http.Response.fromStream(streamedResponse);
 
     debugPrint('[CHAT_UPLOAD] response status=${response.statusCode}');

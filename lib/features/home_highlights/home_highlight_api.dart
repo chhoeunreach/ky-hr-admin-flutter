@@ -5,6 +5,7 @@ import 'package:cnattendance/data/source/datastore/preferences.dart';
 import 'package:cnattendance/models/home_highlight.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:http/http.dart' as http;
+import 'package:cnattendance/core/ky_security/ky_http.dart';
 
 class HomeHighlightException implements Exception {
   const HomeHighlightException(this.message);
@@ -80,7 +81,7 @@ class HomeHighlightApi {
     final token = await _preferences.getToken();
     final uri = Uri.parse('$base${Constant.API_URL}/$path')
         .replace(queryParameters: query);
-    final response = await _client.get(uri, headers: {
+    final response = await KyHttp.getWithClient(_client, uri, headers: {
       'Accept': 'application/json',
       'Authorization': 'Bearer $token',
     }).timeout(const Duration(seconds: 30));

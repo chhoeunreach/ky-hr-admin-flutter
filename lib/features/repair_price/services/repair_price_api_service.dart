@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:cnattendance/core/ky_security/ky_http.dart';
 import 'package:cnattendance/data/source/datastore/preferences.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:http/http.dart' as http;
@@ -316,9 +317,9 @@ class RepairPriceApiService {
     final headers = await _headers();
 
     try {
-      final response = await _client
-          .get(uri, headers: headers)
-          .timeout(RepairPriceConfig.requestTimeout);
+      final response =
+          await KyHttp.getWithClient(_client, uri, headers: headers)
+              .timeout(RepairPriceConfig.requestTimeout);
       final decoded = response.body.isNotEmpty ? jsonDecode(response.body) : {};
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -348,8 +349,8 @@ class RepairPriceApiService {
     final headers = await _headers();
 
     try {
-      final response = await _client
-          .post(uri, headers: headers, body: jsonEncode(body))
+      final response = await KyHttp.postWithClient(_client, uri,
+              headers: headers, body: jsonEncode(body))
           .timeout(RepairPriceConfig.requestTimeout);
       final decoded = response.body.isNotEmpty ? jsonDecode(response.body) : {};
 
@@ -380,8 +381,8 @@ class RepairPriceApiService {
     final headers = await _headers();
 
     try {
-      final response = await _client
-          .put(uri, headers: headers, body: jsonEncode(body))
+      final response = await KyHttp.putWithClient(_client, uri,
+              headers: headers, body: jsonEncode(body))
           .timeout(RepairPriceConfig.requestTimeout);
       final decoded = response.body.isNotEmpty ? jsonDecode(response.body) : {};
 
@@ -412,9 +413,9 @@ class RepairPriceApiService {
     final headers = await _headers();
 
     try {
-      final response = await _client
-          .delete(uri, headers: headers)
-          .timeout(RepairPriceConfig.requestTimeout);
+      final response =
+          await KyHttp.deleteWithClient(_client, uri, headers: headers)
+              .timeout(RepairPriceConfig.requestTimeout);
       final decoded = response.body.isNotEmpty ? jsonDecode(response.body) : {};
 
       if (response.statusCode >= 200 && response.statusCode < 300) {

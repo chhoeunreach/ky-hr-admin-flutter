@@ -6,7 +6,7 @@ import 'package:cnattendance/model/member.dart';
 import 'package:cnattendance/model/project.dart';
 import 'package:cnattendance/model/task.dart';
 import 'package:cnattendance/utils/constant.dart';
-import 'package:http/http.dart' as http;
+import 'package:cnattendance/core/ky_security/ky_http.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -36,7 +36,7 @@ class ProjectDashboardController extends GetxController {
       'Authorization': 'Bearer $token'
     };
 
-    final response = await http.get(
+    final response = await KyHttp.get(
       uri,
       headers: headers,
     );

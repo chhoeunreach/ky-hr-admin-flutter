@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:cnattendance/data/source/datastore/preferences.dart';
 import 'package:cnattendance/models/id_card_profile.dart';
 import 'package:cnattendance/utils/constant.dart';
-import 'package:http/http.dart' as http;
+import 'package:cnattendance/core/ky_security/ky_http.dart';
 
 class IdCardApiService {
   final Preferences _preferences = Preferences();
@@ -12,7 +12,7 @@ class IdCardApiService {
     final token = await _preferences.getToken();
     final baseUrl = await _preferences.getAppUrl();
 
-    final response = await http.get(
+    final response = await KyHttp.get(
       Uri.parse('$baseUrl${Constant.HR_KY_ADMIN_D_CARD_ME_URL}'),
       headers: {
         'Accept': 'application/json',

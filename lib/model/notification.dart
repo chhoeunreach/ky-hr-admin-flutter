@@ -9,6 +9,7 @@ class Notification {
   bool isRead;
   String type;
   int notificationForId;
+  final Map<String, String> appUpdate;
 
   Notification(
       {required this.id,
@@ -20,5 +21,6 @@ class Notification {
       this.localKey,
       this.isRead = true,
       this.type = '',
-      this.notificationForId = 0});
+      this.notificationForId = 0,
+      this.appUpdate = const {}});
 }

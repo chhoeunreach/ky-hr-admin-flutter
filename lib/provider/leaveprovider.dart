@@ -11,7 +11,7 @@ import 'package:cnattendance/model/LeaveDetail.dart';
 import 'package:cnattendance/model/leave.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:cnattendance/core/ky_security/ky_http.dart';
 import 'package:cnattendance/data/source/datastore/preferences.dart';
 
 class LeaveProvider with ChangeNotifier {
@@ -66,7 +66,7 @@ class LeaveProvider with ChangeNotifier {
       'Authorization': 'Bearer $token'
     };
 
-    final response = await http.get(uri, headers: headers);
+    final response = await KyHttp.get(uri, headers: headers);
 
     final responseData = json.decode(response.body);
     debugPrint(responseData.toString());
@@ -134,7 +134,7 @@ class LeaveProvider with ChangeNotifier {
     };
 
     try {
-      final response = await http.get(uri, headers: headers);
+      final response = await KyHttp.get(uri, headers: headers);
 
       final responseData = json.decode(response.body);
       if (response.statusCode == 200) {
@@ -187,7 +187,7 @@ class LeaveProvider with ChangeNotifier {
     };
 
     try {
-      final response = await http.post(uri, headers: headers, body: {
+      final response = await KyHttp.post(uri, headers: headers, body: {
         'issue_date': date,
         'leave_from': from,
         'leave_to': to,
@@ -225,7 +225,7 @@ class LeaveProvider with ChangeNotifier {
     };
 
     try {
-      final response = await http.post(uri, headers: headers, body: {
+      final response = await KyHttp.post(uri, headers: headers, body: {
         'issue_date': date,
         'leave_from': from,
         'leave_to': to,
@@ -262,7 +262,7 @@ class LeaveProvider with ChangeNotifier {
     };
 
     try {
-      final response = await http.post(uri, headers: headers, body: {
+      final response = await KyHttp.post(uri, headers: headers, body: {
         'last_working_day': from,
         'reason': reason,
       });
@@ -297,7 +297,7 @@ class LeaveProvider with ChangeNotifier {
     };
 
     try {
-      final response = await http.get(uri, headers: headers);
+      final response = await KyHttp.get(uri, headers: headers);
 
       print(response.body);
       final responseData = json.decode(response.body);
@@ -338,7 +338,7 @@ class LeaveProvider with ChangeNotifier {
     };
 
     try {
-      final response = await http.get(uri, headers: headers);
+      final response = await KyHttp.get(uri, headers: headers);
 
       final responseData = json.decode(response.body);
       if (response.statusCode == 200) {

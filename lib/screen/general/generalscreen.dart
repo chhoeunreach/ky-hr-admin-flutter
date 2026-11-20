@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'dart:io';
 
+import 'package:cnattendance/utils/app_update_payload.dart';
 import 'package:cnattendance/data/source/datastore/preferences.dart';
 import 'package:cnattendance/utils/app_device_info.dart';
 import 'package:cnattendance/utils/constant.dart';
@@ -15,13 +15,10 @@ import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
 import 'package:hexcolor/hexcolor.dart';
 import 'package:html/parser.dart' as html_parser;
-import 'package:http/http.dart' as http;
+import 'package:cnattendance/core/ky_security/ky_http.dart';
 import 'package:intl/intl.dart';
 import 'package:nepali_date_picker/nepali_date_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
-
-const String _iosTestFlightUpdateUrl =
-    'https://testflight.apple.com/join/hPG4ZA38';
 
 class GeneralScreen extends StatefulWidget {
   @override
@@ -33,6 +30,38 @@ class _GeneralScreenState extends State<GeneralScreen> {
   String fullMessage = "";
   bool isLoadingFullMessage = false;
   String? appBaseUrl;
+  late final Map _params = Get.arguments is Map ? Get.arguments as Map : {};
+  Map? _legacyUpdateSettings;
+
+  bool get _isUpdate => isAppUpdateNotification(
+        _params,
+        legacyText: "${_params['title'] ?? ''} ${_params['message'] ?? ''}",
+      );
+
+  @override
+  void initState() {
+    super.initState();
+    if (_isUpdate && configuredAppUpdateUri(_params) == null) {
+      _loadLegacyUpdateSettings();
+    }
+  }
+
+  Future<void> _loadLegacyUpdateSettings() async {
+    Map settings = const {};
+    try {
+      final baseUrl = await Preferences().getAppUrl();
+      final uri = Uri.parse('$baseUrl${Constant.APP_VERSION_URL}');
+      final response =
+          await KyHttp.get(uri).timeout(const Duration(seconds: 5));
+      if (response.statusCode == 200) {
+        final payload = json.decode(response.body);
+        if (payload is Map && payload['data'] is Map) {
+          settings = payload['data'] as Map;
+        }
+      }
+    } catch (_) {}
+    if (mounted) setState(() => _legacyUpdateSettings = settings);
+  }
 
   Future<void> checkAd(DateTime tempDate) async {
     final preferences = Preferences();
@@ -43,20 +72,9 @@ class _GeneralScreenState extends State<GeneralScreen> {
     }
   }
 
-  Future<void> _openDownload(String url) async {
-    final targetUrl = Platform.isIOS
-        ? _iosTestFlightUpdateUrl
-        : (url.trim().isNotEmpty ? url.trim() : 'https://hr.kneayerng.com');
-    final parsed = Uri.tryParse(targetUrl);
-    final uri = parsed != null && parsed.hasScheme && parsed.hasAuthority
-        ? parsed
-        : Uri.parse(Platform.isIOS
-            ? _iosTestFlightUpdateUrl
-            : 'https://hr.kneayerng.com');
+  Future<void> _openDownload(Uri uri) async {
     try {
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      }
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     } catch (_) {}
   }
 
@@ -68,7 +86,7 @@ class _GeneralScreenState extends State<GeneralScreen> {
   }) async {
     final normalizedType = type.trim().toLowerCase();
     final detailId = normalizedType == 'notice' && noticeId > 0 ? noticeId : id;
-    if (detailId <= 0 || isLoadingFullMessage) {
+    if (_isUpdate || detailId <= 0 || isLoadingFullMessage) {
       return;
     }
 
@@ -85,7 +103,7 @@ class _GeneralScreenState extends State<GeneralScreen> {
           : '${Constant.NOTIFICATION_URL}/$detailId';
       final uri = Uri.parse('$baseUrl$detailPath');
       final token = await preferences.getToken();
-      final response = await http.get(uri, headers: {
+      final response = await KyHttp.get(uri, headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json; charset=UTF-8',
         'Authorization': 'Bearer $token',
@@ -142,7 +160,7 @@ class _GeneralScreenState extends State<GeneralScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final param = Get.arguments is Map ? Get.arguments as Map : {};
+    final param = _params;
     final id = int.tryParse(param["id"]?.toString() ?? "") ?? 0;
     final noticeId = int.tryParse(param["notice_id"]?.toString() ?? "") ?? 0;
     final title = param["title"]?.toString() ?? "";
@@ -160,14 +178,12 @@ class _GeneralScreenState extends State<GeneralScreen> {
       });
     }
     final date = param["date"]?.toString() ?? "";
-    final downloadUrl = _platformDownloadUrl(param);
-
-    final isUpdate = type == "app_update" ||
-        title.contains('អាប់ដេត') ||
-        title.toLowerCase().contains('update') ||
-        message.contains('អាប់ដេត') ||
-        message.toLowerCase().contains('update') ||
-        message.contains('កំណែថ្មី');
+    final isUpdate = _isUpdate;
+    final configuredUrl = configuredAppUpdateUri(param);
+    final updateSettings = {...?_legacyUpdateSettings, ...param};
+    final downloadUrl = appUpdateDownloadUri(
+        configuredAppUpdateUri(updateSettings)?.toString());
+    final updateReady = configuredUrl != null || _legacyUpdateSettings != null;
 
     if (date.isNotEmpty) {
       try {
@@ -254,7 +270,9 @@ class _GeneralScreenState extends State<GeneralScreen> {
                                             ),
                                             SizedBox(height: 2),
                                             Text(
-                                              'hr.kneayerng.com',
+                                              updateReady
+                                                  ? downloadUrl.host
+                                                  : '…',
                                               style: TextStyle(
                                                 color: Colors.white70,
                                                 fontSize: 13,
@@ -288,8 +306,9 @@ class _GeneralScreenState extends State<GeneralScreen> {
                                               fontSize: 14,
                                             ),
                                           ),
-                                          onPressed: () =>
-                                              _openDownload(downloadUrl),
+                                          onPressed: updateReady
+                                              ? () => _openDownload(downloadUrl)
+                                              : null,
                                         ),
                                       ),
                                       SizedBox(width: 8),
@@ -302,21 +321,29 @@ class _GeneralScreenState extends State<GeneralScreen> {
                                           padding: EdgeInsets.symmetric(
                                               vertical: 12, horizontal: 12),
                                         ),
+                                        onPressed: !updateReady
+                                            ? null
+                                            : () async {
+                                                final details =
+                                                    await AppDeviceInfo
+                                                        .getDetails();
+                                                if (!context.mounted) return;
+                                                await showAppUpdateDialog(
+                                                  context: context,
+                                                  currentVersion:
+                                                      details.appVersion,
+                                                  latestVersion:
+                                                      appUpdateTargetVersion(
+                                                          updateSettings),
+                                                  downloadUrl:
+                                                      downloadUrl.toString(),
+                                                  releaseNotes: fullMessage,
+                                                  alertTitle: title,
+                                                  isForceUpdate: false,
+                                                );
+                                              },
                                         child: Icon(Icons.visibility_rounded,
                                             size: 18, color: Colors.white),
-                                        onPressed: () async {
-                                          final details =
-                                              await AppDeviceInfo.getDetails();
-                                          await showAppUpdateDialog(
-                                            context: context,
-                                            currentVersion: details.appVersion,
-                                            latestVersion: '',
-                                            downloadUrl: downloadUrl,
-                                            releaseNotes: fullMessage,
-                                            alertTitle: title,
-                                            isForceUpdate: false,
-                                          );
-                                        },
                                       ),
                                     ],
                                   ),
@@ -380,7 +407,9 @@ class _GeneralScreenState extends State<GeneralScreen> {
                                 ],
                               ),
                               SizedBox(height: 14),
-                              if (_hasImage(fullMessage))
+                              if (isUpdate)
+                                SelectableText(fullMessage)
+                              else if (_hasImage(fullMessage))
                                 SizedBox(
                                   height: 320,
                                   child: ClipRRect(
@@ -454,35 +483,6 @@ class _GeneralScreenState extends State<GeneralScreen> {
         ),
       ),
     );
-  }
-
-  String _platformDownloadUrl(Map param) {
-    String read(List<String> keys) {
-      for (final key in keys) {
-        final value = param[key]?.toString().trim() ?? '';
-        if (value.isNotEmpty) return value;
-      }
-      return '';
-    }
-
-    final platformUrl = Platform.isIOS
-        ? read([
-            'ios_url',
-            'app_store_url',
-            'apple_store_url',
-            'ios_download_url',
-          ])
-        : read([
-            'android_url',
-            'play_store_url',
-            'android_download_url',
-          ]);
-
-    if (platformUrl.isNotEmpty) return platformUrl;
-    if (Platform.isIOS) return _iosTestFlightUpdateUrl;
-
-    final fallbackUrl = read(['download_url', 'url']);
-    return fallbackUrl.isNotEmpty ? fallbackUrl : 'https://hr.kneayerng.com';
   }
 
   Map<String, Style> _descriptionHtmlStyle() {

@@ -77,8 +77,6 @@ class MoreScreenState extends State<MoreScreen> {
             context.select<PrefProvider, String>((p) => p.userId).trim()) ??
         0;
     final enterprise = EnterpriseTheme.of(context);
-    final inlineMenuButton = enterprise.layout.showMenuButton &&
-        MediaQuery.sizeOf(context).width < 720;
     final availableAttendanceMethods =
         attendanceMethod.map((method) => method.toLowerCase()).toList();
 
@@ -204,7 +202,7 @@ class MoreScreenState extends State<MoreScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  HeaderProfile(showMenuButton: inlineMenuButton),
+                  const HeaderProfile(showMenuButton: false),
                   if (features['social-feed'] == '1')
                     Services(translate('community.social_feed'),
                         Icons.dynamic_feed_outlined, const SocialFeedScreen()),

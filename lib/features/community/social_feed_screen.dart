@@ -8,6 +8,7 @@ import 'community_strings.dart';
 import 'package:cnattendance/data/source/datastore/preferences.dart';
 import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -22,6 +23,8 @@ import 'community_media_picker.dart';
 import 'community_media.dart';
 import 'feed_cache.dart';
 import 'feed_performance.dart';
+import 'mention_directory.dart';
+import 'mention_field.dart';
 
 extension _CommunityTheme on BuildContext {
   ColorScheme get _communityColors => Theme.of(this).colorScheme;
@@ -92,15 +95,39 @@ Future<T?> _showCommunityDialog<T>({
   );
 }
 
+/// Opens the Facebook-style profile for a post author (works from any screen
+/// that already has an [api] instance to share).
+void _openAuthorProfile(BuildContext context, Map? author,
+    {CommunityApi? api}) {
+  if (author == null || author['id'] == null) return;
+  Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
+      builder: (_) => SocialFeedScreen(
+          api: api, profileAuthor: Map<String, dynamic>.from(author))));
+}
+
+/// Opens the profile behind a tapped @mention. Unknown names (directory not
+/// loaded or the person left) and `@everyone` do nothing.
+void _openMentionProfile(BuildContext context, String name,
+    {CommunityApi? api}) {
+  final person = MentionDirectory.findByName(name);
+  if (person == null || person.isEveryone || person.id.isEmpty) return;
+  _openAuthorProfile(context, {'id': person.id, 'name': person.name}, api: api);
+}
+
 class SocialFeedScreen extends StatefulWidget {
   const SocialFeedScreen(
       {super.key,
       this.api,
       this.onImmersiveChanged,
-      this.showBackButton = true});
+      this.showBackButton = true,
+      this.profileAuthor});
   final bool showBackButton;
   final CommunityApi? api;
   final ValueChanged<bool>? onImmersiveChanged;
+
+  /// When set, the screen renders as that person's Facebook-style profile:
+  /// a cover/avatar header followed by only their posts.
+  final Map<String, dynamic>? profileAuthor;
   @override
   State<SocialFeedScreen> createState() => _SocialFeedScreenState();
 }
@@ -127,6 +154,8 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
   int _userId = 0;
   bool _cacheRestored = false;
   bool _scrollRestored = false;
+
+  bool get _isProfile => widget.profileAuthor != null;
 
   List<Map<String, dynamic>> get _visiblePosts => _posts.where((post) {
         final category =
@@ -156,9 +185,15 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
     await _restoreScrollOffset();
   }
 
-  String get _scrollKey => 'social_feed_scroll_v1_$_userId';
+  String get _scrollKey => _isProfile
+      ? 'social_feed_scroll_v1_profile_${widget.profileAuthor?['id']}'
+      : 'social_feed_scroll_v1_$_userId';
 
   Future<void> _restoreCachedFeed() async {
+    if (_isProfile) {
+      _cacheRestored = true;
+      return;
+    }
     if (_cacheRestored || _posts.isNotEmpty || _userId <= 0) return;
     _cacheRestored = true;
     final cached = await FeedCache.read(_userId);
@@ -172,7 +207,7 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
   }
 
   Future<void> _restoreScrollOffset() async {
-    if (_scrollRestored || _userId <= 0) return;
+    if (_scrollRestored || _userId <= 0 || _isProfile) return;
     try {
       final prefs = await SharedPreferences.getInstance();
       final offset = prefs.getDouble(_scrollKey) ?? 0;
@@ -197,7 +232,7 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
   }
 
   void _scheduleScrollSave() {
-    if (_userId <= 0) return;
+    if (_userId <= 0 || _isProfile) return;
     _scrollSaveTimer?.cancel();
     _scrollSaveTimer = Timer(const Duration(milliseconds: 700), () {
       unawaited(_saveScrollOffset());
@@ -205,7 +240,7 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
   }
 
   Future<void> _saveScrollOffset() async {
-    if (_userId <= 0) return;
+    if (_userId <= 0 || _isProfile) return;
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setDouble(_scrollKey, _lastScrollOffset);
@@ -217,6 +252,7 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
     super.initState();
     _scrollController.addListener(_handleScroll);
     FeedPerformanceTracker.instance.startScrollTrace();
+    unawaited(MentionDirectory.ensureLoaded());
     _load(reset: true);
     _loadStories();
     _loadProfile();
@@ -281,6 +317,7 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
   }
 
   Future<void> _loadStories() async {
+    if (_isProfile) return;
     if (!_allowsStory('social_feed.stories.view', 'social_feed.view')) return;
     final generation = ++_storiesGeneration;
     setState(() {
@@ -329,9 +366,11 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
     try {
       final page = reset ? 1 : _page + 1;
       final cursor = reset ? null : _nextCursor;
+      final authorFilter =
+          _isProfile ? '&user_id=${widget.profileAuthor?['id']}' : '';
       final path = cursor == null
-          ? 'social-feed?page=$page'
-          : 'social-feed?cursor=${Uri.encodeQueryComponent(cursor)}&per_page=12';
+          ? 'social-feed?page=$page$authorFilter'
+          : 'social-feed?cursor=${Uri.encodeQueryComponent(cursor)}&per_page=12$authorFilter';
       final response = await _api.request('GET', path);
       if (!mounted || generation != _generation) return;
       setState(() {
@@ -351,7 +390,9 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
         if (_posts.isNotEmpty) {
           FeedPerformanceTracker.instance.markFeedFirstPost();
         }
-        if (_userId > 0) unawaited(FeedCache.write(_userId, response));
+        if (_userId > 0 && !_isProfile) {
+          unawaited(FeedCache.write(_userId, response));
+        }
         await _restoreScrollOffset();
       }
     } catch (error) {
@@ -738,204 +779,245 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
     final busy = _busyPosts.contains(post['id']);
     final author = post['author'] as Map?;
     final avatar = '${author?['avatar'] ?? ''}';
+    final primaryType = '${post['media_type'] ?? 'text'}';
+    final hasMedia = (primaryType != 'text' &&
+            '${post['media_url'] ?? ''}'.trim().isNotEmpty) ||
+        (post['media'] is List && (post['media'] as List).isNotEmpty);
+    final inset = hasMedia ? 14.0 : 10.0;
     return Card(
-        margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        margin: EdgeInsets.fromLTRB(hasMedia ? 0 : 8, 4, hasMedia ? 0 : 8, 4),
         elevation: 0,
         color: context._communitySurface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         clipBehavior: Clip.antiAlias,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(10, 8, 10, 4),
+          padding: const EdgeInsets.fromLTRB(0, 6, 0, 4),
           child:
               Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            Row(children: [
-              CircleAvatar(
-                  backgroundImage:
-                      avatar.isNotEmpty ? communityAvatarImage(avatar) : null,
-                  child:
-                      avatar.isEmpty ? const Icon(Icons.person_outline) : null),
-              SizedBox(width: 10),
-              Expanded(
-                  child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                    Row(children: [
-                      Flexible(
-                          child: Text(
-                              '${author?['name'] ?? communityText('Employee')}',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w800))),
-                      if (post['is_announcement'] == true)
-                        Padding(
-                            padding: const EdgeInsets.only(left: 6),
-                            child: Icon(Icons.verified,
-                                size: 16,
-                                color: context
-                                    ._communityColors.onPrimaryContainer))
-                    ]),
-                    Text(
-                        '${author?['department'] ?? ''}${author?['department'] != null ? ' · ' : ''}${_date(post['created_at'])}',
-                        style: Theme.of(context).textTheme.bodySmall),
-                  ])),
-              if (post['can_edit'] == true ||
-                  post['can_delete'] == true ||
-                  post['can_pin'] == true ||
-                  post['can_report'] == true ||
-                  _allows('social_feed.save') ||
-                  _allows('social_feed.follow') ||
-                  _allows('social_feed.hide'))
-                PopupMenuButton<String>(
-                    enabled: !busy,
-                    onSelected: (value) {
-                      switch (value) {
-                        case 'edit':
-                          _compose(post: post);
-                          break;
-                        case 'delete':
-                          _delete(post);
-                          break;
-                        case 'save':
-                          _savePost(post);
-                          break;
-                        case 'pin':
-                          _pinPost(post);
-                          break;
-                        case 'report':
-                          _reportPost(post);
-                          break;
-                        case 'copy':
-                          _copyPostLink(post);
-                          break;
-                        case 'notifications':
-                          _toggleNotifications(post);
-                          break;
-                        case 'hide':
-                          _hidePost(post);
-                          break;
-                      }
-                    },
-                    itemBuilder: (_) => [
-                          if (post['can_edit'] == true)
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: inset),
+              child: Row(children: [
+                Expanded(
+                    child: InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: () => _openAuthorProfile(context, author,
+                            api: widget.api),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 2),
+                          child: Row(children: [
+                            CircleAvatar(
+                                backgroundImage: avatar.isNotEmpty
+                                    ? communityAvatarImage(avatar)
+                                    : null,
+                                child: avatar.isEmpty
+                                    ? const Icon(Icons.person_outline)
+                                    : null),
+                            SizedBox(width: 10),
+                            Expanded(
+                                child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                  Row(children: [
+                                    Flexible(
+                                        child: Text(
+                                            '${author?['name'] ?? communityText('Employee')}',
+                                            style: const TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w800))),
+                                    if (post['is_announcement'] == true)
+                                      Padding(
+                                          padding:
+                                              const EdgeInsets.only(left: 6),
+                                          child: Icon(Icons.verified,
+                                              size: 16,
+                                              color: context._communityColors
+                                                  .onPrimaryContainer))
+                                  ]),
+                                  Text(
+                                      '${author?['department'] ?? ''}${author?['department'] != null ? ' · ' : ''}${_date(post['created_at'])}',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall),
+                                ])),
+                          ]),
+                        ))),
+                if (post['can_edit'] == true ||
+                    post['can_delete'] == true ||
+                    post['can_pin'] == true ||
+                    post['can_report'] == true ||
+                    _allows('social_feed.save') ||
+                    _allows('social_feed.follow') ||
+                    _allows('social_feed.hide'))
+                  PopupMenuButton<String>(
+                      enabled: !busy,
+                      onSelected: (value) {
+                        switch (value) {
+                          case 'edit':
+                            _compose(post: post);
+                            break;
+                          case 'delete':
+                            _delete(post);
+                            break;
+                          case 'save':
+                            _savePost(post);
+                            break;
+                          case 'pin':
+                            _pinPost(post);
+                            break;
+                          case 'report':
+                            _reportPost(post);
+                            break;
+                          case 'copy':
+                            _copyPostLink(post);
+                            break;
+                          case 'notifications':
+                            _toggleNotifications(post);
+                            break;
+                          case 'hide':
+                            _hidePost(post);
+                            break;
+                        }
+                      },
+                      itemBuilder: (_) => [
+                            if (post['can_edit'] == true)
+                              PopupMenuItem(
+                                  value: 'edit',
+                                  child: Text(communityText('Edit post'))),
+                            if (post['can_delete'] == true)
+                              PopupMenuItem(
+                                  value: 'delete',
+                                  child: Text(communityText('Delete post'))),
+                            if (_allows('social_feed.save'))
+                              PopupMenuItem(
+                                  value: 'save',
+                                  child: Text(communityText(
+                                      post['is_saved'] == true
+                                          ? 'Unsave post'
+                                          : 'Save post'))),
+                            if (post['can_pin'] == true)
+                              PopupMenuItem(
+                                  value: 'pin',
+                                  child: Text(communityText(
+                                      post['is_pinned'] == true
+                                          ? 'Unpin post'
+                                          : 'Pin post'))),
+                            if (post['can_report'] == true)
+                              PopupMenuItem(
+                                  value: 'report',
+                                  child: Text(communityText('Report post'))),
                             PopupMenuItem(
-                                value: 'edit',
-                                child: Text(communityText('Edit post'))),
-                          if (post['can_delete'] == true)
-                            PopupMenuItem(
-                                value: 'delete',
-                                child: Text(communityText('Delete post'))),
-                          if (_allows('social_feed.save'))
-                            PopupMenuItem(
-                                value: 'save',
-                                child: Text(communityText(
-                                    post['is_saved'] == true
-                                        ? 'Unsave post'
-                                        : 'Save post'))),
-                          if (post['can_pin'] == true)
-                            PopupMenuItem(
-                                value: 'pin',
-                                child: Text(communityText(
-                                    post['is_pinned'] == true
-                                        ? 'Unpin post'
-                                        : 'Pin post'))),
-                          if (post['can_report'] == true)
-                            PopupMenuItem(
-                                value: 'report',
-                                child: Text(communityText('Report post'))),
-                          PopupMenuItem(
-                              value: 'copy',
-                              child: Text(communityText('Copy link'))),
-                          if (_allows('social_feed.follow'))
-                            PopupMenuItem(
-                                value: 'notifications',
-                                child: Text(communityText(
-                                    post['notifications_enabled'] == true
-                                        ? 'Turn notifications off'
-                                        : 'Turn notifications on'))),
-                          if (_allows('social_feed.hide'))
-                            PopupMenuItem(
-                                value: 'hide',
-                                child: Text(communityText('Hide post'))),
-                        ]),
-            ]),
-            const SizedBox(height: 8),
-            _PostContent(post: post, feedPosition: feedPosition),
-            if (post['poll'] is Map) _PollWidget(post: post, api: _api),
+                                value: 'copy',
+                                child: Text(communityText('Copy link'))),
+                            if (_allows('social_feed.follow'))
+                              PopupMenuItem(
+                                  value: 'notifications',
+                                  child: Text(communityText(
+                                      post['notifications_enabled'] == true
+                                          ? 'Turn notifications off'
+                                          : 'Turn notifications on'))),
+                            if (_allows('social_feed.hide'))
+                              PopupMenuItem(
+                                  value: 'hide',
+                                  child: Text(communityText('Hide post'))),
+                          ]),
+              ]),
+            ),
             const SizedBox(height: 6),
-            Row(children: [
-              Expanded(
-                  child: InkWell(
-                      onTap: (post['reactions_count'] ?? 0) > 0
-                          ? () => _showReactions(post)
-                          : null,
-                      child: Row(children: [
-                        for (final reaction in communityReactions.keys
-                            .where((key) =>
-                                ((post['reactions'] as Map?)?[key] as num? ??
-                                    0) >
-                                0)
-                            .take(3))
-                          Padding(
-                              padding: const EdgeInsets.only(right: 2),
-                              child: Text(communityReactions[reaction]!,
-                                  style: const TextStyle(fontSize: 18))),
-                        Flexible(
-                            child: Text(
-                                '${post['reactions_count'] ?? 0} ${communityText('reactions')}',
-                                overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.bodySmall)),
-                      ]))),
-              InkWell(
-                  onTap: () => _comments(post),
-                  child: Text(
-                      '${post['comments_count'] ?? 0} ${communityText('comments')}',
-                      style: Theme.of(context).textTheme.bodySmall)),
-              const SizedBox(width: 8),
-              Text('${post['shares_count'] ?? 0} ${communityText('shares')}',
-                  style: Theme.of(context).textTheme.bodySmall),
-            ]),
-            const Divider(height: 12),
-            LayoutBuilder(builder: (context, constraints) {
-              final actions = <Widget>[
-                if (_allows('social_feed.react'))
-                  CommunityReactionButton(
-                    reaction: post['my_reaction'] as String?,
-                    enabled: !busy,
-                    onChanged: (reaction) =>
-                        _action(post, 'reaction', data: {'reaction': reaction}),
-                  ),
-                TextButton.icon(
-                    onPressed: busy ? null : () => _comments(post),
-                    icon:
-                        const Icon(Icons.chat_bubble_outline_rounded, size: 20),
-                    label: Text(communityText('Comment'))),
-                if (_allows('social_feed.share')) ...[
-                  TextButton.icon(
-                      onPressed: busy ? null : () => _share(post),
-                      icon: const Icon(Icons.reply_rounded, size: 22),
-                      label: Text(communityText('Share'))),
-                  TextButton.icon(
-                      onPressed: busy ? null : () => _sendPost(post),
-                      icon: const Icon(Icons.send_outlined, size: 20),
-                      label: Text(communityText('Send'))),
-                ],
-              ];
-              return Theme(
-                  data: Theme.of(context).copyWith(
-                      textButtonTheme: TextButtonThemeData(
-                          style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 4, vertical: 6),
-                              foregroundColor: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant,
-                              textStyle: const TextStyle(
-                                  fontSize: 12, fontWeight: FontWeight.w600)))),
-                  child: constraints.maxWidth < 340
-                      ? Wrap(spacing: 4, children: actions)
-                      : Row(children: [
-                          for (final action in actions) Expanded(child: action)
-                        ]));
-            }),
+            _PostContent(
+                post: post,
+                feedPosition: feedPosition,
+                inset: inset,
+                onMentionTap: (name) =>
+                    _openMentionProfile(context, name, api: widget.api)),
+            if (post['poll'] is Map)
+              Padding(
+                  padding: EdgeInsets.symmetric(horizontal: inset),
+                  child: _PollWidget(post: post, api: _api)),
+            const SizedBox(height: 4),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: inset),
+              child: Row(children: [
+                Expanded(
+                    child: InkWell(
+                        onTap: (post['reactions_count'] ?? 0) > 0
+                            ? () => _showReactions(post)
+                            : null,
+                        child: Row(children: [
+                          for (final reaction in communityReactions.keys
+                              .where((key) =>
+                                  ((post['reactions'] as Map?)?[key] as num? ??
+                                      0) >
+                                  0)
+                              .take(3))
+                            Padding(
+                                padding: const EdgeInsets.only(right: 2),
+                                child: Text(communityReactions[reaction]!,
+                                    style: const TextStyle(fontSize: 18))),
+                          Flexible(
+                              child: Text(
+                                  '${post['reactions_count'] ?? 0} ${communityText('reactions')}',
+                                  overflow: TextOverflow.ellipsis,
+                                  style:
+                                      Theme.of(context).textTheme.bodySmall)),
+                        ]))),
+                InkWell(
+                    onTap: () => _comments(post),
+                    child: Text(
+                        '${post['comments_count'] ?? 0} ${communityText('comments')}',
+                        style: Theme.of(context).textTheme.bodySmall)),
+                const SizedBox(width: 8),
+                Text('${post['shares_count'] ?? 0} ${communityText('shares')}',
+                    style: Theme.of(context).textTheme.bodySmall),
+              ]),
+            ),
+            const Divider(height: 8),
+            Padding(
+                padding: EdgeInsets.symmetric(horizontal: inset - 4),
+                child: LayoutBuilder(builder: (context, constraints) {
+                  final actions = <Widget>[
+                    if (_allows('social_feed.react'))
+                      CommunityReactionButton(
+                        reaction: post['my_reaction'] as String?,
+                        enabled: !busy,
+                        onChanged: (reaction) => _action(post, 'reaction',
+                            data: {'reaction': reaction}),
+                      ),
+                    TextButton.icon(
+                        onPressed: busy ? null : () => _comments(post),
+                        icon: const Icon(Icons.chat_bubble_outline_rounded,
+                            size: 20),
+                        label: Text(communityText('Comment'))),
+                    if (_allows('social_feed.share')) ...[
+                      TextButton.icon(
+                          onPressed: busy ? null : () => _share(post),
+                          icon: const Icon(Icons.reply_rounded, size: 22),
+                          label: Text(communityText('Share'))),
+                      TextButton.icon(
+                          onPressed: busy ? null : () => _sendPost(post),
+                          icon: const Icon(Icons.send_outlined, size: 20),
+                          label: Text(communityText('Send'))),
+                    ],
+                  ];
+                  return Theme(
+                      data: Theme.of(context).copyWith(
+                          textButtonTheme: TextButtonThemeData(
+                              style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 4, vertical: 6),
+                                  foregroundColor: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                                  textStyle: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600)))),
+                      child: constraints.maxWidth < 340
+                          ? Wrap(spacing: 4, children: actions)
+                          : Row(children: [
+                              for (final action in actions)
+                                Expanded(child: action)
+                            ]));
+                })),
             if (busy) LinearProgressIndicator(),
           ]),
         ));
@@ -957,10 +1039,12 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
           ? null
           : _communityAppBar(
               context,
-              communityText('Social Feed'),
+              _isProfile
+                  ? '${widget.profileAuthor?['name'] ?? ''}'
+                  : communityText('Social Feed'),
               automaticallyImplyLeading: widget.showBackButton,
               actions: [
-                if (features['social_feed.search'] == '1')
+                if (!_isProfile && features['social_feed.search'] == '1')
                   IconButton(
                       tooltip: communityText('Search'),
                       onPressed: () => Navigator.push(
@@ -968,7 +1052,7 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
                           MaterialPageRoute(
                               builder: (_) => const SocialSearchScreen())),
                       icon: const Icon(Icons.search)),
-                if (features['social_feed.notifications'] == '1')
+                if (!_isProfile && features['social_feed.notifications'] == '1')
                   IconButton(
                       tooltip: communityText('Notifications'),
                       onPressed: () => Navigator.push(
@@ -977,7 +1061,7 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
                               builder: (_) =>
                                   const SocialNotificationsScreen())),
                       icon: const Icon(Icons.notifications_none)),
-                if (features['social_feed.save'] == '1')
+                if (!_isProfile && features['social_feed.save'] == '1')
                   IconButton(
                       tooltip: communityText('Saved posts'),
                       onPressed: () => Navigator.push(
@@ -1009,9 +1093,12 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
                   cacheExtent: 600,
                   slivers: [
                     SliverList.list(children: [
-                      if (features['social_feed.create'] == '1')
+                      if (_isProfile)
+                        _ProfileHeader(
+                            author: widget.profileAuthor!, api: _api),
+                      if (!_isProfile && features['social_feed.create'] == '1')
                         _composerCard(),
-                      if (canViewStories)
+                      if (!_isProfile && canViewStories)
                         SocialStoriesStrip(
                             groups: _storyGroups,
                             loading: _storiesLoading,
@@ -1028,7 +1115,7 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
                                           initialGroup: index)));
                               if (mounted) await _loadStories();
                             }),
-                      _filters(),
+                      if (!_isProfile) _filters(),
                       if (_error != null)
                         Padding(
                             padding: EdgeInsets.all(16),
@@ -1080,6 +1167,153 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
                 )),
       ),
     );
+  }
+}
+
+/// Facebook-style profile header: gradient cover with the avatar overlapping
+/// it, the person's name/subtitle, a short info card, and a "Posts" label that
+/// sits above their feed. Profile details are an enhancement — on failure the
+/// header falls back to the author basics already present in post payloads.
+class _ProfileHeader extends StatefulWidget {
+  const _ProfileHeader({required this.author, required this.api});
+
+  final Map<String, dynamic> author;
+  final CommunityApi api;
+
+  @override
+  State<_ProfileHeader> createState() => _ProfileHeaderState();
+}
+
+class _ProfileHeaderState extends State<_ProfileHeader> {
+  Map<String, dynamic>? _detail;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final id = widget.author['id'];
+    if (id == null) return;
+    try {
+      final response =
+          await widget.api.request('GET', 'users/profile-detail/$id');
+      if (!mounted) return;
+      final data = response['data'];
+      if (data is Map) {
+        setState(() => _detail = Map<String, dynamic>.from(data));
+      }
+    } catch (_) {
+      // Optional enrichment; the header still works without it.
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context._communityColors;
+    final surface = context._communitySurface;
+    final author = widget.author;
+    final name = '${author['name'] ?? communityText('Employee')}';
+    final department =
+        '${_detail?['department'] ?? author['department'] ?? ''}';
+    final position = '${_detail?['post'] ?? ''}';
+    final branch = '${_detail?['branch'] ?? ''}';
+    final avatar = '${_detail?['avatar'] ?? author['avatar'] ?? ''}';
+    final subtitle = [
+      if (department.isNotEmpty) department,
+      if (position.isNotEmpty) position,
+    ].join(' · ');
+    final hasInfo =
+        position.isNotEmpty || department.isNotEmpty || branch.isNotEmpty;
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      Stack(clipBehavior: Clip.none, children: [
+        Container(
+            height: 132,
+            decoration: BoxDecoration(
+                gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                  colors.primary,
+                  colors.primary.withValues(alpha: .65)
+                ]))),
+        Positioned(
+            left: 0,
+            right: 0,
+            bottom: -44,
+            child: Center(
+                child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration:
+                        BoxDecoration(color: surface, shape: BoxShape.circle),
+                    child: CircleAvatar(
+                        radius: 44,
+                        backgroundImage: avatar.isNotEmpty
+                            ? communityAvatarImage(avatar)
+                            : null,
+                        child: avatar.isEmpty
+                            ? const Icon(Icons.person_outline, size: 40)
+                            : null)))),
+      ]),
+      const SizedBox(height: 54),
+      Center(
+          child: Text(name,
+              textAlign: TextAlign.center,
+              style:
+                  const TextStyle(fontSize: 24, fontWeight: FontWeight.w800))),
+      if (subtitle.isNotEmpty)
+        Padding(
+            padding: const EdgeInsets.only(top: 4, left: 16, right: 16),
+            child: Center(
+                child: Text(subtitle,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyMedium))),
+      if (hasInfo)
+        Container(
+            margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+                color: surface, borderRadius: BorderRadius.circular(16)),
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              if (position.isNotEmpty)
+                _infoRow(context, Icons.work_outline, communityText('Position'),
+                    position),
+              if (department.isNotEmpty)
+                _infoRow(context, Icons.apartment, communityText('Department'),
+                    department),
+              if (branch.isNotEmpty)
+                _infoRow(context, Icons.location_city, communityText('Branch'),
+                    branch),
+            ])),
+      const SizedBox(height: 16),
+      const Divider(height: 1),
+      Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+          child: Row(children: [
+            Icon(Icons.article_outlined, size: 20, color: colors.primary),
+            const SizedBox(width: 8),
+            Text(communityText('Posts'),
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+          ])),
+    ]);
+  }
+
+  Widget _infoRow(
+      BuildContext context, IconData icon, String label, String value) {
+    return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Row(children: [
+          Icon(icon,
+              size: 20, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          const SizedBox(width: 10),
+          Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+          const SizedBox(width: 8),
+          Expanded(
+              child: Text(value, maxLines: 1, overflow: TextOverflow.ellipsis)),
+        ]));
   }
 }
 
@@ -3096,6 +3330,9 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
   @override
   void initState() {
     super.initState();
+    // Needed so tapping an @mention in this post can resolve the person even
+    // when the detail screen is the first community screen to open.
+    unawaited(MentionDirectory.ensureLoaded());
     _load();
   }
 
@@ -3158,61 +3395,98 @@ class _SocialPostDetailScreenState extends State<SocialPostDetailScreen> {
                     onRefresh: _load,
                     child: ListView(
                         physics: const AlwaysScrollableScrollPhysics(),
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.fromLTRB(0, 8, 0, 12),
                         children: [
                           Card(
                               color: context._communitySurface,
+                              margin: const EdgeInsets.fromLTRB(0, 4, 0, 4),
                               child: Padding(
-                                  padding: const EdgeInsets.all(14),
+                                  padding:
+                                      const EdgeInsets.fromLTRB(0, 12, 0, 12),
                                   child: Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.stretch,
                                       children: [
-                                        Row(children: [
-                                          CircleAvatar(
-                                              backgroundImage: avatar.isNotEmpty
-                                                  ? communityAvatarImage(avatar)
-                                                  : null,
-                                              child: avatar.isEmpty
-                                                  ? const Icon(
-                                                      Icons.person_outline)
-                                                  : null),
-                                          const SizedBox(width: 10),
-                                          Expanded(
-                                              child: Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                Text(
-                                                    '${author?['name'] ?? communityText('Employee')}',
-                                                    style: const TextStyle(
-                                                        fontWeight:
-                                                            FontWeight.bold)),
-                                                Text(
-                                                    '${author?['department'] ?? ''}${author?['department'] != null ? ' · ' : ''}${_date(post['created_at'])}',
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .bodySmall),
-                                              ])),
-                                        ]),
-                                        const SizedBox(height: 10),
-                                        _PostContent(post: post),
-                                        const SizedBox(height: 8),
-                                        Row(children: [
-                                          Text(
-                                              '${post['reactions_count'] ?? 0} ${communityText('reactions')}'),
-                                          const SizedBox(width: 12),
-                                          Text(
-                                              '${post['comments_count'] ?? 0} ${communityText('comments')}'),
-                                          const Spacer(),
-                                          TextButton.icon(
-                                              onPressed: _openComments,
-                                              icon: const Icon(
-                                                  Icons.chat_bubble_outline,
-                                                  size: 18),
-                                              label: Text(
-                                                  communityText('Comments')))
-                                        ]),
+                                        Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 14),
+                                            child: Row(children: [
+                                              Expanded(
+                                                  child: InkWell(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              12),
+                                                      onTap: () =>
+                                                          _openAuthorProfile(
+                                                              context, author,
+                                                              api: _api),
+                                                      child: Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .symmetric(
+                                                                vertical: 2),
+                                                        child: Row(children: [
+                                                          CircleAvatar(
+                                                              backgroundImage: avatar
+                                                                      .isNotEmpty
+                                                                  ? communityAvatarImage(
+                                                                      avatar)
+                                                                  : null,
+                                                              child: avatar
+                                                                      .isEmpty
+                                                                  ? const Icon(Icons
+                                                                      .person_outline)
+                                                                  : null),
+                                                          const SizedBox(
+                                                              width: 10),
+                                                          Expanded(
+                                                              child: Column(
+                                                                  crossAxisAlignment:
+                                                                      CrossAxisAlignment
+                                                                          .start,
+                                                                  children: [
+                                                                Text(
+                                                                    '${author?['name'] ?? communityText('Employee')}',
+                                                                    style: const TextStyle(
+                                                                        fontWeight:
+                                                                            FontWeight.bold)),
+                                                                Text(
+                                                                    '${author?['department'] ?? ''}${author?['department'] != null ? ' · ' : ''}${_date(post['created_at'])}',
+                                                                    style: Theme.of(
+                                                                            context)
+                                                                        .textTheme
+                                                                        .bodySmall),
+                                                              ])),
+                                                        ]),
+                                                      ))),
+                                            ])),
+                                        const SizedBox(height: 6),
+                                        _PostContent(
+                                            post: post,
+                                            inset: 14,
+                                            onMentionTap: (name) =>
+                                                _openMentionProfile(
+                                                    context, name,
+                                                    api: _api)),
+                                        const SizedBox(height: 6),
+                                        Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 14),
+                                            child: Row(children: [
+                                              Text(
+                                                  '${post['reactions_count'] ?? 0} ${communityText('reactions')}'),
+                                              const SizedBox(width: 12),
+                                              Text(
+                                                  '${post['comments_count'] ?? 0} ${communityText('comments')}'),
+                                              const Spacer(),
+                                              TextButton.icon(
+                                                  onPressed: _openComments,
+                                                  icon: const Icon(
+                                                      Icons.chat_bubble_outline,
+                                                      size: 18),
+                                                  label: Text(communityText(
+                                                      'Comments')))
+                                            ])),
                                       ]))),
                         ])));
   }
@@ -3289,7 +3563,7 @@ class _SocialSavedPostsScreenState extends State<SocialSavedPostsScreen> {
                   onRefresh: _load,
                   child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.fromLTRB(0, 8, 0, 12),
                       children: [
                         if (_posts.isEmpty)
                           Padding(
@@ -3299,22 +3573,40 @@ class _SocialSavedPostsScreenState extends State<SocialSavedPostsScreen> {
                         for (final post in _posts)
                           Card(
                               color: context._communitySurface,
+                              margin: const EdgeInsets.fromLTRB(0, 4, 0, 4),
                               child: Padding(
-                                  padding: const EdgeInsets.all(14),
+                                  padding:
+                                      const EdgeInsets.fromLTRB(0, 12, 0, 12),
                                   child: Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.stretch,
                                       children: [
-                                        Text(
-                                            '${(post['author'] as Map?)?['name'] ?? communityText('Employee')}',
-                                            style: const TextStyle(
-                                                fontWeight: FontWeight.bold)),
-                                        Text(_date(post['created_at']),
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodySmall),
-                                        const SizedBox(height: 8),
-                                        _PostContent(post: post),
+                                        Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 14),
+                                            child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                      '${(post['author'] as Map?)?['name'] ?? communityText('Employee')}',
+                                                      style: const TextStyle(
+                                                          fontWeight:
+                                                              FontWeight.bold)),
+                                                  Text(
+                                                      _date(post['created_at']),
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .bodySmall),
+                                                ])),
+                                        const SizedBox(height: 6),
+                                        _PostContent(
+                                            post: post,
+                                            inset: 14,
+                                            onMentionTap: (name) =>
+                                                _openMentionProfile(
+                                                    context, name,
+                                                    api: _api)),
                                       ])))
                       ])));
 }
@@ -3424,12 +3716,54 @@ class _PollWidgetState extends State<_PollWidget> {
   }
 }
 
-class _PostContent extends StatelessWidget {
-  _PostContent({required this.post, this.nested = false, this.feedPosition});
+class _PostContent extends StatefulWidget {
+  _PostContent(
+      {required this.post,
+      this.nested = false,
+      this.feedPosition,
+      this.inset = 0,
+      this.onMentionTap});
   final Map<String, dynamic> post;
   final bool nested;
   final int? feedPosition;
+  final double inset;
+
+  /// Tapping a rendered @mention opens that person's profile.
+  final CommunityMentionTap? onMentionTap;
+
+  @override
+  State<_PostContent> createState() => _PostContentState();
+}
+
+class _PostContentState extends State<_PostContent> {
+  /// Recognizers created for the @mention spans of the current build, disposed
+  /// whenever the text is rebuilt or the widget goes away.
+  final List<TapGestureRecognizer> _mentionTaps = [];
+
+  @override
+  void dispose() {
+    _disposeMentionTaps();
+    super.dispose();
+  }
+
+  void _disposeMentionTaps() {
+    for (final recognizer in _mentionTaps) {
+      recognizer.dispose();
+    }
+    _mentionTaps.clear();
+  }
+
+  TextSpan _span(String body, TextStyle style,
+      {Color mentionColor = const Color(0xff2563eb)}) {
+    _disposeMentionTaps();
+    return communityFormattedSpan(body, style,
+        mentionColor: mentionColor,
+        onMentionTap: widget.onMentionTap,
+        recognizers: _mentionTaps);
+  }
+
   List<Map<String, dynamic>> _mediaItems() {
+    final post = widget.post;
     final items = <Map<String, dynamic>>[];
     final primaryType = '${post['media_type'] ?? 'text'}';
     final primaryUrl = '${post['media_url'] ?? ''}'.trim();
@@ -3473,44 +3807,47 @@ class _PostContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final media = _mediaItems();
-    final body = '${post['body'] ?? ''}';
-    final background = communityPostBackground('${post['background'] ?? ''}');
+    final body = '${widget.post['body'] ?? ''}';
+    final background =
+        communityPostBackground('${widget.post['background'] ?? ''}');
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       if (body.isNotEmpty)
         if (background != null && media.isEmpty)
-          Container(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 26),
-              decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                      colors: background.colors,
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight),
-                  borderRadius: BorderRadius.circular(16)),
-              child: _communityFormatPattern.hasMatch(body)
-                  ? SelectableText.rich(
-                      communityFormattedSpan(
-                          body,
-                          TextStyle(
+          Padding(
+              padding: EdgeInsets.symmetric(horizontal: widget.inset),
+              child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 18, vertical: 26),
+                  decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                          colors: background.colors,
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight),
+                      borderRadius: BorderRadius.circular(16)),
+                  child: communityNeedsRichText(body)
+                      ? SelectableText.rich(
+                          _span(
+                              body,
+                              TextStyle(
+                                  color: background.foreground,
+                                  fontSize: 22,
+                                  height: 1.35,
+                                  fontWeight: FontWeight.w600),
+                              mentionColor: background.foreground),
+                          textAlign: TextAlign.center)
+                      : SelectableText(body,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
                               color: background.foreground,
                               fontSize: 22,
                               height: 1.35,
-                              fontWeight: FontWeight.w600)),
-                      textAlign: TextAlign.center)
-                  : SelectableText(body,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                          color: background.foreground,
-                          fontSize: 22,
-                          height: 1.35,
-                          fontWeight: FontWeight.w600)))
+                              fontWeight: FontWeight.w600))))
         else
           Padding(
-              padding: EdgeInsets.only(bottom: media.isEmpty ? 0 : 6),
-              child: _communityFormatPattern.hasMatch(body)
-                  ? SelectableText.rich(communityFormattedSpan(
-                      body,
-                      Theme.of(context).textTheme.bodyLarge ??
-                          const TextStyle()))
+              padding: EdgeInsets.fromLTRB(
+                  widget.inset, 0, widget.inset, media.isEmpty ? 0 : 4),
+              child: communityNeedsRichText(body)
+                  ? SelectableText.rich(_span(body, Theme.of(context).textTheme.bodyLarge ?? const TextStyle(), mentionColor: context._communityColors.primary), textAlign: TextAlign.left)
                   : SelectableText(body)),
       if (media.length == 1)
         CommunityMedia(
@@ -3520,7 +3857,7 @@ class _PostContent extends StatelessWidget {
             thumbnailUrl: '${media.first['thumbnail_url'] ?? ''}',
             durationSeconds: media.first['duration_seconds'],
             aspectRatio: media.first['aspect_ratio'],
-            feedPosition: feedPosition,
+            feedPosition: widget.feedPosition,
             autoPlay: media.first['media_type'] == 'video',
             allowFullscreen: true,
             onImageTap: media.first['media_type'] == 'image'
@@ -3529,31 +3866,34 @@ class _PostContent extends StatelessWidget {
       else if (media.length > 1)
         _PostMediaGallery(
             items: media,
-            feedPosition: feedPosition,
+            feedPosition: widget.feedPosition,
             onImageTap: (index) => _openViewer(context, media, index)),
-      if (!nested && post['original_post_id'] != null)
-        Container(
-            margin: const EdgeInsets.only(top: 10),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-                border: Border.all(color: Theme.of(context).dividerColor),
-                borderRadius: BorderRadius.circular(12)),
-            child: post['original'] is Map
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                        Text(
-                            '${(post['original']['author'] as Map?)?['name'] ?? communityText('Employee')}',
-                            style:
-                                const TextStyle(fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 8),
-                        _PostContent(
-                            post: Map<String, dynamic>.from(
-                                post['original'] as Map),
-                            nested: true),
-                      ])
-                : Text(communityText(
-                    'The original post is no longer available.'))),
+      if (!widget.nested && widget.post['original_post_id'] != null)
+        Padding(
+            padding: EdgeInsets.symmetric(horizontal: widget.inset),
+            child: Container(
+                margin: const EdgeInsets.only(top: 10),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                    border: Border.all(color: Theme.of(context).dividerColor),
+                    borderRadius: BorderRadius.circular(12)),
+                child: widget.post['original'] is Map
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                            Text(
+                                '${(widget.post['original']['author'] as Map?)?['name'] ?? communityText('Employee')}',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 8),
+                            _PostContent(
+                                post: Map<String, dynamic>.from(
+                                    widget.post['original'] as Map),
+                                nested: true,
+                                onMentionTap: widget.onMentionTap),
+                          ])
+                    : Text(communityText(
+                        'The original post is no longer available.')))),
     ]);
   }
 }
@@ -3599,16 +3939,16 @@ class _PostMediaGallery extends StatelessWidget {
     final visible = items.take(4).toList();
     if (visible.length == 3) {
       return LayoutBuilder(builder: (context, constraints) {
-        final cell = (constraints.maxWidth - 5) / 2;
+        final cell = (constraints.maxWidth - 4) / 2;
         return SizedBox(
-            height: cell * 2 + 5,
+            height: cell * 2 + 4,
             child: Row(children: [
               Expanded(child: _tile(visible[0], 0)),
-              const SizedBox(width: 5),
+              const SizedBox(width: 4),
               Expanded(
                   child: Column(children: [
                 Expanded(child: _tile(visible[1], 1)),
-                const SizedBox(height: 5),
+                const SizedBox(height: 4),
                 Expanded(child: _tile(visible[2], 2))
               ]))
             ]));
@@ -3620,12 +3960,12 @@ class _PostMediaGallery extends StatelessWidget {
           physics: const NeverScrollableScrollPhysics(),
           itemCount: visible.length,
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2, crossAxisSpacing: 5, mainAxisSpacing: 5),
+              crossAxisCount: 2, crossAxisSpacing: 4, mainAxisSpacing: 4),
           itemBuilder: (context, index) {
             return _tile(visible[index], index);
           }),
       Padding(
-          padding: const EdgeInsets.only(top: 7),
+          padding: const EdgeInsets.only(top: 4),
           child: Row(children: [
             Icon(Icons.collections_rounded,
                 size: 16, color: context._communityColors.onSurfaceVariant),
@@ -3788,26 +4128,127 @@ CommunityPostBackground? communityPostBackground(String? value) =>
 final _communityFormatPattern =
     RegExp(r'(\*\*|__)(.+?)\1|(?<!\w)_([^_\n]+?)_(?!\w)');
 
-TextSpan communityFormattedSpan(String body, TextStyle style) {
+/// True when the body contains bold/italic markup or an @mention, i.e. when
+/// it must render through [communityFormattedSpan] instead of plain text.
+bool communityNeedsRichText(String body) =>
+    body.contains('@') || _communityFormatPattern.hasMatch(body);
+
+final RegExp _mentionWordChar = RegExp(r'\w', unicode: true);
+final RegExp _mentionToken = RegExp(r'^\w+', unicode: true);
+
+bool _mentionBoundary(String rest, int length) =>
+    length >= rest.length || !_mentionWordChar.hasMatch(rest[length]);
+
+/// End offset (exclusive, relative to [text]) of the mention starting at
+/// [at], or -1 when that position does not start a mention. Matches the
+/// longest known employee name, then `everyone`, and falls back to a single
+/// `@word` token only while the directory has not loaded yet.
+int _mentionEnd(String text, int at) {
+  if (at > 0 && _mentionWordChar.hasMatch(text[at - 1])) return -1;
+  final rest = text.substring(at + 1);
+  if (rest.isEmpty || !_mentionWordChar.hasMatch(rest[0])) return -1;
+  final lower = rest.toLowerCase();
+  for (final name in MentionDirectory.names) {
+    final value = name.toLowerCase();
+    if (lower.startsWith(value) && _mentionBoundary(rest, value.length)) {
+      return at + 1 + value.length;
+    }
+  }
+  if (lower.startsWith('everyone') &&
+      _mentionBoundary(rest, 'everyone'.length)) {
+    return at + 1 + 'everyone'.length;
+  }
+  if (!MentionDirectory.isLoaded) {
+    final token = _mentionToken.firstMatch(rest);
+    if (token != null) return at + 1 + token.end;
+  }
+  return -1;
+}
+
+/// Called when the user taps an @mention in rendered post or comment text.
+/// [name] is the mentioned name without the leading `@`.
+typedef CommunityMentionTap = void Function(String name);
+
+/// Splits [text] into plain and highlighted @mention spans. When
+/// [onMentionTap] is given, each resolvable mention gets a
+/// [TapGestureRecognizer] so it can be tapped to open that person's profile;
+/// the recognizers are collected in [recognizers] so the caller can dispose
+/// them with the widget.
+List<InlineSpan> _mentionSpans(String text, TextStyle base, Color color,
+    {CommunityMentionTap? onMentionTap,
+    List<TapGestureRecognizer>? recognizers}) {
+  final spans = <InlineSpan>[];
+  var cursor = 0;
+  var index = text.indexOf('@');
+  while (index != -1) {
+    final end = _mentionEnd(text, index);
+    if (end > 0) {
+      if (index > cursor) {
+        spans.add(TextSpan(text: text.substring(cursor, index)));
+      }
+      final mention = text.substring(index, end);
+      final name = mention.substring(1);
+      TapGestureRecognizer? recognizer;
+      if (onMentionTap != null && name.toLowerCase() != 'everyone') {
+        recognizer = TapGestureRecognizer()..onTap = () => onMentionTap(name);
+        recognizers?.add(recognizer);
+      }
+      spans.add(TextSpan(
+          text: mention,
+          style: base.copyWith(color: color, fontWeight: FontWeight.w700),
+          recognizer: recognizer));
+      cursor = end;
+      index = text.indexOf('@', end);
+      continue;
+    }
+    index = text.indexOf('@', index + 1);
+  }
+  if (cursor == 0) return [TextSpan(text: text)];
+  if (cursor < text.length) spans.add(TextSpan(text: text.substring(cursor)));
+  return spans;
+}
+
+TextSpan _styledChunk(String text, TextStyle base, Color mentionColor,
+    {CommunityMentionTap? onMentionTap,
+    List<TapGestureRecognizer>? recognizers}) {
+  final parts = _mentionSpans(text, base, mentionColor,
+      onMentionTap: onMentionTap, recognizers: recognizers);
+  if (parts.length == 1) {
+    final only = parts.first as TextSpan;
+    if (only.children == null) {
+      return TextSpan(
+          text: only.text, style: base, recognizer: only.recognizer);
+    }
+  }
+  return TextSpan(style: base, children: parts);
+}
+
+TextSpan communityFormattedSpan(String body, TextStyle style,
+    {Color mentionColor = const Color(0xff2563eb),
+    CommunityMentionTap? onMentionTap,
+    List<TapGestureRecognizer>? recognizers}) {
   final spans = <InlineSpan>[];
   var cursor = 0;
   for (final match in _communityFormatPattern.allMatches(body)) {
     if (match.start > cursor) {
-      spans.add(TextSpan(text: body.substring(cursor, match.start)));
+      spans.addAll(_mentionSpans(
+          body.substring(cursor, match.start), style, mentionColor,
+          onMentionTap: onMentionTap, recognizers: recognizers));
     }
     if (match.group(1) != null) {
-      spans.add(TextSpan(
-          text: match.group(2),
-          style: const TextStyle(fontWeight: FontWeight.w800)));
+      spans.add(_styledChunk(match.group(2)!,
+          style.copyWith(fontWeight: FontWeight.w800), mentionColor,
+          onMentionTap: onMentionTap, recognizers: recognizers));
     } else {
-      spans.add(TextSpan(
-          text: match.group(3),
-          style: const TextStyle(fontStyle: FontStyle.italic)));
+      spans.add(_styledChunk(match.group(3)!,
+          style.copyWith(fontStyle: FontStyle.italic), mentionColor,
+          onMentionTap: onMentionTap, recognizers: recognizers));
     }
     cursor = match.end;
   }
   if (cursor < body.length) {
-    spans.add(TextSpan(text: body.substring(cursor)));
+    spans.addAll(_mentionSpans(body.substring(cursor), style, mentionColor,
+        onMentionTap: onMentionTap, recognizers: recognizers));
   }
   return TextSpan(style: style, children: spans);
 }
@@ -4652,7 +5093,7 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
         child: Padding(
             padding: const EdgeInsets.fromLTRB(14, 6, 10, 6),
             child: Column(children: [
-              TextField(
+              MentionField(
                   controller: _body,
                   focusNode: _bodyFocusNode,
                   enabled: !_saving,
@@ -5393,8 +5834,12 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
 }
 
 class _ExpandableCommentText extends StatefulWidget {
-  const _ExpandableCommentText({super.key, required this.text});
+  const _ExpandableCommentText(
+      {super.key, required this.text, this.onMentionTap});
   final String text;
+
+  /// Tapping a rendered @mention opens that person's profile.
+  final CommunityMentionTap? onMentionTap;
   @override
   State<_ExpandableCommentText> createState() => _ExpandableCommentTextState();
 }
@@ -5404,11 +5849,35 @@ class _ExpandableCommentTextState extends State<_ExpandableCommentText> {
   static const _maxLines = 4;
   bool _expanded = false;
 
+  /// Recognizers created for the @mention spans of the current build, disposed
+  /// whenever the text is rebuilt or the widget goes away.
+  final List<TapGestureRecognizer> _mentionTaps = [];
+
+  @override
+  void dispose() {
+    _disposeMentionTaps();
+    super.dispose();
+  }
+
+  void _disposeMentionTaps() {
+    for (final recognizer in _mentionTaps) {
+      recognizer.dispose();
+    }
+    _mentionTaps.clear();
+  }
+
   @override
   Widget build(BuildContext context) {
+    _disposeMentionTaps();
+    final span = communityNeedsRichText(widget.text)
+        ? communityFormattedSpan(widget.text, _style,
+            mentionColor: context._communityColors.primary,
+            onMentionTap: widget.onMentionTap,
+            recognizers: _mentionTaps)
+        : TextSpan(text: widget.text, style: _style);
     return LayoutBuilder(builder: (context, constraints) {
       final painter = TextPainter(
-        text: TextSpan(text: widget.text, style: _style),
+        text: span,
         maxLines: _maxLines,
         textDirection: Directionality.of(context),
         textScaler: MediaQuery.textScalerOf(context),
@@ -5417,7 +5886,7 @@ class _ExpandableCommentTextState extends State<_ExpandableCommentText> {
       painter.dispose();
 
       if (!overflows) {
-        return Text(widget.text, style: _style);
+        return Text.rich(span);
       }
 
       return Column(
@@ -5425,9 +5894,8 @@ class _ExpandableCommentTextState extends State<_ExpandableCommentText> {
         children: [
           GestureDetector(
             onTap: () => setState(() => _expanded = !_expanded),
-            child: Text(
-              widget.text,
-              style: _style,
+            child: Text.rich(
+              span,
               maxLines: _expanded ? null : _maxLines,
               overflow:
                   _expanded ? TextOverflow.visible : TextOverflow.ellipsis,
@@ -5488,6 +5956,7 @@ class _SocialCommentsScreenState extends State<SocialCommentsScreen> {
   @override
   void initState() {
     super.initState();
+    unawaited(MentionDirectory.ensureLoaded());
     _load(reset: true);
   }
 
@@ -5549,8 +6018,11 @@ class _SocialCommentsScreenState extends State<SocialCommentsScreen> {
         context: context,
         builder: (_) => AlertDialog(
               title: Text(communityText('Edit comment')),
-              content: TextField(
-                  controller: controller, maxLines: 4, maxLength: 2000),
+              content: MentionField(
+                  controller: controller,
+                  maxLines: 4,
+                  maxLength: 2000,
+                  maxPanelHeight: 160),
               actions: [
                 TextButton(
                     onPressed: () => Navigator.pop(context),
@@ -5863,7 +6335,11 @@ class _SocialCommentsScreenState extends State<SocialCommentsScreen> {
                                                       key: ValueKey(
                                                           comment['id']),
                                                       text:
-                                                          '${comment['body']}')),
+                                                          '${comment['body']}',
+                                                      onMentionTap: (name) =>
+                                                          _openMentionProfile(
+                                                              context, name,
+                                                              api: _api))),
                                               Row(children: [
                                                 if (canComment)
                                                   TextButton(
@@ -5998,7 +6474,13 @@ class _SocialCommentsScreenState extends State<SocialCommentsScreen> {
                                                                 key: ValueKey(
                                                                     'reply-${reply['id']}'),
                                                                 text:
-                                                                    '${reply['body']}')),
+                                                                    '${reply['body']}',
+                                                                onMentionTap: (name) =>
+                                                                    _openMentionProfile(
+                                                                        context,
+                                                                        name,
+                                                                        api:
+                                                                            _api))),
                                                     ])),
                                             ]))
                                       ])),
@@ -6025,9 +6507,10 @@ class _SocialCommentsScreenState extends State<SocialCommentsScreen> {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Expanded(
-                            child: TextField(
+                            child: MentionField(
                               controller: _text,
                               focusNode: _composerFocus,
+                              panelAbove: true,
                               enabled: !_sending,
                               minLines: 1,
                               maxLines: 4,

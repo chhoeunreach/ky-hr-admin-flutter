@@ -29,6 +29,8 @@ import 'package:cnattendance/screen/profile/profilescreen.dart';
 import 'package:cnattendance/screen/profile/meetingdetailscreen.dart';
 import 'package:cnattendance/screen/sell_out_report_screen.dart';
 import 'package:cnattendance/screen/splashscreen.dart';
+import 'package:cnattendance/security/app_integrity.dart';
+import 'package:cnattendance/security/integrity_blocked_screen.dart';
 import 'package:cnattendance/theme/app_theme_data.dart';
 import 'package:cnattendance/theme/app_theme_mode.dart';
 import 'package:cnattendance/theme/theme_provider.dart';
@@ -84,6 +86,16 @@ Future<void> main() async {
       ),
     );
   };
+  // Clone / re-sign / repackage gate — must run before Firebase, push,
+  // Firestore, Workmanager, or any other service starts. On failure every
+  // service stays off and only the blocked screen is shown.
+  if (await AppIntegrity.isTampered()) {
+    debugPrint('App integrity failed: ${AppIntegrity.lastReason}');
+    await AppIntegrity.wipeSession();
+    runApp(const IntegrityBlockedScreen());
+    return;
+  }
+
   // When neither the primary nor the backup server is reachable, block the UI
   // with a connection alert that keeps retrying until a server responds.
   ServerUrlResolver.onAllServersUnreachable = (primary, fallback) =>

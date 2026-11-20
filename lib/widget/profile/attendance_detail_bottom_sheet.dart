@@ -19,6 +19,40 @@ class AttendanceDetailBottomSheetState
   @override
   Widget build(BuildContext context) {
     final enterprise = EnterpriseTheme.of(context);
+    if (widget.attendances.isEmpty) {
+      return Container(
+        decoration: BoxDecoration(
+          color: enterprise.cardBackground,
+          borderRadius:
+              const BorderRadius.vertical(top: Radius.circular(20)),
+          border: Border.all(color: enterprise.cardBorder),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        child: SafeArea(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                translate('attendance_screen.attendance_summary'),
+                style: TextStyle(
+                    fontSize: 20,
+                    color: enterprise.text,
+                    fontWeight: FontWeight.bold),
+              ),
+              IconButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  icon: Icon(
+                    Icons.close,
+                    size: 20,
+                    color: enterprise.text,
+                  )),
+            ],
+          ),
+        ),
+      );
+    }
     double workedHr = 0;
     final workingHr = widget.attendances.first.working_hours_min;
     final statusLabel = _attendanceStatusLabel(

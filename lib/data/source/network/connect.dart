@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:cnattendance/data/source/datastore/preferences.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:cnattendance/core/ky_security/ky_http.dart';
 import 'package:http/http.dart' as http;
 
 class Connect {
@@ -11,43 +12,45 @@ class Connect {
 
   Future<http.Response> getResponse(
       String url, Map<String, String> headers) async {
-    Preferences preferences = Preferences();
+    final preferences = Preferences();
     final storage = GetStorage();
-    String language = storage.read("language") ?? "en";
+    final String language = storage.read("language") ?? "en";
 
     headers.addEntries({
       "language": language,
     }.entries);
 
-    var uri = Uri.parse(await preferences.getAppUrl() + url);
-    return _client.get(uri, headers: headers);
+    final uri = Uri.parse(await preferences.getAppUrl() + url);
+    return KyHttp.getWithClient(_client, uri, headers: headers);
   }
 
   Future<http.Response> postResponse(String url, Map<String, String> headers,
       Map<String, dynamic> body) async {
-    Preferences preferences = Preferences();
+    final preferences = Preferences();
     final storage = GetStorage();
-    String language = storage.read("language") ?? "en";
+    final String language = storage.read("language") ?? "en";
 
     headers.addEntries({
       "language": language,
     }.entries);
 
-    var uri = Uri.parse(await preferences.getAppUrl() + url);
-    return _client.post(uri, headers: headers, body: body);
+    final uri = Uri.parse(await preferences.getAppUrl() + url);
+    return KyHttp.postWithClient(_client, uri, headers: headers, body: body);
   }
 
   Future<http.Response> postResponseRaw(String url, Map<String, String> headers,
       Map<String, dynamic> body) async {
-    Preferences preferences = Preferences();
+    final preferences = Preferences();
     final storage = GetStorage();
-    String language = storage.read("language") ?? "en";
+    final String language = storage.read("language") ?? "en";
 
     headers.addEntries({
       "language": language,
     }.entries);
 
-    var uri = Uri.parse(await preferences.getAppUrl() + url);
-    return _client.post(uri, headers: headers, body: jsonEncode(body));
+    final uri = Uri.parse(await preferences.getAppUrl() + url);
+    final encodedBody = jsonEncode(body);
+    return KyHttp.postWithClient(_client, uri,
+        headers: headers, body: encodedBody);
   }
 }

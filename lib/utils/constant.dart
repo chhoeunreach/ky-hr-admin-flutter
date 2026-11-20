@@ -26,6 +26,7 @@ class Constant {
   static const LOGIN_URL = "$API_URL/login";
   static const LOGOUT_URL = "$API_URL/logout";
   static const DASHBOARD_URL = "$API_URL/dashboard";
+  static const MOBILE_FEATURES_URL = "$API_URL/mobile-features";
   static const APP_VERSION_URL = "$API_URL/app-version";
 
   static const CHECK_IN_URL = "$API_URL/employees/check-in";
@@ -70,6 +71,8 @@ class Constant {
       "$API_URL/team-meetings/attendance/status";
   static const MEETING_ATTENDANCE_SCAN_URL =
       "$API_URL/team-meetings/attendance/scan";
+
+  static const PAYROLL_QUEUE_URL = "$API_URL/v1/payroll-queue";
 
   static const PROJECT_DASHBOARD_URL = "$API_URL/project-management-dashboard";
   static const PROJECT_LIST_URL = "$API_URL/assigned-projects-list";

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:cnattendance/core/ky_security/ky_certificate_pinning.dart';
 import 'package:cnattendance/data/source/datastore/preferences.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:http/http.dart' as http;
@@ -30,7 +31,7 @@ class DeviceClockService {
     http.Client? client,
     DateTime Function()? now,
     this.allowedDrift = const Duration(minutes: 2),
-    this.timeout = const Duration(seconds: 10),
+    this.timeout = const Duration(seconds: 5),
   })  : _preferences = preferences ?? Preferences(),
         _ownsClient = client == null,
         _client = client ?? http.Client(),
@@ -56,7 +57,8 @@ class DeviceClockService {
         },
       );
       final startedAt = _now().toUtc();
-      final response = await _client.get(uri, headers: const {
+      final client = KyCertificatePinning.clientFor(uri, _client);
+      final response = await client.get(uri, headers: const {
         'Accept': 'application/json',
         'Cache-Control': 'no-cache, no-store, max-age=0',
         'Pragma': 'no-cache',

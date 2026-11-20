@@ -6,6 +6,8 @@ import 'package:cnattendance/utils/constant.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
+import 'package:cnattendance/core/ky_security/ky_http.dart';
+import 'package:cnattendance/core/ky_security/ky_security_manager.dart';
 import 'package:http_interceptor_plus/http_interceptor_plus.dart';
 
 class MoreScreenProvider with ChangeNotifier {
@@ -42,7 +44,7 @@ class MoreScreenProvider with ChangeNotifier {
     };
 
     try {
-      final response = await http.get(uri, headers: headers);
+      final response = await KyHttp.accountLogout(uri, headers: headers);
       debugPrint(response.body.toString());
 
       final responseData = json.decode(response.body);
@@ -50,6 +52,7 @@ class MoreScreenProvider with ChangeNotifier {
       if (response.statusCode == 200 || response.statusCode == 401) {
         final jsonResponse = Logoutresponse.fromJson(responseData);
 
+        KySecurityManager.shared.clearLocalSession();
         await preferences.clearPrefs();
         await preferences.setCompanyVerifyRequired(true);
         features = {};
@@ -87,7 +90,7 @@ class MoreScreenProvider with ChangeNotifier {
 
     final http.Client client = LoggingMiddleware(http.Client());
 
-    final response = await client.post(uri, headers: headers, body: {
+    final response = await KyHttp.postWithClient(client, uri, headers: headers, body: {
       'title': await getDeviceName(),
       'identifier': identifier,
     });

@@ -8,7 +8,7 @@ import 'package:cnattendance/screen/projectscreen/projectdetailscreen/projectdet
 import 'package:cnattendance/utils/constant.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_translate/flutter_translate.dart';
-import 'package:http/http.dart' as http;
+import 'package:cnattendance/core/ky_security/ky_http.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -33,7 +33,7 @@ class ProjectListScreenController extends GetxController {
 
     try {
       EasyLoading.show(status: translate('loader.loading'),maskType: EasyLoadingMaskType.black);
-      final response = await http.get(
+      final response = await KyHttp.get(
         uri,
         headers: headers,
       );

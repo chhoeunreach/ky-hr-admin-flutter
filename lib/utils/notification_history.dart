@@ -1,3 +1,4 @@
+import 'package:cnattendance/utils/app_update_payload.dart';
 import 'package:cnattendance/data/source/datastore/preferences.dart';
 import 'package:cnattendance/model/notification.dart' as Not;
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -45,6 +46,12 @@ class NotificationHistory {
       'messageId': message.messageId,
       'type': message.data['type']?.toString() ?? '',
       'notification_for_id': _noticeIdFromData(message.data),
+      if (message.data['type'] == 'daily_records')
+        'server_notification_id': _parseInt(message.data['notification_id']),
+      if (isAppUpdateNotification(message.data)) ...{
+        'app_update': appUpdateMetadata(message.data),
+        'server_notification_id': _parseInt(message.data['notification_id']),
+      },
       'title': trimmedTitle,
       'description': trimmedBody,
       'date': date,
@@ -72,10 +79,12 @@ class NotificationHistory {
           DateTime.tryParse(item['date']?.toString() ?? '')?.toLocal() ??
               DateTime.now();
       final nepaliDate = parsedDate.toNepaliDateTime();
+      final serverId = _parseInt(item['server_notification_id']);
+      final update = item['app_update'];
 
       notifications.add(
         Not.Notification(
-          id: -1000000 - index,
+          id: serverId > 0 ? serverId : -1000000 - index,
           title: item['title']?.toString() ?? 'Notification',
           description: item['description']?.toString() ?? '',
           month: isAd
@@ -89,6 +98,7 @@ class NotificationHistory {
           isRead: item['isRead'] == true,
           type: item['type']?.toString() ?? '',
           notificationForId: _parseInt(item['notification_for_id']),
+          appUpdate: update is Map ? appUpdateMetadata(update) : const {},
         ),
       );
     }

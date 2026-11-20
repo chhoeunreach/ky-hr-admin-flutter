@@ -1,9 +1,13 @@
 import 'dart:io';
 
 import 'package:cnattendance/data/source/datastore/preferences.dart';
+import 'package:cnattendance/services/device_clock_monitor.dart';
 import 'package:cnattendance/services/device_clock_service.dart';
 import 'package:cnattendance/screen/auth/login_screen.dart';
 import 'package:cnattendance/screen/dashboard/dashboard_screen.dart';
+import 'package:cnattendance/core/ky_security/ky_security_manager.dart';
+import 'package:cnattendance/core/ky_security/ky_optional_update_prompt.dart';
+import 'package:cnattendance/core/ky_security/security_gate_screen.dart';
 import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -17,7 +21,6 @@ class SplashScreen extends StatefulWidget {
 class SplashState extends State<SplashScreen> with WidgetsBindingObserver {
   static const _clockSettingsChannel =
       MethodChannel('cnattendance/device_clock');
-  final DeviceClockService _clockService = DeviceClockService();
   bool _checkingClock = true;
   bool _waitingForDateSettings = false;
 
@@ -32,7 +35,6 @@ class SplashState extends State<SplashScreen> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _clockService.dispose();
     super.dispose();
   }
 
@@ -47,40 +49,37 @@ class SplashState extends State<SplashScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _checkClockAndContinue() async {
-    while (mounted) {
-      if (mounted) setState(() => _checkingClock = true);
-      final result = await _clockService.check();
-      if (!mounted) return;
-      if (result.status == DeviceClockStatus.correct) {
-        await _continueToApp();
-        return;
-      }
+    // Quick server check (short timeout); afterwards the monitor keeps
+    // re-checking in the background and only a mismatch ever blocks the user.
+    final monitor = DeviceClockMonitor.instance..start();
+    if (mounted) setState(() => _checkingClock = true);
+    final current = await monitor.refresh(force: true);
+    if (!mounted) return;
 
-      setState(() => _checkingClock = false);
+    if (current == null || current.status != DeviceClockStatus.incorrect) {
+      // Correct or unverifiable (offline) — never hold the app hostage.
+      await _continueToApp();
+      return;
+    }
+
+    setState(() => _checkingClock = false);
+    DeviceClockCheck mismatch = current;
+    while (mounted) {
+      final result = mismatch;
       final retry = await showDialog<bool>(
         context: context,
         barrierDismissible: false,
         builder: (dialogContext) => PopScope(
           canPop: false,
           child: AlertDialog(
-            icon: Icon(
-              result.status == DeviceClockStatus.incorrect
-                  ? Icons.schedule_rounded
-                  : Icons.cloud_off_rounded,
-            ),
-            title: Text(translate(result.status == DeviceClockStatus.incorrect
-                ? 'device_clock.mismatch_title'
-                : 'device_clock.unavailable_title')),
+            icon: const Icon(Icons.schedule_rounded),
+            title: Text(translate('device_clock.mismatch_title')),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(translate(result.status == DeviceClockStatus.incorrect
-                    ? 'device_clock.mismatch_message'
-                    : 'device_clock.unavailable_message')),
-                if (result.status == DeviceClockStatus.incorrect &&
-                    result.deviceTime != null &&
-                    result.serverTime != null) ...[
+                Text(translate('device_clock.mismatch_message')),
+                if (result.deviceTime != null && result.serverTime != null) ...[
                   const SizedBox(height: 14),
                   Text(
                       '${translate('device_clock.device_time')}: ${result.deviceTime!.toLocal()}'),
@@ -100,8 +99,7 @@ class SplashState extends State<SplashScreen> with WidgetsBindingObserver {
                 onPressed: () => Navigator.of(dialogContext).pop(true),
                 child: Text(translate('device_clock.check_again')),
               ),
-              if (Platform.isAndroid &&
-                  result.status == DeviceClockStatus.incorrect)
+              if (Platform.isAndroid)
                 FilledButton.tonalIcon(
                   onPressed: () async {
                     try {
@@ -123,6 +121,16 @@ class SplashState extends State<SplashScreen> with WidgetsBindingObserver {
         ),
       );
       if (retry != true) return;
+
+      setState(() => _checkingClock = true);
+      final recheck = await monitor.refresh(force: true);
+      if (!mounted) return;
+      setState(() => _checkingClock = false);
+      if (recheck == null || recheck.status != DeviceClockStatus.incorrect) {
+        await _continueToApp();
+        return;
+      }
+      mismatch = recheck;
     }
   }
 
@@ -148,10 +156,43 @@ class SplashState extends State<SplashScreen> with WidgetsBindingObserver {
       Navigator.pushReplacementNamed(context, LoginScreen.routeName);
       return;
     }
-    final routeName = await preferences.getToken() == ''
-        ? LoginScreen.routeName
-        : DashboardScreen.routeName;
-    if (mounted) Navigator.pushReplacementNamed(context, routeName);
+    final token = await preferences.getToken();
+    if (token.isEmpty) {
+      if (mounted)
+        Navigator.pushReplacementNamed(context, LoginScreen.routeName);
+      return;
+    }
+
+    Map<String, dynamic>? securityState;
+    if (Platform.isAndroid) {
+      Map<String, dynamic> state;
+      try {
+        state = await KySecurityManager.shared.initialize();
+      } catch (_) {
+        state = {'state': 'offlineRestricted'};
+      }
+      securityState = state;
+      if (!mounted) return;
+      if (KySecurityManager.shared.securityApplies &&
+          state['state'] != 'authorized' &&
+          state['state'] != 'offlineAuthorized' &&
+          state['state'] != 'disabled') {
+        Navigator.of(context).pushReplacement(MaterialPageRoute<void>(
+          builder: (_) => SecurityGateScreen(initialState: state),
+        ));
+        return;
+      }
+    }
+
+    final optionalUpdate = securityState?['optional_update'];
+    if (optionalUpdate is Map && mounted) {
+      await KyOptionalUpdatePrompt.show(
+        context,
+        Map<String, dynamic>.from(optionalUpdate),
+      );
+    }
+    if (mounted)
+      Navigator.pushReplacementNamed(context, DashboardScreen.routeName);
   }
 
   @override

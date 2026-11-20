@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:cnattendance/core/ky_security/ky_http.dart';
 import 'dart:io';
 
 import 'package:cnattendance/data/source/datastore/preferences.dart';
@@ -316,7 +317,7 @@ class SocialRewardsRepository {
       }
 
       final streamedResponse =
-          await request.send().timeout(const Duration(seconds: 60));
+          await KyHttp.sendMultipart(request).timeout(const Duration(seconds: 60));
       final response = await http.Response.fromStream(streamedResponse);
       debugPrint(response.body.toString());
       return response;

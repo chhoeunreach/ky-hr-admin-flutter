@@ -7,12 +7,18 @@ import 'dart:ui' as ui;
 
 import 'package:cnattendance/provider/dashboardprovider.dart';
 import 'package:cnattendance/provider/prefprovider.dart';
+import 'package:cnattendance/repositories/meeting_attendance_repository.dart';
+import 'package:cnattendance/repositories/payroll_queue_repository.dart';
 import 'package:cnattendance/services/attendance_sync_service.dart';
+import 'package:cnattendance/services/server_status_service.dart';
 import 'package:cnattendance/theme/enterprise_theme.dart';
+import 'package:cnattendance/utils/attendance_verify_feedback.dart';
 import 'package:cnattendance/utils/constant.dart';
+import 'package:cnattendance/utils/qr_scan_router.dart';
 import 'package:cnattendance/widget/attendance_selfie_camera.dart';
 import 'package:cnattendance/widget/attendance_bottom_sheet.dart';
 import 'package:cnattendance/widget/homescreen/monthly_attendance_summary.dart';
+import 'package:cnattendance/widget/homescreen/payroll_queue_ticket_dialog.dart';
 import 'package:cnattendance/widget/customalertdialog.dart';
 import 'package:cnattendance/widget/customnfcdialog.dart';
 import 'package:cnattendance/widget/device_clock_gate.dart';
@@ -600,14 +606,17 @@ class CheckAttendanceState extends State<CheckAttendance>
     );
   }
 
-  void showNFCScanner() {
+  void showNFCScanner({String attendanceStatus = ''}) {
     if (Platform.isAndroid) {
       showDialog(
         barrierDismissible: false,
         context: context,
         builder: (context) {
           return Dialog(
-            child: CustomNfcDialog(NFCMODE.scan),
+            child: CustomNfcDialog(
+              NFCMODE.scan,
+              attendanceStatus: attendanceStatus,
+            ),
           );
         },
       );
@@ -617,63 +626,202 @@ class CheckAttendanceState extends State<CheckAttendance>
       NfcManager.instance.startSession(
         onDiscovered: (NfcTag tag) async {
           onAttendanceVerify(
-              "nfc", base64.encode(utf8.encode(findKey(tag.data))));
+            "nfc",
+            base64.encode(utf8.encode(findKey(tag.data))),
+            attendanceStatus: attendanceStatus,
+          );
           NfcManager.instance.stopSession();
         },
       );
     }
   }
 
-  Future<void> scanQr({bool royal = false}) async {
+  Future<void> scanQr({bool royal = false, String attendanceStatus = ''}) async {
     final ok = await _ensureWithinScanDistanceIfPossible();
     if (!ok || !mounted) return;
 
     final result = await showCustomQrScanner(context);
-    if (result != null && result.trim().isNotEmpty) {
-      await Future.delayed(const Duration(milliseconds: 350));
-      if (!mounted) return;
+    if (result == null || result.trim().isEmpty || !mounted) return;
 
-      final provider = context.read<DashboardProvider>();
-      final selfie = provider.isAttendanceSelfieEnabled
-          ? await _captureAttendanceSelfie()
-          : null;
-      if (!mounted) return;
-      if (provider.isAttendanceSelfieEnabled && selfie == null) {
-        showToast(translate('attendance_messages.selfie_required'));
-        return;
+    final route = QrScanRouter.classify(result);
+    if (!route.isAttendance) {
+      await _handleDirectScan(route);
+      return;
+    }
+
+    await Future.delayed(const Duration(milliseconds: 350));
+    if (!mounted) return;
+
+    final provider = context.read<DashboardProvider>();
+    final selfie = provider.isAttendanceSelfieEnabled
+        ? await _captureAttendanceSelfie()
+        : null;
+    if (!mounted) return;
+    if (provider.isAttendanceSelfieEnabled && selfie == null) {
+      showToast(translate('attendance_messages.selfie_required'));
+      return;
+    }
+
+    if (provider.isNoteEnabled && royal) {
+      final note = await showModalBottomSheet<String>(
+        context: context,
+        useRootNavigator: true,
+        isScrollControlled: true,
+        builder: (context) => NoteBottomSheet(
+          route.payload,
+          route.attendanceType,
+          attendanceSelfie: selfie,
+          returnNote: true,
+          attendanceStatus: attendanceStatus,
+        ),
+      );
+      if (mounted && note != null) {
+        await onAttendanceVerify(route.attendanceType, route.payload,
+            attendanceSelfie: selfie,
+            note: note,
+            attendanceStatus: attendanceStatus);
       }
-
-      if (provider.isNoteEnabled && royal) {
-        final note = await showModalBottomSheet<String>(
+    } else if (provider.isNoteEnabled) {
+      await showModalBottomSheet(
           context: context,
           useRootNavigator: true,
           isScrollControlled: true,
-          builder: (context) => NoteBottomSheet(
-            result,
-            'qr',
-            attendanceSelfie: selfie,
-            returnNote: true,
-          ),
-        );
-        if (mounted && note != null) {
-          await onAttendanceVerify('qr', result,
-              attendanceSelfie: selfie, note: note);
-        }
-      } else if (provider.isNoteEnabled) {
-        await showModalBottomSheet(
-            context: context,
-            useRootNavigator: true,
-            isScrollControlled: true,
-            builder: (context) {
-              return NoteBottomSheet(
-                result,
-                "qr",
-                attendanceSelfie: selfie,
-              );
-            });
+          builder: (context) {
+            return NoteBottomSheet(
+              route.payload,
+              route.attendanceType,
+              attendanceSelfie: selfie,
+              attendanceStatus: attendanceStatus,
+            );
+          });
+    } else {
+      await onAttendanceVerify(route.attendanceType, route.payload,
+          attendanceSelfie: selfie, attendanceStatus: attendanceStatus);
+    }
+  }
+
+  /// Handles scans that are not daily attendance: meeting check-in, payroll
+  /// queue join, and server configuration switch.
+  Future<void> _handleDirectScan(QrScanRoute route) async {
+    if (route.kind == QrScanKind.serverConfig) {
+      await _handleServerConfigScan(route.payload);
+      return;
+    }
+
+    EasyLoading.show(
+      status: translate('loader.requesting'),
+      maskType: EasyLoadingMaskType.black,
+    );
+    String message;
+    final payroll = PayrollQueueRepository();
+    PayrollQueueTicket? ticket;
+    try {
+      if (route.kind == QrScanKind.meeting) {
+        final response =
+            await MeetingAttendanceRepository().scan(route.payload);
+        message = response.message;
       } else {
-        await onAttendanceVerify("qr", result, attendanceSelfie: selfie);
+        final result = await payroll.join(route.payrollToken!);
+        message = result.message;
+        ticket = result.ticket;
       }
+    } catch (error) {
+      message = error.toString();
+    } finally {
+      EasyLoading.dismiss(animation: true);
+    }
+
+    if (!mounted) return;
+    final joinedTicket = ticket;
+    await showDialog<void>(
+      context: context,
+      builder: (_) => joinedTicket == null
+          ? Dialog(child: CustomAlertDialog(message))
+          : PayrollQueueTicketDialog(
+              message: message,
+              initialTicket: joinedTicket,
+              loadTicket: () => payroll.getTicket(joinedTicket.id),
+            ),
+    );
+  }
+
+  Future<void> _handleServerConfigScan(String scannedValue) async {
+    final service = ServerStatusService();
+    final String targetUrl;
+    try {
+      targetUrl = service.normalizeScannedServer(scannedValue);
+    } on FormatException {
+      showToast(translate('alerts.invalid_qr'));
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        final enterprise = EnterpriseTheme.of(dialogContext);
+        return AlertDialog(
+          backgroundColor: enterprise.surface,
+          title: Row(
+            children: [
+              Icon(Icons.swap_horiz_rounded,
+                  color: enterprise.primary, size: 22),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  translate('server_status.change_server_title'),
+                  style: TextStyle(color: enterprise.text, fontSize: 16),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                translate('server_status.change_server_message'),
+                style: TextStyle(color: enterprise.text, fontSize: 13),
+              ),
+              const SizedBox(height: 10),
+              SelectableText(
+                targetUrl,
+                style: TextStyle(color: enterprise.mutedText, fontSize: 13),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(translate('server_status.cancel')),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(translate('server_status.confirm')),
+            ),
+          ],
+        );
+      },
+    );
+    if (confirmed != true || !mounted) return;
+
+    EasyLoading.show(
+      status: translate('server_status.checking_server'),
+      maskType: EasyLoadingMaskType.black,
+    );
+    final result = await service.switchServer(scannedValue);
+    if (!mounted) return;
+    EasyLoading.dismiss(animation: true);
+
+    if (result.isConnected) {
+      try {
+        await context.read<DashboardProvider>().getDashboard();
+      } catch (error) {
+        debugPrint('Server changed, but dashboard refresh failed: $error');
+      }
+      if (!mounted) return;
+      showToast(translate('server_status.server_changed_successfully'));
+    } else {
+      showToast(result.message);
     }
   }
 
@@ -693,10 +841,12 @@ class CheckAttendanceState extends State<CheckAttendance>
   }
 
   Future<void> onAttendanceVerify(String type, String identifier,
-      {File? attendanceSelfie, String note = ''}) async {
+      {File? attendanceSelfie,
+      String note = '',
+      String attendanceStatus = ''}) async {
     if (!mounted) return;
     final provider = context.read<DashboardProvider>();
-    if (type == 'qr' || type == 'nfc') {
+    if (type == 'qr' || type == 'qr_pass' || type == 'nfc') {
       final ok = await _ensureWithinScanDistanceIfPossible();
       if (!ok || !mounted) return;
     }
@@ -705,8 +855,9 @@ class CheckAttendanceState extends State<CheckAttendance>
     final offlineRequestId = syncService.createOfflineRequestId();
     final recordedAt = DateTime.now();
     String message;
+    var showRetry = false;
     EasyLoading.show(
-      status: translate('loader.requesting'),
+      status: translate('attendance_messages.verifying'),
       maskType: EasyLoadingMaskType.black,
     );
     try {
@@ -714,6 +865,7 @@ class CheckAttendanceState extends State<CheckAttendance>
         type,
         note,
         identifier: identifier,
+        attendanceStatus: attendanceStatus,
         attendanceSelfie: attendanceSelfie,
         offlineRequestId: offlineRequestId,
         recordedAt: recordedAt,
@@ -729,28 +881,54 @@ class CheckAttendanceState extends State<CheckAttendance>
             type: type,
             identifier: identifier,
             note: note,
+            attendanceStatus: attendanceStatus,
             attendanceSelfie: attendanceSelfie,
             offlineRequestId: offlineRequestId,
             recordedAt: recordedAt,
           );
           message = translate('attendance_messages.saved_offline');
         } catch (queueError) {
-          message = queueError.toString();
+          showRetry = true;
+          message = attendanceVerifyFailureMessage(queueError.toString());
         }
       } else {
+        showRetry = true;
         final extra =
             await provider.buildWorkspaceDistanceInfoIfNeeded(message);
-        if (extra != null) message = '$message\n\n$extra';
+        message = attendanceVerifyFailureMessage(
+            extra == null ? message : '$message\n\n$extra');
       }
     } finally {
       EasyLoading.dismiss(animation: true);
     }
 
     if (!mounted) return;
-    await showDialog<void>(
-      context: context,
-      builder: (_) => Dialog(child: CustomAlertDialog(message)),
-    );
+    final retry = await showDialog<bool>(
+          context: context,
+          builder: (_) => Dialog(
+            child: CustomAlertDialog(
+              message,
+              actionLabel:
+                  showRetry ? translate('attendance_messages.check_again') : null,
+            ),
+          ),
+        ) ??
+        false;
+
+    if (retry && showRetry && mounted) {
+      await _retryAttendanceScan(type, attendanceStatus);
+    }
+  }
+
+  Future<void> _retryAttendanceScan(
+      String type, String attendanceStatus) async {
+    if (!mounted) return;
+    if (type == 'nfc') {
+      showNFCScanner(attendanceStatus: attendanceStatus);
+      return;
+    }
+    final royal = EnterpriseTheme.of(context).isRoyalBlueGold;
+    await scanQr(royal: royal, attendanceStatus: attendanceStatus);
   }
 
   bool _isOfflineQueueableError(Object error) {
@@ -773,6 +951,7 @@ class CheckAttendanceState extends State<CheckAttendance>
     required String type,
     required String identifier,
     required String note,
+    String attendanceStatus = '',
     required File? attendanceSelfie,
     required String offlineRequestId,
     required DateTime recordedAt,
@@ -781,7 +960,7 @@ class CheckAttendanceState extends State<CheckAttendance>
     await syncService.queueAttendance(
       attendanceType: type,
       identifier: identifier,
-      attendanceStatusType: "",
+      attendanceStatusType: attendanceStatus,
       note: note,
       latitude: provider.locationStatus['latitude'].toString(),
       longitude: provider.locationStatus['longitude'].toString(),
@@ -792,12 +971,14 @@ class CheckAttendanceState extends State<CheckAttendance>
     );
   }
 
-  Future<void> _handleAttendanceTap(String attendanceType) async {
+  Future<void> _handleAttendanceTap(String attendanceType,
+      {String attendanceStatus = ''}) async {
     if (_attendanceInFlight || !mounted) return;
     final royal = EnterpriseTheme.of(context).isRoyalBlueGold;
     if (royal) setState(() => _attendanceInFlight = true);
     try {
-      await _openAttendance(attendanceType, royal: royal);
+      await _openAttendance(attendanceType,
+          royal: royal, attendanceStatus: attendanceStatus);
     } catch (error) {
       if (mounted) _showAttendanceWarning(error.toString());
     } finally {
@@ -806,7 +987,7 @@ class CheckAttendanceState extends State<CheckAttendance>
   }
 
   Future<void> _openAttendance(String attandanceType,
-      {required bool royal}) async {
+      {required bool royal, String attendanceStatus = ''}) async {
     final clockOk = await ensureDeviceClockAllowsAction(context);
     if (!clockOk || !mounted) return;
 
@@ -815,15 +996,21 @@ class CheckAttendanceState extends State<CheckAttendance>
           !context.read<DashboardProvider>().attendanceMethods.any(
                 (method) => method.toLowerCase() == 'qr',
               )) return;
-      await scanQr(royal: royal);
+      await scanQr(royal: royal, attendanceStatus: attendanceStatus);
     } else if (attandanceType.toUpperCase() == "NFC") {
       final isAvailable = await NfcManager.instance.isAvailable();
       if (!isAvailable) {
         showToast(translate('attendance_messages.nfc_not_present'));
         return;
       }
-      showNFCScanner();
+      showNFCScanner(attendanceStatus: attendanceStatus);
     } else {
+      // Default / wifi: the center button opens the sheet with both choices.
+      // An explicit checkIn / checkOut (when supplied) submits directly.
+      if (attendanceStatus == 'checkIn' || attendanceStatus == 'checkOut') {
+        await _submitWifiAttendance(attendanceStatus);
+        return;
+      }
       await showModalBottomSheet(
           context: context,
           useRootNavigator: true,
@@ -832,6 +1019,61 @@ class CheckAttendanceState extends State<CheckAttendance>
             return AttedanceBottomSheet();
           });
     }
+  }
+
+  Future<void> _submitWifiAttendance(String attendanceStatus) async {
+    final provider = context.read<DashboardProvider>();
+    final syncService = AttendanceSyncService();
+    final offlineRequestId = syncService.createOfflineRequestId();
+    final recordedAt = DateTime.now();
+    EasyLoading.show(
+      status: translate('loader.requesting'),
+      maskType: EasyLoadingMaskType.black,
+    );
+    String message;
+    try {
+      final response = await provider.verifyAttendanceApi(
+        'wifi',
+        '',
+        attendanceStatus: attendanceStatus,
+        offlineRequestId: offlineRequestId,
+        recordedAt: recordedAt,
+      );
+      message = response.message;
+    } catch (error) {
+      message = error.toString();
+      if (_isOfflineQueueableError(error)) {
+        try {
+          await provider.getCheckInStatus();
+          await syncService.queueAttendance(
+            attendanceType: 'wifi',
+            identifier: '',
+            attendanceStatusType: attendanceStatus,
+            note: '',
+            latitude: provider.locationStatus['latitude'].toString(),
+            longitude: provider.locationStatus['longitude'].toString(),
+            routerBssid: '',
+            selfie: null,
+            offlineRequestId: offlineRequestId,
+            recordedAt: recordedAt,
+          );
+          message = translate('attendance_messages.saved_offline');
+        } catch (queueError) {
+          message = queueError.toString();
+        }
+      } else {
+        final extra =
+            await provider.buildWorkspaceDistanceInfoIfNeeded(message);
+        if (extra != null) message = '$message\n\n$extra';
+      }
+    } finally {
+      EasyLoading.dismiss(animation: true);
+    }
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (_) => Dialog(child: CustomAlertDialog(message)),
+    );
   }
 
   Widget _buildClock(EnterpriseTheme enterprise, bool isAD, DateTime now) {

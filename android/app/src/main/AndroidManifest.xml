@@ -42,9 +42,12 @@
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon"
         android:label="@string/app_name"
+        android:allowBackup="true"
+        android:fullBackupContent="@xml/backup_rules"
+        android:dataExtractionRules="@xml/data_extraction_rules"
         android:enableOnBackInvokedCallback="true"
         android:requestLegacyExternalStorage="true"
-        android:usesCleartextTraffic="true">
+        android:usesCleartextTraffic="${usesCleartextTraffic}">
         <!-- Request the Photo Picker backport on supported older devices. -->
         <service
             android:name="com.google.android.gms.metadata.ModuleDependencies"

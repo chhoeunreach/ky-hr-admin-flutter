@@ -1,4 +1,7 @@
 import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
+import 'package:cnattendance/core/ky_security/ky_certificate_pinning.dart';
+import 'package:cnattendance/core/ky_security/ky_dio_interceptor.dart';
 import 'package:cnattendance/models/commission_policy.dart';
 import 'package:cnattendance/features/pos/models/pos_report.dart';
 import 'package:cnattendance/data/source/datastore/preferences.dart';
@@ -11,9 +14,23 @@ class SellOutApiService {
   CommissionPolicy commissionPolicy = const CommissionPolicy();
 
   SellOutApiService({Dio? dio, Preferences? preferences})
-      : _dio = dio ??
-            Dio(BaseOptions(connectTimeout: const Duration(seconds: 15))),
-        _preferences = preferences ?? Preferences();
+      : _dio = dio ?? _createDio(),
+        _preferences = preferences ?? Preferences() {
+    if (!_dio.interceptors.any((item) => item is KyDioSecurityInterceptor)) {
+      _dio.interceptors.add(KyDioSecurityInterceptor());
+    }
+  }
+
+  static Dio _createDio() {
+    final dio = Dio(BaseOptions(
+      connectTimeout: const Duration(seconds: 15),
+      followRedirects: false,
+    ));
+    dio.httpClientAdapter = IOHttpClientAdapter(
+      createHttpClient: KyCertificatePinning.createHttpClient,
+    );
+    return dio;
+  }
 
   Future<Response<dynamic>> _reportingRequest(PosFilters filters,
       {bool csv = false}) async {

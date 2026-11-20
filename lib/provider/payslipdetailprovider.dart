@@ -6,7 +6,7 @@ import 'package:cnattendance/data/source/network/model/payslipdetail/Earning.dar
 import 'package:cnattendance/data/source/network/model/payslipdetail/payslipdetailresponse.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:http/http.dart' as http;
+import 'package:cnattendance/core/ky_security/ky_http.dart';
 
 class PaySlipDetailProvider with ChangeNotifier {
   String currency = "";
@@ -76,7 +76,7 @@ class PaySlipDetailProvider with ChangeNotifier {
     };
 
     try {
-      final response = await http.get(uri, headers: headers);
+      final response = await KyHttp.get(uri, headers: headers);
 
       final responseData = json.decode(response.body);
       if (response.statusCode == 200) {

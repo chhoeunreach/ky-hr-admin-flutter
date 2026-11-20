@@ -63,7 +63,7 @@ class AttendanceScreenState extends State<AttendanceScreen> {
               slivers: [
                 SliverToBoxAdapter(
                     child: Column(children: [
-                  const HeaderProfile(),
+                  const HeaderProfile(showMenuButton: false),
                   AttendanceStatus(),
                   AttendanceToggle(),
                 ])),

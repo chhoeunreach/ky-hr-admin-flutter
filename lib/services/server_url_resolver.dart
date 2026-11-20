@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:cnattendance/core/ky_security/ky_certificate_pinning.dart';
 import 'package:cnattendance/config/backend_server_defaults.dart';
 
 import 'package:http/http.dart' as http;
@@ -144,8 +145,10 @@ class ServerUrlResolver {
 
   Future<http.Response?> _probe(String url) async {
     try {
-      return await _client.get(
-        Uri.parse('${url}api/app-version'),
+      final uri = Uri.parse('${url}api/app-version');
+      final client = KyCertificatePinning.clientFor(uri, _client);
+      return await client.get(
+        uri,
         headers: const {'Accept': 'application/json'},
       ).timeout(timeout);
     } catch (_) {

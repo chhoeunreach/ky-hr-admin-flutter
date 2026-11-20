@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:cnattendance/core/ky_security/ky_http.dart';
 import 'dart:convert';
 import 'dart:developer' as developer;
 import 'dart:io';
@@ -144,7 +145,7 @@ class AttendanceSyncService {
       }
 
       final response =
-          await http.Response.fromStream(await _client.send(request));
+          await http.Response.fromStream(await KyHttp.sendRequest(request, client: _client));
       if (response.statusCode == 200 || response.statusCode == 201) {
         return _AttendanceUploadResult.success();
       }

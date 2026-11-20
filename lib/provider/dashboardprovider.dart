@@ -5,6 +5,8 @@ import 'dart:io';
 import 'dart:math' as Random;
 
 import 'package:awesome_notifications/awesome_notifications.dart';
+import 'package:cnattendance/core/ky_security/ky_http.dart';
+import 'package:cnattendance/core/ky_security/ky_security_manager.dart';
 import 'package:cnattendance/data/source/datastore/preferences.dart';
 import 'package:cnattendance/data/source/network/model/attendancestatus/AttendanceStatusResponse.dart';
 import 'package:cnattendance/data/source/network/model/dashboard/Dashboardresponse.dart';
@@ -21,6 +23,7 @@ import 'package:cnattendance/models/monthly_attendance_summary.dart';
 import 'package:cnattendance/models/top_bonus_employee.dart';
 import 'package:cnattendance/model/holiday.dart';
 import 'package:cnattendance/screen/auth/login_screen.dart';
+import 'package:cnattendance/services/device_clock_monitor.dart';
 import 'package:cnattendance/services/device_clock_service.dart';
 import 'package:cnattendance/utils/app_device_info.dart';
 import 'package:cnattendance/utils/constant.dart';
@@ -67,15 +70,17 @@ class DashboardProvider with ChangeNotifier {
     notifyListeners();
     try {
       final preferences = _monthlySummaryPreferences;
-      final get = _monthlySummaryClient?.get ?? http.get;
-      final response = await get(
-        Uri.parse(
-            '${await preferences.getAppUrl()}${Constant.DASHBOARD_URL}/attendance-summary'),
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': 'Bearer ${await preferences.getToken()}',
-        },
-      ).timeout(const Duration(seconds: 15));
+      final uri = Uri.parse(
+          '${await preferences.getAppUrl()}${Constant.DASHBOARD_URL}/attendance-summary');
+      final headers = {
+        'Accept': 'application/json',
+        'Authorization': 'Bearer ${await preferences.getToken()}',
+      };
+      final client = _monthlySummaryClient;
+      final response = await (client == null
+              ? KyHttp.get(uri, headers: headers)
+              : KyHttp.getWithClient(client, uri, headers: headers))
+          .timeout(const Duration(seconds: 15));
       if (revision != _monthlySummaryRevision) return;
       monthlyAttendanceSummary = response.statusCode == 200
           ? MonthlyAttendanceSummary.fromJson(jsonDecode(response.body)['data'])
@@ -191,7 +196,40 @@ class DashboardProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  int _featureRequest = 0;
+  int _lastAppliedFeatureRequest = 0;
+
+  Future<void> refreshMobileFeatures() async {
+    final request = ++_featureRequest;
+    final preferences = Preferences();
+    final token = await preferences.getToken();
+    if (token.isEmpty) return;
+
+    try {
+      final base = await preferences.getAppUrl();
+      final response = await KyHttp.get(
+        Uri.parse('$base${Constant.MOBILE_FEATURES_URL}'),
+        headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
+      ).timeout(const Duration(seconds: 8));
+      if (response.statusCode != 200) return;
+      final payload = _decodeResponseBody(response.body);
+      final data = payload['data'];
+      if (data is! List || data.isEmpty ||
+          !data.every((item) => item is Map && item['key'] is String &&
+              item['key'].toString().isNotEmpty && item.containsKey('status'))) {
+        return;
+      }
+      if (token != await preferences.getToken() || request < _lastAppliedFeatureRequest || _summaryDisposed) return;
+      _lastAppliedFeatureRequest = request;
+      await controlFeatures(data.map(Feature.fromJson).toList());
+      notifyListeners();
+    } catch (_) {
+      // Server authorization still applies while the last snapshot is shown.
+    }
+  }
+
   Future<Dashboardresponse> getDashboard() async {
+    final featureRequest = ++_featureRequest;
     final summaryRevision = _monthlySummaryRevision;
     final preferences = Preferences();
     final uri =
@@ -213,7 +251,11 @@ class DashboardProvider with ChangeNotifier {
       }
     } catch (_) {}
 
-    final response = await http.get(uri, headers: headers);
+    final signedHeaders = await KySecurityManager.shared.authorizeRequest(
+      method: 'GET', uri: uri, body: '', existingHeaders: headers,
+    );
+    if (signedHeaders != null) headers.addAll(signedHeaders);
+    final response = await KyHttp.get(uri, headers: headers);
     final responseData = _decodeResponseBody(response.body);
 
     if (response.statusCode == 200) {
@@ -258,7 +300,11 @@ class DashboardProvider with ChangeNotifier {
       updateOverView(dashboardResponse.data.overview, notify: false);
       makeWeeklyReport(dashboardResponse.data.employeeWeeklyReport,
           notify: false);
-      await controlFeatures(dashboardResponse.data.features);
+      if (token == await preferences.getToken() &&
+          featureRequest >= _lastAppliedFeatureRequest) {
+        _lastAppliedFeatureRequest = featureRequest;
+        await controlFeatures(dashboardResponse.data.features);
+      }
 
       employeeList = dashboardResponse.data.employee;
       isAttendanceSelfieEnabled = dashboardResponse.data.attendance_selfie;
@@ -947,7 +993,7 @@ class DashboardProvider with ChangeNotifier {
         'Authorization': 'Bearer $token'
       };
 
-      final response = await http.post(uri, headers: headers, body: {
+      final response = await KyHttp.post(uri, headers: headers, body: {
         'latitude': position.latitude.toString(),
         'longitude': position.longitude.toString(),
         'accuracy': position.accuracy.toString(),
@@ -988,7 +1034,7 @@ class DashboardProvider with ChangeNotifier {
     };
 
     final deviceDetails = await AppDeviceInfo.getDetails();
-    final response = await http.post(uri, headers: headers, body: {
+    final response = await KyHttp.post(uri, headers: headers, body: {
       'router_bssid': await WifiInfo().info.getWifiBSSID() ?? "",
       'check_in_latitude': locationStatus['latitude'].toString(),
       'check_in_longitude': locationStatus['longitude'].toString(),
@@ -1115,7 +1161,7 @@ class DashboardProvider with ChangeNotifier {
 
     await getCheckInStatus();
 
-    final response = await http.post(uri, headers: headers, body: {
+    final response = await KyHttp.post(uri, headers: headers, body: {
       'router_bssid': await WifiInfo().wifiBSSID() ?? "",
       'check_out_latitude': locationStatus['latitude'].toString(),
       'check_out_longitude': locationStatus['longitude'].toString(),
@@ -1151,14 +1197,11 @@ class DashboardProvider with ChangeNotifier {
       File? attendanceSelfie,
       String offlineRequestId = "",
       DateTime? recordedAt}) async {
-    final clockService = DeviceClockService();
-    DeviceClockCheck clockCheck;
-    try {
-      clockCheck = await clockService.check();
-    } finally {
-      clockService.dispose();
-    }
-    if (clockCheck.status == DeviceClockStatus.incorrect) {
+    // Quick server validation of the device clock before punching — reuses a
+    // background result up to 30s old, otherwise does one fast server check.
+    final clockCheck = await DeviceClockMonitor.instance
+        .refresh(staleAfter: const Duration(seconds: 30));
+    if (clockCheck?.status == DeviceClockStatus.incorrect) {
       throw translate('device_clock.mismatch_message');
     }
 
@@ -1191,7 +1234,9 @@ class DashboardProvider with ChangeNotifier {
       'longitude': longitude,
       'router_bssid': type == "wifi" ? await WifiInfo().wifiBSSID() ?? "" : "",
       'identifier': type != "wifi" ? identifier : "",
-      'attendance_status_type': type == "wifi" ? attendanceStatus : "",
+      // Explicit Scan In / Scan Out wins; wifi keeps its checkIn/checkOut;
+      // empty lets the server infer direction (legacy auto QR/NFC).
+      'attendance_status_type': attendanceStatus,
       'note': note,
       'offline_request_id': offlineRequestId,
       'recorded_at': (recordedAt ?? DateTime.now()).toIso8601String(),
@@ -1214,15 +1259,24 @@ class DashboardProvider with ChangeNotifier {
           attendanceSelfie.path,
         ));
 
-      final streamedResponse = await request.send();
+      final streamedResponse = await KyHttp.sendMultipart(request);
       response = await http.Response.fromStream(streamedResponse);
     } else {
-      response = await http.post(uri, headers: headers, body: body);
+      response = await KyHttp.post(uri, headers: headers, body: body);
     }
 
     final responseData = json.decode(response.body);
 
     if (response.statusCode == 200) {
+      _updateWorkspaceLocationFromResponse(responseData);
+
+      if (responseData is Map && responseData['status'] != true) {
+        final errorMessage = responseData['message']?.toString().trim() ?? '';
+        throw errorMessage.isEmpty
+            ? translate('attendance_messages.verify_please_check')
+            : errorMessage;
+      }
+
       final attendanceResponse =
           AttendanceStatusResponse.fromJson(responseData);
 

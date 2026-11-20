@@ -14,7 +14,7 @@ import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
-import 'package:http/http.dart' as http;
+import 'package:cnattendance/core/ky_security/ky_http.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -730,7 +730,7 @@ class DashboardDrawer extends StatelessWidget {
       if (uri == null) {
         throw Exception('Invalid QR image URL');
       }
-      final response = await http.get(uri);
+      final response = await KyHttp.get(uri);
       if (response.statusCode != 200) {
         throw Exception('Failed to download QR image');
       }

@@ -2,15 +2,20 @@ import 'dart:developer' as developer;
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import '../core/ky_security/ky_certificate_pinning.dart';
+import '../core/ky_security/ky_dio_interceptor.dart';
+import '../data/source/datastore/preferences.dart';
 import 'background_sync_manager.dart';
 import 'database_helper.dart';
 
-/// Placeholder upload endpoint — replace with your real API before shipping.
-const String kImageUploadUrl = 'https://api.example.com/upload';
+const String _configuredImageUploadUrl = String.fromEnvironment(
+  'KY_IMAGE_UPLOAD_URL',
+);
 
 class ImageUploadException implements Exception {
   final String message;
@@ -28,12 +33,35 @@ class ImageUploadException implements Exception {
 /// invoked from both the immediate one-off sync and the periodic
 /// background task without risk of double-processing the same row.
 class ImageService {
-  ImageService({Dio? dio, DatabaseHelper? db})
-      : _dio = dio ?? Dio(),
-        _db = db ?? DatabaseHelper.instance;
+  ImageService({
+    Dio? dio,
+    DatabaseHelper? db,
+    Preferences? preferences,
+    Uri? uploadUri,
+  })  : _dio = dio ?? Dio(BaseOptions(followRedirects: false)),
+        _db = db ?? DatabaseHelper.instance,
+        _preferences = preferences ?? Preferences(),
+        _uploadUri = uploadUri ?? _configuredUploadUri {
+    _dio.options.followRedirects = false;
+    // Do not allow an injected/default Dio to bypass the common pinned TLS
+    // client. This service is dormant until a real endpoint is configured.
+    _dio.httpClientAdapter = IOHttpClientAdapter(
+      createHttpClient: KyCertificatePinning.createHttpClient,
+    );
+    if (!_dio.interceptors.any((item) => item is KyDioSecurityInterceptor)) {
+      _dio.interceptors.add(KyDioSecurityInterceptor());
+    }
+  }
 
   final Dio _dio;
   final DatabaseHelper _db;
+  final Preferences _preferences;
+  final Uri? _uploadUri;
+
+  static Uri? get _configuredUploadUri {
+    if (_configuredImageUploadUrl.isEmpty) return null;
+    return Uri.tryParse(_configuredImageUploadUrl);
+  }
 
   /// Compresses [originalFile] and writes the result into the app's
   /// documents directory under `upload_queue/`. Returns the new local path.
@@ -107,7 +135,33 @@ class ImageService {
       return false;
     }
 
+    final target = _uploadUri;
+    if (target == null ||
+        !target.hasAuthority ||
+        target.host.isEmpty ||
+        target.scheme != 'https' ||
+        !KyCertificatePinning.enabled ||
+        !KyCertificatePinning.hosts.contains(target.host.toLowerCase()) ||
+        !KyCertificatePinning.hasUsablePinSet) {
+      developer.log(
+        'Image upload endpoint is not configured on the approved pinned API host; leaving image queued',
+        name: 'ImageService',
+      );
+      return false;
+    }
+
     try {
+      final token = await _preferences.getToken();
+      if (token.isEmpty) {
+        developer.log(
+          'Image upload has no authenticated account token; leaving image queued',
+          name: 'ImageService',
+        );
+        return false;
+      }
+      // Enforce the authenticated-host allowlist before Dio is allowed to
+      // send the file; the adapter also verifies the server SPKI at TLS time.
+      KyCertificatePinning.clientFor(target, null, authenticatedApi: true);
       final formData = FormData.fromMap({
         'image': await MultipartFile.fromFile(
           localPath,
@@ -116,9 +170,13 @@ class ImageService {
       });
 
       final response = await _dio.post(
-        kImageUploadUrl,
+        target.toString(),
         data: formData,
         options: Options(
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
           sendTimeout: const Duration(seconds: 30),
           receiveTimeout: const Duration(seconds: 30),
         ),

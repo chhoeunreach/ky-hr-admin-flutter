@@ -291,15 +291,16 @@ class HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _checkAppVersion(AppVersionInfo? versionInfo) async {
-    if (versionInfo == null || !mounted) return;
+    if (versionInfo == null || !versionInfo.versionCheckEnabled || !mounted)
+      return;
 
     final details = await AppDeviceInfo.getDetails();
     final currentVersion = details.appVersion;
     final latestVersion = versionInfo.latestVersion;
 
-    final shouldShow = latestVersion.isEmpty
-        ? versionInfo.showAlert
-        : AppDeviceInfo.isVersionOlder(currentVersion, latestVersion);
+    final shouldShow = versionInfo.showAlert ||
+        AppDeviceInfo.isVersionOlder(currentVersion, latestVersion) ||
+        AppDeviceInfo.isVersionOlder(currentVersion, versionInfo.minVersion);
 
     if (shouldShow) {
       if (!mounted) return;
@@ -312,7 +313,9 @@ class HomeScreenState extends State<HomeScreen> {
         downloadUrl: versionInfo.downloadUrl,
         releaseNotes: versionInfo.releaseNotes,
         alertTitle: versionInfo.alertTitle,
-        isForceUpdate: versionInfo.isForceUpdate,
+        isForceUpdate: versionInfo.isForceUpdate ||
+            AppDeviceInfo.isVersionOlder(
+                currentVersion, versionInfo.minVersion),
       );
     }
   }
@@ -347,26 +350,17 @@ class HomeScreenState extends State<HomeScreen> {
     final showAttendance = context.select<DashboardProvider, bool>(
         (provider) => provider.features['attendance'] == '1');
     final enterprise = EnterpriseTheme.of(context);
+    final profileVisible = enterprise.layout.shows(LayoutItem.profile);
     final showMenuInset = enterprise.layout.showMenuButton &&
+        !profileVisible &&
         MediaQuery.sizeOf(context).width < 720;
-    final menuOnRight = enterprise.layout.menuOnRight;
-    final firstSection = enterprise.layout.visible(LayoutArea.home).firstOrNull;
-    final profileFirst = firstSection == LayoutItem.profile;
     final royal = enterprise.isRoyalBlueGold;
-    final menuInset = showMenuInset && profileFirst ? 48.0 : 0.0;
     final sections = <LayoutItem, Widget>{
       LayoutItem.profile: RepaintBoundary(
-        child: Padding(
-          padding: EdgeInsets.only(
-            left: menuOnRight ? 0 : menuInset,
-            right: menuOnRight ? menuInset : 0,
-          ),
-          child: HeaderProfile(
-              showServerTest: true,
-              showMenuButton: false,
-              royalOnline: context.select<DashboardProvider, bool>(
-                  (value) => value.employeeOnline)),
-        ),
+        child: HeaderProfile(
+            showMenuButton: enterprise.layout.showMenuButton,
+            royalOnline: context.select<DashboardProvider, bool>(
+                (value) => value.employeeOnline)),
       ),
       LayoutItem.quickServices: OverviewDashboard(controller),
       if (showAttendance) ...{
@@ -398,8 +392,7 @@ class HomeScreenState extends State<HomeScreen> {
               child: SafeArea(
                   child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: EdgeInsets.only(
-                    top: showMenuInset && !profileFirst ? 54 : 0),
+                padding: EdgeInsets.only(top: showMenuInset ? 54 : 0),
                 child: Center(
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 760),

@@ -8,7 +8,7 @@ import 'package:cnattendance/utils/app_badge_sync.dart';
 import 'package:cnattendance/utils/notification_history.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
-import 'package:http/http.dart' as http;
+import 'package:cnattendance/core/ky_security/ky_http.dart';
 import 'package:cnattendance/model/notification.dart' as Not;
 import 'package:intl/intl.dart';
 import 'package:nepali_date_picker/nepali_date_picker.dart';
@@ -99,7 +99,7 @@ class NotificationController extends GetxController {
     };
 
     try {
-      final response = await http.get(uri, headers: headers);
+      final response = await KyHttp.get(uri, headers: headers);
       debugPrint(response.body.toString());
 
       final responseData = json.decode(response.body);
@@ -151,7 +151,8 @@ class NotificationController extends GetxController {
               date: tempDate,
               isRead: item.isRead,
               type: item.type,
-              notificationForId: item.notificationForId),
+              notificationForId: item.notificationForId,
+              appUpdate: item.appUpdate),
         );
       }
 
@@ -171,6 +172,25 @@ class NotificationController extends GetxController {
   }
 
   void _addNotificationIfMissing(Not.Notification notification) {
+    if (notification.id > 0 &&
+        (notification.type == 'app_update' ||
+            notification.type == 'daily_records')) {
+      final index = _notificationList.indexWhere(
+        (item) => item.id == notification.id && item.type == notification.type,
+      );
+      if (index != -1) {
+        final existing = _notificationList[index];
+        if (notification.localKey == null) {
+          notification.localKey = existing.localKey;
+          notification.isRead = notification.isRead || existing.isRead;
+          _notificationList[index] = notification;
+        } else {
+          existing.localKey ??= notification.localKey;
+        }
+        return;
+      }
+    }
+
     final exists = _notificationList.any(
       (item) =>
           item.localKey == notification.localKey &&
@@ -214,7 +234,8 @@ class NotificationController extends GetxController {
 
     if (notification.localKey != null) {
       await NotificationHistory.markAsRead(notification.localKey!);
-    } else if (notification.id > 0) {
+    }
+    if (notification.id > 0) {
       await _markNotificationAsReadOnServer(notification.id);
     }
 
@@ -239,7 +260,11 @@ class NotificationController extends GetxController {
     final index =
         _notificationList.indexWhere((item) => item.localKey == localKey);
     if (index != -1 && !_notificationList[index].isRead) {
-      _notificationList[index].isRead = true;
+      final notification = _notificationList[index];
+      if (notification.id > 0) {
+        await _markNotificationAsReadOnServer(notification.id);
+      }
+      notification.isRead = true;
       _notificationList.refresh();
     }
 
@@ -254,7 +279,7 @@ class NotificationController extends GetxController {
       '${await preferences.getAppUrl()}${Constant.NOTIFICATION_URL}/$id/read',
     );
 
-    final response = await http.post(uri, headers: {
+    final response = await KyHttp.post(uri, headers: {
       'Content-Type': 'application/json',
       'Accept': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token'

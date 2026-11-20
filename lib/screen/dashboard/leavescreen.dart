@@ -1,6 +1,5 @@
 import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/utils/constant.dart';
-import 'package:cnattendance/widget/buttonborder.dart';
 import 'package:cnattendance/widget/headerprofile.dart';
 import 'package:cnattendance/widget/leavescreen/leave_list_dashboard.dart';
 import 'package:cnattendance/widget/leavescreen/leave_list_detail_dashboard.dart';
@@ -113,7 +112,7 @@ class LeaveScreenState extends State<LeaveScreen> with WidgetsBindingObserver {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    HeaderProfile(),
+                    const HeaderProfile(showMenuButton: false),
                     Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 14, vertical: 4),

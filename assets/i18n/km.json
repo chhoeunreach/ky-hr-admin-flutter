@@ -95,6 +95,8 @@
     "hello_there": "សួស្តី",
     "check_in": "ស្កែនចូលធ្វើការ",
     "check_out": "ស្កែនចេញធ្វើការ",
+    "scan_in": "ស្កេនចូល",
+    "scan_out": "ស្កេនចេញ",
     "present": "វត្តមាន",
     "holidays": "ថ្ងៃឈប់សម្រាក",
     "leave": "ការឈប់សម្រាក",
@@ -221,7 +223,10 @@
     "front_camera_not_available": "ឧបករណ៍នេះមិនមានកាមេរ៉ាមុខទេ។",
     "camera_not_ready": "កាមេរ៉ាមិនទាន់រួចរាល់ទេ។",
     "nfc_not_present": "ឧបករណ៍នេះមិនមាន NFC ទេ។ សូមបើក NFC ឬសាកល្បងវិធីផ្សេង។",
-    "google_map": "ផែនទី Google"
+    "google_map": "ផែនទី Google",
+    "verifying": "កំពុងផ្ទៀងផ្ទាត់វត្តមាន...",
+    "verify_please_check": "មិនអាចផ្ទៀងផ្ទាត់ការស្កេនបានទេ។ សូមពិនិត្យ ហើយព្យាយាមម្តងទៀត។",
+    "check_again": "ពិនិត្យម្តងទៀត"
   },
   "more_screen": {
     "attendance_default_method": "វិធីវត្តមានលំនាំដើម",
@@ -1114,6 +1119,12 @@
     "connect_with_your_team": "ភ្ជាប់ទំនាក់ទំនងជាមួយក្រុមរបស់អ្នក",
     "create_post": "បង្កើតការបង្ហោះ",
     "edit_post": "កែសម្រួលការបង្ហោះ",
+    "everyone": "អ្នកទាំងអស់គ្នា",
+    "no_matching_people": "គ្មានឈ្មោះដែលត្រូវគ្នាទេ",
+    "posts": "ការបង្ហោះ",
+    "position": "តួនាទី",
+    "department": "នាយកដ្ឋាន",
+    "branch": "សាខា",
     "delete_post": "លុបការបង្ហោះ",
     "delete_your_post": "លុបការបង្ហោះរបស់អ្នក?",
     "cancel": "បោះបង់",
@@ -1184,17 +1195,14 @@
     "add_emoji": "បន្ថែមសញ្ញាអារម្មណ៍",
     "add_location": "បន្ថែមទីតាំង",
     "all_company_employees": "បុគ្គលិកទាំងអស់ក្នុងក្រុមហ៊ុន",
-
     "poll_ends": "ការស្ទង់មតិបញ្ចប់",
     "choose_an_end_date_and_time": "ជ្រើសរើសកាលបរិច្ឆេទ និងពេលវេលាបញ្ចប់",
     "choose_an_end_date_and_time_in_the_future": "ជ្រើសរើសកាលបរិច្ឆេទ និងពេលវេលាបញ្ចប់នាពេលអនាគត។",
     "clear": "សម្អាត",
     "optional": "ស្រេចចិត្ត",
     "you_can_add_up_to_10_photos": "អ្នកអាចបន្ថែមរូបភាពរហូតដល់ 10។",
-
     "background": "ផ្ទៃខាងក្រោយ",
     "no_background": "គ្មានផ្ទៃខាងក្រោយ",
-
     "add_to_your_post": "បន្ថែមទៅក្នុងការបង្ហោះរបស់អ្នក",
     "add_a_document": "បន្ថែមឯកសារ",
     "pdf_word_or_excel_up_to_25_mb": "PDF, Word ឬ Excel រហូតដល់ 25 MB",

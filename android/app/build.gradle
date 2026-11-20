@@ -32,6 +32,106 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 }
 def hasReleaseKeystore = keystorePropertiesFile.exists()
+def leaseVerifierKeys = (project.findProperty('kySecurityLeaseVerifyKeys')
+        ?: System.getenv('KY_SECURITY_LEASE_VERIFY_KEYS')
+        ?: '').toString()
+def releaseTrustedSigners = (project.findProperty('kyTrustedSigningSha256')
+        ?: System.getenv('KY_TRUSTED_SIGNING_SHA256')
+        ?: '6A275F4C91E2ACCF7654BA89C26514D9678FCDD1BAC30A4AD37D533CC2192AC9')
+        .toString().split(',').collect { it.trim().toUpperCase(Locale.ROOT) }.unique()
+if (releaseTrustedSigners.isEmpty() || releaseTrustedSigners.any { !(it ==~ /[0-9A-F]{64}/) }) {
+    throw new GradleException('KY_TRUSTED_SIGNING_SHA256 must contain one or more comma-separated 64-character SHA-256 fingerprints.')
+}
+
+// Flutter passes --dart-define values to Gradle as comma-separated Base64.
+// Validate release transport configuration before any release AOT compilation,
+// so the signing setup cannot produce a release APK that cannot reach its API.
+def releaseDartDefines = [:]
+def encodedDartDefines = project.findProperty('dart-defines')?.toString()
+if (encodedDartDefines) {
+    encodedDartDefines.split(',').each { encodedDefine ->
+        try {
+            def decodedDefine = new String(
+                    java.util.Base64.getDecoder().decode(encodedDefine),
+                    java.nio.charset.StandardCharsets.UTF_8)
+            def separator = decodedDefine.indexOf('=')
+            if (separator > 0) {
+                def key = decodedDefine.substring(0, separator)
+                if (releaseDartDefines.containsKey(key)) {
+                    throw new GradleException("Duplicate Flutter build define: ${key}")
+                }
+                releaseDartDefines[key] = decodedDefine.substring(separator + 1)
+            }
+        } catch (IllegalArgumentException error) {
+            throw new GradleException('Flutter release build defines are not valid Base64.', error)
+        }
+    }
+}
+
+def validateReleaseSecurityConfiguration = tasks.register('validateReleaseSecurityConfiguration') {
+    group = 'verification'
+    description = 'Requires a valid HTTPS API host and primary/backup SPKI pins for release builds.'
+    doLast {
+        if (!'true'.equalsIgnoreCase(releaseDartDefines['KY_SECURITY_PINNING_ENABLED']?.trim())) {
+            throw new GradleException('Release APKs require --dart-define=KY_SECURITY_PINNING_ENABLED=true.')
+        }
+
+        def apiBaseUrl = releaseDartDefines['KY_API_BASE_URL']?.trim()
+        def pinnedHostsValue = releaseDartDefines['KY_SECURITY_PINNED_HOSTS']?.trim()
+        def rawPins = releaseDartDefines['KY_SECURITY_SPKI_PINS']?.trim()
+        if (!apiBaseUrl || !pinnedHostsValue || !rawPins) {
+            throw new GradleException('Release APKs require KY_API_BASE_URL, KY_SECURITY_PINNED_HOSTS, and KY_SECURITY_SPKI_PINS.')
+        }
+
+        java.net.URI apiUri
+        try {
+            apiUri = new java.net.URI(apiBaseUrl)
+        } catch (java.net.URISyntaxException error) {
+            throw new GradleException('KY_API_BASE_URL must be a valid HTTPS origin.', error)
+        }
+        if (!'https'.equalsIgnoreCase(apiUri.scheme) || !apiUri.host || apiUri.userInfo ||
+                (apiUri.port != -1 && apiUri.port != 443) ||
+                !(apiUri.path in ['', '/']) || apiUri.query || apiUri.fragment) {
+            throw new GradleException('KY_API_BASE_URL must be an HTTPS origin without credentials, custom ports, paths, queries, or fragments.')
+        }
+
+        def pinnedHosts = pinnedHostsValue.split(',', -1).collect { it.trim().toLowerCase(Locale.ROOT) }
+        def validHostname = { host ->
+            host ==~ /(?i)^(?=.{1,253}$)[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)*$/
+        }
+        if (pinnedHosts.any { !it || !validHostname(it) } || pinnedHosts.toSet().size() != pinnedHosts.size()) {
+            throw new GradleException('KY_SECURITY_PINNED_HOSTS must contain unique, exact hostnames (no wildcards).')
+        }
+        if (!pinnedHosts.contains(apiUri.host.toLowerCase(Locale.ROOT))) {
+            throw new GradleException('KY_API_BASE_URL host must appear in KY_SECURITY_PINNED_HOSTS.')
+        }
+
+        def pins = rawPins.split(',', -1).collect { it.trim() }
+        if (pins.toSet().size() < 2) {
+            throw new GradleException('Release APKs require at least two distinct SPKI pins for primary and backup keys.')
+        }
+        pins.each { pin ->
+            if (!pin.startsWith('sha256/')) {
+                throw new GradleException('Each KY_SECURITY_SPKI_PINS entry must use sha256/<base64> format.')
+            }
+            try {
+                def encodedHash = pin.substring('sha256/'.length())
+                def decodedHash = java.util.Base64.getDecoder().decode(encodedHash)
+                if (decodedHash.length != 32 || java.util.Base64.getEncoder().encodeToString(decodedHash) != encodedHash) {
+                    throw new GradleException('Each SPKI pin must be canonical Base64 encoding of a 32-byte SHA-256 digest.')
+                }
+            } catch (IllegalArgumentException error) {
+                throw new GradleException('Each SPKI pin must be canonical Base64 encoding of a 32-byte SHA-256 digest.', error)
+            }
+        }
+    }
+}
+
+tasks.configureEach { task ->
+    if (task.name == 'compileFlutterBuildRelease') {
+        task.dependsOn(validateReleaseSecurityConfiguration)
+    }
+}
 
 android {
     namespace "com.kneayerng.hrms"
@@ -52,6 +152,10 @@ android {
         main.java.srcDirs += 'src/main/kotlin'
     }
 
+    buildFeatures {
+        buildConfig true
+    }
+
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId "com.kneayerng.hrms"
@@ -61,6 +165,8 @@ android {
         targetSdkVersion 36
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
+        buildConfigField "String", "EXPECTED_PACKAGE_NAME", "\"com.kneayerng.hrms\""
+        buildConfigField "String", "LEASE_VERIFYING_KEYS", "\"${leaseVerifierKeys.replace('\\', '\\\\').replace('"', '\\"')}\""
     }
 
     signingConfigs {
@@ -73,14 +179,23 @@ android {
     }
 
     buildTypes {
+        debug {
+            manifestPlaceholders += [usesCleartextTraffic: "true"]
+            // Android debug keystore fingerprint — IDE/debug runs stay unlocked.
+            buildConfigField "String", "EXPECTED_SIGNING_CERT_SHA256",
+                    "\"43ED8EDC1D6E880DFBA01D88E384FB9B126449E95E1433AEBED7AECA13C7387D\""
+        }
         release {
-            // TODO: Add your own signing config for the release build.
+            manifestPlaceholders += [usesCleartextTraffic: "false"]
             if (!hasReleaseKeystore) {
-                throw new GradleException("Missing android/key.properties. Configure a release upload keystore before building a Play Store bundle.")
+                throw new GradleException("Missing android/key.properties. Configure the approved release signing keystore before building the private APK.")
             }
             signingConfig signingConfigs.release
             minifyEnabled false
             shrinkResources false
+            // Release upload-keystore fingerprint — clones/re-signs fail this check.
+            buildConfigField "String", "EXPECTED_SIGNING_CERT_SHA256",
+                    "\"${releaseTrustedSigners.join(',')}\""
         }
     }
 }

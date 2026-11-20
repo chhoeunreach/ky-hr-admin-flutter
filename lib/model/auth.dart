@@ -9,7 +9,9 @@ import 'package:cnattendance/services/server_status_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:http/http.dart' as http;
+import 'package:cnattendance/core/ky_security/ky_http.dart';
+import 'package:cnattendance/core/ky_security/ky_security_manager.dart';
+import 'package:cnattendance/core/ky_security/ky_pairing_message.dart';
 
 class Auth with ChangeNotifier {
   String appUrl = "";
@@ -99,8 +101,13 @@ class Auth with ChangeNotifier {
 
       // Resolve immediately before sending credentials so an unavailable primary
       // does not prevent login through the company's configured backup.
-      final uri = Uri.parse(await preferences.getAppUrl() + Constant.LOGIN_URL);
-      final response = await http.post(uri, headers: headers, body: body);
+      final server = Uri.parse(await preferences.getAppUrl());
+      if (KySecurityManager.shared.securityApplies) {
+        final problem = KySecurityManager.pairingTransportProblem(server);
+        if (problem != null) throw kyPairingMessage(problem);
+      }
+      final uri = Uri.parse('$server${Constant.LOGIN_URL}');
+      final response = await KyHttp.post(uri, headers: headers, body: body);
 
       final responseData = json.decode(response.body);
       if (response.statusCode == 200 && responseData['status'] == true) {
