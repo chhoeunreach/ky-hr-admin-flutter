@@ -149,23 +149,28 @@ class _RepairDeviceViewState extends State<_RepairDeviceView> {
           ),
         ),
         floatingActionButton: provider.canManageDevices
-            ? FloatingActionButton.extended(
-                backgroundColor: enterprise.primary,
-                foregroundColor: Colors.white,
-                icon: const Icon(Icons.add_rounded, size: 20),
-                label: Text(
-                  translate('repair_screen.add_device'),
-                  style: const TextStyle(fontWeight: FontWeight.w700),
+            ? Padding(
+                padding: EdgeInsets.only(
+                  bottom: widget.showBackButton ? 0 : 80,
                 ),
-                onPressed: () {
-                  RepairEditDeviceSheet.show(
-                    context,
-                    brands: provider.brands,
-                    deviceTypes: provider.deviceTypes,
-                    existingDevices: provider.devices,
-                    onSave: (device) => provider.addDevice(device),
-                  );
-                },
+                child: FloatingActionButton.extended(
+                  backgroundColor: enterprise.primary,
+                  foregroundColor: Colors.white,
+                  icon: const Icon(Icons.add_rounded, size: 20),
+                  label: Text(
+                    translate('repair_screen.add_device'),
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  onPressed: () {
+                    RepairEditDeviceSheet.show(
+                      context,
+                      brands: provider.brands,
+                      deviceTypes: provider.deviceTypes,
+                      existingDevices: provider.devices,
+                      onSave: (device) => provider.addDevice(device),
+                    );
+                  },
+                ),
               )
             : null,
         body: !provider.canView
@@ -447,6 +452,8 @@ class _RepairDeviceViewState extends State<_RepairDeviceView> {
         );
 
       case RepairLoadingState.loaded:
+        final bottomPadding = (widget.showBackButton ? 16.0 : 96.0) +
+            (provider.canManageDevices ? 64.0 : 0.0);
         return LayoutBuilder(
           builder: (context, constraints) {
             final isTablet = constraints.maxWidth >= 600;
@@ -455,7 +462,7 @@ class _RepairDeviceViewState extends State<_RepairDeviceView> {
               return GridView.builder(
                 controller: _scrollController,
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    EdgeInsets.fromLTRB(14, 8, 14, bottomPadding),
                 physics: const AlwaysScrollableScrollPhysics(
                     parent: BouncingScrollPhysics()),
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -500,7 +507,7 @@ class _RepairDeviceViewState extends State<_RepairDeviceView> {
 
             return ListView.separated(
               controller: _scrollController,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              padding: EdgeInsets.fromLTRB(14, 8, 14, bottomPadding),
               physics: const AlwaysScrollableScrollPhysics(
                   parent: BouncingScrollPhysics()),
               itemCount: provider.devices.length +

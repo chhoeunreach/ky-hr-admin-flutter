@@ -9,7 +9,9 @@ import 'package:cnattendance/provider/holidaycontroller.dart';
 import 'package:cnattendance/provider/leavecalendarcontroller.dart';
 import 'package:cnattendance/repositories/attendancereportrepository.dart';
 import 'package:cnattendance/screen/dashboard/attendancescreen.dart';
+import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/theme/royal_colors.dart';
+import 'package:cnattendance/theme/royal_blue_day_theme.dart';
 import 'package:cnattendance/utils/attendance_status.dart';
 import 'package:cnattendance/widget/attendancescreen/attendance_status_label.dart';
 import 'package:flutter/foundation.dart';
@@ -45,6 +47,7 @@ class RoyalCalendarActivity extends StatefulWidget {
     required this.checkIn,
     required this.checkOut,
     required this.hours,
+    this.workProgress,
     required this.hasAttendance,
     required this.showClock,
     required this.showTodayAttendance,
@@ -58,6 +61,7 @@ class RoyalCalendarActivity extends StatefulWidget {
 
   final ValueListenable<DateTime> clock;
   final String checkIn, checkOut, hours;
+  final Widget? workProgress;
   final bool hasAttendance, hasHolidays, hasOfficeCalendar, isAd;
   final bool showClock, showTodayAttendance;
   final bool attendanceLoading, attendanceError;
@@ -288,18 +292,20 @@ class _RoyalCalendarActivityState extends State<RoyalCalendarActivity> {
             checkOut: checkOut,
             hours: widget.hours,
             status: status,
+            workProgress: widget.workProgress,
           );
         },
       );
 
   Widget _buildCalendar(AsyncSnapshot<_MonthData> snapshot) {
+    final day = EnterpriseTheme.of(context).isRoyalDay;
     final data =
         snapshot.connectionState == ConnectionState.done ? snapshot.data : null;
     return RoyalPanel(
       padding: const EdgeInsets.all(8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: 6,
+        spacing: day ? 4 : 6,
         children: [
           RoyalPanelTitle(Icons.calendar_month, translate('royal.calendar')),
           Row(
@@ -324,19 +330,26 @@ class _RoyalCalendarActivityState extends State<RoyalCalendarActivity> {
             lastDay: DateTime(_today.year + 1, 12, 31),
             focusedDay: _focused,
             selectedDayPredicate: (date) => isSameDay(_selected, date),
-            rowHeight: 29,
-            daysOfWeekHeight: 25,
+            calendarFormat: CalendarFormat.week,
+            availableCalendarFormats: const {CalendarFormat.week: 'Week'},
+            rowHeight: 23,
+            daysOfWeekHeight: 20,
             availableGestures: AvailableGestures.horizontalSwipe,
-            daysOfWeekStyle: const DaysOfWeekStyle(
+            daysOfWeekStyle: DaysOfWeekStyle(
               weekdayStyle: TextStyle(fontSize: 9),
-              weekendStyle:
-                  TextStyle(fontSize: 9, color: RoyalColors.lightGold),
+              weekendStyle: TextStyle(
+                  fontSize: 9,
+                  color: day ? RoyalDayColors.primary : RoyalColors.lightGold),
             ),
-            calendarStyle: const CalendarStyle(
+            calendarStyle: CalendarStyle(
               outsideDaysVisible: false,
               defaultTextStyle: TextStyle(fontSize: 10),
-              weekendTextStyle: TextStyle(fontSize: 10),
-              todayTextStyle: TextStyle(fontSize: 10, color: Colors.white),
+              weekendTextStyle: TextStyle(
+                  fontSize: 10,
+                  color:
+                      day ? RoyalDayColors.primary : RoyalColors.textSecondary),
+              todayTextStyle:
+                  const TextStyle(fontSize: 10, color: Colors.white),
               selectedTextStyle:
                   TextStyle(fontSize: 10, color: RoyalColors.navy),
               todayDecoration: BoxDecoration(
@@ -416,11 +429,16 @@ class _RoyalCalendarActivityState extends State<RoyalCalendarActivity> {
     return IconButton(
       tooltip:
           direction < 0 ? local.previousMonthTooltip : local.nextMonthTooltip,
+      constraints: const BoxConstraints.tightFor(width: 32, height: 32),
+      padding: EdgeInsets.zero,
+      visualDensity: VisualDensity.compact,
       onPressed: next.year < _today.year - 1 || next.year > _today.year + 1
           ? null
           : () => _changeMonth(next),
       icon: Icon(direction < 0 ? Icons.chevron_left : Icons.chevron_right,
-          color: RoyalColors.lightGold,
+          color: EnterpriseTheme.of(context).isRoyalDay
+              ? RoyalDayColors.primary
+              : RoyalColors.lightGold,
           size: 18),
     );
   }
@@ -463,81 +481,88 @@ class _RoyalCalendarActivityState extends State<RoyalCalendarActivity> {
 
   void _changeMonth(DateTime date) {
     setState(() {
+      final monthChanged =
+          _focused.year != date.year || _focused.month != date.month;
       _focused = date;
-      _loadMonth();
+      if (monthChanged) _loadMonth();
     });
   }
 
-  Widget _buildRecent() => RoyalPanel(
-        padding: const EdgeInsets.all(9),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: 5,
-          children: [
-            RoyalPanelTitle(Icons.history, translate('royal.recent')),
-            FutureBuilder<List<EmployeeAttendance>>(
-              future: _recent,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState != ConnectionState.done) {
-                  return const LinearProgressIndicator();
-                }
-                if (snapshot.hasError) {
-                  return TextButton(
-                      onPressed: _retry, child: Text(translate('royal.retry')));
-                }
-                final locale = Localizations.localeOf(context).languageCode;
-                final items = [
-                  for (final row
-                      in snapshot.data ?? const <EmployeeAttendance>[])
-                    ..._activityItems(row),
-                ].take(4).toList();
-                if (items.isEmpty) {
-                  return Text(translate('royal.no_activity'),
-                      style: const TextStyle(fontSize: 11));
-                }
-                return Column(
-                  children: [
-                    for (final (title, date, detail, color, icon) in items)
-                      InkWell(
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                              builder: (_) => AttendanceScreen()),
-                        ),
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(minHeight: 48),
-                          child: Row(
-                            spacing: 8,
-                            children: [
-                              _activityBadge(icon, color),
-                              Expanded(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(title,
-                                        style: const TextStyle(
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w800)),
-                                    Text(
-                                      '${DateFormat.MMMd(locale).format(date)} · $detail',
+  Widget _buildRecent() {
+    final day = EnterpriseTheme.of(context).isRoyalDay;
+    return RoyalPanel(
+      padding: const EdgeInsets.all(9),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: 5,
+        children: [
+          RoyalPanelTitle(Icons.history, translate('royal.recent')),
+          FutureBuilder<List<EmployeeAttendance>>(
+            future: _recent,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState != ConnectionState.done) {
+                return const LinearProgressIndicator();
+              }
+              if (snapshot.hasError) {
+                return TextButton(
+                    onPressed: _retry, child: Text(translate('royal.retry')));
+              }
+              final locale = Localizations.localeOf(context).languageCode;
+              final items = [
+                for (final row in snapshot.data ?? const <EmployeeAttendance>[])
+                  ..._activityItems(row),
+              ].take(day ? 3 : 4).toList();
+              if (items.isEmpty) {
+                return Text(translate('royal.no_activity'),
+                    style: const TextStyle(fontSize: 11));
+              }
+              return Column(
+                children: [
+                  for (final (title, date, detail, color, icon) in items)
+                    InkWell(
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                            builder: (_) => AttendanceScreen()),
+                      ),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(minHeight: day ? 28 : 48),
+                        child: Row(
+                          spacing: 8,
+                          children: [
+                            _activityBadge(icon, color),
+                            Expanded(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(title,
                                       style: const TextStyle(
-                                          fontSize: 10,
-                                          color: RoyalColors.textSecondary),
-                                    ),
-                                  ],
-                                ),
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w800)),
+                                  Text(
+                                    '${DateFormat.MMMd(locale).format(date)} · $detail',
+                                    style: TextStyle(
+                                        fontSize: 10,
+                                        color: day
+                                            ? RoyalDayColors.text
+                                                .withValues(alpha: .68)
+                                            : RoyalColors.textSecondary),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
-                  ],
-                );
-              },
-            ),
-          ],
-        ),
-      );
+                    ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
 
   Iterable<(String, DateTime, String, Color, IconData)> _activityItems(
       EmployeeAttendance row) sync* {

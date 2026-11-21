@@ -17,6 +17,8 @@ import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:cnattendance/theme/royal_colors.dart';
+import 'package:cnattendance/theme/royal_blue_day_theme.dart';
+import 'package:cnattendance/widget/enterprise/khmer_luxury_frame.dart';
 import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
 import 'package:provider/provider.dart';
 import 'package:cnattendance/features/repair_price/pages/repair_device_page.dart';
@@ -495,20 +497,31 @@ class DashboardScreenState extends State<DashboardScreen>
               child: Padding(
                 padding: const EdgeInsets.only(top: 6),
                 child: Material(
-                  color:
-                      enterprise.colors.backgroundColor.withValues(alpha: 0.84),
+                  color: enterprise.isRoyalLuxuryDay
+                      ? KhmerLuxuryColors.iceBlue.withValues(alpha: .94)
+                      : enterprise.colors.backgroundColor
+                          .withValues(alpha: 0.84),
                   shape:
                       enterprise.isKhmerHeritage || enterprise.isRoyalBlueGold
                           ? RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(13),
-                              side: BorderSide(color: enterprise.cardBorder),
+                              side: BorderSide(
+                                color: enterprise.isRoyalLuxuryDay
+                                    ? KhmerLuxuryColors.metallicGold
+                                    : enterprise.cardBorder,
+                              ),
                             )
                           : const CircleBorder(),
                   clipBehavior: Clip.antiAlias,
                   child: IconButton(
                     tooltip:
                         MaterialLocalizations.of(context).openAppDrawerTooltip,
-                    icon: Icon(Icons.menu, color: sidebarFg),
+                    icon: Icon(
+                      Icons.menu,
+                      color: enterprise.isRoyalLuxuryDay
+                          ? KhmerLuxuryColors.deepRoyalBlue
+                          : sidebarFg,
+                    ),
                     onPressed: () {
                       _openDashboardDrawer(enterprise.layout.menuOnRight);
                     },
@@ -556,6 +569,56 @@ class DashboardNavigationBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final enterprise = EnterpriseTheme.of(context);
+    final navSurface = Container(
+      height: 66,
+      decoration: BoxDecoration(
+        gradient: enterprise.isRoyalLuxuryDay
+            ? KhmerLuxuryColors.frosted
+            : enterprise.isRoyalDay
+                ? RoyalDayColors.frosted
+                : enterprise.isRoyalBlueGold
+                    ? const LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [RoyalColors.deepBlue, RoyalColors.navy],
+                      )
+                    : enterprise.pageGradient,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: enterprise.accent.withValues(
+            alpha: enterprise.isKhmerHeritage || enterprise.isRoyalBlueGold
+                ? .68
+                : .34,
+          ),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: enterprise.primary.withValues(alpha: 0.18),
+            blurRadius: 24,
+            spreadRadius: 0.5,
+          ),
+          BoxShadow(
+            color: Colors.black
+                .withValues(alpha: enterprise.isRoyalDay ? .05 : .35),
+            blurRadius: 22,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          for (final i in visibleTabs)
+            Expanded(
+              child: _EnterpriseNavItem(
+                item: navBarConfig.items[i],
+                selected: navBarConfig.selectedIndex == i,
+                onTap: () => navBarConfig.onItemSelected(i),
+              ),
+            ),
+        ],
+      ),
+    );
     return SafeArea(
       top: false,
       child: Padding(
@@ -565,53 +628,14 @@ class DashboardNavigationBar extends StatelessWidget {
           child: BackdropFilter(
             enabled: !enterprise.isRoyalBlueGold,
             filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-            child: Container(
-              height: 66,
-              decoration: BoxDecoration(
-                gradient: enterprise.isRoyalBlueGold
-                    ? const LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [RoyalColors.deepBlue, RoyalColors.navy],
-                      )
-                    : enterprise.pageGradient,
-                borderRadius: BorderRadius.circular(28),
-                border: Border.all(
-                  color: enterprise.accent.withValues(
-                    alpha:
-                        enterprise.isKhmerHeritage || enterprise.isRoyalBlueGold
-                            ? .68
-                            : .34,
-                  ),
-                  width: 1,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: enterprise.primary.withValues(alpha: 0.18),
-                    blurRadius: 24,
-                    spreadRadius: 0.5,
-                    offset: const Offset(0, 0),
-                  ),
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.35),
-                    blurRadius: 22,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  for (final i in visibleTabs)
-                    Expanded(
-                      child: _EnterpriseNavItem(
-                        item: navBarConfig.items[i],
-                        selected: navBarConfig.selectedIndex == i,
-                        onTap: () => navBarConfig.onItemSelected(i),
-                      ),
-                    ),
-                ],
-              ),
-            ),
+            child: enterprise.isRoyalLuxuryDay
+                ? KhmerLuxuryFrame(
+                    style: KhmerFrameStyle.goldBlue,
+                    radius: 28,
+                    cornerSize: 16,
+                    child: navSurface,
+                  )
+                : navSurface,
           ),
         ),
       ),
@@ -638,15 +662,22 @@ class _EnterpriseNavItem extends StatelessWidget {
     final duration = MediaQuery.disableAnimationsOf(context)
         ? Duration.zero
         : const Duration(milliseconds: 260);
-    final inactiveColor =
-        sidebarForeground(enterprise).withValues(alpha: royal ? .97 : .72);
+    final inactiveColor = enterprise.isRoyalDay
+        ? (enterprise.isRoyalLuxuryDay
+            ? KhmerLuxuryColors.darkText
+            : enterprise.text)
+        : sidebarForeground(enterprise).withValues(alpha: royal ? .97 : .72);
     final customAccent = enterprise.layout.accent;
     final activeColor = customAccent == null
-        ? (royal
-            ? RoyalColors.navy
-            : heritage
-                ? enterprise.colors.backgroundColor
-                : Colors.white)
+        ? (enterprise.isRoyalDay
+            ? enterprise.isRoyalLuxuryDay
+                ? KhmerLuxuryColors.darkText
+                : Colors.white
+            : royal
+                ? RoyalColors.navy
+                : heritage
+                    ? enterprise.colors.backgroundColor
+                    : Colors.white)
         : ThemeData.estimateBrightnessForColor(customAccent) == Brightness.dark
             ? Colors.white
             : const Color(0xff211720);
@@ -670,14 +701,22 @@ class _EnterpriseNavItem extends StatelessWidget {
                             : Colors.white,
                         .16)!,
                   ]
-                : royal
-                    ? RoyalColors.goldGradient.colors
-                    : heritage
-                        ? [enterprise.text, enterprise.accent]
-                        : [
-                            sidebarTone(enterprise.primary),
-                            sidebarTone(enterprise.secondary),
-                          ],
+                : enterprise.isRoyalDay
+                    ? enterprise.isRoyalLuxuryDay
+                        ? const [
+                            KhmerLuxuryColors.brightGold,
+                            KhmerLuxuryColors.metallicGold,
+                            KhmerLuxuryColors.darkGold,
+                          ]
+                        : RoyalDayColors.controls.colors
+                    : royal
+                        ? RoyalColors.goldGradient.colors
+                        : heritage
+                            ? [enterprise.text, enterprise.accent]
+                            : [
+                                sidebarTone(enterprise.primary),
+                                sidebarTone(enterprise.secondary),
+                              ],
           )
         : null;
 
@@ -692,7 +731,9 @@ class _EnterpriseNavItem extends StatelessWidget {
         : null;
 
     final BoxBorder? tabBorder = selected
-        ? Border.all(color: enterprise.accent.withValues(alpha: 0.44))
+        ? Border.all(
+            color: enterprise.accent
+                .withValues(alpha: enterprise.isRoyalDay ? .9 : .44))
         : null;
 
     return Semantics(

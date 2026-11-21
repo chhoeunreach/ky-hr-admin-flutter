@@ -1,9 +1,13 @@
+import 'dart:io';
+
 import 'package:cnattendance/theme/app_theme_data.dart';
 import 'package:cnattendance/theme/app_theme_mode.dart';
 import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/theme/theme_provider.dart';
 import 'package:cnattendance/widgets/theme_layout_editor.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
 class ThemeSelector extends StatelessWidget {
@@ -214,6 +218,87 @@ class ThemeSelectorPage extends StatelessWidget {
   }
 }
 
+Future<void> _showBackgroundOptions(
+    BuildContext context, AppThemeMode mode) async {
+  final provider = context.read<ThemeProvider>();
+  final currentPath = provider.backgroundFor(mode);
+  final action = await showModalBottomSheet<String>(
+    context: context,
+    showDragHandle: true,
+    builder: (sheetContext) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.photo_library_outlined),
+            title: const Text('Choose from this device'),
+            onTap: () => Navigator.pop(sheetContext, 'choose'),
+          ),
+          if (currentPath != null)
+            ListTile(
+              leading: const Icon(Icons.restart_alt_rounded),
+              title: const Text('Use theme default'),
+              onTap: () => Navigator.pop(sheetContext, 'reset'),
+            ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    ),
+  );
+  if (!context.mounted || action == null) return;
+
+  try {
+    if (action == 'reset') {
+      await provider.setBackground(mode, null);
+      if (currentPath != null) {
+        final oldFile = File(currentPath);
+        if (await oldFile.exists()) await oldFile.delete();
+      }
+      if (context.mounted) _showThemeSnack(context, 'Theme background reset');
+      return;
+    }
+
+    final image = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 90,
+      maxWidth: 2400,
+      maxHeight: 2400,
+    );
+    if (image == null || !context.mounted) return;
+
+    final directory = await getApplicationDocumentsDirectory();
+    final backgroundDirectory = Directory(
+        '${directory.path}${Platform.pathSeparator}theme_backgrounds');
+    await backgroundDirectory.create(recursive: true);
+    final extension = _backgroundImageExtension(image.path);
+    final destination = File(
+      '${backgroundDirectory.path}${Platform.pathSeparator}'
+      '${mode.id}_${DateTime.now().microsecondsSinceEpoch}$extension',
+    );
+    await File(image.path).copy(destination.path);
+    await provider.setBackground(mode, destination.path);
+
+    if (currentPath != null && currentPath != destination.path) {
+      final oldFile = File(currentPath);
+      if (await oldFile.exists()) await oldFile.delete();
+    }
+    if (context.mounted) _showThemeSnack(context, 'Theme background updated');
+  } catch (error) {
+    if (context.mounted) {
+      _showThemeSnack(context, 'Could not update background: $error');
+    }
+  }
+}
+
+String _backgroundImageExtension(String path) {
+  final dot = path.lastIndexOf('.');
+  if (dot < 0) return '.jpg';
+  final extension = path.substring(dot).toLowerCase();
+  return const {'.jpg', '.jpeg', '.png', '.webp'}.contains(extension)
+      ? extension
+      : '.jpg';
+}
+
 void _openLayoutEditor(BuildContext context) {
   Navigator.of(context).push(MaterialPageRoute(
     builder: (_) => const ThemeLayoutEditor(),
@@ -234,8 +319,10 @@ class _ThemePreviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final info = AppThemeData.info(mode);
-    final colors = context.watch<ThemeProvider>().colorsForMode(mode);
+    final themeProvider = context.watch<ThemeProvider>();
+    final colors = themeProvider.colorsForMode(mode);
     final onDark = colors.isDark;
+    final hasCustomBackground = themeProvider.backgroundFor(mode) != null;
     return InkWell(
       borderRadius: BorderRadius.circular(22),
       onTap: () async {
@@ -277,6 +364,24 @@ class _ThemePreviewCard extends StatelessWidget {
                 Icon(info.icon,
                     color: colors.textColor, size: compact ? 18 : 24),
                 const Spacer(),
+                if (!compact)
+                  IconButton(
+                    tooltip: hasCustomBackground
+                        ? 'Change background'
+                        : 'Choose background',
+                    visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.zero,
+                    constraints:
+                        const BoxConstraints.tightFor(width: 30, height: 30),
+                    onPressed: () => _showBackgroundOptions(context, mode),
+                    icon: Icon(
+                      hasCustomBackground
+                          ? Icons.wallpaper_rounded
+                          : Icons.add_photo_alternate_outlined,
+                      color: colors.textColor,
+                      size: 19,
+                    ),
+                  ),
                 AnimatedOpacity(
                   duration: AppThemeData.animationDuration,
                   opacity: selected ? 1 : 0,
@@ -317,12 +422,9 @@ class _ThemePreviewCard extends StatelessWidget {
             SizedBox(height: compact ? 4 : 8),
             Row(
               children: [
-                _ColorDot(
-                    color: colors.primaryColor, onDark: onDark),
-                _ColorDot(
-                    color: colors.secondaryColor, onDark: onDark),
-                _ColorDot(
-                    color: colors.accentColor, onDark: onDark),
+                _ColorDot(color: colors.primaryColor, onDark: onDark),
+                _ColorDot(color: colors.secondaryColor, onDark: onDark),
+                _ColorDot(color: colors.accentColor, onDark: onDark),
                 _ColorDot(color: colors.cardColor, onDark: onDark),
               ],
             ),
@@ -426,7 +528,8 @@ class _ColorDot extends StatelessWidget {
         color: color,
         shape: BoxShape.circle,
         border: Border.all(
-            color: onDark ? Colors.white54 : Colors.black.withValues(alpha: 0.16)),
+            color:
+                onDark ? Colors.white54 : Colors.black.withValues(alpha: 0.16)),
       ),
     );
   }

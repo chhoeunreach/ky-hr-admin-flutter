@@ -8,6 +8,7 @@ import 'package:cnattendance/screen/profile/profilescreen.dart';
 import 'package:cnattendance/services/server_status_service.dart';
 import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/theme/royal_colors.dart';
+import 'package:cnattendance/theme/royal_blue_day_theme.dart';
 import 'package:cnattendance/widget/homescreen/royal_dashboard_widgets.dart';
 import 'package:cnattendance/widget/dashboard_drawer_scope.dart';
 import 'package:flutter/material.dart';
@@ -154,6 +155,7 @@ class HeaderState extends State<HeaderProfile> {
     final provider = Provider.of<PrefProvider>(context);
     final theme = EnterpriseTheme.of(context);
     final royal = theme.isRoyalBlueGold;
+    final avatarSize = theme.isRoyalDay ? 42.0 : 36.0;
     final initials = provider.fullname
         .trim()
         .split(RegExp(r'\s+'))
@@ -162,7 +164,7 @@ class HeaderState extends State<HeaderProfile> {
         .map((word) => word.characters.first)
         .join();
     final royalAvatar = SizedBox.square(
-      dimension: 36,
+      dimension: avatarSize,
       child: ColoredBox(
         color: RoyalColors.deepBlue,
         child: Center(
@@ -175,10 +177,11 @@ class HeaderState extends State<HeaderProfile> {
     );
     final labelSurface =
         theme.layout.background ?? theme.colors.backgroundColor;
-    final labelColor = ThemeData.estimateBrightnessForColor(labelSurface) ==
-            Brightness.dark
-        ? Colors.white
-        : const Color(0xFF211720);
+    final labelColor = theme.isRoyalLuxuryDay
+        ? KhmerLuxuryColors.darkText
+        : ThemeData.estimateBrightnessForColor(labelSurface) == Brightness.dark
+            ? Colors.white
+            : const Color(0xFF211720);
     final features = context.watch<DashboardProvider>().features;
     final isEnabledLocation =
         context.watch<DashboardProvider>().isLocationEnabled;
@@ -186,8 +189,8 @@ class HeaderState extends State<HeaderProfile> {
     // corner (see DashboardScreen), so the header keeps only the avatar row.
     final isMobileLayout = MediaQuery.sizeOf(context).width < 720;
     final showInlineMenu = widget.showMenuButton && !isMobileLayout;
-    final pinnedMenuClearance =
-        isMobileLayout && theme.layout.showMenuButton;
+    final pinnedMenuClearance = isMobileLayout && theme.layout.showMenuButton;
+    final menuOnRight = theme.isRoyalDay && theme.layout.menuOnRight;
 
     final profile = <Widget>[
       // 1. Menu Squircle Button (desktop rail only; mobile uses the pinned one)
@@ -244,7 +247,14 @@ class HeaderState extends State<HeaderProfile> {
                 shape: BoxShape.circle,
                 gradient: LinearGradient(
                   colors: royal
-                      ? [RoyalColors.lightGold, theme.accent]
+                      ? (theme.isRoyalLuxuryDay
+                          ? [
+                              KhmerLuxuryColors.brightGold,
+                              KhmerLuxuryColors.metallicGold
+                            ]
+                          : theme.isRoyalDay
+                              ? [RoyalDayColors.skyBlue, theme.primary]
+                              : [RoyalColors.lightGold, theme.accent])
                       : theme.isKhmerHeritage
                           ? [theme.text, theme.accent]
                           : const [Color(0xFF0066FF), Color(0xFF5EB1FF)],
@@ -256,8 +266,8 @@ class HeaderState extends State<HeaderProfile> {
                     : CachedNetworkImage(
                         imageUrl: provider.avatar,
                         memCacheWidth: royal ? 176 : null,
-                        width: 36,
-                        height: 36,
+                        width: avatarSize,
+                        height: avatarSize,
                         fit: BoxFit.cover,
                         placeholder: (context, url) {
                           if (royal) return royalAvatar;
@@ -347,11 +357,15 @@ class HeaderState extends State<HeaderProfile> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                 decoration: BoxDecoration(
-                  color: royal ||
-                          theme.isKhmerHeritage ||
-                          theme.layout.background != null
-                      ? theme.accent.withValues(alpha: .18)
-                      : Colors.white.withValues(alpha: 0.22),
+                  color: theme.isRoyalLuxuryDay
+                      ? KhmerLuxuryColors.deepRoyalBlue
+                      : theme.isRoyalDay
+                          ? theme.primary.withValues(alpha: .12)
+                          : royal ||
+                                  theme.isKhmerHeritage ||
+                                  theme.layout.background != null
+                              ? theme.accent.withValues(alpha: .18)
+                              : Colors.white.withValues(alpha: 0.22),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
@@ -363,7 +377,7 @@ class HeaderState extends State<HeaderProfile> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: labelColor,
+                    color: theme.isRoyalLuxuryDay ? Colors.white : labelColor,
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
                   ),
@@ -509,9 +523,9 @@ class HeaderState extends State<HeaderProfile> {
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
-        (royal ? 0 : 10) + (pinnedMenuClearance ? 48 : 0),
+        (royal ? 0 : 10) + (pinnedMenuClearance && !menuOnRight ? 48 : 0),
         6,
-        royal ? 0 : 10,
+        (royal ? 0 : 10) + (pinnedMenuClearance && menuOnRight ? 48 : 0),
         2,
       ),
       child: LayoutBuilder(
@@ -519,7 +533,12 @@ class HeaderState extends State<HeaderProfile> {
           final minimumProfileWidth = showInlineMenu ? 164.0 : 116.0;
           if (constraints.maxWidth >=
               minimumProfileWidth +
-                  actions.length * (royal ? 42 : _HeaderIconButton.slotWidth)) {
+                  actions.length *
+                      (theme.isRoyalDay
+                          ? 40
+                          : royal
+                              ? 42
+                              : _HeaderIconButton.slotWidth)) {
             return Row(children: [...profile, ...actions]);
           }
 
@@ -559,20 +578,36 @@ class _HeaderIconButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = EnterpriseTheme.of(context);
     return Container(
-      width: theme.isRoyalBlueGold ? 42 : _size,
-      height: theme.isRoyalBlueGold ? 42 : _size,
+      width: theme.isRoyalDay
+          ? 40
+          : theme.isRoyalBlueGold
+              ? 42
+              : _size,
+      height: theme.isRoyalDay
+          ? 40
+          : theme.isRoyalBlueGold
+              ? 42
+              : _size,
       margin: EdgeInsets.only(left: theme.isRoyalBlueGold ? 0 : _spacing),
       decoration: BoxDecoration(
         shape: theme.isKhmerHeritage ? BoxShape.rectangle : BoxShape.circle,
         borderRadius: theme.isKhmerHeritage ? BorderRadius.circular(12) : null,
-        gradient: theme.isKhmerHeritage ? theme.cardGradient : null,
+        gradient: theme.isRoyalDay
+            ? (theme.isRoyalLuxuryDay
+                ? KhmerLuxuryColors.controls
+                : RoyalDayColors.controls)
+            : theme.isKhmerHeritage
+                ? theme.cardGradient
+                : null,
         color: theme.isKhmerHeritage
             ? null
             : const Color(0xFF0C2247).withValues(alpha: 0.72),
         border: Border.all(
-          color: theme.isKhmerHeritage
-              ? theme.cardBorder
-              : Colors.white.withValues(alpha: 0.20),
+          color: theme.isRoyalLuxuryDay
+              ? KhmerLuxuryColors.metallicGold
+              : theme.isKhmerHeritage
+                  ? theme.cardBorder
+                  : Colors.white.withValues(alpha: 0.20),
         ),
         boxShadow: [
           BoxShadow(
@@ -585,11 +620,13 @@ class _HeaderIconButton extends StatelessWidget {
       child: IconButton(
         padding: EdgeInsets.zero,
         icon: Icon(icon,
-            color: theme.isRoyalBlueGold
-                ? RoyalColors.lightGold
-                : theme.isKhmerHeritage
-                    ? theme.text
-                    : color,
+            color: theme.isRoyalDay
+                ? Colors.white
+                : theme.isRoyalBlueGold
+                    ? RoyalColors.lightGold
+                    : theme.isKhmerHeritage
+                        ? theme.text
+                        : color,
             size: 18),
         onPressed: onPressed,
       ),

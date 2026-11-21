@@ -15,6 +15,7 @@ import 'package:cnattendance/theme/app_theme_data.dart';
 import 'package:cnattendance/theme/app_theme_mode.dart';
 import 'package:cnattendance/theme/theme_provider.dart';
 import 'package:cnattendance/theme/theme_layout.dart';
+import 'package:cnattendance/widget/homescreen/royal_calendar_activity.dart';
 import 'package:cnattendance/widget/homescreen/checkattendance.dart';
 import 'package:cnattendance/widget/homescreen/home_model_view.dart';
 import 'package:cnattendance/widget/homescreen/royal_dashboard_widgets.dart';
@@ -29,6 +30,7 @@ import 'package:http/testing.dart';
 import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:visibility_detector/visibility_detector.dart';
 
 import 'helpers/chat_storage_test_env.dart';
 
@@ -127,7 +129,9 @@ void _mockCameraPermission() {
 }
 
 Widget _app(Widget child,
-        {required DashboardProvider dashboard, Locale? locale}) =>
+        {required DashboardProvider dashboard,
+        Locale? locale,
+        AppThemeMode mode = AppThemeMode.royalBlueGold}) =>
     MultiProvider(
       providers: [
         ChangeNotifierProvider<DashboardProvider>.value(value: dashboard),
@@ -139,7 +143,7 @@ Widget _app(Widget child,
         builder: EasyLoading.init(),
         supportedLocales: const [Locale('en'), Locale('km')],
         localizationsDelegates: GlobalMaterialLocalizations.delegates,
-        theme: AppThemeData.themeData(AppThemeMode.royalBlueGold),
+        theme: AppThemeData.themeData(mode),
         home: Scaffold(body: SingleChildScrollView(child: child)),
       ),
     );
@@ -242,7 +246,7 @@ void main() {
     expect(reloaded.mode, AppThemeMode.royalBlueGold);
   });
 
-  test('Royal Blue & Gold adds a mode alongside every existing theme',
+  test('Royal theme modes are additive alongside every existing theme',
       () async {
     const existingIds = {
       'light',
@@ -261,7 +265,12 @@ void main() {
     };
     expect(
       AppThemeMode.values.map((mode) => mode.id).toSet(),
-      {...existingIds, 'royal_blue_gold'},
+      {
+        ...existingIds,
+        'royal_blue_gold',
+        'royal_blue_day',
+        'royal_blue_gold_khmer_day',
+      },
     );
     expect(AppThemeData.themes.keys.toSet(), AppThemeMode.values.toSet());
     for (final id in existingIds) {
@@ -300,6 +309,38 @@ void main() {
     expect(
       AppThemeData.info(AppThemeMode.royalBlueGold).name,
       'Royal Blue & Gold',
+    );
+    expect(
+      AppThemeData.info(AppThemeMode.royalBlueGoldKhmerDay).name,
+      'Royal Blue & Gold Khmer Luxury Day',
+    );
+  });
+
+  test('Day Mode persists independently of the existing Royal theme', () async {
+    final provider = ThemeProvider();
+    addTearDown(provider.dispose);
+    await provider.setMode(AppThemeMode.royalBlueDay);
+    final reloaded = ThemeProvider();
+    addTearDown(reloaded.dispose);
+    await reloaded.load();
+    expect(reloaded.mode, AppThemeMode.royalBlueDay);
+    expect(reloaded.themeData.brightness, Brightness.light);
+    expect(reloaded.layout.separatesBanner(reloaded.mode), isFalse);
+  });
+
+  test('Khmer Luxury Day is a separate persisted light theme', () async {
+    final provider = ThemeProvider();
+    addTearDown(provider.dispose);
+    await provider.setMode(AppThemeMode.royalBlueGoldKhmerDay);
+    final reloaded = ThemeProvider();
+    addTearDown(reloaded.dispose);
+    await reloaded.load();
+    expect(reloaded.mode, AppThemeMode.royalBlueGoldKhmerDay);
+    expect(reloaded.themeData.brightness, Brightness.light);
+    expect(reloaded.layout.separatesBanner(reloaded.mode), isFalse);
+    expect(
+      AppThemeData.info(AppThemeMode.royalBlueDay).name,
+      'Royal Blue Gold Day',
     );
   });
 
@@ -351,6 +392,127 @@ void main() {
       }, () => client);
     });
   }
+
+  for (final mode in [
+    AppThemeMode.royalBlueDay,
+    AppThemeMode.royalBlueGoldKhmerDay,
+  ]) {
+    for (final width in [320.0, 360.0, 390.0, 430.0]) {
+      testWidgets('${mode.id} keeps the reference dashboard order at $width dp',
+          (tester) async {
+        _loadLanguage('km');
+        await _setSize(tester, width);
+        final dashboard = _AttendanceProvider();
+        addTearDown(dashboard.dispose);
+        dashboard.features = {
+          ...dashboard.features,
+          'quote.view': '1',
+          'social_feed.stories.view': '1',
+        };
+        final client = _api();
+        addTearDown(client.close);
+        await http.runWithClient(() async {
+          await tester.pumpWidget(_app(
+            _home(
+              tester,
+              banner: const HomeBannerConfig(
+                bannerTitle:
+                    'ប្រព័ន្ធគ្រប់គ្រងធនធានមនុស្សសម្រាប់បុគ្គលិកទាំងអស់',
+                quote: 'វិន័យល្អ នាំមកនូវភាពជោគជ័យ និងការទទួលខុសត្រូវ',
+              ),
+            ),
+            dashboard: dashboard,
+            locale: const Locale('km'),
+            mode: mode,
+          ));
+          await tester.pumpAndSettle();
+          final banner = find.byKey(const ValueKey(LayoutItem.banner));
+          final quote = find.byKey(const ValueKey(LayoutItem.quote));
+          final clockAndAttendance =
+              find.byKey(const ValueKey(LayoutItem.clock));
+          final summary = find.byKey(const ValueKey(LayoutItem.summary));
+          final stories = find.byKey(const ValueKey(LayoutItem.stories));
+          final stage = find.byKey(const ValueKey('royal-day-scanner-stage'));
+          final scanner = find.byType(RoyalAttendanceScanner);
+          final calendar = find.byKey(const ValueKey('royal-calendar'));
+          expect(find.byKey(const ValueKey('royal-day-hero')), findsNothing);
+          expect(
+              find.descendant(of: quote, matching: find.byType(RoyalQuotation)),
+              findsOneWidget);
+          expect(
+              find.descendant(
+                  of: clockAndAttendance,
+                  matching: find.byType(RoyalClockCard)),
+              findsOneWidget);
+          expect(
+              find.descendant(
+                  of: clockAndAttendance,
+                  matching: find.byType(RoyalTodayAttendance)),
+              findsOneWidget);
+          expect(tester.getSize(stage).width, tester.getSize(banner).width);
+          expect(tester.getTopLeft(banner).dy,
+              lessThan(tester.getTopLeft(quote).dy));
+          expect(tester.getTopLeft(quote).dy,
+              lessThan(tester.getTopLeft(clockAndAttendance).dy));
+          expect(tester.getTopLeft(clockAndAttendance).dy,
+              lessThan(tester.getTopLeft(summary).dy));
+          expect(tester.getTopLeft(summary).dy,
+              lessThan(tester.getTopLeft(stories).dy));
+          expect(tester.getTopLeft(stories).dy,
+              lessThan(tester.getTopLeft(scanner).dy));
+          expect(tester.getTopLeft(scanner).dy,
+              lessThan(tester.getTopLeft(calendar).dy));
+          expect(find.byType(RoyalCalendarActivity), findsOneWidget);
+          expect(
+              find.byKey(const ValueKey(LayoutItem.workingTime)), findsNothing);
+          expect(tester.takeException(), isNull);
+          await tester.pumpWidget(const SizedBox.shrink());
+        }, () => client);
+      });
+    }
+  }
+
+  testWidgets('Day Mode pauses the scanner pulse outside the viewport',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 320));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final visibility = VisibilityDetectorController.instance;
+    final previousInterval = visibility.updateInterval;
+    visibility.updateInterval = Duration.zero;
+    addTearDown(() => visibility.updateInterval = previousInterval);
+
+    final dashboard = _AttendanceProvider()..animated = true;
+    addTearDown(dashboard.dispose);
+    final client = _api();
+    addTearDown(client.close);
+    await http.runWithClient(() async {
+      await tester.pumpWidget(_app(
+        const CheckAttendance(),
+        dashboard: dashboard,
+        mode: AppThemeMode.royalBlueDay,
+      ));
+      await tester.pump();
+      final scanner = find.byType(RoyalAttendanceScanner);
+      final pulse = tester.widget<RoyalAttendanceScanner>(scanner).animation
+          as AnimationController;
+      expect(pulse.isAnimating, isFalse);
+
+      await tester.ensureVisible(scanner);
+      await tester.pump();
+      expect(pulse.isAnimating, isTrue);
+
+      await tester.ensureVisible(find.byKey(const ValueKey(LayoutItem.banner)));
+      await tester.pump();
+      expect(pulse.isAnimating, isFalse);
+
+      await tester.ensureVisible(scanner);
+      await tester.pump();
+      expect(pulse.isAnimating, isTrue);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+    }, () => client);
+  });
 
   testWidgets(
       'banner pauses, wraps by swipe, and stays independent of quotations',

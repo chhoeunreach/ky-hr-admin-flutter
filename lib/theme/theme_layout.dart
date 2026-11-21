@@ -134,8 +134,10 @@ class ThemeLayout {
   ThemeLayout setShowMenuButton(bool value) => _copy(showMenuButton: value);
 
   bool separatesBanner(AppThemeMode mode) =>
-      mode == AppThemeMode.royalBlueGold ||
-      (_splitBanner ?? mode == AppThemeMode.khmerHeritage);
+      mode != AppThemeMode.royalBlueDay &&
+      mode != AppThemeMode.royalBlueGoldKhmerDay &&
+      (mode == AppThemeMode.royalBlueGold ||
+          (_splitBanner ?? mode == AppThemeMode.khmerHeritage));
 
   ThemeLayout setSeparateBanner(bool value) => _copy(splitBanner: value);
 

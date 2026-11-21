@@ -13,6 +13,8 @@ enum AppThemeMode {
   rosePink,
   khmerHeritage,
   royalBlueGold,
+  royalBlueDay,
+  royalBlueGoldKhmerDay,
 }
 
 extension AppThemeModeX on AppThemeMode {
@@ -46,6 +48,10 @@ extension AppThemeModeX on AppThemeMode {
         return 'khmer_heritage';
       case AppThemeMode.royalBlueGold:
         return 'royal_blue_gold';
+      case AppThemeMode.royalBlueDay:
+        return 'royal_blue_day';
+      case AppThemeMode.royalBlueGoldKhmerDay:
+        return 'royal_blue_gold_khmer_day';
     }
   }
 

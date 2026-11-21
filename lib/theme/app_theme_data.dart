@@ -1,6 +1,7 @@
 import 'package:cnattendance/theme/app_theme_mode.dart';
 import 'package:cnattendance/theme/theme_colors.dart';
 import 'package:cnattendance/theme/royal_colors.dart';
+import 'package:cnattendance/theme/royal_blue_day_theme.dart';
 import 'package:flutter/material.dart';
 
 class AppThemeData {
@@ -193,6 +194,44 @@ class AppThemeData {
         Color(0xffad1457)
       ],
     ),
+    AppThemeMode.royalBlueDay: _theme(
+      AppThemeMode.royalBlueDay,
+      'Royal Blue Gold Day',
+      Icons.wb_sunny_outlined,
+      'Daylight blue and gold with Khmer architecture',
+      RoyalDayColors.primary,
+      RoyalDayColors.royalBlue,
+      RoyalDayColors.gold,
+      RoyalDayColors.background,
+      RoyalDayColors.white,
+      RoyalDayColors.text,
+      false,
+      const [
+        Color(0xFF9CCFF8),
+        RoyalDayColors.background,
+        RoyalDayColors.white,
+        RoyalDayColors.background
+      ],
+    ),
+    AppThemeMode.royalBlueGoldKhmerDay: _theme(
+      AppThemeMode.royalBlueGoldKhmerDay,
+      'Royal Blue & Gold Khmer Luxury Day',
+      Icons.account_balance_rounded,
+      'Khmer ornaments, royal blue and metallic gold in daylight',
+      KhmerLuxuryColors.royalBlue,
+      KhmerLuxuryColors.deepRoyalBlue,
+      KhmerLuxuryColors.metallicGold,
+      KhmerLuxuryColors.iceBlue,
+      KhmerLuxuryColors.white,
+      KhmerLuxuryColors.darkText,
+      false,
+      const [
+        Color(0xFF80C8FF),
+        Color(0xFFD6ECFF),
+        Color(0xFFF5FAFF),
+        Color(0xFFDDEEFF),
+      ],
+    ),
     AppThemeMode.royalBlueGold: _theme(
       AppThemeMode.royalBlueGold,
       'Royal Blue & Gold',
@@ -257,6 +296,18 @@ class AppThemeData {
       canvasColor: colors.backgroundColor,
       cardColor: colors.cardColor,
       dividerColor: colors.textColor.withValues(alpha: 0.14),
+      iconTheme: mode == AppThemeMode.royalBlueDay ||
+              mode == AppThemeMode.royalBlueGoldKhmerDay
+          ? IconThemeData(color: colors.primaryColor)
+          : null,
+      filledButtonTheme: mode == AppThemeMode.royalBlueDay ||
+              mode == AppThemeMode.royalBlueGoldKhmerDay
+          ? FilledButtonThemeData(
+              style: FilledButton.styleFrom(
+              backgroundColor: colors.primaryColor,
+              foregroundColor: Colors.white,
+            ))
+          : null,
       appBarTheme: AppBarTheme(
         backgroundColor: colors.primaryColor,
         foregroundColor: appBarText,

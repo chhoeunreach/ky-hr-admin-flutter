@@ -9,6 +9,7 @@ import 'package:cnattendance/widget/customqrscanner.dart';
 import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/widget/premium_background.dart';
 import 'package:cnattendance/widget/showlanguage.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_translate/flutter_translate.dart';
@@ -143,6 +144,7 @@ class loginScreenState extends State<LoginScreen> {
   }*/
 
   void loginUser() async {
+    if (_isLoading) return;
     setState(() {
       _isLoading = true;
       EasyLoading.show(
@@ -155,6 +157,10 @@ class loginScreenState extends State<LoginScreen> {
           .login(_usernameController.text, _passwordController.text);
 
       final securityState = await KySecurityManager.shared.initialize();
+      if (kDebugMode) {
+        debugPrint('Login: device security state ${securityState['state']}'
+            ' (reason: ${securityState['reason'] ?? 'none'})');
+      }
       if (!mounted) return;
       if (securityState['state'] != 'authorized' &&
           securityState['state'] != 'offlineAuthorized' &&

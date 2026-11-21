@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:cnattendance/theme/enterprise_theme.dart';
+import 'package:cnattendance/theme/royal_blue_day_theme.dart';
 import 'package:flutter/material.dart';
 
 import 'assign_task_screen.dart';
@@ -86,13 +87,27 @@ class _CreateRecordButtonState extends State<CreateRecordButton> {
         heroTag: null,
         tooltip: 'Create Record',
         backgroundColor: theme.primary,
-        foregroundColor: recordContrastColor(theme.primary, theme.text),
+        foregroundColor: theme.isRoyalDay
+            ? Colors.white
+            : recordContrastColor(theme.primary, theme.text),
         onPressed: _open,
-        child: AnimatedRotation(
-          turns: _sheetOpen ? .125 : 0,
-          duration: duration,
-          curve: Curves.easeOutCubic,
-          child: const Icon(Icons.add),
+        child: Ink(
+          width: double.infinity,
+          height: double.infinity,
+          decoration: theme.isRoyalDay
+              ? BoxDecoration(
+                  gradient: RoyalDayColors.controls,
+                  borderRadius: BorderRadius.circular(12),
+                  border:
+                      Border.all(color: theme.accent.withValues(alpha: .85)),
+                )
+              : null,
+          child: AnimatedRotation(
+            turns: _sheetOpen ? .125 : 0,
+            duration: duration,
+            curve: Curves.easeOutCubic,
+            child: const Icon(Icons.add),
+          ),
         ),
       ),
     );
@@ -100,7 +115,7 @@ class _CreateRecordButtonState extends State<CreateRecordButton> {
       clipBehavior: Clip.none,
       children: [
         button,
-        if (!_sheetOpen)
+        if (!_sheetOpen && !theme.isRoyalDay)
           Positioned.fill(
             left: -9,
             right: -9,

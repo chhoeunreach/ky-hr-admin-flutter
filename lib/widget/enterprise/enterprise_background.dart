@@ -1,13 +1,19 @@
 import 'dart:math' as math;
+import 'dart:io';
 import 'dart:ui';
 
 import 'package:cnattendance/theme/app_theme_mode.dart';
 import 'package:cnattendance/theme/royal_colors.dart';
+import 'package:cnattendance/theme/royal_blue_day_theme.dart';
 import 'package:cnattendance/theme/enterprise_theme.dart';
+import 'package:cnattendance/theme/theme_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:provider/provider.dart';
 
 class PremiumBackground extends StatefulWidget {
   final Widget child;
+  final String? imageBackground;
 
   /// Pins the original deep-navy backdrop regardless of the active theme so
   /// screens with fixed light foregrounds (e.g. the login form) stay readable.
@@ -17,6 +23,7 @@ class PremiumBackground extends StatefulWidget {
     Key? key,
     required this.child,
     this.brandBackdrop = false,
+    this.imageBackground,
   }) : super(key: key);
 
   @override
@@ -35,14 +42,66 @@ class _PremiumBackgroundState extends State<PremiumBackground> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final theme = EnterpriseTheme.of(context);
+    final customBackground = Provider.of<ThemeProvider?>(context, listen: false)
+        ?.backgroundFor(theme.mode);
+    if (!widget.brandBackdrop &&
+        (widget.imageBackground != null || customBackground != null)) {
+      return;
+    }
     if (!theme.isKhmerHeritage && !theme.isRoyalBlueGold) {
       precacheImage(_worldMapProvider, context);
     }
   }
 
+  Widget _imageBackground(ImageProvider image) => Stack(
+        children: [
+          Positioned.fill(
+            child: IgnorePointer(
+              child: Image(
+                image: image,
+                alignment: Alignment.center,
+                fit: BoxFit.cover,
+                excludeFromSemantics: true,
+                gaplessPlayback: true,
+              ),
+            ),
+          ),
+          widget.child,
+        ],
+      );
+
   @override
   Widget build(BuildContext context) {
     final enterprise = EnterpriseTheme.of(context);
+    final customBackground =
+        context.watch<ThemeProvider?>()?.backgroundFor(enterprise.mode);
+    if (!widget.brandBackdrop && customBackground != null) {
+      return _imageBackground(FileImage(File(customBackground)));
+    }
+    if (!widget.brandBackdrop && widget.imageBackground != null) {
+      return _imageBackground(AssetImage(widget.imageBackground!));
+    }
+
+    if (enterprise.isRoyalDay && !widget.brandBackdrop) {
+      return Stack(
+        children: [
+          Positioned.fill(
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(gradient: enterprise.pageGradient),
+                child: SvgPicture.asset(
+                  '$royalDayAssets/backgrounds/dashboard_wave.svg',
+                  alignment: Alignment.bottomCenter,
+                  fit: BoxFit.fitWidth,
+                  excludeFromSemantics: true,
+                ),
+              ),
+            ),
+          ),
+          widget.child,
+        ],
+      );
+    }
     final recipe = widget.brandBackdrop
         ? _PremiumBackgroundRecipe.branded
         : _PremiumBackgroundRecipe.forMode(enterprise.mode);
@@ -784,6 +843,8 @@ class _PremiumBackgroundRecipe {
           detail: _BackgroundDetailStyle.flowers,
           detailColor: const Color(0xffff80ab),
         );
+      case AppThemeMode.royalBlueDay:
+      case AppThemeMode.royalBlueGoldKhmerDay:
       case AppThemeMode.royalBlueGold:
         return _recipe(
           colors: RoyalColors.background,

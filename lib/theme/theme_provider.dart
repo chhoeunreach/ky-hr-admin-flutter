@@ -23,11 +23,13 @@ class ThemeProvider extends ChangeNotifier {
   bool _animationsEnabled = true;
   final Map<String, bool> _effects = Map<String, bool>.from(_effectDefaults);
   final Map<AppThemeMode, ThemeLayout> _layouts = {};
+  final Map<AppThemeMode, String?> _backgrounds = {};
 
   AppThemeMode get mode => _mode;
   bool get loaded => _loaded;
   bool get animationsEnabled => _animationsEnabled;
   ThemeLayout get layout => layoutFor(_mode);
+  String? backgroundFor(AppThemeMode mode) => _backgrounds[mode];
   ThemeColors get colors => colorsForMode(_mode);
   ThemeData get themeData => AppThemeData.themeData(_mode, overrides: colors);
   ThemeData get lightTheme => AppThemeData.themeData(AppThemeMode.light);
@@ -58,6 +60,7 @@ class ThemeProvider extends ChangeNotifier {
     for (final mode in AppThemeMode.values) {
       final layout = ThemeLayout.decode(prefs.getString(layoutKey(mode)));
       _layouts[mode] = layout;
+      _backgrounds[mode] = prefs.getString(backgroundKey(mode));
       _mirrorLayout(mode, layout);
     }
     _syncLegacyStorage(_mode);
@@ -72,6 +75,19 @@ class ThemeProvider extends ChangeNotifier {
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(storageKey, mode.id);
+  }
+
+  Future<void> setBackground(AppThemeMode mode, String? filePath) async {
+    if (_backgrounds[mode] == filePath) return;
+    final prefs = await SharedPreferences.getInstance();
+    if (filePath == null) {
+      await prefs.remove(backgroundKey(mode));
+      _backgrounds.remove(mode);
+    } else {
+      await prefs.setString(backgroundKey(mode), filePath);
+      _backgrounds[mode] = filePath;
+    }
+    notifyListeners();
   }
 
   Future<void> setEffect(String key, bool enabled) async {
@@ -109,6 +125,9 @@ class ThemeProvider extends ChangeNotifier {
   }
 
   static String layoutKey(AppThemeMode mode) => 'theme_layout_${mode.id}';
+
+  static String backgroundKey(AppThemeMode mode) =>
+      'theme_background_${mode.id}';
 
   Future<void> resetToSystemMode() async {
     final brightness =

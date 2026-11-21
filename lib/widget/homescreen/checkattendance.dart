@@ -21,6 +21,7 @@ import 'package:cnattendance/widget/homescreen/payroll_queue_ticket_dialog.dart'
 import 'package:cnattendance/widget/customalertdialog.dart';
 import 'package:cnattendance/widget/customnfcdialog.dart';
 import 'package:cnattendance/widget/device_clock_gate.dart';
+import 'package:cnattendance/services/device_clock_monitor.dart';
 import 'package:cnattendance/widget/profile/note_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -35,6 +36,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
 import 'package:cnattendance/model/home_banner_config.dart';
 import 'package:cnattendance/theme/theme_layout.dart';
+import 'package:cnattendance/theme/theme_provider.dart';
 import 'home_model_view.dart';
 import 'royal_dashboard_widgets.dart';
 import '../customqrscanner.dart';
@@ -72,6 +74,9 @@ class CheckAttendanceState extends State<CheckAttendance>
   late final ValueNotifier<DateTime> _clockNow = ValueNotifier(_now);
   List<String>? _resolvedAttendanceMethods;
   bool _clockEnabled = true;
+  bool _dayClock = false;
+  bool _royalClock = false;
+  bool _scannerVisible = false;
   bool _foreground = true;
   bool _animateAttendance = false;
   bool _isRefreshingZone = false;
@@ -97,11 +102,10 @@ class CheckAttendanceState extends State<CheckAttendance>
         !_clockEnabled ||
         !_foreground ||
         !(ModalRoute.of(context)?.isCurrent ?? true)) return;
-    final now = DateTime.now();
+    final now = _displayNow(_dayClock);
     _clockNow.value = now;
-    final royal = EnterpriseTheme.of(context).isRoyalBlueGold;
-    final current = royal ? royalLocalTime(now) : now;
-    final previous = royal ? royalLocalTime(_now) : _now;
+    final current = _royalClock ? royalLocalTime(now) : now;
+    final previous = _royalClock ? royalLocalTime(_now) : _now;
     final dayChanged = current.year != previous.year ||
         current.month != previous.month ||
         current.day != previous.day;
@@ -110,13 +114,31 @@ class CheckAttendanceState extends State<CheckAttendance>
       final provider = context.read<DashboardProvider>();
       if (provider.features['attendance'] == '1') {
         unawaited(provider.refreshMonthlyAttendanceSummary());
-        if (royal) widget.onRetryDashboard?.call();
+        if (_royalClock) widget.onRetryDashboard?.call();
       }
     }
   }
 
+  DateTime _displayNow(bool synced) {
+    if (!synced) return DateTime.now();
+    final monitor = DeviceClockMonitor.instance;
+    final offset = monitor.isFresh(staleAfter: const Duration(minutes: 10))
+        ? monitor.latest?.offset
+        : null;
+    return DateTime.now().add(offset ?? Duration.zero);
+  }
+
+  void _onScannerVisibilityChanged(bool visible) {
+    if (!mounted || _scannerVisible == visible) return;
+    _scannerVisible = visible;
+    _syncPulse();
+  }
+
   void _syncPulse() {
-    final shouldAnimate = _clockEnabled && _foreground && _animateAttendance;
+    final shouldAnimate = _clockEnabled &&
+        _foreground &&
+        _animateAttendance &&
+        (!_dayClock || _scannerVisible);
     if (shouldAnimate && !_pulseController.isAnimating) {
       _pulseController.repeat();
     } else if (!shouldAnimate && _pulseController.isAnimating) {
@@ -128,10 +150,26 @@ class CheckAttendanceState extends State<CheckAttendance>
   void didChangeDependencies() {
     super.didChangeDependencies();
     _clockEnabled = TickerMode.valuesOf(context).enabled;
+    final theme = EnterpriseTheme.of(context);
+    _royalClock = theme.isRoyalBlueGold;
+    final dayClock = theme.isRoyalDay;
+    if (dayClock != _dayClock) {
+      _scannerVisible = false;
+      _dayClock = dayClock;
+      _now = _displayNow(dayClock);
+      _clockNow.value = _now;
+    }
     final dashboard = context.watch<DashboardProvider>();
-    _animateAttendance = dashboard.animated &&
+    final animateAttendance = dashboard.animated &&
         dashboard.attendanceMethods.isNotEmpty &&
-        !MediaQuery.disableAnimationsOf(context);
+        !MediaQuery.disableAnimationsOf(context) &&
+        (!dayClock ||
+            (dashboard.features['attendance'] == '1' &&
+                theme.layout.shows(LayoutItem.scanner) &&
+                (context.read<ThemeProvider?>()?.effectEnabled('qr_pulse') ??
+                    true)));
+    if (!animateAttendance) _scannerVisible = false;
+    _animateAttendance = animateAttendance;
     _syncPulse();
     final methods = dashboard.attendanceMethods;
     if (!listEquals(_resolvedAttendanceMethods, methods)) {
@@ -340,7 +378,8 @@ class CheckAttendanceState extends State<CheckAttendance>
     }
   }
 
-  Future<void> scanQr({bool royal = false, String attendanceStatus = ''}) async {
+  Future<void> scanQr(
+      {bool royal = false, String attendanceStatus = ''}) async {
     final ok = await _ensureWithinScanDistanceIfPossible();
     if (!ok || !mounted) return;
 
@@ -612,8 +651,9 @@ class CheckAttendanceState extends State<CheckAttendance>
           builder: (_) => Dialog(
             child: CustomAlertDialog(
               message,
-              actionLabel:
-                  showRetry ? translate('attendance_messages.check_again') : null,
+              actionLabel: showRetry
+                  ? translate('attendance_messages.check_again')
+                  : null,
             ),
           ),
         ) ??
@@ -875,6 +915,8 @@ class CheckAttendanceState extends State<CheckAttendance>
       summary: dashboardProvider.monthlyAttendanceSummary,
       pulseController: _pulseController,
       animated: _animateAttendance,
+      onScannerVisibilityChanged:
+          _dayClock ? _onScannerVisibilityChanged : null,
       onAttendanceTap: () => _handleAttendanceTap(attandanceType),
       onRefreshZone: () => _refreshZoneStatus(force: true),
       allowedDistanceMeters: allowedDistance,
@@ -893,7 +935,6 @@ class CheckAttendanceState extends State<CheckAttendance>
     );
   }
 }
-
 
 class _MapZoomControls extends StatelessWidget {
   const _MapZoomControls({

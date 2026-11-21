@@ -13,6 +13,7 @@ import 'package:cnattendance/widget/customalertdialog.dart';
 import 'package:cnattendance/widget/homescreen/checkattendance.dart';
 import 'package:cnattendance/widget/homescreen/overviewdashboard.dart';
 import 'package:cnattendance/widget/premium_background.dart';
+import 'package:cnattendance/theme/app_theme_mode.dart';
 import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/theme/theme_layout.dart';
 import 'package:flutter/material.dart';
@@ -371,58 +372,72 @@ class HomeScreenState extends State<HomeScreen> {
     };
     return Stack(
       children: [
-        const Positioned.fill(
-          child: PremiumBackground(child: SizedBox.expand()),
+        Positioned.fill(
+          child: PremiumBackground(
+            imageBackground: enterprise.mode == AppThemeMode.light
+                ? 'assets/images/home_bg.jpg'
+                : null,
+            child: const SizedBox.expand(),
+          ),
         ),
-        Scaffold(
-          backgroundColor: Colors.transparent,
-          body: FocusDetector(
-            onFocusGained: () {
-              if (_dashboardLoadedOnce) {
-                unawaited(loadDashboard());
-              }
-            },
-            child: RefreshIndicator(
-              triggerMode: RefreshIndicatorTriggerMode.onEdge,
-              color: enterprise.accent,
-              backgroundColor: enterprise.cardBackground,
-              edgeOffset: 50,
-              onRefresh: () {
-                return loadDashboard(force: true);
+        HomeSurfaceStyle(
+          clean: enterprise.mode == AppThemeMode.light,
+          child: Scaffold(
+            backgroundColor: Colors.transparent,
+            body: FocusDetector(
+              onFocusGained: () {
+                if (_dashboardLoadedOnce) {
+                  unawaited(loadDashboard());
+                }
               },
-              child: SafeArea(
+              child: RefreshIndicator(
+                triggerMode: RefreshIndicatorTriggerMode.onEdge,
+                color: enterprise.accent,
+                backgroundColor: enterprise.cardBackground,
+                edgeOffset: 50,
+                onRefresh: () {
+                  return loadDashboard(force: true);
+                },
+                child: SafeArea(
                   child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: EdgeInsets.only(top: showMenuInset ? 54 : 0),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 760),
-                    child: showAttendance || royal
-                        ? RepaintBoundary(
-                            child: CheckAttendance(
-                              controller: controller,
-                              otherSections: sections,
-                              dashboardLoading: !_dashboardLoadedOnce &&
-                                  !_dashboardLoadFailed,
-                              dashboardError: _dashboardLoadFailed,
-                              onRetryDashboard: () =>
-                                  loadDashboard(force: true),
-                            ),
-                          )
-                        : Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              for (final item
-                                  in enterprise.layout.visible(LayoutArea.home))
-                                if (sections[item] case final Widget section)
-                                  KeyedSubtree(
-                                      key: ValueKey(item), child: section),
-                              const SizedBox(height: 6),
-                            ],
-                          ),
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: EdgeInsets.only(
+                      top: showMenuInset ? 54 : 0,
+                      bottom: enterprise.isRoyalDay ? 44 : 0,
+                    ),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 760),
+                        child: showAttendance || royal
+                            ? RepaintBoundary(
+                                child: CheckAttendance(
+                                  controller: controller,
+                                  otherSections: sections,
+                                  dashboardLoading: !_dashboardLoadedOnce &&
+                                      !_dashboardLoadFailed,
+                                  dashboardError: _dashboardLoadFailed,
+                                  onRetryDashboard: () =>
+                                      loadDashboard(force: true),
+                                ),
+                              )
+                            : Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  for (final item in enterprise.layout
+                                      .visible(LayoutArea.home))
+                                    if (sections[item] case final Widget section)
+                                      KeyedSubtree(
+                                        key: ValueKey(item),
+                                        child: section,
+                                      ),
+                                  const SizedBox(height: 6),
+                                ],
+                              ),
+                      ),
+                    ),
                   ),
                 ),
-              )),
+              ),
             ),
           ),
         ),

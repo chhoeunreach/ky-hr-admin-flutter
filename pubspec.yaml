@@ -159,3 +159,10 @@ flutter:
     - assets/raw/
     - assets/i18n/
     - assets/royal_blue_gold/decorations/
+    - assets/themes/royal_blue_day/backgrounds/
+    - assets/themes/royal_blue_day/banners/
+    - assets/themes/royal_blue_day/ornaments/
+    - assets/themes/royal_blue_day/scanner/
+    - assets/themes/royal_blue_day/icons/
+    - assets/themes/royal_blue_day/placeholders/
+    - assets/themes/royal_blue_day/quotations/

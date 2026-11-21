@@ -10,6 +10,7 @@ import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:cnattendance/theme/royal_blue_day_theme.dart';
 import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
@@ -34,7 +35,7 @@ extension _CommunityTheme on BuildContext {
 
   Color get _communityPage {
     final theme = EnterpriseTheme.of(this);
-    return theme.isDark
+    return theme.isDark || theme.isRoyalDay
         ? theme.colors.backgroundColor
         : _communityColors.surfaceContainerLow;
   }
@@ -1328,6 +1329,7 @@ class SocialStoriesStrip extends StatelessWidget {
     required this.onCreate,
     required this.onRetry,
     required this.onOpen,
+    this.royalDay = false,
   });
 
   final List<Map<String, dynamic>> groups;
@@ -1337,6 +1339,7 @@ class SocialStoriesStrip extends StatelessWidget {
   final VoidCallback onCreate;
   final VoidCallback onRetry;
   final ValueChanged<int> onOpen;
+  final bool royalDay;
 
   @override
   Widget build(BuildContext context) {
@@ -1354,35 +1357,39 @@ class SocialStoriesStrip extends StatelessWidget {
     }
     if (!canCreate && groups.isEmpty) return const SizedBox.shrink();
     return SizedBox(
-        height: 88,
+        height: royalDay ? 86 : 88,
         child: ListView.separated(
-            padding: const EdgeInsets.fromLTRB(10, 2, 10, 4),
+            padding: royalDay
+                ? const EdgeInsets.symmetric(vertical: 4)
+                : const EdgeInsets.fromLTRB(10, 2, 10, 4),
             scrollDirection: Axis.horizontal,
             itemCount: groups.length + (canCreate ? 1 : 0),
-            separatorBuilder: (_, __) => const SizedBox(width: 5),
+            separatorBuilder: (_, __) => SizedBox(width: royalDay ? 8 : 5),
             itemBuilder: (context, index) {
               if (canCreate && index == 0) {
-                return _CreateStoryCard(onTap: onCreate);
+                return _CreateStoryCard(onTap: onCreate, royalDay: royalDay);
               }
               final group = groups[index - (canCreate ? 1 : 0)];
               return _StoryCard(
                   group: group,
+                  royalDay: royalDay,
                   onTap: () => onOpen(index - (canCreate ? 1 : 0)));
             }));
   }
 }
 
 class _CreateStoryCard extends StatelessWidget {
-  const _CreateStoryCard({required this.onTap});
+  const _CreateStoryCard({required this.onTap, required this.royalDay});
   final VoidCallback onTap;
+  final bool royalDay;
 
   @override
   Widget build(BuildContext context) {
     final colors = context._communityColors;
     return SizedBox(
-        width: 62,
+        width: royalDay ? 82 : 62,
         child: Card(
-            color: context._communitySurface,
+            color: royalDay ? RoyalDayColors.white : context._communitySurface,
             clipBehavior: Clip.antiAlias,
             margin: EdgeInsets.zero,
             elevation: 0,
@@ -1405,12 +1412,17 @@ class _CreateStoryCard extends StatelessWidget {
                         child: Center(
                             child: DecoratedBox(
                                 decoration: BoxDecoration(
+                                    gradient: royalDay
+                                        ? RoyalDayColors.controls
+                                        : null,
                                     color: colors.primaryContainer,
                                     shape: BoxShape.circle),
                                 child: Padding(
                                     padding: const EdgeInsets.all(7),
                                     child: Icon(Icons.add_rounded,
-                                        color: colors.onPrimaryContainer,
+                                        color: royalDay
+                                            ? Colors.white
+                                            : colors.onPrimaryContainer,
                                         size: 20))))),
                   ),
                   Padding(
@@ -1419,8 +1431,9 @@ class _CreateStoryCard extends StatelessWidget {
                       child: Text(communityText('Create story'),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                              fontWeight: FontWeight.w800, fontSize: 8.5)))
+                          style: TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: royalDay ? 10 : 8.5)))
                 ]))));
   }
 }
@@ -1448,9 +1461,11 @@ class _StoryDurationBadge extends StatelessWidget {
 }
 
 class _StoryCard extends StatelessWidget {
-  const _StoryCard({required this.group, required this.onTap});
+  const _StoryCard(
+      {required this.group, required this.onTap, required this.royalDay});
   final Map<String, dynamic> group;
   final VoidCallback onTap;
+  final bool royalDay;
 
   @override
   Widget build(BuildContext context) {
@@ -1474,7 +1489,7 @@ class _StoryCard extends StatelessWidget {
     final colors = context._communityColors;
     final ringColor = colors.onPrimaryContainer;
     return SizedBox(
-        width: 62,
+        width: royalDay ? 82 : 62,
         child: Card(
             clipBehavior: Clip.antiAlias,
             margin: EdgeInsets.zero,
@@ -1482,8 +1497,12 @@ class _StoryCard extends StatelessWidget {
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
                 side: BorderSide(
-                    color: seen ? Colors.transparent : ringColor,
-                    width: seen ? 0 : 2)),
+                    color: royalDay
+                        ? (seen
+                            ? RoyalDayColors.royalBlue
+                            : RoyalDayColors.gold)
+                        : (seen ? Colors.transparent : ringColor),
+                    width: royalDay || !seen ? 2 : 0)),
             child: InkWell(
                 onTap: onTap,
                 child: Stack(fit: StackFit.expand, children: [
@@ -1493,7 +1512,9 @@ class _StoryCard extends StatelessWidget {
                         fit: BoxFit.cover,
                         memCacheWidth: 300,
                         maxWidthDiskCache: 600,
-                        fadeInDuration: const Duration(milliseconds: 120),
+                        fadeInDuration: MediaQuery.disableAnimationsOf(context)
+                            ? Duration.zero
+                            : const Duration(milliseconds: 120),
                         errorWidget: (_, __, ___) => ColoredBox(
                             color: colors.surfaceContainerHigh,
                             child: Icon(Icons.image_not_supported_outlined,
@@ -1509,10 +1530,12 @@ class _StoryCard extends StatelessWidget {
                                         Color(0xff172a46),
                                         Color(0xff07111f)
                                       ]
-                                    : const [
-                                        Color(0xff6246d9),
-                                        Color(0xffa66cff)
-                                      ])),
+                                    : royalDay
+                                        ? RoyalDayColors.controls.colors
+                                        : const [
+                                            Color(0xff6246d9),
+                                            Color(0xffa66cff)
+                                          ])),
                         child: Center(
                             child: type == 'text' && caption.isNotEmpty
                                 ? Padding(
@@ -1539,7 +1562,8 @@ class _StoryCard extends StatelessWidget {
                             color: Colors.white, size: 24)),
                     if (duration != null)
                       Positioned(
-                          top: 28,
+                          top: royalDay ? null : 28,
+                          bottom: royalDay ? 20 : null,
                           right: 4,
                           child: DecoratedBox(
                               decoration: BoxDecoration(
@@ -4408,7 +4432,10 @@ class _SocialPostComposerState extends State<SocialPostComposer> {
                 department.isNotEmpty ? department : communityText('Employee'),
           });
       await _restoreDraft();
-    } catch (error) { if (kDebugMode) debugPrint('Social feed: failed to restore draft: $error'); }
+    } catch (error) {
+      if (kDebugMode)
+        debugPrint('Social feed: failed to restore draft: $error');
+    }
   }
 
   String get _draftKey => 'social_feed_draft_${widget.post?['id'] ?? 'new'}';

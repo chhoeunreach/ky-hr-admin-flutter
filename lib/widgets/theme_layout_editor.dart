@@ -162,7 +162,9 @@ class _ThemeLayoutEditorState extends State<ThemeLayoutEditor> {
                                 child: const Text('Use theme colors'),
                               ),
                             ),
-                          if (_mode != AppThemeMode.royalBlueGold)
+                          if (_mode != AppThemeMode.royalBlueGold &&
+                              _mode != AppThemeMode.royalBlueDay &&
+                              _mode != AppThemeMode.royalBlueGoldKhmerDay)
                             SwitchListTile(
                               contentPadding: EdgeInsets.zero,
                               title: const Text(

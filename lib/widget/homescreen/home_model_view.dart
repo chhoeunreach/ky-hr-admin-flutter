@@ -19,8 +19,10 @@ import 'package:cnattendance/model/home_banner_config.dart';
 import 'package:cnattendance/models/monthly_attendance_summary.dart';
 import 'package:cnattendance/provider/dashboardprovider.dart';
 import 'package:cnattendance/provider/prefprovider.dart';
+import 'package:cnattendance/theme/app_theme_mode.dart';
 import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/theme/royal_colors.dart';
+import 'package:cnattendance/theme/royal_blue_day_theme.dart';
 import 'package:cnattendance/theme/theme_provider.dart';
 import 'package:cnattendance/theme/theme_layout.dart';
 import 'package:cnattendance/widget/homescreen/home_attendance_highlights.dart';
@@ -30,6 +32,7 @@ import 'royal_quick_actions.dart';
 import 'royal_calendar_activity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:intl/intl.dart';
@@ -38,6 +41,7 @@ import 'package:percent_indicator/linear_percent_indicator.dart';
 import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:visibility_detector/visibility_detector.dart';
 
 Color _premiumTone(Color color, double amount) =>
     Color.lerp(color, Colors.black, amount)!;
@@ -60,12 +64,14 @@ class HomeModelView extends StatefulWidget {
     this.controller,
     this.bannerConfig,
     this.otherSections = const {},
+    this.onScannerVisibilityChanged,
     this.scannerBusy = false,
     this.dashboardLoading = false,
     this.dashboardError = false,
     this.onRetryDashboard,
   });
 
+  final ValueChanged<bool>? onScannerVisibilityChanged;
   final bool scannerBusy;
   final bool dashboardLoading;
   final bool dashboardError;
@@ -100,6 +106,7 @@ class _HomeModelViewState extends State<HomeModelView>
   bool _storiesLoading = true;
   String? _storiesError;
   int _storiesGeneration = 0;
+  Timer? _storyExpiryTimer;
   bool _storiesPermissionWasEnabled = false;
   int _storiesTab = 0;
   final HomeHighlightApi _homeHighlights = HomeHighlightApi();
@@ -149,6 +156,7 @@ class _HomeModelViewState extends State<HomeModelView>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _storiesGeneration++;
+    _storyExpiryTimer?.cancel();
     _slideTimer?.cancel();
     _publicationTimer?.cancel();
     _quoteTimer?.cancel();
@@ -170,6 +178,8 @@ class _HomeModelViewState extends State<HomeModelView>
       slideTick.value++;
     }
     if (_appForeground) {
+      if (_royalTheme && _storiesPermissionWasEnabled)
+        unawaited(_loadStories());
       unawaited(_loadBannerConfig());
       if (_royalTheme && _highlights != null) {
         setState(() => _highlights = null);
@@ -482,11 +492,7 @@ class _HomeModelViewState extends State<HomeModelView>
               group['stories'] is List &&
               (group['stories'] as List).isNotEmpty)
           .toList(growable: false);
-      setState(() {
-        _storyGroups
-          ..clear()
-          ..addAll(groups);
-      });
+      _setActiveStories(groups);
     } catch (error) {
       if (mounted && generation == _storiesGeneration) {
         setState(() => _storiesError = communityError(error));
@@ -495,6 +501,37 @@ class _HomeModelViewState extends State<HomeModelView>
       if (mounted && generation == _storiesGeneration) {
         setState(() => _storiesLoading = false);
       }
+    }
+  }
+
+  void _setActiveStories(List<Map<String, dynamic>> groups) {
+    final now = DateTime.now();
+    DateTime? nextExpiry;
+    final active = <Map<String, dynamic>>[];
+    for (final group in groups) {
+      final stories = <Map>[];
+      for (final story in (group['stories'] as List).whereType<Map>()) {
+        final expiry = DateTime.tryParse('${story['expires_at'] ?? ''}');
+        if (expiry != null) {
+          if (!expiry.isAfter(now)) continue;
+          if (nextExpiry == null || expiry.isBefore(nextExpiry)) {
+            nextExpiry = expiry;
+          }
+        }
+        stories.add(story);
+      }
+      if (stories.isNotEmpty) active.add({...group, 'stories': stories});
+    }
+    setState(() {
+      _storyGroups
+        ..clear()
+        ..addAll(active);
+    });
+    _storyExpiryTimer?.cancel();
+    if (nextExpiry != null) {
+      _storyExpiryTimer = Timer(nextExpiry.difference(now), () {
+        if (mounted) _setActiveStories(_storyGroups);
+      });
     }
   }
 
@@ -509,11 +546,13 @@ class _HomeModelViewState extends State<HomeModelView>
   }
 
   Future<void> _openStory(int index) async {
+    final stories = List<Map<String, dynamic>>.of(_storyGroups);
+    if (index >= stories.length) return;
     FeedVideoAutoplayManager.instance.pauseAll();
     await Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute(
         builder: (_) => SocialStoryViewer(
-          groups: _storyGroups,
+          groups: stories,
           initialGroup: index,
           api: _communityApi,
         ),
@@ -550,8 +589,8 @@ class _HomeModelViewState extends State<HomeModelView>
       LayoutItem.stories: () => _buildStoriesSection(context),
       if (attendanceMethod.isNotEmpty)
         LayoutItem.scanner: () {
-          final background = enterprise.layout.background ??
-              enterprise.colors.backgroundColor;
+          final background =
+              enterprise.layout.background ?? enterprise.colors.backgroundColor;
           final backgroundBrightness =
               ThemeData.estimateBrightnessForColor(background);
           final onBackground = backgroundBrightness == Brightness.dark
@@ -594,8 +633,8 @@ class _HomeModelViewState extends State<HomeModelView>
                 Center(
                   child: Container(
                     margin: const EdgeInsets.only(top: 3, bottom: 5),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 13, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 13, vertical: 4),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                           colors: [enterprise.text, enterprise.accent]),
@@ -751,230 +790,346 @@ class _HomeModelViewState extends State<HomeModelView>
     final quote = _royalQuote;
     final checkIn = '${widget.attendanceList['check-in'] ?? ''}';
     final checkOut = '${widget.attendanceList['check-out'] ?? ''}';
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: RoyalCalendarActivity(
-        clock: widget.clockNow,
-        checkIn: checkIn,
-        checkOut: checkOut,
-        hours: '${widget.attendanceList['production_hour'] ?? ''}',
-        hasAttendance: hasAttendance,
-        showClock: theme.layout.shows(LayoutItem.clock),
-        showTodayAttendance: theme.layout.shows(LayoutItem.workingTime),
-        hasHolidays: provider.features['holiday'] == '1',
-        hasOfficeCalendar: provider.features['leave-calendar'] == '1',
-        isAd: provider.isAD,
-        attendanceLoading: widget.dashboardLoading,
-        attendanceError: widget.dashboardError,
-        builder: (context, parts) {
-          final sections = <Object, Widget? Function()>{
-            LayoutItem.profile: () => widget.otherSections[LayoutItem.profile],
-            LayoutItem.banner: () => ValueListenableBuilder<int>(
-                  valueListenable: slideTick,
-                  builder: (context, _, __) => _buildRoyalBanner(),
-                ),
-            LayoutItem.quote: () =>
-                quote.showQuote && provider.features['quote.view'] == '1'
-                    ? ValueListenableBuilder<int>(
-                        valueListenable: _royalQuoteTick,
-                        builder: (context, _, __) {
-                          final current = _royalQuote;
-                          return RoyalQuotation(
-                            text: current.quote,
-                            author: current.quoteAuthor,
-                            translation: _royalQuoteTranslation(current),
-                            onTap: () => _openRoyalQuote(current),
-                          );
-                        },
-                      )
-                    : null,
-            LayoutItem.clock: () => parts.clock,
-            LayoutItem.summary: () => hasAttendance
+    final day = theme.isRoyalDay;
+
+    Widget attendanceHighlights(HomeBannerConfig? current) {
+      return RoyalAttendanceHighlights(
+        summary: widget.summary,
+        employees: provider.topBonusEmployees,
+        quote:
+            current?.showQuote == true && provider.features['quote.view'] == '1'
+                ? current?.quote
+                : null,
+        onQuote: () {
+          if (current != null) _openRoyalQuote(current);
+        },
+        onViewHighlights: provider.features['home_highlight.view'] == '1'
+            ? _openHighlights
+            : null,
+        loading: widget.dashboardLoading && widget.summary == null,
+        onRetry: widget.dashboardError ? widget.onRetryDashboard : null,
+      );
+    }
+
+    Widget buildSections(BuildContext context, RoyalCalendarParts parts) {
+      final sections = <Object, Widget? Function()>{
+        LayoutItem.profile: () => widget.otherSections[LayoutItem.profile],
+        LayoutItem.banner: () => ValueListenableBuilder<int>(
+              valueListenable: slideTick,
+              builder: (context, _, __) => _buildRoyalBanner(embedded: false),
+            ),
+        LayoutItem.quote: () =>
+            quote.showQuote && provider.features['quote.view'] == '1'
                 ? ValueListenableBuilder<int>(
                     valueListenable: _royalQuoteTick,
                     builder: (context, _, __) {
                       final current = _royalQuote;
-                      return RoyalAttendanceHighlights(
-                        summary: widget.summary,
-                        employees: provider.topBonusEmployees,
-                        quote: current.showQuote &&
-                                provider.features['quote.view'] == '1'
-                            ? current.quote
-                            : null,
-                        onQuote: () => _openRoyalQuote(current),
-                        loading:
-                            widget.dashboardLoading && widget.summary == null,
-                        onRetry: widget.dashboardError
-                            ? widget.onRetryDashboard
-                            : null,
+                      if (!current.showQuote) return const SizedBox.shrink();
+                      return RoyalQuotation(
+                        text: current.quote,
+                        author: current.quoteAuthor,
+                        translation: _royalQuoteTranslation(current),
+                        onTap: () => _openRoyalQuote(current),
                       );
                     },
                   )
                 : null,
-            LayoutItem.stories: () => _buildStoriesSection(context),
-            LayoutItem.scanner: () => showScanner
-                ? RoyalAttendanceScanner(
-                    animation: widget.pulseController,
-                    animate: widget.animated &&
-                        context.select<ThemeProvider, bool>(
-                            (provider) => provider.effectEnabled('qr_pulse')),
-                    method: method,
-                    status: widget.scannerBusy
-                        ? translate('royal.checking_attendance')
-                        : widget.isRefreshingZone
-                            ? translate('attendance_messages.zone_checking')
-                            : radiusBlocked
-                                ? translate('royal.outside_area')
-                                : null,
-                    onTap: widget.scannerBusy ? null : widget.onAttendanceTap,
+        LayoutItem.clock: () {
+          if (!day) return parts.clock;
+          if (parts.clock != null && parts.today != null) {
+            return RoyalPanelPair(first: parts.clock!, second: parts.today!);
+          }
+          return parts.clock ?? parts.today;
+        },
+        LayoutItem.summary: () => !hasAttendance
+            ? null
+            : day
+                ? ValueListenableBuilder<int>(
+                    valueListenable: _royalQuoteTick,
+                    builder: (context, _, __) => attendanceHighlights(
+                      quote.showQuote && provider.features['quote.view'] == '1'
+                          ? _royalQuote
+                          : null,
+                    ),
                   )
-                : null,
-            LayoutItem.workingTime: () => parts.today,
-            LayoutItem.attendanceZone: () => showLocation
-                ? _buildZoneStatusCard(
-                    context: context,
-                    provider: provider,
-                    enterprise: theme,
-                    isInZone: widget.isInZone,
-                    distanceMeters: widget.distanceMeters,
-                    allowedDistance: widget.allowedDistanceMeters,
-                    isRefreshingZone: widget.isRefreshingZone,
-                    onRefresh: widget.onRefreshZone,
-                    mapWidget: provider.isAttendanceMapEnabled
-                        ? widget.mapWidget
-                        : null,
-                  )
-                : null,
-            LayoutItem.quickServices: () => const RoyalQuickActions(),
-            LayoutItem.weeklyReport: () =>
-                widget.otherSections[LayoutItem.weeklyReport],
-            LayoutItem.team: () => widget.otherSections[LayoutItem.team],
-          };
-          final resolved = <(Object, Widget?)>[
-            for (final item in theme.layout.visible(LayoutArea.home))
-              (item, sections[item]?.call()),
-          ];
-          if (widget.dashboardError && provider.features.isEmpty) {
-            var errorAt = 0;
-            for (var i = 0; i < resolved.length; i++) {
-              final key = resolved[i].$1;
-              if (key == LayoutItem.profile ||
-                  key == LayoutItem.banner ||
-                  key == LayoutItem.quote) {
-                errorAt = i + 1;
-              }
-            }
-            resolved.insert(
-              errorAt,
-              (
-                'royal-dashboard-error',
-                RoyalPanel(
-                  child: TextButton(
-                    onPressed: widget.onRetryDashboard,
-                    child: Text(translate('royal.retry')),
+                : ValueListenableBuilder<int>(
+                    valueListenable: _royalQuoteTick,
+                    builder: (context, _, __) =>
+                        attendanceHighlights(_royalQuote),
                   ),
-                ),
-              ),
-            );
-          }
-          final calendar = parts.calendar == null && parts.recent == null
-              ? null
-              : parts.calendar != null && parts.recent != null
-                  ? RoyalPanelPair(
-                      first: parts.calendar!, second: parts.recent!)
-                  : (parts.calendar ?? parts.recent)!;
-          if (calendar != null) {
-            var insertAt = resolved
-                .indexWhere((entry) => entry.$1 == LayoutItem.workingTime);
-            if (insertAt < 0) {
-              insertAt =
-                  resolved.indexWhere((entry) => entry.$1 == LayoutItem.clock);
-            }
-            insertAt = insertAt < 0 ? resolved.length : insertAt + 1;
-            resolved.insert(insertAt, ('royal-calendar', calendar));
-          }
-          final children = <Widget>[];
-          for (var i = 0; i < resolved.length; i++) {
-            final (key, section) = resolved[i];
-            if (section == null) continue;
-            final next = i + 1 < resolved.length ? resolved[i + 1] : null;
-            Widget? paired;
-            if (next != null &&
-                next.$2 != null &&
-                ((key == LayoutItem.clock &&
-                        next.$1 == LayoutItem.workingTime) ||
-                    (key == LayoutItem.workingTime &&
-                        next.$1 == LayoutItem.clock))) {
-            paired = RoyalPanelPair(first: section, second: next.$2!);
-            i++;
-          }
-          final Object childKey =
-              paired == null ? key : 'royal-clock-today';
-          children.add(KeyedSubtree(
-            key: childKey is LayoutItem
-                ? ValueKey(childKey)
-                : ValueKey(childKey as String),
-            child: paired ?? section,
-          ));
-          }
-          children.add(const SizedBox(height: 4));
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            spacing: 8,
-            children: children,
+        LayoutItem.stories: () => _buildStoriesSection(context),
+        LayoutItem.scanner: () {
+          if (!showScanner) return null;
+          final scanner = RoyalAttendanceScanner(
+            animation: widget.pulseController,
+            animate: widget.animated &&
+                (context.read<ThemeProvider?>()?.effectEnabled('qr_pulse') ??
+                    true),
+            method: method,
+            status: widget.scannerBusy
+                ? translate('royal.checking_attendance')
+                : widget.isRefreshingZone
+                    ? translate('attendance_messages.zone_checking')
+                    : radiusBlocked
+                        ? translate('royal.outside_area')
+                        : null,
+            onTap: widget.scannerBusy ? null : widget.onAttendanceTap,
+          );
+          final onVisibilityChanged = widget.onScannerVisibilityChanged;
+          if (onVisibilityChanged == null || !widget.animated) return scanner;
+          return VisibilityDetector(
+            key: const ValueKey('royal-day-attendance-scanner'),
+            onVisibilityChanged: (info) =>
+                onVisibilityChanged(info.visibleFraction > 0),
+            child: scanner,
           );
         },
-      ),
+        LayoutItem.workingTime: () =>
+            day && theme.layout.shows(LayoutItem.clock) ? null : parts.today,
+        LayoutItem.attendanceZone: () => !day && showLocation
+            ? _buildZoneStatusCard(
+                context: context,
+                provider: provider,
+                enterprise: theme,
+                isInZone: widget.isInZone,
+                distanceMeters: widget.distanceMeters,
+                allowedDistance: widget.allowedDistanceMeters,
+                isRefreshingZone: widget.isRefreshingZone,
+                onRefresh: widget.onRefreshZone,
+                mapWidget:
+                    provider.isAttendanceMapEnabled ? widget.mapWidget : null,
+              )
+            : null,
+        LayoutItem.quickServices: () => day
+            ? widget.otherSections[LayoutItem.quickServices]
+            : const RoyalQuickActions(),
+        LayoutItem.weeklyReport: () =>
+            widget.otherSections[LayoutItem.weeklyReport],
+        LayoutItem.team: () => widget.otherSections[LayoutItem.team],
+      };
+      final resolved = <(Object, Widget?)>[
+        for (final item in theme.layout.visible(LayoutArea.home))
+          (item, sections[item]?.call()),
+      ];
+      if (widget.dashboardError && provider.features.isEmpty) {
+        var errorAt = 0;
+        for (var i = 0; i < resolved.length; i++) {
+          final key = resolved[i].$1;
+          if (key == LayoutItem.profile ||
+              key == LayoutItem.banner ||
+              key == LayoutItem.quote) {
+            errorAt = i + 1;
+          }
+        }
+        resolved.insert(
+          errorAt,
+          (
+            'royal-dashboard-error',
+            RoyalPanel(
+              child: TextButton(
+                onPressed: widget.onRetryDashboard,
+                child: Text(translate('royal.retry')),
+              ),
+            ),
+          ),
+        );
+      }
+      final calendar = parts.calendar == null && parts.recent == null
+          ? null
+          : parts.calendar != null && parts.recent != null
+              ? RoyalPanelPair(
+                  first: parts.calendar!,
+                  second: parts.recent!,
+                  matchHeight: false,
+                )
+              : (parts.calendar ?? parts.recent)!;
+      if (calendar != null) {
+        int insertAt;
+        if (day) {
+          insertAt = resolved
+              .indexWhere((entry) => entry.$1 == LayoutItem.quickServices);
+          if (insertAt < 0) {
+            insertAt =
+                resolved.indexWhere((entry) => entry.$1 == LayoutItem.scanner);
+          }
+        } else {
+          insertAt = resolved
+              .indexWhere((entry) => entry.$1 == LayoutItem.workingTime);
+          if (insertAt < 0) {
+            insertAt =
+                resolved.indexWhere((entry) => entry.$1 == LayoutItem.clock);
+          }
+        }
+        insertAt = insertAt < 0 ? resolved.length : insertAt + 1;
+        resolved.insert(insertAt, ('royal-calendar', calendar));
+      }
+      if (day &&
+          theme.layout.shows(LayoutItem.attendanceZone) &&
+          showLocation) {
+        var insertAt =
+            resolved.indexWhere((entry) => entry.$1 == 'royal-calendar');
+        if (insertAt < 0) {
+          insertAt = resolved
+              .indexWhere((entry) => entry.$1 == LayoutItem.quickServices);
+        }
+        if (insertAt < 0) {
+          insertAt =
+              resolved.indexWhere((entry) => entry.$1 == LayoutItem.scanner);
+        }
+        if (insertAt >= 0) insertAt++;
+        if (insertAt < 0) insertAt = resolved.length;
+        resolved.insert(
+          insertAt,
+          (
+            LayoutItem.attendanceZone,
+            _buildZoneStatusCard(
+              context: context,
+              provider: provider,
+              enterprise: theme,
+              isInZone: widget.isInZone,
+              distanceMeters: widget.distanceMeters,
+              allowedDistance: widget.allowedDistanceMeters,
+              isRefreshingZone: widget.isRefreshingZone,
+              onRefresh: widget.onRefreshZone,
+              mapWidget:
+                  provider.isAttendanceMapEnabled ? widget.mapWidget : null,
+            ),
+          ),
+        );
+      }
+      final children = <Widget>[];
+      for (var i = 0; i < resolved.length; i++) {
+        final (key, section) = resolved[i];
+        if (section == null) continue;
+        final next = i + 1 < resolved.length ? resolved[i + 1] : null;
+        Widget? paired;
+        if (next != null &&
+            next.$2 != null &&
+            ((key == LayoutItem.clock && next.$1 == LayoutItem.workingTime) ||
+                (key == LayoutItem.workingTime &&
+                    next.$1 == LayoutItem.clock))) {
+          paired = RoyalPanelPair(first: section, second: next.$2!);
+          i++;
+        }
+        final Object childKey = paired == null ? key : 'royal-clock-today';
+        children.add(KeyedSubtree(
+          key: childKey is LayoutItem
+              ? ValueKey(childKey)
+              : ValueKey(childKey as String),
+          child: paired ?? section,
+        ));
+      }
+      children.add(const SizedBox(height: 4));
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: day ? 12 : 8,
+        children: children,
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: day
+          ? RoyalCalendarActivity(
+              clock: widget.clockNow,
+              checkIn: checkIn,
+              checkOut: checkOut,
+              hours: '${widget.attendanceList['production_hour'] ?? ''}',
+              workProgress: hasAttendance
+                  ? _buildWorkingTimeCard(
+                      context: context,
+                      attendanceList: widget.attendanceList,
+                      enterprise: theme,
+                      compact: true,
+                    )
+                  : null,
+              hasAttendance: hasAttendance,
+              showClock: theme.layout.shows(LayoutItem.clock),
+              showTodayAttendance: theme.layout.shows(LayoutItem.workingTime),
+              hasHolidays: provider.features['holiday'] == '1',
+              hasOfficeCalendar: provider.features['leave-calendar'] == '1',
+              isAd: provider.isAD,
+              attendanceLoading: widget.dashboardLoading,
+              attendanceError: widget.dashboardError,
+              builder: buildSections,
+            )
+          : RoyalCalendarActivity(
+              clock: widget.clockNow,
+              checkIn: checkIn,
+              checkOut: checkOut,
+              hours: '${widget.attendanceList['production_hour'] ?? ''}',
+              hasAttendance: hasAttendance,
+              showClock: theme.layout.shows(LayoutItem.clock),
+              showTodayAttendance: theme.layout.shows(LayoutItem.workingTime),
+              hasHolidays: provider.features['holiday'] == '1',
+              hasOfficeCalendar: provider.features['leave-calendar'] == '1',
+              isAd: provider.isAD,
+              attendanceLoading: widget.dashboardLoading,
+              attendanceError: widget.dashboardError,
+              builder: buildSections,
+            ),
     );
   }
 
-  Widget _buildRoyalBanner() {
+  Widget _buildRoyalBanner({required bool embedded}) {
     final theme = EnterpriseTheme.of(context);
     final slides = _activeSlides;
     final index = slides.isEmpty ? 0 : _slideIndex % slides.length;
     final slide =
         slides.elementAtOrNull(index) ?? const BannerSlide(id: 'angkor');
     final config = _activeSlideshow;
-    return RepaintBoundary(
-      child: RoyalPanel(
-        padding: EdgeInsets.zero,
-        radius: 24,
-        goldEdge: true,
-        child: Listener(
-          onPointerDown: (_) => _handleSlideTouchPause(true),
-          onPointerUp: (_) => _handleSlideTouchPause(false),
-          onPointerCancel: (_) => _handleSlideTouchPause(false),
-          child: GestureDetector(
-            onHorizontalDragStart:
-                slides.length < 2 ? null : (_) => _royalBannerDrag = 0,
-            onHorizontalDragUpdate: slides.length < 2
-                ? null
-                : (details) => _royalBannerDrag += details.primaryDelta ?? 0,
-            onHorizontalDragEnd: slides.length < 2
-                ? null
-                : (details) {
-                    final velocity = details.primaryVelocity ?? 0;
-                    final direction = _royalBannerDrag.abs() >= 24
-                        ? _royalBannerDrag
-                        : velocity;
-                    if (direction.abs() >= 24) {
-                      _showRoyalSlide(
-                          index + (direction < 0 ? 1 : -1), slides.length);
-                    }
-                  },
-            child: Stack(
-              children: [
-                Positioned.fill(
-                  child: BannerSlideSwitcher(
-                    transition: config.transition,
-                    child: KeyedSubtree(
-                      key: ValueKey((slide.id, slide.imageUrl)),
-                      child: SizedBox.expand(
-                        child: _buildSlideArtwork(slide, theme, null),
-                      ),
+    final day = theme.isRoyalDay;
+    final artworkHeight = day
+        ? 112 + (MediaQuery.textScalerOf(context).scale(42) - 42) * 2
+        : 162 + (MediaQuery.textScalerOf(context).scale(42) - 42) * 3;
+    final dayArtwork = embedded || day;
+    final canvas = RepaintBoundary(
+      child: Listener(
+        onPointerDown: (_) => _handleSlideTouchPause(true),
+        onPointerUp: (_) => _handleSlideTouchPause(false),
+        onPointerCancel: (_) => _handleSlideTouchPause(false),
+        child: GestureDetector(
+          onHorizontalDragStart:
+              slides.length < 2 ? null : (_) => _royalBannerDrag = 0,
+          onHorizontalDragUpdate: slides.length < 2
+              ? null
+              : (details) => _royalBannerDrag += details.primaryDelta ?? 0,
+          onHorizontalDragEnd: slides.length < 2
+              ? null
+              : (details) {
+                  final velocity = details.primaryVelocity ?? 0;
+                  final direction = _royalBannerDrag.abs() >= 24
+                      ? _royalBannerDrag
+                      : velocity;
+                  if (direction.abs() >= 24) {
+                    _showRoyalSlide(
+                        index + (direction < 0 ? 1 : -1), slides.length);
+                  }
+                },
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: BannerSlideSwitcher(
+                  transition: config.transition,
+                  child: KeyedSubtree(
+                    key: ValueKey((slide.id, slide.imageUrl)),
+                    child: SizedBox.expand(
+                      child: _buildSlideArtwork(slide, theme, null),
                     ),
                   ),
                 ),
+              ),
+              if (dayArtwork)
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: SvgPicture.asset(
+                      '$royalDayAssets/banners/banner_overlay.svg',
+                      fit: BoxFit.fill,
+                      excludeFromSemantics: true,
+                    ),
+                  ),
+                )
+              else
                 const Positioned.fill(
                   child: DecoratedBox(
                     decoration: BoxDecoration(
@@ -989,101 +1144,140 @@ class _HomeModelViewState extends State<HomeModelView>
                     ),
                   ),
                 ),
-                Material(
-                  type: MaterialType.transparency,
-                  child: InkWell(
-                    onTap: slide.hasLink
-                        ? () => _launchBannerUrl(slide.linkUrl)
-                        : null,
-                    child: ConstrainedBox(
-                      key: const ValueKey('home-banner-canvas'),
-                      constraints: const BoxConstraints(minHeight: 120),
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 12, 12, 8),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          mainAxisSize: MainAxisSize.min,
-                          spacing: 4,
-                          children: [
-                            FractionallySizedBox(
-                              widthFactor: .62,
-                              alignment: Alignment.centerLeft,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                spacing: 3,
-                                children: [
-                                  Text('KNEAYERNG  /  DIGITAL HRMS',
-                                      style: TextStyle(
-                                          color: theme.accent,
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w900)),
+              if (dayArtwork)
+                Positioned(
+                  right: 0,
+                  left: 0,
+                  bottom: 0,
+                  height: 27,
+                  child: IgnorePointer(
+                    child: SvgPicture.asset(
+                      '$royalDayAssets/ornaments/gold_wave.svg',
+                      fit: BoxFit.fill,
+                      excludeFromSemantics: true,
+                    ),
+                  ),
+                ),
+              Material(
+                type: MaterialType.transparency,
+                child: InkWell(
+                  onTap: slide.hasLink
+                      ? () => _launchBannerUrl(slide.linkUrl)
+                      : null,
+                  child: ConstrainedBox(
+                    key: const ValueKey('home-banner-canvas'),
+                    constraints: BoxConstraints(
+                      minHeight: dayArtwork ? artworkHeight : 120,
+                      maxHeight: dayArtwork ? artworkHeight : double.infinity,
+                    ),
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(
+                          16, dayArtwork ? 6 : 12, 12, dayArtwork ? 25 : 8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        mainAxisSize: MainAxisSize.min,
+                        spacing: 6,
+                        children: [
+                          FractionallySizedBox(
+                            widthFactor: dayArtwork ? .74 : .62,
+                            alignment: Alignment.centerLeft,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              spacing: 3,
+                              children: [
+                                Text('KNEAYERNG  /  DIGITAL HRMS',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                        color: theme.accent,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w900)),
+                                Text(
+                                    slide.title.trim().isEmpty
+                                        ? translate('royal.banner_title')
+                                        : slide.title,
+                                    maxLines: dayArtwork ? 2 : 3,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: dayArtwork ? 15 : 18,
+                                        fontWeight: FontWeight.w900)),
+                                if (slide.subtitle.isNotEmpty ||
+                                    slide.title.isEmpty)
                                   Text(
-                                      slide.title.trim().isEmpty
-                                          ? translate('royal.banner_title')
-                                          : slide.title,
-                                      maxLines: 3,
+                                      slide.subtitle.isEmpty
+                                          ? translate('royal.banner_subtitle')
+                                          : slide.subtitle,
+                                      maxLines: dayArtwork ? 2 : 3,
                                       overflow: TextOverflow.ellipsis,
                                       style: const TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w900)),
-                                  if (slide.subtitle.isNotEmpty ||
-                                      slide.title.isEmpty)
-                                    Text(
-                                        slide.subtitle.isEmpty
-                                            ? translate('royal.banner_subtitle')
-                                            : slide.subtitle,
-                                        maxLines: 3,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(fontSize: 10)),
-                                  if (slide.hasLink &&
-                                      slide.actionLabel.isNotEmpty)
-                                    Text(slide.actionLabel,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                            color: theme.accent,
-                                            fontWeight: FontWeight.w800)),
-                                ],
-                              ),
+                                          color: Colors.white, fontSize: 11)),
+                                if (slide.hasLink &&
+                                    slide.actionLabel.isNotEmpty)
+                                  Text(slide.actionLabel,
+                                      maxLines: dayArtwork ? 1 : 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                          color: theme.accent,
+                                          fontWeight: FontWeight.w800)),
+                              ],
                             ),
-                            if (config.showIndicators && slides.length > 1)
-                              Wrap(
-                                alignment: WrapAlignment.center,
-                                spacing: 4,
-                                children: [
-                                  for (var i = 0; i < slides.length; i++)
-                                    Semantics(
-                                      selected: i == index,
-                                      label:
-                                          '${translate('royal.banner_slide')} ${i + 1}',
-                                      child: Container(
-                                        key: ValueKey('royal-slide-$i'),
-                                        width: i == index ? 14 : 5,
-                                        height: 5,
-                                        decoration: BoxDecoration(
-                                          color: i == index
-                                              ? theme.accent
-                                              : Colors.white70,
-                                          borderRadius:
-                                              BorderRadius.circular(5),
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                          ],
-                        ),
+                          ),
+                          if (!dayArtwork &&
+                              config.showIndicators &&
+                              slides.length > 1)
+                            _buildRoyalIndicators(
+                                slides.length, index, theme.accent),
+                        ],
                       ),
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+              if (dayArtwork && config.showIndicators && slides.length > 1)
+                Positioned(
+                  left: 12,
+                  right: 12,
+                  bottom: 8,
+                  child:
+                      _buildRoyalIndicators(slides.length, index, theme.accent),
+                ),
+            ],
           ),
         ),
       ),
     );
+    return embedded
+        ? canvas
+        : RoyalPanel(
+            padding: EdgeInsets.zero,
+            radius: 24,
+            goldEdge: true,
+            blueSurface: day,
+            child: canvas,
+          );
   }
+
+  Widget _buildRoyalIndicators(int count, int index, Color accent) => Wrap(
+        alignment: WrapAlignment.center,
+        spacing: 4,
+        children: [
+          for (var i = 0; i < count; i++)
+            Semantics(
+              selected: i == index,
+              label: '${translate('royal.banner_slide')} ${i + 1}',
+              child: Container(
+                key: ValueKey('royal-slide-$i'),
+                width: i == index ? 14 : 5,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: i == index ? accent : Colors.white70,
+                  borderRadius: BorderRadius.circular(5),
+                ),
+              ),
+            ),
+        ],
+      );
 
   void _showRoyalSlide(int index, int count) {
     _slideIndex =
@@ -1211,8 +1405,7 @@ class _HomeModelViewState extends State<HomeModelView>
             : null;
         final animateBorder = slideshow.animateBorder && _appForeground;
         if (enterprise.layout.separatesBanner(enterprise.mode)) {
-          if (item == LayoutItem.quote &&
-              (!config.showQuote || !canQuote)) {
+          if (item == LayoutItem.quote && (!config.showQuote || !canQuote)) {
             return const SizedBox.shrink();
           }
           return Padding(
@@ -1769,8 +1962,13 @@ class _HomeModelViewState extends State<HomeModelView>
           ? 'assets/images/angkor_wat_banner.jpg'
           : HomeBannerConfig.defaultAngkorWatAsset,
       fit: BoxFit.cover,
+      alignment:
+          enterprise.isRoyalDay ? Alignment.centerRight : Alignment.center,
       cacheWidth: enterprise.isRoyalBlueGold ? 1024 : null,
-      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+      errorBuilder: (_, __, ___) => enterprise.isRoyalDay
+          ? SvgPicture.asset('$royalDayAssets/banners/banner_fallback.svg',
+              fit: BoxFit.cover, excludeFromSemantics: true)
+          : const SizedBox.shrink(),
     );
     final gradients = switch (wallpaper) {
       'gradient:royal' => const [Color(0xff0b192c), Color(0xff1e3e62)],
@@ -1810,7 +2008,9 @@ class _HomeModelViewState extends State<HomeModelView>
         imageUrl: wallpaper,
         fit: BoxFit.cover,
         memCacheWidth: 1000,
-        placeholder: (_, __) => ColoredBox(color: enterprise.secondary),
+        placeholder: (_, __) => enterprise.isRoyalDay
+            ? fallback
+            : ColoredBox(color: enterprise.secondary),
         errorWidget: (_, __, ___) => fallback,
       );
     }
@@ -2001,11 +2201,18 @@ class _HomeModelViewState extends State<HomeModelView>
     );
   }
 
+  void _openHighlights() {
+    Navigator.of(context).push(MaterialPageRoute<void>(
+      builder: (_) => const HomeHighlightsScreen(),
+    ));
+  }
+
   Widget _buildRoyalMedia(
       bool canViewStories, bool canCreateStories, bool canViewHighlights) {
     if (!canViewStories && !canViewHighlights) {
       return const SizedBox.shrink();
     }
+    final day = EnterpriseTheme.of(context).isRoyalDay;
     final selected =
         canViewStories ? ((_storiesTab == 1 && canViewHighlights) ? 1 : 0) : 1;
     if (selected == 1) _highlights ??= _homeHighlights.index();
@@ -2019,12 +2226,20 @@ class _HomeModelViewState extends State<HomeModelView>
             if (canViewStories) _mediaTab(0, selected, 'royal.stories'),
             if (canViewHighlights) _mediaTab(1, selected, 'royal.highlights'),
             TextButton(
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                    builder: (_) => selected == 0
-                        ? const SocialFeedScreen()
-                        : const HomeHighlightsScreen()),
-              ),
+              onPressed: selected == 0
+                  ? () => Navigator.of(context).push(MaterialPageRoute<void>(
+                        builder: (_) => const SocialFeedScreen(),
+                      ))
+                  : _openHighlights,
+              style: day
+                  ? TextButton.styleFrom(
+                      foregroundColor: RoyalDayColors.primary,
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      minimumSize: const Size(0, 34),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      visualDensity: VisualDensity.compact,
+                    )
+                  : null,
               child: Text(translate('royal.view_all')),
             ),
           ],
@@ -2038,6 +2253,7 @@ class _HomeModelViewState extends State<HomeModelView>
           else
             SocialStoriesStrip(
               groups: _storyGroups,
+              royalDay: day,
               loading: _storiesLoading,
               error: _storiesError,
               canCreate: canCreateStories,
@@ -2121,22 +2337,68 @@ class _HomeModelViewState extends State<HomeModelView>
     );
   }
 
-  Widget _mediaTab(int index, int selected, String label) => Semantics(
-        selected: index == selected,
-        child: index == selected
-            ? FilledButton(
-                style: FilledButton.styleFrom(
-                  backgroundColor: EnterpriseTheme.of(context).accent,
-                  foregroundColor: RoyalColors.navy,
-                ),
-                onPressed: () => setState(() => _storiesTab = index),
-                child: Text(translate(label)),
-              )
-            : OutlinedButton(
-                onPressed: () => setState(() => _storiesTab = index),
-                child: Text(translate(label)),
-              ),
+  Widget _mediaTab(int index, int selected, String label) {
+    final theme = EnterpriseTheme.of(context);
+    if (theme.isRoyalDay) {
+      final active = index == selected;
+      final luxuryDay = theme.isRoyalLuxuryDay;
+      return Semantics(
+        selected: active,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: active
+                ? (luxuryDay
+                    ? KhmerLuxuryColors.controls
+                    : RoyalDayColors.controls)
+                : (luxuryDay
+                    ? KhmerLuxuryColors.frosted
+                    : RoyalDayColors.frosted),
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: OutlinedButton(
+            style: OutlinedButton.styleFrom(
+              foregroundColor: active
+                  ? Colors.white
+                  : luxuryDay
+                      ? KhmerLuxuryColors.royalBlue
+                      : RoyalDayColors.primary,
+              side: BorderSide(
+                  color: active
+                      ? luxuryDay
+                          ? KhmerLuxuryColors.metallicGold
+                          : RoyalDayColors.gold
+                      : Colors.white),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              minimumSize: const Size(0, 34),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              visualDensity: VisualDensity.compact,
+              shape: const StadiumBorder(),
+              textStyle:
+                  const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+            ),
+            onPressed: () => setState(() => _storiesTab = index),
+            child: Text(translate(label)),
+          ),
+        ),
       );
+    }
+    return Semantics(
+      selected: index == selected,
+      child: index == selected
+          ? FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: EnterpriseTheme.of(context).accent,
+                foregroundColor: RoyalColors.navy,
+              ),
+              onPressed: () => setState(() => _storiesTab = index),
+              child: Text(translate(label)),
+            )
+          : OutlinedButton(
+              onPressed: () => setState(() => _storiesTab = index),
+              child: Text(translate(label)),
+            ),
+    );
+  }
 
   Color _readableColor(Color background, Color light, Color dark) {
     return background.computeLuminance() > 0.45 ? dark : light;
@@ -2188,12 +2450,19 @@ class _HomeModelViewState extends State<HomeModelView>
         ? 100.0
         : (isTablet ? 132.0 : 110.0);
     final qrCircleColor = isCheckedIn ? enterprise.accent : enterprise.primary;
-    final qrFaceColors = [
-      _premiumTone(enterprise.accent, 0.38),
-      _premiumTone(enterprise.primary, 0.28),
-      _premiumTone(enterprise.secondary, 0.18),
-      _premiumTone(enterprise.secondary, 0.42),
-    ];
+    final qrFaceColors = enterprise.mode == AppThemeMode.light
+        ? [
+            Color.lerp(enterprise.primary, Colors.white, 0.38)!,
+            Color.lerp(enterprise.primary, enterprise.accent, 0.22)!,
+            enterprise.primary,
+            Color.lerp(enterprise.primary, const Color(0xFF0054D7), 0.12)!,
+          ]
+        : [
+            _premiumTone(enterprise.accent, 0.38),
+            _premiumTone(enterprise.primary, 0.28),
+            _premiumTone(enterprise.secondary, 0.18),
+            _premiumTone(enterprise.secondary, 0.42),
+          ];
     final qrIconColor =
         _readableColor(qrFaceColors.last, Colors.white, Colors.black);
 
@@ -2545,6 +2814,7 @@ class _HomeModelViewState extends State<HomeModelView>
     required BuildContext context,
     required Map<String, dynamic> attendanceList,
     required EnterpriseTheme enterprise,
+    bool compact = false,
   }) {
     final percent =
         (attendanceList['production-time'] as num?)?.toDouble() ?? 0.0;
@@ -2552,13 +2822,41 @@ class _HomeModelViewState extends State<HomeModelView>
     final isCheckedIn =
         attendanceList['check-in'] != "-" && attendanceList['check-out'] == "-";
     final color = isCheckedIn ? const Color(0xFF10B981) : enterprise.accent;
+    final day = enterprise.isRoyalDay;
+    if (day &&
+        (widget.dashboardLoading || widget.dashboardError) &&
+        attendanceList.isEmpty) {
+      final message = widget.dashboardError
+          ? TextButton(
+              onPressed: widget.onRetryDashboard,
+              child: Text(translate('royal.retry')))
+          : const LinearProgressIndicator();
+      return compact ? message : RoyalPanel(child: message);
+    }
+
+    if (compact) {
+      return Semantics(
+        label: translate('attendance_screen.working_time'),
+        child: LinearPercentIndicator(
+          lineHeight: 5,
+          padding: EdgeInsets.zero,
+          percent: safePercent,
+          barRadius: const Radius.circular(20),
+          backgroundColor: Colors.white.withValues(alpha: .28),
+          progressColor: color,
+        ),
+      );
+    }
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+      margin: enterprise.isRoyalDay
+          ? EdgeInsets.zero
+          : const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: enterprise.cardBackground,
-        borderRadius: BorderRadius.circular(16),
+        gradient: enterprise.isRoyalDay ? RoyalDayColors.frosted : null,
+        borderRadius: BorderRadius.circular(enterprise.isRoyalDay ? 20 : 16),
         border: Border.all(
           color: enterprise.cardBorder,
         ),
@@ -2582,14 +2880,17 @@ class _HomeModelViewState extends State<HomeModelView>
                 child: Text(
                   translate('attendance_screen.working_time'),
                   style: TextStyle(
-                    color: enterprise.text,
+                    color: enterprise.isRoyalDay
+                        ? enterprise.primary
+                        : enterprise.text,
                     fontWeight: FontWeight.w800,
                     fontSize: 12,
                   ),
                 ),
               ),
               Text(
-                attendanceList['production_hour']?.toString() ?? '00:00',
+                attendanceList['production_hour']?.toString() ??
+                    (enterprise.isRoyalDay ? '—' : '00:00'),
                 style: TextStyle(
                   color: enterprise.text,
                   fontWeight: FontWeight.w900,

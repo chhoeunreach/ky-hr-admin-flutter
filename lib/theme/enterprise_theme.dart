@@ -45,7 +45,9 @@ class EnterpriseTheme {
   }
 
   bool get isDark => colors.isDark;
-  bool get isRoyalBlueGold => mode == AppThemeMode.royalBlueGold;
+  bool get isRoyalDay => mode == AppThemeMode.royalBlueDay || isRoyalLuxuryDay;
+  bool get isRoyalLuxuryDay => mode == AppThemeMode.royalBlueGoldKhmerDay;
+  bool get isRoyalBlueGold => mode == AppThemeMode.royalBlueGold || isRoyalDay;
   bool get isKhmerHeritage => mode == AppThemeMode.khmerHeritage;
   Color get primary => colors.primaryColor;
   Color get secondary => colors.secondaryColor;
@@ -163,6 +165,45 @@ class EnterpriseGlass extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final enterprise = EnterpriseTheme.of(context);
+    if (HomeSurfaceStyle.isClean(context)) {
+      final card = ClipRRect(
+        borderRadius: BorderRadius.circular(radius),
+        child: Container(
+          padding: padding,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(radius),
+            border: Border.all(color: const Color(0xFFB8DEFF)),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x1A1683E6),
+                blurRadius: 18,
+                offset: Offset(0, 7),
+              ),
+              BoxShadow(
+                color: Color(0x55FFFFFF),
+                blurRadius: 4,
+                offset: Offset(0, 1),
+              ),
+            ],
+          ),
+          child: child,
+        ),
+      );
+      if (MediaQuery.disableAnimationsOf(context)) return card;
+
+      return TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0, end: 1),
+        duration: const Duration(milliseconds: 340),
+        curve: Curves.easeOutCubic,
+        child: card,
+        builder: (context, progress, child) => Transform.translate(
+          offset: Offset(0, 10 * (1 - progress)),
+          child: child,
+        ),
+      );
+    }
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(radius),
       child: BackdropFilter(
@@ -180,4 +221,23 @@ class EnterpriseGlass extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Limits the simplified surface treatment to the Original Mode home screen.
+class HomeSurfaceStyle extends InheritedWidget {
+  final bool clean;
+
+  const HomeSurfaceStyle({
+    Key? key,
+    required this.clean,
+    required Widget child,
+  }) : super(key: key, child: child);
+
+  static bool isClean(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<HomeSurfaceStyle>()?.clean ??
+      false;
+
+  @override
+  bool updateShouldNotify(HomeSurfaceStyle oldWidget) =>
+      clean != oldWidget.clean;
 }

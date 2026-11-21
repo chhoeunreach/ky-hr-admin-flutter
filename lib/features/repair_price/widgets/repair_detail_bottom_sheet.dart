@@ -32,6 +32,7 @@ class RepairDetailBottomSheet extends StatelessWidget {
   }) {
     return showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => RepairDetailBottomSheet(
