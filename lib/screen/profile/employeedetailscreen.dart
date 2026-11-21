@@ -8,320 +8,264 @@ import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class EmployeeDetailScreen extends StatelessWidget {
-  bool _hasValidNetworkImage(String url) {
-    final uri = Uri.tryParse(url.trim());
-    return uri != null &&
-        (uri.scheme == 'http' || uri.scheme == 'https') &&
-        uri.host.isNotEmpty;
+class EmployeeDetailScreen extends StatefulWidget {
+  const EmployeeDetailScreen({
+    super.key,
+    this.employeeId,
+    this.chatUsername,
+    this.chatName = '',
+    this.chatAvatar = '',
+    this.controller,
+  });
+
+  final String? employeeId;
+  final String? chatUsername;
+  final String chatName;
+  final String chatAvatar;
+  final EmployeeDetailController? controller;
+
+  @override
+  State<EmployeeDetailScreen> createState() => _EmployeeDetailScreenState();
+}
+
+class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
+  late final EmployeeDetailController _controller;
+  late final String _employeeId;
+  Future<EmployeeDetail>? _details;
+  EmployeeDetail? _lastDetails;
+  bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = widget.controller ?? EmployeeDetailController();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_details != null) return;
+    final arguments = ModalRoute.of(context)?.settings.arguments;
+    final routeId = arguments is Map ? arguments['employeeId'] : null;
+    _employeeId = (widget.employeeId ?? routeId?.toString() ?? '').trim();
+    _details = _loadDetails();
+  }
+
+  Future<EmployeeDetail> _loadDetails() async {
+    _loading = true;
+    try {
+      final details = await _controller.getEmployeeDetail(
+        _lastDetails?.employeeId ?? _employeeId,
+        username: widget.chatUsername?.trim() ?? '',
+      );
+      if (mounted) _lastDetails = details;
+      return details;
+    } finally {
+      _loading = false;
+    }
+  }
+
+  Future<void> _refresh() async {
+    if (_loading) return;
+    final request = _loadDetails();
+    setState(() {
+      _details = request;
+    });
+    try {
+      await request;
+    } catch (_) {
+      // FutureBuilder displays the error.
+    }
   }
 
   Widget _buildProfileAvatar(String imageUrl) {
-    if (!_hasValidNetworkImage(imageUrl)) {
-      return Container(
-        width: 180,
-        height: 180,
-        color: Colors.white10,
-        alignment: Alignment.center,
-        child: const Icon(
-          Icons.person,
-          color: Colors.white70,
-          size: 64,
-        ),
-      );
-    }
+    const fallback = ColoredBox(
+      color: Colors.white10,
+      child: Center(
+        child: Icon(Icons.person, color: Colors.white70, size: 64),
+      ),
+    );
+    final uri = Uri.tryParse(imageUrl);
+    final hasImage = uri != null &&
+        (uri.scheme == 'http' || uri.scheme == 'https') &&
+        uri.host.isNotEmpty;
 
-    return Image.network(
-      imageUrl,
+    return SizedBox(
       width: 180,
       height: 180,
-      fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) => Container(
-        width: 180,
-        height: 180,
-        color: Colors.white10,
-        alignment: Alignment.center,
-        child: const Icon(
-          Icons.person,
-          color: Colors.white70,
-          size: 64,
+      child: ClipRRect(
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(20),
+          bottomRight: Radius.circular(20),
         ),
+        child: hasImage
+            ? Image.network(
+                imageUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => fallback,
+              )
+            : fallback,
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final model = Get.put(EmployeeDetailController());
-    return Obx(
-      () => Container(
-        decoration: RadialDecoration(),
-        child: Scaffold(
-          backgroundColor: Colors.transparent,
-          appBar: AppBar(
+    return FutureBuilder<EmployeeDetail>(
+      future: _details,
+      builder: (context, snapshot) {
+        final details = _lastDetails;
+        final profile = details?.profile;
+        final name = (profile?.name.trim().isNotEmpty ?? false)
+            ? profile!.name
+            : widget.chatName.trim();
+        final avatar = (profile?.avatar.trim().isNotEmpty ?? false)
+            ? profile!.avatar.trim()
+            : widget.chatAvatar.trim();
+        final loading = snapshot.connectionState == ConnectionState.waiting;
+
+        return Container(
+          decoration: RadialDecoration(),
+          child: Scaffold(
             backgroundColor: Colors.transparent,
-            elevation: 0,
-            title: Text(model.profile.value.name == ""
-                ? translate('employee_detail_screen.profile')
-                : model.profile.value.name),
-          ),
-          resizeToAvoidBottomInset: true,
-          body: RefreshIndicator(
-            onRefresh: () {
-              return model.getEmployeeDetail(Get.arguments["employeeId"]);
-            },
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              child: Obx(
-                () => Column(
-                  children: [
-                    Container(
-                      child: Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            ClipRRect(
-                                borderRadius: BorderRadius.only(
-                                    topLeft: Radius.circular(20),
-                                    bottomRight: Radius.circular(20)),
-                                child: Container(
-                                  width: 180,
-                                  height: 180,
-                                  color: Colors.transparent,
-                                  alignment: Alignment.bottomCenter,
-                                  child: _buildProfileAvatar(
-                                    model.profile.value.avatar,
-                                  ),
-                                )),
-                          ],
-                        ),
+            appBar: AppBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              title: Text(name.isEmpty ? _label('profile') : name),
+            ),
+            body: RefreshIndicator(
+              onRefresh: _refresh,
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+                children: [
+                  Center(child: _buildProfileAvatar(avatar)),
+                  if (loading && details == null)
+                    const Padding(
+                      padding: EdgeInsets.all(20),
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+                  if (snapshot.hasError && !loading)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 16),
+                      child: Column(
+                        children: [
+                          Text(
+                            _label('load_failed'),
+                            textAlign: TextAlign.center,
+                          ),
+                          TextButton(
+                            onPressed: _refresh,
+                            child: Text(translate('royal.retry')),
+                          ),
+                        ],
                       ),
                     ),
-                    model.profile.value.post != ''
-                        ? Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            width: double.infinity,
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 10),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  IconButton(
-                                      padding: EdgeInsets.zero,
-                                      onPressed: () async {
-                                        final url = Uri.parse(
-                                            "tel:${model.profile.value.phone}");
-                                        if (await canLaunchUrl(url)) {
-                                          await launchUrl(url);
-                                        } else {
-                                          throw 'Could not launch $url';
-                                        }
-                                      },
-                                      icon: Card(
-                                          elevation: 0,
-                                          color: Colors.white24,
-                                          shape: CircleBorder(),
-                                          child: Padding(
-                                            padding: const EdgeInsets.all(10.0),
-                                            child: Icon(
-                                              Icons.call,
-                                              color: Colors.white,
-                                            ),
-                                          ))),
-                                  IconButton(
-                                      padding: EdgeInsets.zero,
-                                      onPressed: () {
-                                        Get.to(ChatScreen(), arguments: {
-                                          "name": model.profile.value.name,
-                                          "avatar": model.profile.value.avatar,
-                                          "username":
-                                              model.profile.value.username,
-                                          "employeeId": Get
-                                              .arguments["employeeId"]
-                                              .toString(),
-                                        });
-                                      },
-                                      icon: Card(
-                                          elevation: 0,
-                                          color: Colors.white24,
-                                          shape: CircleBorder(),
-                                          child: Padding(
-                                            padding: const EdgeInsets.all(10.0),
-                                            child: Icon(
-                                              Icons.message,
-                                              color: Colors.white,
-                                            ),
-                                          ))),
-                                ],
-                              ),
-                            ),
-                          )
-                        : SizedBox(),
-                    model.profile.value.post != ''
-                        ? Container(
-                            padding: const EdgeInsets.only(
-                                left: 30, right: 30, bottom: 5),
-                            width: double.infinity,
-                            child: Text(
-                              translate('employee_detail_screen.basic_details'),
-                              style: TextStyle(
-                                  color: Colors.white38, fontSize: 15),
-                            ),
-                          )
-                        : SizedBox(),
-                    model.profile.value.post != ''
-                        ? Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            width: double.infinity,
-                            child: Card(
-                              shape: ButtonBorder(),
-                              color: Colors.white10,
-                              elevation: 0,
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 10),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    CardTitle(
-                                        translate(
-                                            'employee_detail_screen.fullname'),
-                                        model.profile.value.name),
-                                    CardTitle(
-                                        translate(
-                                            'employee_detail_screen.phone_number'),
-                                        model.profile.value.phone),
-                                    if (model.canViewPrivateDetails.value)
-                                      CardTitle(
-                                          translate(
-                                              'employee_detail_screen.dob'),
-                                          model.profile.value.dob),
-                                    CardTitle(
-                                        translate(
-                                            'employee_detail_screen.gender'),
-                                        model.profile.value.gender),
-                                    if (model.canViewPrivateDetails.value)
-                                      CardTitle(
-                                          translate(
-                                              'employee_detail_screen.address'),
-                                          model.profile.value.address),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          )
-                        : SizedBox(),
-                    model.profile.value.post != ''
-                        ? Container(
-                            padding: const EdgeInsets.only(
-                                left: 30, right: 30, top: 10, bottom: 5),
-                            width: double.infinity,
-                            child: Text(
-                              translate(
-                                  'employee_detail_screen.company_details'),
-                              style: TextStyle(
-                                  color: Colors.white38, fontSize: 15),
-                            ),
-                          )
-                        : SizedBox(),
-                    model.profile.value.post != ''
-                        ? Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            width: double.infinity,
-                            child: Card(
-                              shape: ButtonBorder(),
-                              color: Colors.white10,
-                              elevation: 0,
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 10),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    CardTitle(
-                                        translate(
-                                            'employee_detail_screen.job_position'),
-                                        model.profile.value.post),
-                                    CardTitle(
-                                        translate(
-                                            'employee_detail_screen.branch'),
-                                        model.profile.value.branch),
-                                    CardTitle(
-                                        translate(
-                                            'employee_detail_screen.department'),
-                                        model.profile.value.department),
-                                    CardTitle(
-                                        translate(
-                                            'employee_detail_screen.employment_type'),
-                                        model.profile.value.employment_type),
-                                    CardTitle(
-                                        translate(
-                                            'employee_detail_screen.joined_date'),
-                                        model.profile.value.joinedDate),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          )
-                        : SizedBox(),
-                    model.awardsList.isNotEmpty
-                        ? Container(
-                            padding: const EdgeInsets.only(
-                                left: 30, right: 30, top: 10, bottom: 5),
-                            width: double.infinity,
-                            child: Text(
-                              translate('employee_detail_screen.achievements'),
-                              style: TextStyle(
-                                  color: Colors.white38, fontSize: 15),
-                            ),
-                          )
-                        : SizedBox(),
-                    model.awardsList.isNotEmpty
-                        ? Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 15.0, vertical: 10),
-                            child: ListView.builder(
-                              primary: false,
-                              shrinkWrap: true,
-                              itemCount: model.awardsList.length,
-                              itemBuilder: (context, index) {
-                                final award = model.awardsList[index];
-                                return Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Card(
-                                        elevation: 0,
-                                        color: Colors.transparent,
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 8.0, vertical: 0),
-                                          child: Text(
-                                            "🏆   $award",
-                                            style:
-                                                TextStyle(color: Colors.white),
-                                          ),
-                                        )),
-                                    Divider(
-                                      color: Colors.white30,
-                                      indent: 10,
-                                      endIndent: 10,
-                                    )
-                                  ],
-                                );
-                              },
-                            ),
-                          )
-                        : SizedBox(),
-                  ],
-                ),
+                  if (details != null) ..._buildDetails(details, name, avatar),
+                ],
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
+
+  List<Widget> _buildDetails(
+    EmployeeDetail details,
+    String name,
+    String avatar,
+  ) {
+    final profile = details.profile;
+    final username = profile.username.trim();
+    final phone = profile.phone.trim();
+    final canStartChat = widget.chatUsername == null && username.isNotEmpty;
+
+    return [
+      if (phone.isNotEmpty || canStartChat)
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (phone.isNotEmpty)
+              IconButton(
+                tooltip: _label('phone_number'),
+                onPressed: () async {
+                  final url = Uri(scheme: 'tel', path: phone);
+                  if (await canLaunchUrl(url)) await launchUrl(url);
+                },
+                icon: const Icon(Icons.call, color: Colors.white),
+              ),
+            if (canStartChat)
+              IconButton(
+                onPressed: () {
+                  Get.to(() => const ChatScreen(), arguments: {
+                    'name': name,
+                    'avatar': avatar,
+                    'username': username,
+                    'employeeId': details.employeeId,
+                  });
+                },
+                icon: const Icon(Icons.message, color: Colors.white),
+              ),
+          ],
+        ),
+      ..._section('basic_details', {
+        'fullname': name,
+        'username': username,
+        'phone_number': phone,
+        if (details.canViewPrivateDetails) 'dob': profile.dob,
+        'gender': profile.gender,
+        if (details.canViewPrivateDetails) 'address': profile.address,
+      }),
+      ..._section('company_details', {
+        'job_position': profile.post,
+        'branch': profile.branch,
+        'department': profile.department,
+        'employment_type': profile.employment_type,
+        'joined_date': profile.joining_date,
+      }),
+      if (profile.all_awards.isNotEmpty) ...[
+        _heading('achievements'),
+        for (final award in profile.all_awards)
+          ListTile(
+            leading: const Text('🏆'),
+            title: Text(award.award_name),
+          ),
+      ],
+    ];
+  }
+
+  List<Widget> _section(String title, Map<String, String> fields) {
+    final rows = fields.entries
+        .where((field) => field.value.trim().isNotEmpty)
+        .map((field) => CardTitle(_label(field.key), field.value))
+        .toList();
+
+    if (rows.isEmpty) return const [];
+    return [
+      _heading(title),
+      Card(
+        shape: ButtonBorder(),
+        color: Colors.white10,
+        elevation: 0,
+        child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: rows,
+          ),
+        ),
+      ),
+    ];
+  }
+
+  Widget _heading(String key) => Padding(
+        padding: const EdgeInsets.fromLTRB(10, 10, 10, 5),
+        child: Text(
+          _label(key),
+          style: const TextStyle(color: Colors.white70, fontSize: 15),
+        ),
+      );
+
+  String _label(String key) => translate('employee_detail_screen.$key');
 }

@@ -100,7 +100,7 @@ class RecordDetailState extends State<RecordDetail> {
     final data = _data;
     return PopScope(
       canPop: !busy || data == null,
-      child: Scaffold(
+      child: RecordScaffold(
         appBar: AppBar(
           title: Text(widget.title),
           actions: [
@@ -194,7 +194,7 @@ class _RecordMessageFormState extends State<_RecordMessageForm> {
   @override
   Widget build(BuildContext context) => PopScope(
         canPop: !_saving,
-        child: Scaffold(
+        child: RecordScaffold(
           appBar: AppBar(title: Text(widget.title)),
           body: Form(
             key: _form,

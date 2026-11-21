@@ -162,7 +162,7 @@ class HeaderState extends State<HeaderProfile> {
         .map((word) => word.characters.first)
         .join();
     final royalAvatar = SizedBox.square(
-      dimension: 44,
+      dimension: 36,
       child: ColoredBox(
         color: RoyalColors.deepBlue,
         child: Center(
@@ -173,8 +173,12 @@ class HeaderState extends State<HeaderProfile> {
         ),
       ),
     );
-    final labelColor =
-        theme.layout.background == null ? Colors.white : theme.text;
+    final labelSurface =
+        theme.layout.background ?? theme.colors.backgroundColor;
+    final labelColor = ThemeData.estimateBrightnessForColor(labelSurface) ==
+            Brightness.dark
+        ? Colors.white
+        : const Color(0xFF211720);
     final features = context.watch<DashboardProvider>().features;
     final isEnabledLocation =
         context.watch<DashboardProvider>().isLocationEnabled;
@@ -194,8 +198,8 @@ class HeaderState extends State<HeaderProfile> {
             borderRadius: BorderRadius.circular(21),
             onTap: _openDashboardDrawer,
             child: Container(
-              width: 42,
-              height: 42,
+              width: 36,
+              height: 36,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: const Color(0xFF0C2247).withValues(alpha: 0.78),
@@ -213,12 +217,12 @@ class HeaderState extends State<HeaderProfile> {
               child: const Icon(
                 Icons.menu_rounded,
                 color: Colors.white,
-                size: 22,
+                size: 20,
               ),
             ),
           ),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 8),
       ],
 
       // 2. Avatar with Green Online Dot
@@ -252,15 +256,15 @@ class HeaderState extends State<HeaderProfile> {
                     : CachedNetworkImage(
                         imageUrl: provider.avatar,
                         memCacheWidth: royal ? 176 : null,
-                        width: 42,
-                        height: 42,
+                        width: 36,
+                        height: 36,
                         fit: BoxFit.cover,
                         placeholder: (context, url) {
                           if (royal) return royalAvatar;
                           return Image.asset(
                             'assets/images/dummy_avatar.png',
-                            width: 42,
-                            height: 42,
+                            width: 36,
+                            height: 36,
                             fit: BoxFit.cover,
                           );
                         },
@@ -268,8 +272,8 @@ class HeaderState extends State<HeaderProfile> {
                           if (royal) return royalAvatar;
                           return Image.asset(
                             'assets/images/dummy_avatar.png',
-                            width: 42,
-                            height: 42,
+                            width: 36,
+                            height: 36,
                             fit: BoxFit.cover,
                           );
                         },
@@ -293,7 +297,7 @@ class HeaderState extends State<HeaderProfile> {
           ],
         ),
       ),
-      const SizedBox(width: 10),
+      const SizedBox(width: 8),
 
       // 3. User Info Column: Hello There 👋, Name, Staff Code Pill
       Expanded(
@@ -505,17 +509,17 @@ class HeaderState extends State<HeaderProfile> {
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
-        (royal ? 0 : 14) + (pinnedMenuClearance ? 48 : 0),
-        8,
-        royal ? 0 : 14,
-        4,
+        (royal ? 0 : 10) + (pinnedMenuClearance ? 48 : 0),
+        6,
+        royal ? 0 : 10,
+        2,
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final minimumProfileWidth = showInlineMenu ? 184.0 : 132.0;
+          final minimumProfileWidth = showInlineMenu ? 164.0 : 116.0;
           if (constraints.maxWidth >=
               minimumProfileWidth +
-                  actions.length * (royal ? 48 : _HeaderIconButton.slotWidth)) {
+                  actions.length * (royal ? 42 : _HeaderIconButton.slotWidth)) {
             return Row(children: [...profile, ...actions]);
           }
 
@@ -537,8 +541,8 @@ class HeaderState extends State<HeaderProfile> {
 }
 
 class _HeaderIconButton extends StatelessWidget {
-  static const _size = 38.0;
-  static const _spacing = 6.0;
+  static const _size = 34.0;
+  static const _spacing = 4.0;
   static const slotWidth = _size + _spacing;
 
   final IconData icon;
@@ -555,8 +559,8 @@ class _HeaderIconButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = EnterpriseTheme.of(context);
     return Container(
-      width: theme.isRoyalBlueGold ? 48 : _size,
-      height: theme.isRoyalBlueGold ? 48 : _size,
+      width: theme.isRoyalBlueGold ? 42 : _size,
+      height: theme.isRoyalBlueGold ? 42 : _size,
       margin: EdgeInsets.only(left: theme.isRoyalBlueGold ? 0 : _spacing),
       decoration: BoxDecoration(
         shape: theme.isKhmerHeritage ? BoxShape.rectangle : BoxShape.circle,
@@ -581,7 +585,12 @@ class _HeaderIconButton extends StatelessWidget {
       child: IconButton(
         padding: EdgeInsets.zero,
         icon: Icon(icon,
-            color: theme.isKhmerHeritage ? theme.text : color, size: 20),
+            color: theme.isRoyalBlueGold
+                ? RoyalColors.lightGold
+                : theme.isKhmerHeritage
+                    ? theme.text
+                    : color,
+            size: 18),
         onPressed: onPressed,
       ),
     );

@@ -313,6 +313,7 @@
     "other": "آخر"
   },
   "employee_detail_screen": {
+    "load_failed": "تعذر تحميل تفاصيل الملف الشخصي.",
     "profile": "الملف الشخصي",
     "basic_details": "التفاصيل الأساسية",
     "change": "تغيير",
@@ -617,6 +618,7 @@
     "time_leave": "Time Leave",
     "leave_request": "Leave Request",
     "time_leave_request": "Time Leave Request",
+    "day_off": "يوم راحة",
     "holiday": "Holiday",
     "weekend": "Weekend",
     "late": "Late",

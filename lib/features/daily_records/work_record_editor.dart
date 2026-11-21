@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 
 import 'daily_records_api.dart';
+import 'note_description_editor.dart';
 import 'record_widgets.dart';
 import 'related_task_picker.dart';
 import 'work_labels.dart';
@@ -17,12 +18,14 @@ class WorkRecordEditor extends StatefulWidget {
     required this.api,
     required this.kind,
     this.entry,
+    this.attachments = const [],
     this.assignmentId,
   });
 
   final DailyRecordsApi api;
   final String kind;
   final RecordData? entry;
+  final List<RecordData> attachments;
   final int? assignmentId;
 
   @override
@@ -35,6 +38,7 @@ class _WorkRecordEditorState extends State<WorkRecordEditor> {
   final _data = <String, dynamic>{};
   List<RecordData> _categories = [];
   List<PlatformFile> _files = [];
+  final _noteImages = <String, PlatformFile>{};
   Timer? _timer;
   Future<void> _draftWrite = Future.value();
   bool _dirty = false;
@@ -76,6 +80,8 @@ class _WorkRecordEditorState extends State<WorkRecordEditor> {
           'assignment_id': entry['assignment_id'],
         'title': entry['title'],
         'body': entry['body'],
+        if (details['note_document'] is List)
+          'note_document': jsonEncode(details['note_document']),
         'solution': entry['solution'],
         'private':
             !entry.containsKey('private') || recordFlag(entry['private']),
@@ -154,7 +160,15 @@ class _WorkRecordEditorState extends State<WorkRecordEditor> {
 
   void _queueDraft() {
     if (!_dirty) return;
-    final serialized = jsonEncode(_data);
+    final draft = {..._data};
+    final ops = noteOperations(draft['note_document']);
+    if (_noteImages.isNotEmpty && ops != null) {
+      draft['note_document'] = jsonEncode([
+        for (final op in ops)
+          if (!noteImageNames([op]).any(_noteImages.containsKey)) op,
+      ]);
+    }
+    final serialized = jsonEncode(draft);
     _draftWrite = _draftWrite.then((_) async {
       try {
         await widget.api.post('drafts/$_draftKey', {'payload': serialized});
@@ -177,6 +191,7 @@ class _WorkRecordEditorState extends State<WorkRecordEditor> {
         _restored = false;
         _draftFailed = false;
         _files = [];
+        _noteImages.clear();
         _formVersion++;
         _loading = _load();
       });
@@ -215,9 +230,19 @@ class _WorkRecordEditorState extends State<WorkRecordEditor> {
     final path = widget.entry == null
         ? 'work-records'
         : 'work-records/${widget.entry!['id']}';
+    final images = noteImageNames(noteOperations(payload['note_document']));
+    final uploads = [
+      ..._files,
+      for (final name in images)
+        if (_noteImages[name] case final PlatformFile file) file,
+    ];
     try {
+      if (uploads.length > 4) {
+        throw const DailyRecordsError(
+            'A note can upload up to four files at a time.');
+      }
       await _draftWrite;
-      await widget.api.postWork(path, payload, files: _files);
+      await widget.api.postWork(path, payload, files: uploads);
       _dirty = false;
       try {
         await widget.api.post('drafts/$_draftKey', {});
@@ -245,7 +270,7 @@ class _WorkRecordEditorState extends State<WorkRecordEditor> {
                 : 'Daily Activity';
     return PopScope(
       canPop: !_saving,
-      child: Scaffold(
+      child: RecordScaffold(
         appBar: AppBar(title: Text(workText(context, label))),
         body: FutureBuilder<void>(
           future: _loading,
@@ -292,9 +317,36 @@ class _WorkRecordEditorState extends State<WorkRecordEditor> {
                       _time('end_time', 'End time'),
                       _relatedTask(),
                     ],
-                    _text('body',
-                        _note || _incident ? 'Description' : 'Work performed',
-                        limit: 10000, required: !_note, lines: 4),
+                    if (_note)
+                      NoteDescriptionEditor(
+                        key: ValueKey(_formVersion),
+                        api: widget.api,
+                        plainText: (_data['body'] ?? '').toString(),
+                        operations: noteOperations(_data['note_document']),
+                        entryId: widget.entry == null
+                            ? null
+                            : recordNumber(widget.entry!['id']),
+                        attachments: widget.attachments,
+                        pendingImages: _noteImages,
+                        freeUploadSlots: 4 - _files.length,
+                        onImage: (file) {
+                          if (_noteImages.length >= 4) {
+                            final used = noteImageNames(
+                                noteOperations(_data['note_document']));
+                            _noteImages
+                                .removeWhere((name, _) => !used.contains(name));
+                          }
+                          _noteImages[file.name] = file;
+                        },
+                        onChanged: (document, plain) {
+                          _data['body'] = plain;
+                          _change('note_document', document);
+                        },
+                      )
+                    else
+                      _text(
+                          'body', _incident ? 'Description' : 'Work performed',
+                          limit: 10000, required: true, lines: 4),
                     if (_incident) ...[
                       _choice(
                           'priority',

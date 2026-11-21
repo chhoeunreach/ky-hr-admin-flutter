@@ -27,13 +27,19 @@ class ThemeProvider extends ChangeNotifier {
   AppThemeMode get mode => _mode;
   bool get loaded => _loaded;
   bool get animationsEnabled => _animationsEnabled;
-  ThemeLayout get layout => _layouts[_mode] ?? const ThemeLayout.defaults();
-  ThemeColors get colors => layout.colorsFor(AppThemeData.info(_mode).colors);
+  ThemeLayout get layout => layoutFor(_mode);
+  ThemeColors get colors => colorsForMode(_mode);
   ThemeData get themeData => AppThemeData.themeData(_mode, overrides: colors);
   ThemeData get lightTheme => AppThemeData.themeData(AppThemeMode.light);
   ThemeData get darkTheme => AppThemeData.themeData(AppThemeMode.dark);
   bool get isDark => colors.isDark;
   bool effectEnabled(String key) => _effects[key] ?? false;
+
+  ThemeLayout layoutFor(AppThemeMode mode) =>
+      _layouts[mode] ?? const ThemeLayout.defaults();
+
+  ThemeColors colorsForMode(AppThemeMode mode) =>
+      layoutFor(mode).colorsFor(AppThemeData.info(mode).colors);
 
   Future<void> load() async {
     _animationsEnabled = GetStorage().read(_animationKey) != false;
@@ -50,7 +56,9 @@ class ThemeProvider extends ChangeNotifier {
           prefs.getBool('rose_effect_${entry.key}') ?? entry.value;
     }
     for (final mode in AppThemeMode.values) {
-      _layouts[mode] = ThemeLayout.decode(prefs.getString(_layoutKey(mode)));
+      final layout = ThemeLayout.decode(prefs.getString(layoutKey(mode)));
+      _layouts[mode] = layout;
+      _mirrorLayout(mode, layout);
     }
     _syncLegacyStorage(_mode);
     _loaded = true;
@@ -87,13 +95,20 @@ class ThemeProvider extends ChangeNotifier {
 
   Future<bool> saveLayout(AppThemeMode mode, ThemeLayout layout) async {
     final prefs = await SharedPreferences.getInstance();
-    if (!await prefs.setString(_layoutKey(mode), layout.encode())) return false;
+    if (!await prefs.setString(layoutKey(mode), layout.encode())) return false;
     _layouts[mode] = layout;
+    _mirrorLayout(mode, layout);
     notifyListeners();
     return true;
   }
 
-  static String _layoutKey(AppThemeMode mode) => 'theme_layout_${mode.id}';
+  static void _mirrorLayout(AppThemeMode mode, ThemeLayout layout) {
+    GetStorage().write(layoutKey(mode), layout.encode()).catchError((error) {
+      debugPrint('Unable to mirror layout storage: $error');
+    });
+  }
+
+  static String layoutKey(AppThemeMode mode) => 'theme_layout_${mode.id}';
 
   Future<void> resetToSystemMode() async {
     final brightness =

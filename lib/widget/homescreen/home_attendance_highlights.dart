@@ -20,6 +20,9 @@ class HomeAttendanceHighlights extends StatelessWidget {
     final enterprise = EnterpriseTheme.of(context);
     final topBonusEmployees =
         context.watch<DashboardProvider>().topBonusEmployees;
+    final canViewHighlights =
+        context.watch<DashboardProvider>().features['home_highlight.view'] ==
+            '1';
     void openDetails() => showMonthlyAttendanceDetails(context, summary);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 1),
@@ -149,13 +152,15 @@ class HomeAttendanceHighlights extends StatelessWidget {
                         enterprise: enterprise,
                         icon: Icons.auto_awesome_rounded,
                         title: 'Highlights',
-                        action: 'View All',
-                        onTap: () {
-                          Navigator.of(context).push(MaterialPageRoute(
-                            builder: (_) =>
-                                HomeHighlightsScreen(api: HomeHighlightApi()),
-                          ));
-                        },
+                        action: canViewHighlights ? 'View All' : null,
+                        onTap: canViewHighlights
+                            ? () {
+                                Navigator.of(context).push(MaterialPageRoute(
+                                  builder: (_) => HomeHighlightsScreen(
+                                      api: HomeHighlightApi()),
+                                ));
+                              }
+                            : null,
                       ),
                       const SizedBox(height: 4),
                       _monthlyBonusMetric(
@@ -267,8 +272,8 @@ class HomeAttendanceHighlights extends StatelessWidget {
     required EnterpriseTheme enterprise,
     required IconData icon,
     required String title,
-    required String action,
-    required VoidCallback onTap,
+    String? action,
+    VoidCallback? onTap,
   }) {
     return Row(
       spacing: 4,
@@ -291,30 +296,31 @@ class HomeAttendanceHighlights extends StatelessWidget {
             ],
           ),
         ),
-        Flexible(
-          child: InkWell(
-            onTap: onTap,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              spacing: 2,
-              children: [
-                Flexible(
-                  child: Text(
-                    action,
-                    textAlign: TextAlign.end,
-                    style: TextStyle(
-                      color: enterprise.accent,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
+        if (action != null && onTap != null)
+          Flexible(
+            child: InkWell(
+              onTap: onTap,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                spacing: 2,
+                children: [
+                  Flexible(
+                    child: Text(
+                      action,
+                      textAlign: TextAlign.end,
+                      style: TextStyle(
+                        color: enterprise.accent,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
-                ),
-                Icon(Icons.arrow_forward_rounded,
-                    color: enterprise.accent, size: 11),
-              ],
+                  Icon(Icons.arrow_forward_rounded,
+                      color: enterprise.accent, size: 11),
+                ],
+              ),
             ),
           ),
-        ),
       ],
     );
   }

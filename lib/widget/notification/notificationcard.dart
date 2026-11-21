@@ -3,6 +3,7 @@ import 'package:cnattendance/screen/general/generalscreen.dart';
 import 'package:cnattendance/model/notification.dart' as app_notification;
 import 'package:cnattendance/provider/notificationcontroller.dart';
 import 'package:cnattendance/screen/profile/notice_detail_screen.dart';
+import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/widget/buttonborder.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';

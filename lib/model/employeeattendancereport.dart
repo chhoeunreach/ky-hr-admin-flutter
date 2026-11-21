@@ -1,3 +1,4 @@
+import 'package:cnattendance/utils/attendance_status.dart';
 import 'package:flutter/material.dart';
 
 class EmployeeAttendanceReport with ChangeNotifier {
@@ -30,6 +31,9 @@ class EmployeeAttendanceReport with ChangeNotifier {
     if (dayStatus == 'leave_request') return 'Leave Request';
     if (dayStatus == 'time_leave') return 'Time Leave';
     if (dayStatus == 'time_leave_request') return 'Time Leave Request';
+    if (dayStatus == 'day_off') return 'Day Off';
+    if (dayStatus == 'holiday') return 'Holiday';
+    if (dayStatus == 'weekend') return 'Weekend';
     if (isUnderTime) return 'Early';
     if (isOverTime) return 'Overtime';
     return 'On Time';
@@ -38,7 +42,22 @@ class EmployeeAttendanceReport with ChangeNotifier {
   bool get isPositiveStatus =>
       dayStatus == 'present' && !isUnderTime && dayStatus != 'absent';
 
-  bool get hasAttendance => check_in != '-' || check_out != '-';
+  bool get hasAttendance =>
+      hasAttendanceTime(check_in) || hasAttendanceTime(check_out);
+
+  static EmployeeAttendanceReport statusForDay(
+      Iterable<EmployeeAttendanceReport> rows) {
+    return rows.firstWhere(
+      (row) => attendanceExceptions.contains(row.dayStatus),
+      orElse: () => rows.firstWhere(
+        (row) => row.hasAttendance && !row.isPositiveStatus,
+        orElse: () => rows.firstWhere(
+          (row) => row.hasAttendance,
+          orElse: () => rows.first,
+        ),
+      ),
+    );
+  }
 
   EmployeeAttendanceReport({
     required this.id,

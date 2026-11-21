@@ -1,3 +1,5 @@
+import 'package:cnattendance/utils/attendance_status.dart';
+
 class EmployeeAttendance {
   EmployeeAttendance({
     required this.id,
@@ -71,6 +73,15 @@ class EmployeeAttendance {
   String? timeLeaveStatus;
   String? timeLeaveFrom;
   String? timeLeaveTo;
+
+  String get resolvedDayStatus => resolveAttendanceStatus(
+        hasAttendance:
+            hasAttendanceTime(checkIn) || hasAttendanceTime(checkOut),
+        dayStatus: dayStatus,
+        statusLabel: statusLabel,
+        leaveStatus: leaveStatus,
+        timeLeaveStatus: timeLeaveStatus,
+      );
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{};

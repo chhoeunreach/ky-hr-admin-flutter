@@ -8,23 +8,30 @@ import '../utils/repair_price_helper.dart';
 class RepairEditPriceSheet extends StatefulWidget {
   final RepairService service;
   final Future<void> Function(RepairService service) onSave;
+  final bool isCreate;
 
   const RepairEditPriceSheet({
     super.key,
     required this.service,
     required this.onSave,
+    this.isCreate = false,
   });
 
   static Future<void> show(
     BuildContext context, {
     required RepairService service,
     required Future<void> Function(RepairService service) onSave,
+    bool isCreate = false,
   }) {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => RepairEditPriceSheet(service: service, onSave: onSave),
+      builder: (_) => RepairEditPriceSheet(
+        service: service,
+        onSave: onSave,
+        isCreate: isCreate,
+      ),
     );
   }
 
@@ -129,7 +136,9 @@ class _RepairEditPriceSheetState extends State<RepairEditPriceSheet> {
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('បានកែប្រែតម្លៃ ${widget.service.name} ដោយជោគជ័យ!'),
+          content: Text(widget.isCreate
+              ? 'បានបន្ថែមតម្លៃ ${widget.service.name} ដោយជោគជ័យ!'
+              : 'បានកែប្រែតម្លៃ ${widget.service.name} ដោយជោគជ័យ!'),
           backgroundColor: RepairPriceConfig.success,
         ),
       );
@@ -175,7 +184,9 @@ class _RepairEditPriceSheetState extends State<RepairEditPriceSheet> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        translate('repair_screen.edit_price'),
+                        widget.isCreate
+                            ? 'Add Repair Price'
+                            : translate('repair_screen.edit_price'),
                         style: const TextStyle(
                           fontSize: 17,
                           fontWeight: FontWeight.w700,

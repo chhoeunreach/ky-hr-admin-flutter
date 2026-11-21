@@ -1,3 +1,4 @@
+import 'package:cnattendance/widget/attendancescreen/attendance_status_label.dart';
 import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
@@ -23,8 +24,7 @@ class AttendanceDetailBottomSheetState
       return Container(
         decoration: BoxDecoration(
           color: enterprise.cardBackground,
-          borderRadius:
-              const BorderRadius.vertical(top: Radius.circular(20)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           border: Border.all(color: enterprise.cardBorder),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -55,11 +55,11 @@ class AttendanceDetailBottomSheetState
     }
     double workedHr = 0;
     final workingHr = widget.attendances.first.working_hours_min;
-    final statusLabel = _attendanceStatusLabel(
-      widget.attendances.first.dayStatus,
-      widget.attendances.first.statusLabel,
-    );
-    final dayStatus = widget.attendances.first.dayStatus;
+    final statusItem =
+        EmployeeAttendanceReport.statusForDay(widget.attendances);
+    final dayStatus = statusItem.dayStatus;
+    final statusLabel =
+        attendanceStatusLabel(dayStatus, statusItem.statusLabel);
 
     for (final att in widget.attendances) {
       workedHr = workedHr + att.worked_hours_min;
@@ -133,7 +133,8 @@ class AttendanceDetailBottomSheetState
               decoration: BoxDecoration(
                 color: enterprise.accent.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: enterprise.accent.withValues(alpha: 0.25)),
+                border: Border.all(
+                    color: enterprise.accent.withValues(alpha: 0.25)),
               ),
               child: Text(
                 statusLabel,
@@ -258,44 +259,6 @@ class AttendanceDetailBottomSheetState
       )),
     );
   }
-}
-
-String _attendanceStatusLabel(String status, String fallback) {
-  final normalizedStatus = status.trim().toLowerCase();
-  final normalizedFallback = fallback.trim().toLowerCase();
-  switch (normalizedStatus.isNotEmpty ? normalizedStatus : normalizedFallback) {
-    case 'present':
-      return translate('attendance_status.present');
-    case 'absent':
-      return translate('attendance_status.absent');
-    case 'leave':
-      return translate('attendance_status.leave');
-    case 'time_leave':
-      return translate('attendance_status.time_leave');
-    case 'leave_request':
-      return translate('attendance_status.leave_request');
-    case 'time_leave_request':
-      return translate('attendance_status.time_leave_request');
-    case 'holiday':
-      return translate('attendance_status.holiday');
-    case 'weekend':
-      return translate('attendance_status.weekend');
-    case 'late':
-      return translate('attendance_status.late');
-    case 'early':
-      return translate('attendance_status.early');
-  }
-
-  if (normalizedFallback == 'on review' || normalizedFallback == 'pending') {
-    return translate('attendance_status.pending');
-  }
-  if (normalizedFallback == 'approved') {
-    return translate('attendance_status.approved');
-  }
-  if (normalizedFallback == 'rejected') {
-    return translate('attendance_status.rejected');
-  }
-  return fallback;
 }
 
 String convertMinutesToFormattedString(double minutes) {

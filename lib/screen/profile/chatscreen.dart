@@ -156,17 +156,12 @@ class ChatScreen extends StatelessWidget {
   }
 
   void _openProfile(ChatController model) {
-    final employeeId = model.hostEmployeeId.trim();
-    if (employeeId.isEmpty) {
-      Get.snackbar(
-        "Profile",
-        "Profile detail is not available for this chat.",
-        snackPosition: SnackPosition.BOTTOM,
-      );
-      return;
-    }
-
-    Get.to(EmployeeDetailScreen(), arguments: {"employeeId": employeeId});
+    Get.to(() => EmployeeDetailScreen(
+          employeeId: model.hostEmployeeId,
+          chatUsername: model.hostUsername,
+          chatName: model.host.value,
+          chatAvatar: model.hostImage,
+        ));
   }
 
   Widget _buildDateSeparator(DateTime dateTime) {

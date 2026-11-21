@@ -15,7 +15,8 @@ class ShowLanguage extends StatelessWidget {
         border: Border.all(color: enterprise.cardBorder),
       ),
       height: 500,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(20) +
+          EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

@@ -44,7 +44,7 @@ class _WorkRecordsScreenState extends State<WorkRecordsScreen> {
       'note': 'Personal Note',
       'archive': 'Archived notes',
     };
-    return Scaffold(
+    return RecordScaffold(
       appBar: AppBar(
         title: Text(workText(context, 'My Records')),
         actions: [

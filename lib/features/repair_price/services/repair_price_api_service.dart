@@ -295,6 +295,21 @@ class RepairPriceApiService {
   }
 
   // PUT /api/repair-price/admin/prices/{id}
+  Future<RepairService> createPrice({
+    required int deviceId,
+    required RepairService service,
+  }) async {
+    final response = await _post(
+      '/admin/prices',
+      service.toPriceUpdateJson(deviceId: deviceId),
+    );
+    if (response is Map && response['data'] is Map) {
+      return RepairService.fromJson(
+          Map<String, dynamic>.from(response['data']));
+    }
+    throw const RepairApiException('Invalid repair price create response');
+  }
+
   Future<RepairService> updatePrice({
     required int priceId,
     required int deviceId,

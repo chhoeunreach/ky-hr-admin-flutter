@@ -101,6 +101,7 @@ class RepairPriceProvider extends ChangeNotifier {
   String get deviceSearchQuery => _deviceSearchQuery;
 
   int _devicePage = 1;
+  int _deviceRequest = 0;
   bool _hasMoreDevices = true;
   bool get hasMoreDevices => _hasMoreDevices;
 
@@ -139,6 +140,7 @@ class RepairPriceProvider extends ChangeNotifier {
 
   Future<void> initDevicePage() async {
     if (_deviceLoadingState == RepairLoadingState.loading) return;
+    final request = ++_deviceRequest;
     _deviceLoadingState = RepairLoadingState.loading;
     _deviceErrorMessage = null;
     notifyListeners();
@@ -157,31 +159,48 @@ class RepairPriceProvider extends ChangeNotifier {
           brandId: _selectedBrandId,
           deviceTypeId: _selectedDeviceTypeId,
         ),
-        _repository.fetchDevices(
-          search: _deviceSearchQuery,
-          brandId: _selectedBrandId,
-          deviceTypeId: _selectedDeviceTypeId,
-          seriesId: _selectedSeriesId,
-          page: 1,
-          perPage: RepairPriceConfig.pageSize,
-        ),
+        _fetchDevicesForCurrentQuery(),
       ]);
+
+      if (_disposed || request != _deviceRequest) return;
 
       _brands = results[0] as List<RepairBrand>;
       _deviceTypes = results[1] as List<RepairDeviceType>;
       _series = results[2] as List<RepairDeviceSeries>;
       _devices = results[3] as List<RepairDevice>;
 
-      _hasMoreDevices = _devices.length >= RepairPriceConfig.pageSize;
+      _hasMoreDevices = _deviceSearchQuery.trim().isEmpty &&
+          _devices.length >= RepairPriceConfig.pageSize;
       _deviceLoadingState = _devices.isEmpty
           ? RepairLoadingState.empty
           : RepairLoadingState.loaded;
     } catch (e) {
+      if (_disposed || request != _deviceRequest) return;
       _deviceErrorMessage = _messageForError(e);
       _deviceLoadingState = _stateForError(e);
     }
 
     notifyListeners();
+  }
+
+  Future<List<RepairDevice>> _fetchDevicesForCurrentQuery() async {
+    final query = _deviceSearchQuery.trim();
+    if (query.isEmpty) {
+      return _repository.fetchDevices(
+        brandId: _selectedBrandId,
+        deviceTypeId: _selectedDeviceTypeId,
+        seriesId: _selectedSeriesId,
+        page: 1,
+        perPage: RepairPriceConfig.pageSize,
+      );
+    }
+    return (await _repository.searchDevices(query)).where((device) {
+      return (_selectedBrandId == null ||
+              device.brand?.id == _selectedBrandId) &&
+          (_selectedDeviceTypeId == null ||
+              device.deviceType?.id == _selectedDeviceTypeId) &&
+          (_selectedSeriesId == null || device.series?.id == _selectedSeriesId);
+    }).toList();
   }
 
   void onDeviceSearchChanged(String query) {
@@ -227,7 +246,9 @@ class RepairPriceProvider extends ChangeNotifier {
         brandId: _selectedBrandId,
         deviceTypeId: _selectedDeviceTypeId,
       );
-    } catch (error) { if (kDebugMode) debugPrint('Repair: failed to reload series: $error'); }
+    } catch (error) {
+      if (kDebugMode) debugPrint('Repair: failed to reload series: $error');
+    }
     loadDevices();
   }
 
@@ -238,6 +259,7 @@ class RepairPriceProvider extends ChangeNotifier {
       return;
     }
 
+    final request = ++_deviceRequest;
     _deviceLoadingState = RepairLoadingState.loading;
     _deviceErrorMessage = null;
     _devicePage = 1;
@@ -245,19 +267,19 @@ class RepairPriceProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _devices = await _repository.fetchDevices(
-        search: _deviceSearchQuery,
-        brandId: _selectedBrandId,
-        deviceTypeId: _selectedDeviceTypeId,
-        seriesId: _selectedSeriesId,
-        page: 1,
-        perPage: RepairPriceConfig.pageSize,
-      );
-      _hasMoreDevices = _devices.length >= RepairPriceConfig.pageSize;
+      final query = _deviceSearchQuery.trim();
+      final devices = await _fetchDevicesForCurrentQuery();
+      // Search and filter changes can overlap while requests are in flight.
+      // Only let the latest request update the visible list.
+      if (_disposed || request != _deviceRequest) return;
+      _devices = devices;
+      _hasMoreDevices =
+          query.isEmpty && _devices.length >= RepairPriceConfig.pageSize;
       _deviceLoadingState = _devices.isEmpty
           ? RepairLoadingState.empty
           : RepairLoadingState.loaded;
     } catch (e) {
+      if (_disposed || request != _deviceRequest) return;
       _deviceErrorMessage = _messageForError(e);
       _deviceLoadingState = _stateForError(e);
     }
@@ -374,7 +396,9 @@ class RepairPriceProvider extends ChangeNotifier {
         d.name.trim().toLowerCase() == device.name.trim().toLowerCase());
     if (isDuplicate) {
       if (kDebugMode) {
-        if (kDebugMode) debugPrint('addDevice error: Duplicate device model name for this brand');
+        if (kDebugMode)
+          debugPrint(
+              'addDevice error: Duplicate device model name for this brand');
       }
       return false;
     }
@@ -409,7 +433,9 @@ class RepairPriceProvider extends ChangeNotifier {
         d.name.trim().toLowerCase() == device.name.trim().toLowerCase());
     if (isDuplicate) {
       if (kDebugMode) {
-        if (kDebugMode) debugPrint('updateDevice error: Duplicate device model name for this brand');
+        if (kDebugMode)
+          debugPrint(
+              'updateDevice error: Duplicate device model name for this brand');
       }
       return false;
     }
@@ -537,6 +563,27 @@ class RepairPriceProvider extends ChangeNotifier {
       service: updatedService,
     );
     updateServicePrice(saved);
+  }
+
+  Future<void> addServicePrice(RepairService service) async {
+    if (!canCreatePrices) {
+      throw const RepairApiException(
+        'You do not have permission to add repair prices.',
+        statusCode: 403,
+      );
+    }
+    final device = _selectedDevice;
+    if (device == null) {
+      throw const RepairApiException('No repair device selected');
+    }
+    final saved = await _repository.createPrice(
+      deviceId: device.id,
+      service: service,
+    );
+    final index = _services.indexWhere((item) => item.id == service.id);
+    if (index >= 0) _services[index] = saved;
+    _selectedService = saved;
+    notifyListeners();
   }
 
   // --- Page 3 Actions ---

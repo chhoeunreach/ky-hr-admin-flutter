@@ -312,6 +312,7 @@
     "other": "Andere"
   },
   "employee_detail_screen": {
+    "load_failed": "Die Profildetails konnten nicht geladen werden.",
     "profile": "Profil",
     "basic_details": "Grundlegende Details",
     "change": "Ändern",
@@ -615,6 +616,7 @@
     "time_leave": "Time Leave",
     "leave_request": "Leave Request",
     "time_leave_request": "Time Leave Request",
+    "day_off": "Freier Tag",
     "holiday": "Holiday",
     "weekend": "Weekend",
     "late": "Late",

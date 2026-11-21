@@ -100,6 +100,13 @@ class RepairPriceRepository {
     );
   }
 
+  Future<RepairService> createPrice({
+    required int deviceId,
+    required RepairService service,
+  }) async {
+    return _apiService.createPrice(deviceId: deviceId, service: service);
+  }
+
   // Brand CRUD
   Future<RepairBrand> createBrand(Map<String, dynamic> data) async {
     return await _apiService.createBrand(data);

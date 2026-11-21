@@ -33,6 +33,8 @@ class SupportScreen extends StatelessWidget {
           ],
         ),
         body: SingleChildScrollView(
+          padding:
+              EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
           child: Form(
             key: model.form,
             child: Column(

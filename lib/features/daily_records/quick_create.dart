@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:math' as math;
+
 import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:flutter/material.dart';
 
@@ -11,60 +14,248 @@ import 'work_records_screen.dart';
 import 'work_record_editor.dart';
 import 'work_labels.dart';
 
-class CreateRecordButton extends StatelessWidget {
+class CreateRecordButton extends StatefulWidget {
   const CreateRecordButton({super.key, this.api});
 
   final DailyRecordsApi? api;
 
   @override
+  State<CreateRecordButton> createState() => _CreateRecordButtonState();
+}
+
+class _CreateRecordButtonState extends State<CreateRecordButton> {
+  bool _sheetOpen = false;
+
+  Future<void> _open() async {
+    if (_sheetOpen) return;
+    final service = widget.api ?? DailyRecordsApi();
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    setState(() => _sheetOpen = true);
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      useRootNavigator: true,
+      isScrollControlled: true,
+      useSafeArea: true,
+      constraints: const BoxConstraints(maxWidth: 560),
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      sheetAnimationStyle: reduceMotion ? AnimationStyle.noAnimation : null,
+      builder: (_) => _QuickCreate(api: service),
+    );
+    if (!mounted) return;
+    setState(() => _sheetOpen = false);
+    if (choice == null) return;
+
+    final screen = switch (choice) {
+      'tasks' => MyTasksScreen(api: service),
+      'records' => MyDailyRecordsScreen(api: service),
+      'assign' => AssignEmployeeTaskScreen(api: service),
+      'work-records' => WorkRecordsScreen(api: service),
+      'activity' => WorkRecordEditor(api: service, kind: 'activity'),
+      'work-incident' => WorkRecordEditor(api: service, kind: 'incident'),
+      'work-note' => WorkRecordEditor(api: service, kind: 'note'),
+      'summary' => DailySummaryEditor(api: service),
+      'submissions' => DailySummariesScreen(api: service),
+      'review' => DailySummariesScreen(api: service, manager: true),
+      _ => NewDailyRecordScreen(api: service, kind: choice),
+    };
+    final saved = await Navigator.of(context, rootNavigator: true)
+        .push<bool>(recordRoute(builder: (_) => screen));
+    if (saved == true && mounted) {
+      final message = switch (choice) {
+        'assign' => 'Task assigned.',
+        'report' => 'Daily report submitted.',
+        _ => 'Record saved.',
+      };
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(workText(context, message))));
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = EnterpriseTheme.of(context);
-    return FloatingActionButton.small(
-      heroTag: null,
-      tooltip: 'Create Record',
-      backgroundColor: theme.primary,
-      foregroundColor: recordContrastColor(theme.primary, theme.text),
-      onPressed: () async {
-        final service = api ?? DailyRecordsApi();
-        final choice = await showModalBottomSheet<String>(
-          context: context,
-          useRootNavigator: true,
-          isScrollControlled: true,
-          useSafeArea: true,
-          constraints: const BoxConstraints(maxWidth: 560),
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          builder: (_) => _QuickCreate(api: service),
-        );
-        if (choice == null || !context.mounted) return;
-        final screen = switch (choice) {
-          'tasks' => MyTasksScreen(api: service),
-          'records' => MyDailyRecordsScreen(api: service),
-          'assign' => AssignEmployeeTaskScreen(api: service),
-          'work-records' => WorkRecordsScreen(api: service),
-          'activity' => WorkRecordEditor(api: service, kind: 'activity'),
-          'work-incident' => WorkRecordEditor(api: service, kind: 'incident'),
-          'work-note' => WorkRecordEditor(api: service, kind: 'note'),
-          'summary' => DailySummaryEditor(api: service, date: workToday()),
-          'submissions' => DailySummariesScreen(api: service),
-          'review' => DailySummariesScreen(api: service, manager: true),
-          _ => NewDailyRecordScreen(api: service, kind: choice),
-        };
-        final saved = await Navigator.of(context, rootNavigator: true)
-            .push<bool>(recordRoute(builder: (_) => screen));
-        if (saved == true && context.mounted) {
-          final message = switch (choice) {
-            'assign' => 'Task assigned.',
-            'report' => 'Daily report submitted.',
-            _ => 'Record saved.',
-          };
-          ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(workText(context, message))));
-        }
-      },
-      child: const Icon(Icons.add),
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    final duration =
+        reduceMotion ? Duration.zero : const Duration(milliseconds: 180);
+    final button = AnimatedScale(
+      scale: _sheetOpen && !reduceMotion ? .94 : 1,
+      duration: duration,
+      curve: Curves.easeOutCubic,
+      child: FloatingActionButton.small(
+        heroTag: null,
+        tooltip: 'Create Record',
+        backgroundColor: theme.primary,
+        foregroundColor: recordContrastColor(theme.primary, theme.text),
+        onPressed: _open,
+        child: AnimatedRotation(
+          turns: _sheetOpen ? .125 : 0,
+          duration: duration,
+          curve: Curves.easeOutCubic,
+          child: const Icon(Icons.add),
+        ),
+      ),
+    );
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        button,
+        if (!_sheetOpen)
+          Positioned.fill(
+            left: -9,
+            right: -9,
+            top: -9,
+            bottom: -9,
+            child: IgnorePointer(
+              child: reduceMotion
+                  ? _SparkleDecoration(
+                      animation: const AlwaysStoppedAnimation(0.0),
+                      color: theme.accent,
+                    )
+                  : _QuickCreateSparkles(color: theme.accent),
+            ),
+          ),
+      ],
     );
   }
+}
+
+class _QuickCreateSparkles extends StatefulWidget {
+  const _QuickCreateSparkles({required this.color});
+
+  final Color color;
+
+  @override
+  State<_QuickCreateSparkles> createState() => _QuickCreateSparklesState();
+}
+
+class _QuickCreateSparklesState extends State<_QuickCreateSparkles>
+    with SingleTickerProviderStateMixin {
+  late final _animation = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1450),
+  )..addStatusListener(_onStatus);
+  Timer? _timer;
+  bool _active = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final active = TickerMode.valuesOf(context).enabled;
+    if (_active == active) return;
+    _active = active;
+    _timer?.cancel();
+    if (active) {
+      _schedule(const Duration(milliseconds: 180));
+    } else {
+      _animation.reset();
+    }
+  }
+
+  void _onStatus(AnimationStatus status) {
+    if (_active && status == AnimationStatus.completed) {
+      _schedule(const Duration(milliseconds: 1600));
+    }
+  }
+
+  void _schedule(Duration delay) {
+    _timer = Timer(delay, () => _animation.forward(from: 0));
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _animation.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      _SparkleDecoration(animation: _animation, color: widget.color);
+}
+
+class _SparkleDecoration extends StatelessWidget {
+  const _SparkleDecoration({required this.animation, required this.color});
+
+  final Animation<double> animation;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => RepaintBoundary(
+        child: CustomPaint(
+          key: const ValueKey('quick-create-sparkles'),
+          painter: _QuickCreateSparklePainter(animation, color),
+        ),
+      );
+}
+
+class _QuickCreateSparklePainter extends CustomPainter {
+  _QuickCreateSparklePainter(this.animation, this.color)
+      : super(repaint: animation);
+
+  final Animation<double> animation;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final progress = animation.value;
+    const sparks = [
+      (Offset(.85, .15), 7.6, 0.0),
+      (Offset(.13, .35), 5.6, .13),
+      (Offset(.88, .76), 4.8, .26),
+    ];
+    final highlight = Color.lerp(color, Colors.white, .55)!;
+    final pulse = math.sin(progress * math.pi);
+    if (pulse > .01) {
+      final center = size.center(Offset.zero);
+      final radius = size.shortestSide / 2 - 7 + pulse * 3;
+      canvas.drawCircle(
+        center,
+        radius,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.4
+          ..color = highlight.withValues(alpha: pulse * .68),
+      );
+    }
+    final paint = Paint();
+    for (final (position, radius, delay) in sparks) {
+      final time = ((progress - delay) / .67).clamp(0.0, 1.0);
+      final intensity = math.sin(time * math.pi);
+      final center =
+          Offset(size.width * position.dx, size.height * position.dy);
+      final length = radius * (.67 + .33 * intensity);
+      paint.color = color.withValues(alpha: intensity * .32);
+      if (intensity > .01) canvas.drawCircle(center, length * 1.1, paint);
+      final sparkle = Path();
+      for (var point = 0; point < 8; point++) {
+        final angle = point * math.pi / 4;
+        final distance = point.isEven ? length : length * .26;
+        final vertex =
+            center + Offset(math.cos(angle), math.sin(angle)) * distance;
+        if (point == 0) {
+          sparkle.moveTo(vertex.dx, vertex.dy);
+        } else {
+          sparkle.lineTo(vertex.dx, vertex.dy);
+        }
+      }
+      sparkle.close();
+      canvas.drawPath(
+        sparkle,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5
+          ..strokeJoin = StrokeJoin.round
+          ..color = const Color(0xff151725).withValues(alpha: .76),
+      );
+      paint.color = highlight.withValues(alpha: .82 + .18 * intensity);
+      canvas.drawPath(sparkle, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_QuickCreateSparklePainter oldDelegate) =>
+      color != oldDelegate.color || animation != oldDelegate.animation;
 }
 
 /// Positions the button over More even when the active theme reorders tabs.
@@ -100,10 +291,16 @@ class _QuickCreate extends StatefulWidget {
 class _QuickCreateState extends State<_QuickCreate> {
   late Future<RecordData> _access = _capabilities();
   bool _full = false;
+  bool _canSubmit = false;
 
   Future<RecordData> _capabilities() async {
     final access = await widget.api.get('capabilities');
-    if (mounted) setState(() => _full = recordFlag(access['work_records']));
+    if (mounted) {
+      setState(() {
+        _full = recordFlag(access['work_records']);
+        _canSubmit = access['can_submit_report'] == true;
+      });
+    }
     return access;
   }
 
@@ -194,25 +391,36 @@ class _QuickCreateState extends State<_QuickCreate> {
                           final actions = [
                             for (final (value, icon, label)
                                 in (_full ? _workActions : _recordActions))
-                              _action(context, theme, value, icon, label,
-                                  stacked: twoColumns),
+                              if (value != 'report' || _canSubmit)
+                                _action(context, theme, value, icon, label,
+                                    stacked: twoColumns),
                           ];
                           return Column(
                             children: [
                               if (twoColumns)
                                 for (var i = 0; i < actions.length; i += 2) ...[
                                   if (i > 0) const SizedBox(height: 10),
-                                  IntrinsicHeight(
-                                    child: Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.stretch,
-                                      children: [
-                                        Expanded(child: actions[i]),
-                                        const SizedBox(width: 10),
-                                        Expanded(child: actions[i + 1]),
-                                      ],
+                                  if (i + 1 < actions.length)
+                                    IntrinsicHeight(
+                                      child: Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.stretch,
+                                        children: [
+                                          Expanded(child: actions[i]),
+                                          const SizedBox(width: 10),
+                                          Expanded(child: actions[i + 1]),
+                                        ],
+                                      ),
+                                    )
+                                  else
+                                    Align(
+                                      alignment:
+                                          AlignmentDirectional.centerStart,
+                                      child: SizedBox(
+                                        width: (constraints.maxWidth - 10) / 2,
+                                        child: actions[i],
+                                      ),
                                     ),
-                                  ),
                                 ]
                               else
                                 for (final (i, action) in actions.indexed) ...[
@@ -318,9 +526,11 @@ class _QuickCreateState extends State<_QuickCreate> {
                           Icons.folder_open_outlined,
                           _full ? 'My Records' : 'My Daily Records'),
                       if (_full) ...[
-                        const SizedBox(height: 8),
-                        _action(context, theme, 'summary',
-                            Icons.summarize_outlined, 'Daily Summary'),
+                        if (_canSubmit) ...[
+                          const SizedBox(height: 8),
+                          _action(context, theme, 'summary',
+                              Icons.summarize_outlined, 'Daily Summary'),
+                        ],
                         const SizedBox(height: 8),
                         _action(context, theme, 'submissions',
                             Icons.history_outlined, 'My Submitted Reports'),

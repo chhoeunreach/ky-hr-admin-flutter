@@ -30,7 +30,7 @@ class _MyTasksScreenState extends State<MyTasksScreen> {
   };
 
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) => RecordScaffold(
         appBar: AppBar(title: const Text('My Tasks')),
         body: Column(
           children: [

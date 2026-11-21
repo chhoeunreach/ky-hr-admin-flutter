@@ -541,97 +541,115 @@ class _HomeModelViewState extends State<HomeModelView>
         entry.key: () => entry.value,
       LayoutItem.banner: () => _heroSection(LayoutItem.banner),
       if (enterprise.layout.separatesBanner(enterprise.mode)) ...{
-        LayoutItem.quote: () => _heroSection(LayoutItem.quote),
+        if (dashboardProvider.features['quote.view'] == '1')
+          LayoutItem.quote: () => _heroSection(LayoutItem.quote),
         LayoutItem.clock: () => _heroSection(LayoutItem.clock),
       },
       LayoutItem.summary: () =>
           HomeAttendanceHighlights(summary: widget.summary),
       LayoutItem.stories: () => _buildStoriesSection(context),
       if (attendanceMethod.isNotEmpty)
-        LayoutItem.scanner: () => Column(
-              children: [
-                const SizedBox(height: 4),
-                _buildOldAttendanceControl(
-                  enterprise: enterprise,
-                  attandanceType: attandanceType,
-                  animated: widget.animated &&
-                      context.select<ThemeProvider, bool>(
-                        (provider) => provider.effectEnabled('qr_pulse'),
-                      ),
-                  isCheckedIn: isCheckedIn,
-                  onTap: widget.onAttendanceTap,
-                  pulseController: widget.pulseController,
+        LayoutItem.scanner: () {
+          final background = enterprise.layout.background ??
+              enterprise.colors.backgroundColor;
+          final backgroundBrightness =
+              ThemeData.estimateBrightnessForColor(background);
+          final onBackground = backgroundBrightness == Brightness.dark
+              ? Colors.white
+              : const Color(0xFF211720);
+          final scanColor =
+              ThemeData.estimateBrightnessForColor(enterprise.accent) !=
+                      backgroundBrightness
+                  ? enterprise.accent
+                  : ThemeData.estimateBrightnessForColor(enterprise.primary) !=
+                          backgroundBrightness
+                      ? enterprise.primary
+                      : onBackground;
+          return Column(
+            children: [
+              const SizedBox(height: 4),
+              _buildOldAttendanceControl(
+                enterprise: enterprise,
+                attandanceType: attandanceType,
+                animated: widget.animated &&
+                    context.select<ThemeProvider, bool>(
+                      (provider) => provider.effectEnabled('qr_pulse'),
+                    ),
+                isCheckedIn: isCheckedIn,
+                onTap: widget.onAttendanceTap,
+                pulseController: widget.pulseController,
+              ),
+              if (enterprise.isKhmerHeritage) ...[
+                Text(
+                  attandanceType == 'QR'
+                      ? 'Scan for Attendance'
+                      : translate('dashboard_screen.attendance'),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: enterprise.text,
+                    fontSize: 19,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
-                if (enterprise.isKhmerHeritage) ...[
-                  Text(
-                    attandanceType == 'QR'
-                        ? 'Scan for Attendance'
-                        : translate('dashboard_screen.attendance'),
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: enterprise.text,
-                      fontSize: 19,
-                      fontWeight: FontWeight.w900,
+                Center(
+                  child: Container(
+                    margin: const EdgeInsets.only(top: 3, bottom: 5),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 13, vertical: 4),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                          colors: [enterprise.text, enterprise.accent]),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      "${translate('home_screen.check_in')} / ${translate('home_screen.check_out')}",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: enterprise.colors.backgroundColor,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
-                  Center(
-                    child: Container(
-                      margin: const EdgeInsets.only(top: 3, bottom: 5),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 13, vertical: 4),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                            colors: [enterprise.text, enterprise.accent]),
-                        borderRadius: BorderRadius.circular(20),
+                ),
+              ] else ...[
+                Padding(
+                  padding: const EdgeInsets.only(top: 3, bottom: 2),
+                  child: Center(
+                    child: Text(
+                      "${translate('home_screen.check_in')} | ${translate('home_screen.check_out')}",
+                      style: TextStyle(
+                        color: onBackground,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.2,
                       ),
-                      child: Text(
-                        "${translate('home_screen.check_in')} / ${translate('home_screen.check_out')}",
-                        textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+                Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.qr_code_scanner_rounded,
+                          color: scanColor, size: 14),
+                      const SizedBox(width: 5),
+                      Text(
+                        'Scan for Attendance',
                         style: TextStyle(
-                          color: enterprise.colors.backgroundColor,
-                          fontSize: 11,
+                          color: scanColor,
+                          fontSize: 12,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
-                    ),
+                    ],
                   ),
-                ] else ...[
-                  Padding(
-                    padding: const EdgeInsets.only(top: 3, bottom: 2),
-                    child: Center(
-                      child: Text(
-                        "${translate('home_screen.check_in')} | ${translate('home_screen.check_out')}",
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 0.2,
-                        ),
-                      ),
-                    ),
-                  ),
-                  Center(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.qr_code_scanner_rounded,
-                            color: Color(0xFF5EB1FF), size: 14),
-                        const SizedBox(width: 5),
-                        const Text(
-                          'Scan for Attendance',
-                          style: TextStyle(
-                            color: Color(0xFF5EB1FF),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 2),
+                ),
               ],
-            ),
+              const SizedBox(height: 2),
+            ],
+          );
+        },
       LayoutItem.workingTime: () => _buildWorkingTimeCard(
             context: context,
             attendanceList: widget.attendanceList,
@@ -735,116 +753,177 @@ class _HomeModelViewState extends State<HomeModelView>
     final checkOut = '${widget.attendanceList['check-out'] ?? ''}';
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: 8,
-        children: [
-          if (theme.layout.shows(LayoutItem.profile))
-            if (widget.otherSections[LayoutItem.profile]
-                case final Widget header)
-              header,
-          if (theme.layout.shows(LayoutItem.banner))
-            ValueListenableBuilder<int>(
-              valueListenable: slideTick,
-              builder: (context, _, __) => _buildRoyalBanner(),
-            ),
-          if (theme.layout.shows(LayoutItem.quote) && quote.showQuote)
-            ValueListenableBuilder<int>(
-              valueListenable: _royalQuoteTick,
-              builder: (context, _, __) {
-                final current = _royalQuote;
-                return RoyalQuotation(
-                  text: current.quote,
-                  author: current.quoteAuthor,
-                  translation: _royalQuoteTranslation(current),
-                  onTap: () => _openRoyalQuote(current),
-                );
-              },
-            ),
-          if (widget.dashboardError && provider.features.isEmpty)
-            RoyalPanel(
-              child: TextButton(
-                onPressed: widget.onRetryDashboard,
-                child: Text(translate('royal.retry')),
+      child: RoyalCalendarActivity(
+        clock: widget.clockNow,
+        checkIn: checkIn,
+        checkOut: checkOut,
+        hours: '${widget.attendanceList['production_hour'] ?? ''}',
+        hasAttendance: hasAttendance,
+        showClock: theme.layout.shows(LayoutItem.clock),
+        showTodayAttendance: theme.layout.shows(LayoutItem.workingTime),
+        hasHolidays: provider.features['holiday'] == '1',
+        hasOfficeCalendar: provider.features['leave-calendar'] == '1',
+        isAd: provider.isAD,
+        attendanceLoading: widget.dashboardLoading,
+        attendanceError: widget.dashboardError,
+        builder: (context, parts) {
+          final sections = <Object, Widget? Function()>{
+            LayoutItem.profile: () => widget.otherSections[LayoutItem.profile],
+            LayoutItem.banner: () => ValueListenableBuilder<int>(
+                  valueListenable: slideTick,
+                  builder: (context, _, __) => _buildRoyalBanner(),
+                ),
+            LayoutItem.quote: () =>
+                quote.showQuote && provider.features['quote.view'] == '1'
+                    ? ValueListenableBuilder<int>(
+                        valueListenable: _royalQuoteTick,
+                        builder: (context, _, __) {
+                          final current = _royalQuote;
+                          return RoyalQuotation(
+                            text: current.quote,
+                            author: current.quoteAuthor,
+                            translation: _royalQuoteTranslation(current),
+                            onTap: () => _openRoyalQuote(current),
+                          );
+                        },
+                      )
+                    : null,
+            LayoutItem.clock: () => parts.clock,
+            LayoutItem.summary: () => hasAttendance
+                ? ValueListenableBuilder<int>(
+                    valueListenable: _royalQuoteTick,
+                    builder: (context, _, __) {
+                      final current = _royalQuote;
+                      return RoyalAttendanceHighlights(
+                        summary: widget.summary,
+                        employees: provider.topBonusEmployees,
+                        quote: current.showQuote &&
+                                provider.features['quote.view'] == '1'
+                            ? current.quote
+                            : null,
+                        onQuote: () => _openRoyalQuote(current),
+                        loading:
+                            widget.dashboardLoading && widget.summary == null,
+                        onRetry: widget.dashboardError
+                            ? widget.onRetryDashboard
+                            : null,
+                      );
+                    },
+                  )
+                : null,
+            LayoutItem.stories: () => _buildStoriesSection(context),
+            LayoutItem.scanner: () => showScanner
+                ? RoyalAttendanceScanner(
+                    animation: widget.pulseController,
+                    animate: widget.animated &&
+                        context.select<ThemeProvider, bool>(
+                            (provider) => provider.effectEnabled('qr_pulse')),
+                    method: method,
+                    status: widget.scannerBusy
+                        ? translate('royal.checking_attendance')
+                        : widget.isRefreshingZone
+                            ? translate('attendance_messages.zone_checking')
+                            : radiusBlocked
+                                ? translate('royal.outside_area')
+                                : null,
+                    onTap: widget.scannerBusy ? null : widget.onAttendanceTap,
+                  )
+                : null,
+            LayoutItem.workingTime: () => parts.today,
+            LayoutItem.attendanceZone: () => showLocation
+                ? _buildZoneStatusCard(
+                    context: context,
+                    provider: provider,
+                    enterprise: theme,
+                    isInZone: widget.isInZone,
+                    distanceMeters: widget.distanceMeters,
+                    allowedDistance: widget.allowedDistanceMeters,
+                    isRefreshingZone: widget.isRefreshingZone,
+                    onRefresh: widget.onRefreshZone,
+                    mapWidget: provider.isAttendanceMapEnabled
+                        ? widget.mapWidget
+                        : null,
+                  )
+                : null,
+            LayoutItem.quickServices: () => const RoyalQuickActions(),
+            LayoutItem.weeklyReport: () =>
+                widget.otherSections[LayoutItem.weeklyReport],
+            LayoutItem.team: () => widget.otherSections[LayoutItem.team],
+          };
+          final resolved = <(Object, Widget?)>[
+            for (final item in theme.layout.visible(LayoutArea.home))
+              (item, sections[item]?.call()),
+          ];
+          if (widget.dashboardError && provider.features.isEmpty) {
+            var errorAt = 0;
+            for (var i = 0; i < resolved.length; i++) {
+              final key = resolved[i].$1;
+              if (key == LayoutItem.profile ||
+                  key == LayoutItem.banner ||
+                  key == LayoutItem.quote) {
+                errorAt = i + 1;
+              }
+            }
+            resolved.insert(
+              errorAt,
+              (
+                'royal-dashboard-error',
+                RoyalPanel(
+                  child: TextButton(
+                    onPressed: widget.onRetryDashboard,
+                    child: Text(translate('royal.retry')),
+                  ),
+                ),
               ),
-            ),
-          RoyalCalendarActivity(
-            clock: widget.clockNow,
-            checkIn: checkIn,
-            checkOut: checkOut,
-            hours: '${widget.attendanceList['production_hour'] ?? ''}',
-            hasAttendance: hasAttendance,
-            showClock: theme.layout.shows(LayoutItem.clock),
-            showTodayAttendance: theme.layout.shows(LayoutItem.workingTime),
-            hasHolidays: provider.features['holiday'] == '1',
-            hasOfficeCalendar: provider.features['leave-calendar'] == '1',
-            isAd: provider.isAD,
-            attendanceLoading: widget.dashboardLoading,
-            attendanceError: widget.dashboardError,
-            between: [
-              if (hasAttendance && theme.layout.shows(LayoutItem.summary))
-                ValueListenableBuilder<int>(
-                  valueListenable: _royalQuoteTick,
-                  builder: (context, _, __) {
-                    final current = _royalQuote;
-                    return RoyalAttendanceHighlights(
-                      summary: widget.summary,
-                      employees: provider.topBonusEmployees,
-                      quote: current.showQuote ? current.quote : null,
-                      onQuote: () => _openRoyalQuote(current),
-                      loading:
-                          widget.dashboardLoading && widget.summary == null,
-                      onRetry: widget.dashboardError
-                          ? widget.onRetryDashboard
-                          : null,
-                    );
-                  },
-                ),
-              if (theme.layout.shows(LayoutItem.stories))
-                _buildStoriesSection(context),
-              if (showScanner && theme.layout.shows(LayoutItem.scanner)) ...[
-                RoyalAttendanceScanner(
-                  animation: widget.pulseController,
-                  animate: widget.animated &&
-                      context.select<ThemeProvider, bool>(
-                          (provider) => provider.effectEnabled('qr_pulse')),
-                  method: method,
-                  status: widget.scannerBusy
-                      ? translate('royal.checking_attendance')
-                      : widget.isRefreshingZone
-                          ? translate('attendance_messages.zone_checking')
-                          : radiusBlocked
-                              ? translate('royal.outside_area')
-                              : null,
-                  onTap: widget.scannerBusy ? null : widget.onAttendanceTap,
-                ),
-              ],
-              if (theme.layout.shows(LayoutItem.quickServices))
-                const RoyalQuickActions(),
-            ],
-          ),
-          if (showLocation && theme.layout.shows(LayoutItem.attendanceZone))
-            _buildZoneStatusCard(
-              context: context,
-              provider: provider,
-              enterprise: theme,
-              isInZone: widget.isInZone,
-              distanceMeters: widget.distanceMeters,
-              allowedDistance: widget.allowedDistanceMeters,
-              isRefreshingZone: widget.isRefreshingZone,
-              onRefresh: widget.onRefreshZone,
-              mapWidget:
-                  provider.isAttendanceMapEnabled ? widget.mapWidget : null,
-            ),
-          if (theme.layout.shows(LayoutItem.weeklyReport))
-            if (widget.otherSections[LayoutItem.weeklyReport]
-                case final Widget report)
-              report,
-          if (theme.layout.shows(LayoutItem.team))
-            if (widget.otherSections[LayoutItem.team] case final Widget team)
-              team,
-          const SizedBox(height: 4),
-        ],
+            );
+          }
+          final calendar = parts.calendar == null && parts.recent == null
+              ? null
+              : parts.calendar != null && parts.recent != null
+                  ? RoyalPanelPair(
+                      first: parts.calendar!, second: parts.recent!)
+                  : (parts.calendar ?? parts.recent)!;
+          if (calendar != null) {
+            var insertAt = resolved
+                .indexWhere((entry) => entry.$1 == LayoutItem.workingTime);
+            if (insertAt < 0) {
+              insertAt =
+                  resolved.indexWhere((entry) => entry.$1 == LayoutItem.clock);
+            }
+            insertAt = insertAt < 0 ? resolved.length : insertAt + 1;
+            resolved.insert(insertAt, ('royal-calendar', calendar));
+          }
+          final children = <Widget>[];
+          for (var i = 0; i < resolved.length; i++) {
+            final (key, section) = resolved[i];
+            if (section == null) continue;
+            final next = i + 1 < resolved.length ? resolved[i + 1] : null;
+            Widget? paired;
+            if (next != null &&
+                next.$2 != null &&
+                ((key == LayoutItem.clock &&
+                        next.$1 == LayoutItem.workingTime) ||
+                    (key == LayoutItem.workingTime &&
+                        next.$1 == LayoutItem.clock))) {
+            paired = RoyalPanelPair(first: section, second: next.$2!);
+            i++;
+          }
+          final Object childKey =
+              paired == null ? key : 'royal-clock-today';
+          children.add(KeyedSubtree(
+            key: childKey is LayoutItem
+                ? ValueKey(childKey)
+                : ValueKey(childKey as String),
+            child: paired ?? section,
+          ));
+          }
+          children.add(const SizedBox(height: 4));
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: 8,
+            children: children,
+          );
+        },
       ),
     );
   }
@@ -1062,6 +1141,8 @@ class _HomeModelViewState extends State<HomeModelView>
             config.quoteStyle?.hasCustomPosition == true || rotatingQuotes;
         final pauseOnTouch =
             slideshow.pauseOnTouch || quoteSettings.pauseOnTouch;
+        final canQuote =
+            context.watch<DashboardProvider>().features['quote.view'] == '1';
         final style = config.showQuote ? config.quoteStyle : null;
         final overlayOpacity = (style?.bannerOverlay ?? .35).clamp(0.0, .8);
 
@@ -1130,7 +1211,8 @@ class _HomeModelViewState extends State<HomeModelView>
             : null;
         final animateBorder = slideshow.animateBorder && _appForeground;
         if (enterprise.layout.separatesBanner(enterprise.mode)) {
-          if (item == LayoutItem.quote && !config.showQuote) {
+          if (item == LayoutItem.quote &&
+              (!config.showQuote || !canQuote)) {
             return const SizedBox.shrink();
           }
           return Padding(
@@ -1420,7 +1502,9 @@ class _HomeModelViewState extends State<HomeModelView>
                                   ),
 
                                   // Right: Khmer Motivational Quote (Updated Independently)
-                                  if (config.showQuote && !quoteOnCanvas)
+                                  if (config.showQuote &&
+                                      canQuote &&
+                                      !quoteOnCanvas)
                                     Expanded(
                                       flex: 5,
                                       child: Padding(
@@ -1437,7 +1521,7 @@ class _HomeModelViewState extends State<HomeModelView>
                           ),
                         ),
 
-                        if (config.showQuote && quoteOnCanvas)
+                        if (config.showQuote && canQuote && quoteOnCanvas)
                           Positioned.fill(
                             child: IgnorePointer(
                               child: BannerSlideSwitcher(
@@ -1749,6 +1833,7 @@ class _HomeModelViewState extends State<HomeModelView>
     final canCreateStories = features.containsKey('social_feed.stories.create')
         ? features['social_feed.stories.create'] == '1'
         : features['social_feed.create'] == '1';
+    final canViewHighlights = features['home_highlight.view'] == '1';
     final showStoryStrip = !enterprise.isRoyalBlueGold || _storiesTab == 0;
     if (canViewStories && showStoryStrip && !_storiesPermissionWasEnabled) {
       _storiesPermissionWasEnabled = true;
@@ -1760,7 +1845,11 @@ class _HomeModelViewState extends State<HomeModelView>
     }
 
     if (enterprise.isRoyalBlueGold) {
-      return _buildRoyalMedia(canViewStories, canCreateStories);
+      return _buildRoyalMedia(
+          canViewStories, canCreateStories, canViewHighlights);
+    }
+    if (!canViewStories && !canViewHighlights) {
+      return const SizedBox.shrink();
     }
 
     final storiesTitle = Container(
@@ -1801,41 +1890,43 @@ class _HomeModelViewState extends State<HomeModelView>
         ],
       ),
     );
-    final highlights = InkWell(
-      borderRadius: BorderRadius.circular(20),
-      onTap: () {
-        Navigator.of(context).push(MaterialPageRoute(
-          builder: (_) => HomeHighlightsScreen(api: HomeHighlightApi()),
-        ));
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: enterprise.glassFill,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: enterprise.glassStroke),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.style_outlined,
-              color: enterprise.accent,
-              size: 14,
-            ),
-            SizedBox(width: 5),
-            Text(
-              'Highlights',
-              style: TextStyle(
-                color: enterprise.accent,
-                fontSize: 11.5,
-                fontWeight: FontWeight.w700,
+    final highlights = canViewHighlights
+        ? InkWell(
+            borderRadius: BorderRadius.circular(20),
+            onTap: () {
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => HomeHighlightsScreen(api: HomeHighlightApi()),
+              ));
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: enterprise.glassFill,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: enterprise.glassStroke),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.style_outlined,
+                    color: enterprise.accent,
+                    size: 14,
+                  ),
+                  SizedBox(width: 5),
+                  Text(
+                    'Highlights',
+                    style: TextStyle(
+                      color: enterprise.accent,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
-      ),
-    );
+          )
+        : const SizedBox.shrink();
     final viewAll = InkWell(
       onTap: () {
         Navigator.of(context).push(MaterialPageRoute(
@@ -1910,8 +2001,13 @@ class _HomeModelViewState extends State<HomeModelView>
     );
   }
 
-  Widget _buildRoyalMedia(bool canViewStories, bool canCreateStories) {
-    final selected = canViewStories ? _storiesTab : 1;
+  Widget _buildRoyalMedia(
+      bool canViewStories, bool canCreateStories, bool canViewHighlights) {
+    if (!canViewStories && !canViewHighlights) {
+      return const SizedBox.shrink();
+    }
+    final selected =
+        canViewStories ? ((_storiesTab == 1 && canViewHighlights) ? 1 : 0) : 1;
     if (selected == 1) _highlights ??= _homeHighlights.index();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1921,7 +2017,7 @@ class _HomeModelViewState extends State<HomeModelView>
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             if (canViewStories) _mediaTab(0, selected, 'royal.stories'),
-            _mediaTab(1, selected, 'royal.highlights'),
+            if (canViewHighlights) _mediaTab(1, selected, 'royal.highlights'),
             TextButton(
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute<void>(
@@ -2330,14 +2426,49 @@ class _HomeModelViewState extends State<HomeModelView>
           children: [
             Row(
               children: [
-                Icon(
-                  isInZone
-                      ? Icons.location_on_rounded
-                      : Icons.location_off_rounded,
-                  color: statusColor,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
+                if (enterprise.isRoyalBlueGold)
+                  Container(
+                    width: 28,
+                    height: 28,
+                    margin: const EdgeInsets.only(right: 8),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      gradient: LinearGradient(
+                        colors: isInZone
+                            ? const [Color(0xFF059669), Color(0xFF34D399)]
+                            : const [Color(0xFFE11D48), Color(0xFFFB7185)],
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: (isInZone
+                                  ? const Color(0xFF059669)
+                                  : const Color(0xFFE11D48))
+                              .withValues(alpha: 0.38),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: Icon(
+                        isInZone
+                            ? Icons.location_on_rounded
+                            : Icons.location_off_rounded,
+                        color: Colors.white,
+                        size: 16,
+                      ),
+                    ),
+                  )
+                else ...[
+                  Icon(
+                    isInZone
+                        ? Icons.location_on_rounded
+                        : Icons.location_off_rounded,
+                    color: statusColor,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                ],
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

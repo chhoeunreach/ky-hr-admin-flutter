@@ -42,6 +42,102 @@ double _contrast(Color a, Color b) {
 }
 
 void main() {
+  testWidgets(
+      'Quick Create sparkles briefly while idle and pause with the sheet',
+      (tester) async {
+    final api = DailyRecordsApi(
+      preferences: _Preferences(),
+      client: MockClient((_) async => _response({'assign_tasks': false})),
+    );
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(floatingActionButton: CreateRecordButton(api: api)),
+    ));
+    final sparkles = find.byKey(const ValueKey('quick-create-sparkles'));
+    expect(sparkles, findsOneWidget);
+    expect(sparkles, paints..path());
+    await tester.pump(const Duration(milliseconds: 180));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(
+        sparkles,
+        paints
+          ..circle()
+          ..path());
+    await tester.pumpAndSettle();
+    expect(tester.hasRunningAnimations, isFalse);
+
+    await tester.tap(find.byTooltip('Create Record'));
+    await tester.pumpAndSettle();
+    expect(sparkles, findsNothing);
+    Navigator.of(tester.element(find.text('Quick Create'))).pop();
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 2));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(
+        sparkles,
+        paints
+          ..circle()
+          ..path());
+  });
+
+  for (final reduceMotion in [false, true]) {
+    testWidgets(
+        'Quick Create button opens and resets with reduced motion $reduceMotion',
+        (tester) async {
+      final api = DailyRecordsApi(
+        preferences: _Preferences(),
+        client: MockClient((_) async => _response({'assign_tasks': false})),
+      );
+      await tester.pumpWidget(MaterialApp(
+        builder: (context, child) => MediaQuery(
+          data:
+              MediaQuery.of(context).copyWith(disableAnimations: reduceMotion),
+          child: child!,
+        ),
+        home: Scaffold(floatingActionButton: CreateRecordButton(api: api)),
+      ));
+      final button = find.byType(CreateRecordButton);
+      final sparkles = find.byKey(const ValueKey('quick-create-sparkles'));
+      expect(sparkles, findsOneWidget);
+      if (reduceMotion) {
+        await tester.pump(const Duration(seconds: 2));
+        expect(sparkles, paints..path());
+        expect(tester.hasRunningAnimations, isFalse);
+      }
+      final iconRotation = find.descendant(
+        of: button,
+        matching: find.byType(RotationTransition),
+      );
+      final buttonScale = find.descendant(
+        of: button,
+        matching: find.byType(ScaleTransition),
+      );
+
+      await tester.tap(find.byTooltip('Create Record'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 60));
+      final turns = tester.widget<RotationTransition>(iconRotation).turns.value;
+      final scale = tester.widget<ScaleTransition>(buttonScale).scale.value;
+      if (reduceMotion) {
+        expect(turns, .125);
+        expect(scale, 1);
+      } else {
+        expect(turns, allOf(greaterThan(0), lessThan(.125)));
+        expect(scale, allOf(greaterThan(.94), lessThan(1)));
+      }
+
+      await tester.pumpAndSettle();
+      final sheet = tester.element(find.text('Quick Create'));
+      if (reduceMotion) {
+        expect(ModalRoute.of(sheet)!.transitionDuration, Duration.zero);
+      }
+      Navigator.of(sheet).pop();
+      await tester.pumpAndSettle();
+      expect(find.text('Quick Create'), findsNothing);
+      expect(tester.widget<RotationTransition>(iconRotation).turns.value, 0);
+      expect(tester.widget<ScaleTransition>(buttonScale).scale.value, 1);
+    });
+  }
+
   for (final mode in AppThemeMode.values) {
     testWidgets('Quick Create matches ${mode.name} on a narrow phone',
         (tester) async {
@@ -49,7 +145,10 @@ void main() {
       addTearDown(() => tester.binding.setSurfaceSize(null));
       final api = DailyRecordsApi(
         preferences: _Preferences(),
-        client: MockClient((_) async => _response({'assign_tasks': true})),
+        client: MockClient((_) async => _response({
+              'assign_tasks': true,
+              'can_submit_report': true,
+            })),
       );
       await tester.pumpWidget(MaterialApp(
         theme: AppThemeData.themeData(mode),
@@ -105,7 +204,7 @@ void main() {
         checks++;
         return checks == 1
             ? http.Response('{"message":"Unavailable"}', 503)
-            : _response({'assign_tasks': true});
+            : _response({'assign_tasks': true, 'can_submit_report': true});
       }),
     );
     await tester.pumpWidget(ChangeNotifierProvider<ThemeProvider>.value(
@@ -176,7 +275,10 @@ void main() {
         preferences: _Preferences(),
         client: MockClient((request) async {
           expect(request.url.path, '/hrms/api/v1/daily-records/capabilities');
-          return _response({'assign_tasks': canAssign});
+          return _response({
+            'assign_tasks': canAssign,
+            'can_submit_report': true,
+          });
         }),
       );
       await tester.pumpWidget(MaterialApp(

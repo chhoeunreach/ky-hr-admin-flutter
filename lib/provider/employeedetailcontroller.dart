@@ -1,104 +1,77 @@
 import 'dart:convert';
 
+import 'package:cnattendance/core/ky_security/ky_http.dart';
 import 'package:cnattendance/data/source/datastore/preferences.dart';
 import 'package:cnattendance/data/source/network/model/employeedetailresponse/Data.dart';
 import 'package:cnattendance/data/source/network/model/employeedetailresponse/employeedetailresponse.dart';
+import 'package:cnattendance/repositories/teamsheetrepository.dart';
 import 'package:cnattendance/utils/constant.dart';
-import 'package:flutter_easyloading/flutter_easyloading.dart';
-import 'package:flutter_translate/flutter_translate.dart';
-import 'package:get/get.dart';
-import 'package:cnattendance/model/profile.dart' as up;
-import 'package:cnattendance/core/ky_security/ky_http.dart';
 
-class EmployeeDetailController extends GetxController{
-  var canViewPrivateDetails = false.obs;
+typedef EmployeeDetail = ({
+  String employeeId,
+  Data profile,
+  bool canViewPrivateDetails,
+});
 
-  var  profile = up.Profile(
-      id: 0,
-      avatar: '',
-      name: '',
-      username: '',
-      email: '',
-      post: '',
-      phone: '',
-      dob: '',
-      gender: '',
-      address: '',
-      bankName: '',
-      bankNumber: '',
-      joinedDate: '',
-      department: '',
-      branch: '',
-      bank_type: '',
-      employment_type: '',
-  ).obs;
+class EmployeeDetailController {
+  EmployeeDetailController({
+    Preferences? preferences,
+    TeamSheetRepository? teamRepository,
+  })  : _preferences = preferences ?? Preferences(),
+        _teamRepository = teamRepository ?? TeamSheetRepository();
 
-  var awardsList = <String>[].obs;
-  
-  Future<employeedetailresponse> getEmployeeDetail(String id) async {
-    final Preferences preferences = Preferences();
-    canViewPrivateDetails.value =
-        (await preferences.getUserId()).toString() == id;
-    final uri = Uri.parse(await preferences.getAppUrl()+Constant.EMPLOYEE_PROFILE_URL+"/$id");
+  final Preferences _preferences;
+  final TeamSheetRepository _teamRepository;
 
+  Future<EmployeeDetail> getEmployeeDetail(
+    String employeeId, {
+    String username = '',
+  }) async {
+    final id =
+        employeeId.isEmpty ? await _findEmployeeId(username) : employeeId;
+    final url = await _preferences.getAppUrl();
+    final token = await _preferences.getToken();
+    final uri = Uri.parse(
+      '$url${Constant.EMPLOYEE_PROFILE_URL}/${Uri.encodeComponent(id)}',
+    );
 
-    final String token = await preferences.getToken();
-
-    final Map<String, String> headers = {
+    final response = await KyHttp.get(uri, headers: {
       'Content-Type': 'application/json',
       'Accept': 'application/json; charset=UTF-8',
-      'Authorization': 'Bearer $token'
-    };
+      'Authorization': 'Bearer $token',
+    });
+    if (response.statusCode != 200) {
+      throw StateError(
+          'Employee profile request failed (${response.statusCode})');
+    }
+    final result = employeedetailresponse.fromJson(jsonDecode(response.body));
+    if (!result.status) {
+      throw StateError('Employee profile is unavailable');
+    }
 
-    try {
-      EasyLoading.show(
-          status: translate('loader.loading'),
-          maskType: EasyLoadingMaskType.black);
-      final response = await KyHttp.get(uri, headers: headers);
-      EasyLoading.dismiss(animation: true);
-      final responseData = json.decode(response.body);
-      if (response.statusCode == 200) {
+    return (
+      employeeId: id,
+      profile: result.data,
+      canViewPrivateDetails: (await _preferences.getUserId()).toString() == id,
+    );
+  }
 
-        final responseJson = employeedetailresponse.fromJson(responseData);
-        parseUser(responseJson.data);
-
-        return responseJson;
-      } else {
-        final errorMessage = responseData['message'];
-        throw errorMessage;
+  Future<String> _findEmployeeId(String username) async {
+    if (username.isNotEmpty) {
+      final directory = await _teamRepository.getChatContacts();
+      for (final contact in [
+        ...directory.contacts,
+        ...directory.onlineContacts
+      ]) {
+        if (contact.usesAdminThread || contact.username.trim() != username) {
+          continue;
+        }
+        final id = contact.id.trim();
+        final sourceId = contact.sourceId.trim();
+        if (id.isNotEmpty) return id;
+        if (sourceId.isNotEmpty) return sourceId;
       }
-    } catch (error) {
-      rethrow;
     }
-  }
-
-  void parseUser(Data rprofile) {
-    profile.value.avatar = rprofile.avatar;
-    profile.value.name = rprofile.name;
-    profile.value.username = rprofile.username;
-    profile.value.post = rprofile.post;
-    profile.value.phone = rprofile.phone;
-    profile.value.dob = rprofile.dob;
-    profile.value.gender = rprofile.gender;
-    profile.value.address = rprofile.address;
-    profile.value.branch = rprofile.branch;
-    profile.value.department = rprofile.department;
-    profile.value.employment_type = rprofile.employment_type;
-
-    final awards = <String>[];
-    for(var award in rprofile.all_awards){
-      awards.add(award.award_name);
-    }
-
-    awardsList.value = awards;
-
-    profile.refresh();
-    awardsList.refresh();
-  }
-
-  @override
-  void onInit() {
-    getEmployeeDetail(Get.arguments["employeeId"]);
-    super.onInit();
+    throw StateError('Employee was not found in the chat directory');
   }
 }

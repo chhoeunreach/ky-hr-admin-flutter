@@ -467,6 +467,15 @@ class _RepairPriceDetailView extends StatelessWidget {
               service: service,
               canViewCost: provider.canViewCost,
               canManagePrices: provider.canEditServicePrice(service),
+              onAddPrice:
+                  provider.canCreatePrices && (service.repairPriceId ?? 0) <= 0
+                      ? () => RepairEditPriceSheet.show(
+                            context,
+                            service: service,
+                            isCreate: true,
+                            onSave: provider.addServicePrice,
+                          )
+                      : null,
               isSelected: isSelected,
               onTap: () {
                 provider.selectService(service);

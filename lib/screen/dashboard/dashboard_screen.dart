@@ -30,17 +30,21 @@ class DashboardScreen extends StatefulWidget {
   State<StatefulWidget> createState() => DashboardScreenState();
 }
 
-class DashboardScreenState extends State<DashboardScreen> with WidgetsBindingObserver {
+class DashboardScreenState extends State<DashboardScreen>
+    with WidgetsBindingObserver {
   final PersistentTabController _controller =
       PersistentTabController(initialIndex: 0);
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _selectedRailIndex = 0;
   bool? _railExpanded;
   bool _socialFeedImmersive = false;
+  bool _repairNavigationVisible = true;
   final Map<String, GlobalKey<NavigatorState>> _tabNavigatorKeys = {};
   final Map<String, _TabRouteObserver> _tabRouteObservers = {};
 
   bool _loadedUser = false;
+  bool _repairPermissionsStarted = false;
+  RepairPriceProvider? _repairProvider;
 
   @override
   void initState() {
@@ -60,7 +64,17 @@ class DashboardScreenState extends State<DashboardScreen> with WidgetsBindingObs
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (mounted && state == AppLifecycleState.resumed) {
       unawaited(context.read<DashboardProvider>().refreshMobileFeatures());
+      unawaited(_repairProvider?.loadWebPermissions());
     }
+  }
+
+  void _ensureRepairPermissions(BuildContext context) {
+    if (_repairPermissionsStarted) return;
+    _repairPermissionsStarted = true;
+    _repairProvider = context.read<RepairPriceProvider>();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_repairProvider?.loadWebPermissions());
+    });
   }
 
   @override
@@ -104,6 +118,7 @@ class DashboardScreenState extends State<DashboardScreen> with WidgetsBindingObs
           },
           child: LayoutBuilder(
             builder: (context, constraints) {
+              _ensureRepairPermissions(context);
               if (constraints.maxWidth >= 720) {
                 return _buildRailLayout(context, constraints.maxWidth);
               }
@@ -120,16 +135,17 @@ class DashboardScreenState extends State<DashboardScreen> with WidgetsBindingObs
     final sidebarFg = sidebarForeground(enterprise);
     final extended = _railExpanded ?? (width >= 1100);
     final features = context.watch<DashboardProvider>().features;
+    final canRepair = context.watch<RepairPriceProvider>().canView;
     final hasSocialFeed = features['social-feed'] == '1';
-    final repairIndex = hasSocialFeed ? 2 : 1;
 
     final railItems = [
       LayoutItem.home,
       if (hasSocialFeed) LayoutItem.social,
-      LayoutItem.repair,
+      if (canRepair) LayoutItem.repair,
       if (LayoutItem.attendance.allowed(features)) LayoutItem.attendance,
       LayoutItem.more,
     ];
+    final repairIndex = railItems.indexOf(LayoutItem.repair);
     final visibleRail = enterprise.layout.visibleTabIndices(railItems);
     final selectedRail = visibleRail.indexOf(_selectedRailIndex);
     final showDrawerButton = enterprise.layout.showMenuButton &&
@@ -141,17 +157,18 @@ class DashboardScreenState extends State<DashboardScreen> with WidgetsBindingObs
         selectedIcon: const Icon(Icons.dashboard),
         label: Text(translate('dashboard_screen.home')),
       ),
-      if (features["social-feed"] == "1")
+      if (hasSocialFeed)
         NavigationRailDestination(
           icon: const Icon(Icons.dynamic_feed_outlined),
           selectedIcon: const Icon(Icons.dynamic_feed),
           label: Text(translate('community.social_feed')),
         ),
-      NavigationRailDestination(
-        icon: const Icon(Icons.build_circle_outlined),
-        selectedIcon: const Icon(Icons.build_circle),
-        label: Text(translate('dashboard_screen.repair_list')),
-      ),
+      if (canRepair)
+        NavigationRailDestination(
+          icon: const Icon(Icons.build_circle_outlined),
+          selectedIcon: const Icon(Icons.build_circle),
+          label: Text(translate('dashboard_screen.repair_list')),
+        ),
       if (features["attendance"] == "1")
         NavigationRailDestination(
           icon: const Icon(Icons.analytics_outlined),
@@ -166,18 +183,18 @@ class DashboardScreenState extends State<DashboardScreen> with WidgetsBindingObs
     ];
     final pages = <Widget>[
       HomeScreen(_controller),
-      if (features["social-feed"] == "1")
+      if (hasSocialFeed)
         SocialFeedScreen(
             showBackButton: false,
             onImmersiveChanged: _handleSocialFeedImmersive),
-      if (_selectedRailIndex == repairIndex)
-        const RepairDevicePage(showBackButton: false)
-      else
-        const SizedBox.shrink(),
+      if (canRepair)
+        _selectedRailIndex == repairIndex
+            ? const RepairDevicePage(showBackButton: false)
+            : const SizedBox.shrink(),
       if (features["attendance"] == "1") AttendanceScreen(),
       MoreScreen(),
     ];
-    final socialFeedIndex = features["social-feed"] == "1" ? 1 : -1;
+    final socialFeedIndex = hasSocialFeed ? 1 : -1;
     final showRailControls =
         _selectedRailIndex.clamp(0, destinations.length - 1) != socialFeedIndex;
 
@@ -229,7 +246,7 @@ class DashboardScreenState extends State<DashboardScreen> with WidgetsBindingObs
               fontWeight: FontWeight.w700,
             ),
             leading: Padding(
-              padding: const EdgeInsets.fromLTRB(10, 6, 10, 22),
+              padding: const EdgeInsets.fromLTRB(8, 6, 8, 16),
               child: extended
                   ? Row(
                       children: [
@@ -331,6 +348,7 @@ class DashboardScreenState extends State<DashboardScreen> with WidgetsBindingObs
     final enterprise = EnterpriseTheme.of(context);
     final sidebarFg = sidebarForeground(enterprise);
     final features = context.watch<DashboardProvider>().features;
+    final canRepair = context.watch<RepairPriceProvider>().canView;
 
     final tabIds = <LayoutItem>[];
     final tabs = <PersistentTabConfig>[];
@@ -363,16 +381,23 @@ class DashboardScreenState extends State<DashboardScreen> with WidgetsBindingObs
           translate('community.social_feed'),
         ),
       );
-    addTab(
-      LayoutItem.repair,
-      const RepairDevicePage(showBackButton: false),
-      getItemConfig(
-        const Icon(Icons.build_circle_outlined),
-        translate(enterprise.isRoyalBlueGold
-            ? 'royal.repair'
-            : 'dashboard_screen.repair_list'),
-      ),
-    );
+    if (canRepair)
+      addTab(
+        LayoutItem.repair,
+        RepairDevicePage(
+          showBackButton: false,
+          onNavigationVisibilityChanged: (visible) {
+            if (_repairNavigationVisible == visible || !mounted) return;
+            setState(() => _repairNavigationVisible = visible);
+          },
+        ),
+        getItemConfig(
+          const Icon(Icons.build_circle_outlined),
+          translate(enterprise.isRoyalBlueGold
+              ? 'royal.repair'
+              : 'dashboard_screen.repair_list'),
+        ),
+      );
     if (features["leave-request"] == "1")
       addTab(
         LayoutItem.leave,
@@ -427,7 +452,7 @@ class DashboardScreenState extends State<DashboardScreen> with WidgetsBindingObs
       children: [
         PersistentTabView(
           key: ValueKey(
-              'tabs_${features["social-feed"]}_${features["leave-request"]}_${features["attendance"]}'),
+              'tabs_${features["social-feed"]}_${features["leave-request"]}_${features["attendance"]}_$canRepair'),
           controller: _controller,
           onTabChanged: (index) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -443,7 +468,10 @@ class DashboardScreenState extends State<DashboardScreen> with WidgetsBindingObs
           handleAndroidBackButtonPress: true,
           resizeToAvoidBottomInset: true,
           stateManagement: true,
-          hideNavigationBar: immersive || socialDetailOpen || repairDetailOpen,
+          hideNavigationBar: immersive ||
+              socialDetailOpen ||
+              repairDetailOpen ||
+              (isRepairActive && !_repairNavigationVisible),
           floatingActionButton:
               showCreateRecord ? const CreateRecordButton() : null,
           floatingActionButtonLocation: showCreateRecord
@@ -636,11 +664,11 @@ class _EnterpriseNavItem extends StatelessWidget {
                 ? [
                     customAccent,
                     Color.lerp(
-                      customAccent,
-                      activeColor == Colors.white
-                          ? Colors.black
-                          : Colors.white,
-                      .16)!,
+                        customAccent,
+                        activeColor == Colors.white
+                            ? Colors.black
+                            : Colors.white,
+                        .16)!,
                   ]
                 : royal
                     ? RoyalColors.goldGradient.colors

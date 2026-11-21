@@ -8,6 +8,7 @@ import 'package:cnattendance/screen/profile/chatscreen.dart';
 import 'package:cnattendance/security/app_integrity.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:cnattendance/utils/chat/chat_message_preview.dart';
+import 'package:cnattendance/utils/chat/chat_sender_name.dart';
 import 'package:cnattendance/utils/navigationservice.dart';
 import 'package:get/get.dart';
 
@@ -67,26 +68,30 @@ class IncomingChatListener {
         final conversationId = (data['id'] ?? '').toString().trim();
         final type = (data['type'] ?? '').toString().trim();
         final encodedMessage = (data['message'] ?? '').toString();
-        final message = chatMessagePreview(type, _decodeMessage(encodedMessage));
+        final message =
+            chatMessagePreview(type, _decodeMessage(encodedMessage));
+        final senderName = await incomingChatSenderName(
+          username: sender,
+          savedName: data['sender_name'],
+        );
 
         if (conversationId.isNotEmpty) {
           await ChatBadgeController.ensureRegistered().handleIncomingMessage(
             conversationId: conversationId,
             messageKey: 'firestore:${change.doc.id}',
-            title: sender,
+            title: senderName,
           );
         }
 
-
         showToast(
-          message.isEmpty ? sender : '$sender\n$message',
-          onTap: () => _openChat(sender),
+          message.isEmpty ? senderName : '$senderName\n$message',
+          onTap: () => _openChat(sender, senderName),
         );
 
         NavigationService().showSnackBar(
-          sender,
+          senderName,
           message,
-          onTap: () => _openChat(sender),
+          onTap: () => _openChat(sender, senderName),
         );
       }
     });
@@ -100,11 +105,11 @@ class IncomingChatListener {
     }
   }
 
-  void _openChat(String senderUsername) {
+  void _openChat(String senderUsername, String senderName) {
     Get.to(
       ChatScreen(),
       arguments: {
-        'name': senderUsername,
+        'name': senderName,
         'avatar': '',
         'username': senderUsername,
       },

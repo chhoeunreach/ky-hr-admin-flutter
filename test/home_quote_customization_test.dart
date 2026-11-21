@@ -20,8 +20,12 @@ import 'package:http/testing.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'helpers/chat_storage_test_env.dart';
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  setUpAll(ChatStorageTestEnv.install);
+  tearDownAll(ChatStorageTestEnv.uninstall);
 
   for (final width in [320.0, 390.0]) {
     testWidgets(
@@ -370,7 +374,8 @@ Future<void> pumpHome(WidgetTester tester,
         ChangeNotifierProvider<ThemeProvider>.value(value: themeProvider),
       ChangeNotifierProvider(
         create: (_) => DashboardProvider()
-          ..attendanceMethods = onAttendanceTap == null ? [] : ['QR'],
+          ..attendanceMethods = onAttendanceTap == null ? [] : ['QR']
+          ..features = {'quote.view': '1'},
       ),
       ChangeNotifierProvider(create: (_) => preferences),
     ],

@@ -2,6 +2,7 @@ import 'package:cnattendance/features/community/social_feed_screen.dart';
 import 'package:cnattendance/features/home_highlights/home_highlight_api.dart';
 import 'package:cnattendance/features/home_highlights/home_highlights_screen.dart';
 import 'package:cnattendance/features/repair_price/pages/repair_device_page.dart';
+import 'package:cnattendance/features/repair_price/providers/repair_price_provider.dart';
 import 'package:cnattendance/screen/dashboard/chatlistscreen.dart';
 import 'package:cnattendance/theme/theme_layout.dart';
 import 'package:cnattendance/screen/dashboard/attendancescreen.dart';
@@ -35,6 +36,8 @@ class _OverviewDashboardState extends State<OverviewDashboard> {
   Widget build(BuildContext context) {
     final _overview = Provider.of<DashboardProvider>(context).overviewList;
     final features = context.watch<DashboardProvider>().features;
+    final canRepair = context.watch<RepairPriceProvider>().canView;
+    final canViewHighlights = features['home_highlight.view'] == '1';
     final employeeId =
         int.tryParse(context.watch<PrefProvider>().userId.trim()) ?? 0;
     final width = MediaQuery.sizeOf(context).width;
@@ -154,7 +157,7 @@ class _OverviewDashboardState extends State<OverviewDashboard> {
             );
           },
         ),
-      if (enterprise.layout.shows(LayoutItem.repairShortcut))
+      if (canRepair && enterprise.layout.shows(LayoutItem.repairShortcut))
         LayoutItem.repairShortcut: _shortcut(
           context,
           translate('dashboard_screen.repair_list'),
@@ -177,7 +180,7 @@ class _OverviewDashboardState extends State<OverviewDashboard> {
           Icons.dynamic_feed_outlined,
           () => const SocialFeedScreen(),
         ),
-      if (enterprise.layout.shows(LayoutItem.highlightsShortcut))
+      if (canViewHighlights && enterprise.layout.shows(LayoutItem.highlightsShortcut))
         LayoutItem.highlightsShortcut: _shortcut(
           context,
           'Highlights',

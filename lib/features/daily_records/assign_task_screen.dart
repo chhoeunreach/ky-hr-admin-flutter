@@ -108,7 +108,7 @@ class _AssignEmployeeTaskScreenState extends State<AssignEmployeeTaskScreen> {
   @override
   Widget build(BuildContext context) => PopScope(
         canPop: !_saving,
-        child: Scaffold(
+        child: RecordScaffold(
           appBar: AppBar(title: const Text('Assign Employee Task')),
           body: FutureBuilder<RecordData>(
             future: _groups,
@@ -282,7 +282,7 @@ class _EmployeePickerState extends State<_EmployeePicker> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) => RecordScaffold(
         appBar: AppBar(
           title: const Text('Choose employees'),
           actions: [

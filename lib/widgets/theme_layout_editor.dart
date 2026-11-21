@@ -52,6 +52,20 @@ class _ThemeLayoutEditorState extends State<ThemeLayoutEditor> {
     final colors = _draft.colorsFor(info.colors);
     final features = context.watch<DashboardProvider?>()?.features ??
         const <String, String>{};
+    final baseTheme = Theme.of(context);
+    final ambientText = ThemeData.estimateBrightnessForColor(
+                baseTheme.scaffoldBackgroundColor) ==
+            Brightness.dark
+        ? Colors.white
+        : const Color(0xFF211720);
+    final ambientTheme = baseTheme.copyWith(
+      textTheme: baseTheme.textTheme
+          .apply(bodyColor: ambientText, displayColor: ambientText),
+      colorScheme: baseTheme.colorScheme.copyWith(
+        onSurface: ambientText,
+        onSurfaceVariant: ambientText,
+      ),
+    );
 
     return DefaultTabController(
       length: LayoutArea.values.length + 1,
@@ -66,146 +80,156 @@ class _ThemeLayoutEditorState extends State<ThemeLayoutEditor> {
             ],
           ),
         ),
-        body: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(info.name,
-                    style: Theme.of(context).textTheme.titleMedium),
-              ),
-            ),
-            Expanded(
-              child: IgnorePointer(
-                ignoring: _saving,
-                child: TabBarView(
-                  physics: const NeverScrollableScrollPhysics(),
-                  children: [
-                    for (final area in LayoutArea.values)
-                      _itemList(area, features),
-                    ListView(
-                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
-                      children: [
-                        Semantics(
-                          label: 'Color preview',
-                          child: Container(
-                            height: 70,
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              gradient:
-                                  LinearGradient(colors: colors.gradientColors),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: colors.accentColor),
-                            ),
-                            child: Align(
-                              alignment: Alignment.centerLeft,
-                              child: Icon(Icons.dashboard_outlined,
-                                  color: colors.accentColor),
-                            ),
-                          ),
-                        ),
-                        ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: CircleAvatar(
-                              backgroundColor: colors.backgroundColor),
-                          title: const Text('Background color'),
-                          trailing: const Icon(Icons.edit_outlined),
-                          onTap: () async {
-                            final selected = await _pickColor(
-                                'Background color', colors.backgroundColor);
-                            if (!mounted || selected == null) return;
-                            setState(() => _draft = _draft.setColors(
-                                background: selected, accent: _draft.accent));
-                          },
-                        ),
-                        ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading:
-                              CircleAvatar(backgroundColor: colors.accentColor),
-                          title: const Text('Accent color'),
-                          trailing: const Icon(Icons.edit_outlined),
-                          onTap: () async {
-                            final selected = await _pickColor(
-                                'Accent color', colors.accentColor);
-                            if (!mounted || selected == null) return;
-                            setState(() => _draft = _draft.setColors(
-                                background: _draft.background,
-                                accent: selected));
-                          },
-                        ),
-                        if (_draft.background != null || _draft.accent != null)
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: TextButton(
-                              onPressed: () => setState(() {
-                                _draft = _draft.setColors(
-                                    background: null, accent: null);
-                              }),
-                              child: const Text('Use theme colors'),
-                            ),
-                          ),
-                        if (_mode != AppThemeMode.royalBlueGold)
-                          SwitchListTile(
-                            contentPadding: EdgeInsets.zero,
-                            title:
-                                const Text('Separate banner, quote and clock'),
-                            value: _draft.separatesBanner(_mode),
-                            onChanged: (value) => setState(() {
-                              _draft = _draft.setSeparateBanner(value);
-                            }),
-                          ),
-                        SwitchListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: const Text('Show side menu button'),
-                          value: _draft.showMenuButton,
-                          onChanged: (value) => setState(() {
-                            _draft = _draft.setShowMenuButton(value);
-                          }),
-                        ),
-                        const SizedBox(height: 10),
-                        Text('Side menu position',
-                            style: Theme.of(context).textTheme.titleMedium),
-                        const SizedBox(height: 8),
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: SegmentedButton<bool>(
-                            segments: const [
-                              ButtonSegment(value: false, label: Text('Left')),
-                              ButtonSegment(value: true, label: Text('Right')),
-                            ],
-                            selected: {_draft.menuOnRight},
-                            onSelectionChanged: (values) => setState(() =>
-                                _draft = _draft.setMenuOnRight(values.single)),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+        body: Theme(
+          data: ambientTheme,
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(info.name,
+                      style: ambientTheme.textTheme.titleMedium),
                 ),
               ),
-            ),
-          ],
-        ),
-        bottomNavigationBar: SafeArea(
-          minimum: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-          child: OverflowBar(
-            alignment: MainAxisAlignment.spaceBetween,
-            spacing: 10,
-            overflowSpacing: 6,
-            children: [
-              TextButton(
-                onPressed: _saving
-                    ? null
-                    : () =>
-                        setState(() => _draft = const ThemeLayout.defaults()),
-                child: const Text('Reset to default'),
-              ),
-              FilledButton(
-                onPressed: _saving ? null : _save,
-                child: Text(_saving ? 'Saving…' : 'Save layout'),
+              Expanded(
+                child: IgnorePointer(
+                  ignoring: _saving,
+                  child: TabBarView(
+                    physics: const NeverScrollableScrollPhysics(),
+                    children: [
+                      for (final area in LayoutArea.values)
+                        _itemList(area, features),
+                      ListView(
+                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
+                        children: [
+                          Semantics(
+                            label: 'Color preview',
+                            child: Container(
+                              height: 70,
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                    colors: colors.gradientColors),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: colors.accentColor),
+                              ),
+                              child: Align(
+                                alignment: Alignment.centerLeft,
+                                child: Icon(Icons.dashboard_outlined,
+                                    color: colors.accentColor),
+                              ),
+                            ),
+                          ),
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: CircleAvatar(
+                                backgroundColor: colors.backgroundColor),
+                            title: const Text('Background color'),
+                            trailing: const Icon(Icons.edit_outlined),
+                            onTap: () async {
+                              final selected = await _pickColor(
+                                  'Background color', colors.backgroundColor);
+                              if (!mounted || selected == null) return;
+                              setState(() => _draft = _draft.setColors(
+                                  background: selected, accent: _draft.accent));
+                            },
+                          ),
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: CircleAvatar(
+                                backgroundColor: colors.accentColor),
+                            title: const Text('Accent color'),
+                            trailing: const Icon(Icons.edit_outlined),
+                            onTap: () async {
+                              final selected = await _pickColor(
+                                  'Accent color', colors.accentColor);
+                              if (!mounted || selected == null) return;
+                              setState(() => _draft = _draft.setColors(
+                                  background: _draft.background,
+                                  accent: selected));
+                            },
+                          ),
+                          if (_draft.background != null ||
+                              _draft.accent != null)
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: TextButton(
+                                onPressed: () => setState(() {
+                                  _draft = _draft.setColors(
+                                      background: null, accent: null);
+                                }),
+                                child: const Text('Use theme colors'),
+                              ),
+                            ),
+                          if (_mode != AppThemeMode.royalBlueGold)
+                            SwitchListTile(
+                              contentPadding: EdgeInsets.zero,
+                              title: const Text(
+                                  'Separate banner, quote and clock'),
+                              value: _draft.separatesBanner(_mode),
+                              onChanged: (value) => setState(() {
+                                _draft = _draft.setSeparateBanner(value);
+                              }),
+                            ),
+                          SwitchListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: const Text('Show side menu button'),
+                            value: _draft.showMenuButton,
+                            onChanged: (value) => setState(() {
+                              _draft = _draft.setShowMenuButton(value);
+                            }),
+                          ),
+                          const SizedBox(height: 10),
+                          Text('Side menu position',
+                              style: ambientTheme.textTheme.titleMedium),
+                          const SizedBox(height: 8),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: SegmentedButton<bool>(
+                              segments: const [
+                                ButtonSegment(
+                                    value: false, label: Text('Left')),
+                                ButtonSegment(
+                                    value: true, label: Text('Right')),
+                              ],
+                              selected: {_draft.menuOnRight},
+                              onSelectionChanged: (values) => setState(() =>
+                                  _draft =
+                                      _draft.setMenuOnRight(values.single)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ],
+          ),
+        ),
+        bottomNavigationBar: Theme(
+          data: ambientTheme,
+          child: SafeArea(
+            minimum: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+            child: OverflowBar(
+              alignment: MainAxisAlignment.spaceBetween,
+              spacing: 10,
+              overflowSpacing: 6,
+              children: [
+                TextButton(
+                  onPressed: _saving
+                      ? null
+                      : () =>
+                          setState(() => _draft = const ThemeLayout.defaults()),
+                  child: const Text('Reset to default'),
+                ),
+                FilledButton(
+                  onPressed: _saving ? null : _save,
+                  child: Text(_saving ? 'Saving…' : 'Save layout'),
+                ),
+              ],
+            ),
           ),
         ),
       ),

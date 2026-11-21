@@ -6,6 +6,7 @@ import 'package:cnattendance/data/source/network/model/attendancereport/Attendan
 import 'package:cnattendance/provider/attendancereportprovider.dart';
 import 'package:cnattendance/repositories/attendancereportrepository.dart';
 import 'package:cnattendance/widget/attendancescreen/attendancecardview.dart';
+import 'package:cnattendance/widget/attendancescreen/attendancestatus.dart';
 import 'package:cnattendance/widget/attendancescreen/reportlistview.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -32,7 +33,12 @@ class _Repository extends AttendanceReportRepository {
   }
 }
 
-AttendanceReportResponse _response({String present = '10', int rows = 0}) =>
+AttendanceReportResponse _response({
+  String present = '10',
+  int rows = 0,
+  Map<String, dynamic>? today,
+  List<Map<String, dynamic>> extraRows = const [],
+}) =>
     AttendanceReportResponse.fromJson({
       'status': true,
       'message': 'OK',
@@ -43,11 +49,12 @@ AttendanceReportResponse _response({String present = '10', int rows = 0}) =>
           'totalWorkedHours': '80h'
         },
         'user_detail': {'user_id': 1, 'name': 'Employee', 'email': ''},
-        'employee_today_attendance': {
-          'check_in_at': '08:00',
-          'check_out_at': '-',
-          'productive_time_in_min': '120',
-        },
+        'employee_today_attendance': today ??
+            {
+              'check_in_at': '08:00',
+              'check_out_at': '-',
+              'productive_time_in_min': '120',
+            },
         'employee_attendance': [
           for (var i = 0; i < rows; i++)
             {
@@ -57,7 +64,8 @@ AttendanceReportResponse _response({String present = '10', int rows = 0}) =>
               'week_day': 'Monday',
               'check_in': '08:00',
               'check_out': '17:00',
-            }
+            },
+          ...extraRows,
         ],
       },
     });
@@ -145,6 +153,111 @@ void main() {
     provider.dispose();
     repository.requests.single.complete(_response());
     await pending;
+  });
+
+  testWidgets('attendance header displays absence after an empty report',
+      (tester) async {
+    Localization.load(jsonDecode(File('assets/i18n/en.json').readAsStringSync())
+        as Map<String, dynamic>);
+    final provider = AttendanceReportProvider();
+    addTearDown(provider.dispose);
+    await tester.pumpWidget(ChangeNotifierProvider.value(
+      value: provider,
+      child: MaterialApp(home: Scaffold(body: AttendanceStatus())),
+    ));
+    expect(find.text('Absent'), findsNothing);
+
+    provider.makeTodayReport(_response(today: {}).data.employeeTodayAttendance);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Absent'), findsOneWidget);
+  });
+
+  test('leave requests and days off take precedence over missing punches', () {
+    final provider = AttendanceReportProvider();
+    addTearDown(provider.dispose);
+    final date = DateTime.now().toIso8601String().split('T').first;
+    final response = _response(today: {}, extraRows: [
+      {'id': 1, 'attendance_date_ad': date, 'day_status': 'present'},
+      {'id': 2, 'attendance_date_ad': date, 'leave_status': 'On Review'},
+      {'id': 3, 'status_label': 'Day Off', 'check_in': '', 'check_out': '-'},
+      {'id': 4, 'status_label': 'សុំច្បាប់\u200b'},
+    ]);
+    provider.makeTodayReport(response.data.employeeTodayAttendance);
+    provider.makeAttendanceReport(response.data.employeeAttendance);
+
+    expect(provider.todayReport['day_status'], 'leave_request');
+    expect(
+      provider.attendanceReport.map((row) => row.dayStatus),
+      ['absent', 'leave_request', 'day_off', 'leave_request'],
+    );
+  });
+
+  test('a blank history row preserves a check-in from the today report', () {
+    final provider = AttendanceReportProvider();
+    addTearDown(provider.dispose);
+    final response = _response(extraRows: [
+      {
+        'id': 1,
+        'attendance_date_ad': DateTime.now().toIso8601String().split('T').first,
+      },
+    ]);
+    provider.makeTodayReport(response.data.employeeTodayAttendance);
+    provider.makeAttendanceReport(response.data.employeeAttendance);
+
+    expect(provider.todayReport['check_in_at'], '08:00');
+    expect(provider.todayReport['day_status'], 'present');
+  });
+
+  testWidgets('attendance labels change when a leave request is approved',
+      (tester) async {
+    void loadLabels(String language) {
+      Localization.load(
+          jsonDecode(File('assets/i18n/$language.json').readAsStringSync())
+              as Map<String, dynamic>);
+    }
+
+    loadLabels('en');
+    final repository = _Repository();
+    final provider = AttendanceReportProvider()..repository = repository;
+    addTearDown(provider.dispose);
+    final date = DateTime.now().toIso8601String().split('T').first;
+    await tester.pumpWidget(ChangeNotifierProvider.value(
+      value: provider,
+      child: MaterialApp(
+        home: Scaffold(
+          body: CustomScrollView(slivers: [
+            SliverToBoxAdapter(child: AttendanceStatus()),
+            const ReportListView(asSliver: true),
+          ]),
+        ),
+      ),
+    ));
+
+    Future<void> refresh(String leaveStatus, String dayStatus) async {
+      final load = provider.getAttendanceReport();
+      repository.requests.last.complete(_response(today: {}, extraRows: [
+        {
+          'id': 0,
+          'attendance_date_nepali': '21 Nov',
+          'attendance_date_ad': date,
+          'leave_status': leaveStatus,
+          'day_status': dayStatus,
+        },
+      ]));
+      await load;
+      await tester.pumpAndSettle();
+    }
+
+    await refresh('pending', 'leave');
+    expect(find.text('Leave Request'), findsNWidgets(2));
+
+    await refresh('approved', 'leave_request');
+    expect(find.text('Day Off'), findsNWidgets(2));
+
+    loadLabels('km');
+    await refresh('approved', 'leave');
+    expect(find.text('ច្បាប់'), findsNWidgets(2));
   });
 
   testWidgets('attendance history builds visible days as the user scrolls',

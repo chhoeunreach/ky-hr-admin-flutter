@@ -170,10 +170,11 @@
   "attendance_status": {
     "present": "មានវត្តមាន",
     "absent": "អវត្តមាន",
-    "leave": "ឈប់សម្រាក",
+    "leave": "ច្បាប់",
     "time_leave": "ឈប់សម្រាកជាម៉ោង",
     "leave_request": "សំណើឈប់សម្រាក",
     "time_leave_request": "សំណើឈប់សម្រាកជាម៉ោង",
+    "day_off": "ថ្ងៃសម្រាក",
     "holiday": "ថ្ងៃឈប់សម្រាក",
     "weekend": "ចុងសប្ដាហ៍",
     "late": "មកយឺត",
@@ -450,6 +451,7 @@
     "other": "ផ្សេងៗ"
   },
   "employee_detail_screen": {
+    "load_failed": "មិនអាចផ្ទុកព័ត៌មានលម្អិតនៃប្រវត្តិរូបបានទេ។",
     "profile": "ប្រវត្តិរូប",
     "basic_details": "ព័ត៌មានមូលដ្ឋាន",
     "change": "ផ្លាស់ប្ដូរ",

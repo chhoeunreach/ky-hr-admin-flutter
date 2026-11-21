@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
 import 'daily_records_api.dart';
+import 'note_description_editor.dart';
 import 'record_theme.dart';
 import 'daily_summaries.dart';
 import 'work_record_editor.dart';
@@ -37,6 +38,7 @@ class _NewDailyRecordScreenState extends State<NewDailyRecordScreen> {
   bool _saving = false;
   DateTime? _due;
   List<PlatformFile> _files = [];
+  String? _reportDate;
 
   String get kind => widget.kind;
   bool get _bodyRequired =>
@@ -54,11 +56,21 @@ class _NewDailyRecordScreenState extends State<NewDailyRecordScreen> {
     if (_saving || !_form.currentState!.validate()) return;
     setState(() => _saving = true);
     try {
+      if (kind == 'report' && _reportDate == null) {
+        final access = await widget.api.get('capabilities');
+        if (access['can_submit_report'] != true ||
+            access['reporting_today'] is! String) {
+          throw DailyRecordsError(
+              workText(context, 'Your role cannot submit daily reports.'));
+        }
+        _reportDate = access['reporting_today'] as String;
+      }
       await widget.api.post(
           'records',
           {
             'request_id': _requestId,
             'kind': kind,
+            if (_reportDate != null) 'report_date': _reportDate,
             'title': _title.text.trim(),
             if (_body.text.trim().isNotEmpty) 'body': _body.text.trim(),
             if (widget.assignmentId != null)
@@ -94,7 +106,7 @@ class _NewDailyRecordScreenState extends State<NewDailyRecordScreen> {
 
     return PopScope(
       canPop: !_saving,
-      child: Scaffold(
+      child: RecordScaffold(
         appBar: AppBar(title: Text(title)),
         body: Form(
           key: _form,
@@ -199,7 +211,7 @@ class _MyDailyRecordsScreenState extends State<MyDailyRecordsScreen> {
   };
 
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) => RecordScaffold(
         appBar: AppBar(title: const Text('My Daily Records')),
         body: Column(
           children: [
@@ -298,6 +310,10 @@ class DailyRecordScreen extends StatelessWidget {
           final classification = workMap(entry['classification']);
           final details = workMap(entry['details']);
           final fields = recordMap(details['fields']);
+          final note =
+              kind == 'note' ? noteOperations(details['note_document']) : null;
+          final files = recordRows(data['files']);
+          final inlineImages = noteImageNames(note);
           return [
             Text(entry['title'].toString(),
                 style: Theme.of(context).textTheme.headlineSmall),
@@ -323,7 +339,17 @@ class DailyRecordScreen extends StatelessWidget {
                 for (final tag in workList(entry['tags']))
                   Chip(label: Text(tag.toString()))
               ]),
-            if (entry['body'] != null) ...[
+            if (note != null) ...[
+              recordSpacing,
+              NoteDescriptionEditor(
+                key: ValueKey((id, entry['revision'])),
+                api: api,
+                entryId: id,
+                plainText: (entry['body'] ?? '').toString(),
+                operations: note,
+                attachments: files,
+              ),
+            ] else if (entry['body'] != null) ...[
               recordSpacing,
               Text(entry['body'].toString())
             ],
@@ -368,7 +394,7 @@ class DailyRecordScreen extends StatelessWidget {
               children: [
                 if (canEdit)
                   FilledButton(
-                      onPressed: () => _edit(context, detail, entry),
+                      onPressed: () => _edit(context, detail, entry, files),
                       child: Text(workText(context, 'Edit record'))),
                 if (workRecords && !assigned && kind == 'note') ...[
                   if (!closed)
@@ -415,6 +441,12 @@ class DailyRecordScreen extends StatelessWidget {
                 if (kind == 'report' &&
                     status == 'returned' &&
                     entry['assignment_id'] == null &&
+                    data['can_submit_report'] == true &&
+                    recordBusinessTime(entry['created_at'])
+                            ?.toIso8601String()
+                            .split('T')
+                            .first ==
+                        data['reporting_today'] &&
                     !recordFlag(entry['consolidated']))
                   FilledButton(
                       onPressed: () => _message(context, detail, 'resubmit',
@@ -435,7 +467,11 @@ class DailyRecordScreen extends StatelessWidget {
               ],
             ),
             RecordAttachments(
-                api: api, path: _path, files: recordRows(data['files'])),
+                api: api,
+                path: _path,
+                files: files
+                    .where((file) => !inlineImages.contains(file['name']))
+                    .toList()),
             RecordHistory(
                 page: recordMap(data['history']),
                 onMore: () => detail.more('history')),
@@ -443,11 +479,14 @@ class DailyRecordScreen extends StatelessWidget {
         },
       );
 
-  Future<void> _edit(
-      BuildContext context, RecordDetailState detail, RecordData entry) async {
+  Future<void> _edit(BuildContext context, RecordDetailState detail,
+      RecordData entry, List<RecordData> files) async {
     final saved = await Navigator.of(context).push<bool>(recordRoute(
       builder: (_) => WorkRecordEditor(
-          api: api, kind: entry['kind'].toString(), entry: entry),
+          api: api,
+          kind: entry['kind'].toString(),
+          entry: entry,
+          attachments: files),
     ));
     if (saved == true && context.mounted) await detail.refresh();
   }

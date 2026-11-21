@@ -4,9 +4,9 @@ import 'package:cnattendance/data/source/network/model/attendancereport/Employee
 import 'package:cnattendance/model/employeeattendancereport.dart';
 import 'package:cnattendance/model/month.dart';
 import 'package:cnattendance/repositories/attendancereportrepository.dart';
+import 'package:cnattendance/utils/attendance_status.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:nepali_utils/nepali_utils.dart';
 
 class AttendanceReportProvider with ChangeNotifier {
@@ -36,6 +36,7 @@ class AttendanceReportProvider with ChangeNotifier {
   int _reportRevision = 0;
   bool? _dateInAd;
   bool _disposed = false;
+  String? _todayReportDate;
 
   @override
   void dispose() {
@@ -135,7 +136,7 @@ class AttendanceReportProvider with ChangeNotifier {
         isUnderTime: item.isUnderTime,
         worked_hours_min: item.workedhrsMin,
         working_hours_min: item.workingHourMin,
-        dayStatus: item.dayStatus,
+        dayStatus: item.resolvedDayStatus,
         rawStatusLabel: item.statusLabel,
         leaveStatus: item.leaveStatus,
         leaveType: item.leaveType,
@@ -145,18 +146,32 @@ class AttendanceReportProvider with ChangeNotifier {
       ));
     }
 
-    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    final today = _todayDateKey();
     final todayRows =
         _attendanceReport.where((item) => item.attendance_date_ad == today);
     if (todayRows.isNotEmpty) {
-      final todayReport = todayRows.first;
-      _todayReport['day_status'] = todayReport.dayStatus;
-      _todayReport['status_label'] = todayReport.statusLabel;
-      if (!todayReport.hasAttendance) {
-        _todayReport['check_in_at'] = '-';
-        _todayReport['check_out_at'] = '-';
-        _todayReport['production_hour'] = '0 hr 0 min';
-        _todayReport['production_percent'] = 0.0;
+      final todayReport = EmployeeAttendanceReport.statusForDay(todayRows);
+      _todayReportDate = today;
+      for (final row in todayRows) {
+        if (!hasAttendanceTime(_todayReport['check_in_at']) &&
+            hasAttendanceTime(row.check_in)) {
+          _todayReport['check_in_at'] = row.check_in;
+        }
+        if (!hasAttendanceTime(_todayReport['check_out_at']) &&
+            hasAttendanceTime(row.check_out)) {
+          _todayReport['check_out_at'] = row.check_out;
+        }
+      }
+      if (attendanceExceptions.contains(todayReport.dayStatus) ||
+          !attendanceExceptions.contains(_todayReport['day_status'])) {
+        final dayStatus = resolveAttendanceStatus(
+          hasAttendance: hasAttendanceTime(_todayReport['check_in_at']) ||
+              hasAttendanceTime(_todayReport['check_out_at']),
+          dayStatus: todayReport.dayStatus,
+        );
+        _todayReport['day_status'] = dayStatus;
+        _todayReport['status_label'] =
+            dayStatus == todayReport.dayStatus ? todayReport.statusLabel : '';
       }
     }
 
@@ -165,13 +180,33 @@ class AttendanceReportProvider with ChangeNotifier {
 
   void makeTodayReport(EmployeeTodayAttendance employeeTodayAttendance,
       {bool notify = true}) {
-    _todayReport['check_in_at'] = employeeTodayAttendance.checkInAt;
-    _todayReport['check_out_at'] = employeeTodayAttendance.checkOutAt;
-    _todayReport['day_status'] = 'present';
-    _todayReport['status_label'] = '';
+    final today = _todayDateKey();
+    final currentMonth = _dateInAd == false
+        ? NepaliDateTime.now().month - 1
+        : DateTime.now().month - 1;
+    final dayStatus = employeeTodayAttendance.resolvedDayStatus;
+    _todayReport['check_in_at'] =
+        hasAttendanceTime(employeeTodayAttendance.checkInAt)
+            ? employeeTodayAttendance.checkInAt
+            : '-';
+    _todayReport['check_out_at'] =
+        hasAttendanceTime(employeeTodayAttendance.checkOutAt)
+            ? employeeTodayAttendance.checkOutAt
+            : '-';
+    final keepKnownException = selectedMonth != currentMonth &&
+        today == _todayReportDate &&
+        attendanceExceptions.contains(_todayReport['day_status']) &&
+        !attendanceExceptions.contains(dayStatus);
+    if (!keepKnownException) {
+      _todayReport['day_status'] = dayStatus;
+      _todayReport['status_label'] = employeeTodayAttendance.statusLabel ?? '';
+    }
+    _todayReportDate = today;
 
     if (notify) notifyListeners();
   }
+
+  String _todayDateKey() => DateTime.now().toIso8601String().split('T').first;
 
   void makeMonthlyReport(AttendanceSummary attendanceSummary,
       {bool notify = true}) {

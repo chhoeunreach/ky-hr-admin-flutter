@@ -53,13 +53,12 @@ class DailyRecordsApi {
       }
     }
     for (final file in files) {
-      final path = file.path;
       if (file.bytes != null) {
         request.files.add(
           http.MultipartFile.fromBytes('files[]', file.bytes!,
               filename: file.name),
         );
-      } else if (path != null) {
+      } else if (file.path case final String path) {
         request.files.add(
           await http.MultipartFile.fromPath('files[]', path,
               filename: file.name),

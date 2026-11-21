@@ -170,10 +170,11 @@
   "attendance_status": {
     "present": "Present",
     "absent": "Absent",
-    "leave": "Leave",
+    "leave": "Day Off",
     "time_leave": "Time Leave",
     "leave_request": "Leave Request",
     "time_leave_request": "Time Leave Request",
+    "day_off": "Day Off",
     "holiday": "Holiday",
     "weekend": "Weekend",
     "late": "Late",
@@ -450,6 +451,7 @@
     "other": "Other"
   },
   "employee_detail_screen": {
+    "load_failed": "Could not load profile details.",
     "profile": "Profile",
     "basic_details": "Basic Details",
     "change": "Change",

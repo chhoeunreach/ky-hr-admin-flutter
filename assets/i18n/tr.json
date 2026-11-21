@@ -318,6 +318,7 @@
     "other": "Diğer"
   },
   "employee_detail_screen": {
+    "load_failed": "Profil ayrıntıları yüklenemedi.",
     "profile": "Profil",
     "basic_details": "Temel Ayrıntılar",
     "change": "Değiştir",
@@ -621,6 +622,7 @@
     "time_leave": "Time Leave",
     "leave_request": "Leave Request",
     "time_leave_request": "Time Leave Request",
+    "day_off": "İzin günü",
     "holiday": "Holiday",
     "weekend": "Weekend",
     "late": "Late",

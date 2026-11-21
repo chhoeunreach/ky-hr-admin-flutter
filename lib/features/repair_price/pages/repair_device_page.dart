@@ -1,6 +1,7 @@
 import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/widget/premium_background.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:provider/provider.dart';
 import '../config/repair_price_config.dart';
@@ -13,8 +14,13 @@ import '../widgets/repair_search_bar.dart';
 import 'repair_price_detail_page.dart';
 
 class RepairDevicePage extends StatelessWidget {
-  const RepairDevicePage({super.key, this.showBackButton = true});
+  const RepairDevicePage({
+    super.key,
+    this.showBackButton = true,
+    this.onNavigationVisibilityChanged,
+  });
   final bool showBackButton;
+  final ValueChanged<bool>? onNavigationVisibilityChanged;
 
   static Route route() {
     return MaterialPageRoute(
@@ -26,19 +32,29 @@ class RepairDevicePage extends StatelessWidget {
   Widget build(BuildContext context) {
     try {
       Provider.of<RepairPriceProvider>(context, listen: false);
-      return _RepairDeviceView(showBackButton: showBackButton);
+      return _RepairDeviceView(
+        showBackButton: showBackButton,
+        onNavigationVisibilityChanged: onNavigationVisibilityChanged,
+      );
     } catch (_) {
       return ChangeNotifierProvider(
         create: (_) => RepairPriceProvider()..initDevicePage(),
-        child: _RepairDeviceView(showBackButton: showBackButton),
+        child: _RepairDeviceView(
+          showBackButton: showBackButton,
+          onNavigationVisibilityChanged: onNavigationVisibilityChanged,
+        ),
       );
     }
   }
 }
 
 class _RepairDeviceView extends StatefulWidget {
-  const _RepairDeviceView({required this.showBackButton});
+  const _RepairDeviceView({
+    required this.showBackButton,
+    required this.onNavigationVisibilityChanged,
+  });
   final bool showBackButton;
+  final ValueChanged<bool>? onNavigationVisibilityChanged;
 
   @override
   State<_RepairDeviceView> createState() => _RepairDeviceViewState();
@@ -46,6 +62,7 @@ class _RepairDeviceView extends StatefulWidget {
 
 class _RepairDeviceViewState extends State<_RepairDeviceView> {
   final ScrollController _scrollController = ScrollController();
+  bool _navigationVisible = true;
 
   @override
   void initState() {
@@ -59,6 +76,19 @@ class _RepairDeviceViewState extends State<_RepairDeviceView> {
   }
 
   void _onScroll() {
+    if (_scrollController.position.userScrollDirection !=
+        ScrollDirection.idle) {
+      final visible = _scrollController.position.userScrollDirection ==
+          ScrollDirection.forward;
+      if (visible != _navigationVisible) {
+        _navigationVisible = visible;
+        widget.onNavigationVisibilityChanged?.call(visible);
+      }
+    }
+    if (_scrollController.position.pixels <= 0 && !_navigationVisible) {
+      _navigationVisible = true;
+      widget.onNavigationVisibilityChanged?.call(true);
+    }
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 200) {
       context.read<RepairPriceProvider>().loadMoreDevices();

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'daily_records_api.dart';
 import 'record_theme.dart';
 import 'employee_records.dart';
+import 'monthly_report_progress.dart';
 import 'record_detail.dart';
 import 'record_widgets.dart';
 import 'work_labels.dart';
@@ -31,12 +32,33 @@ class DailySummariesScreen extends StatefulWidget {
 class _DailySummariesScreenState extends State<DailySummariesScreen> {
   final _list = GlobalKey<RecordListState>();
   late String _status = widget.manager ? 'pending' : '';
+  bool _canSubmit = false;
 
   Future<void> _openDate() async {
-    final date = await chooseWorkDate(context, workToday());
-    if (!mounted || date == null) return;
     await Navigator.of(context).push<bool>(recordRoute(
-      builder: (_) => DailySummaryEditor(api: widget.api, date: date),
+      builder: (_) => DailySummaryEditor(api: widget.api),
+    ));
+    if (mounted) await _list.currentState?.refresh();
+  }
+
+  Future<RecordData> _loadPage(int page) async {
+    final data = await widget.api.get(
+      widget.manager ? 'summary-inbox' : 'summaries',
+      {'page': '$page', if (_status.isNotEmpty) 'status': _status},
+    );
+    final canSubmit = data['can_submit_report'] == true;
+    if (mounted && !widget.manager && page == 1 && canSubmit != _canSubmit) {
+      setState(() => _canSubmit = canSubmit);
+    }
+    return data;
+  }
+
+  Future<void> _openMonthlyProgress() async {
+    await Navigator.of(context).push<void>(recordRoute(
+      builder: (_) => MonthlyReportProgressScreen(
+        api: widget.api,
+        editor: (date) => DailySummaryEditor(api: widget.api, date: date),
+      ),
     ));
     if (mounted) await _list.currentState?.refresh();
   }
@@ -52,7 +74,7 @@ class _DailySummariesScreenState extends State<DailySummariesScreen> {
       'approved': 'Approved',
       if (!widget.manager) 'draft': 'Draft',
     };
-    return Scaffold(
+    return RecordScaffold(
       appBar: AppBar(
           title: Text(workText(context,
               widget.manager ? 'Review Reports' : 'My Submitted Reports'))),
@@ -63,10 +85,18 @@ class _DailySummariesScreenState extends State<DailySummariesScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (!widget.manager) ...[
-                FilledButton.icon(
-                  onPressed: _openDate,
-                  icon: const Icon(Icons.event_outlined),
-                  label: Text(workText(context, 'Choose reporting date')),
+                if (_canSubmit) ...[
+                  FilledButton.icon(
+                    onPressed: _openDate,
+                    icon: const Icon(Icons.event_outlined),
+                    label: Text(workText(context, "Today's report")),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+                OutlinedButton.icon(
+                  onPressed: _openMonthlyProgress,
+                  icon: const Icon(Icons.calendar_month_outlined),
+                  label: Text(workText(context, 'Monthly report progress')),
                 ),
                 recordSpacing,
               ],
@@ -92,9 +122,7 @@ class _DailySummariesScreenState extends State<DailySummariesScreen> {
           key: _list,
           query: _status,
           empty: workText(context, 'No matching records.'),
-          load: (page) => widget.api.get(
-              widget.manager ? 'summary-inbox' : 'summaries',
-              {'page': '$page', if (_status.isNotEmpty) 'status': _status}),
+          load: _loadPage,
           itemBuilder: (context, row) => ListTile(
             leading: const Icon(Icons.description_outlined),
             title: Text(widget.manager
@@ -121,9 +149,9 @@ class _DailySummariesScreenState extends State<DailySummariesScreen> {
 }
 
 class DailySummaryEditor extends StatefulWidget {
-  const DailySummaryEditor({super.key, required this.api, required this.date});
+  const DailySummaryEditor({super.key, required this.api, this.date});
   final DailyRecordsApi api;
-  final String date;
+  final String? date;
 
   @override
   State<DailySummaryEditor> createState() => _DailySummaryEditorState();
@@ -137,6 +165,9 @@ class _DailySummaryEditorState extends State<DailySummaryEditor> {
   final _records = <RecordData>[];
   final _tasks = <RecordData>[];
   RecordData _report = {};
+  String? _date;
+  String? _today;
+  bool _canSubmit = false;
   List<PlatformFile> _files = [];
   int _recordPage = 1;
   int _taskPage = 1;
@@ -145,13 +176,19 @@ class _DailySummaryEditorState extends State<DailySummaryEditor> {
   bool _loadingMore = false;
   bool _saving = false;
 
-  Future<RecordData> _preview({int page = 1, int taskPage = 1}) =>
-      widget.api.get('summaries/preview',
-          {'date': widget.date, 'page': '$page', 'task_page': '$taskPage'});
+  Future<RecordData> _preview({String? date, int page = 1, int taskPage = 1}) =>
+      widget.api.get('summaries/preview', {
+        if (date != null) 'date': date,
+        'page': '$page',
+        'task_page': '$taskPage',
+      });
 
   Future<void> _load() async {
-    final data = await _preview();
+    final data = await _preview(date: widget.date);
     if (!mounted) return;
+    _date = (data['report_date'] as String?) ?? widget.date;
+    _today = data['reporting_today'] as String?;
+    _canSubmit = data['can_submit_report'] == true;
     _report = recordMap(data['report']);
     final draft = workMap(_report['draft']);
     _content
@@ -185,8 +222,8 @@ class _DailySummaryEditorState extends State<DailySummaryEditor> {
     setState(() => _loadingMore = true);
     try {
       final next = tasks ? _taskPage + 1 : _recordPage + 1;
-      final data =
-          await _preview(page: tasks ? 1 : next, taskPage: tasks ? next : 1);
+      final data = await _preview(
+          date: _date, page: tasks ? 1 : next, taskPage: tasks ? next : 1);
       if (!mounted) return;
       final result = recordMap(data[tasks ? 'tasks' : 'records']);
       final rows = recordRows(result['data']);
@@ -209,7 +246,12 @@ class _DailySummaryEditorState extends State<DailySummaryEditor> {
   }
 
   Future<void> _save(bool submit) async {
-    if (_saving || !_form.currentState!.validate()) return;
+    final date = _date;
+    if (date == null ||
+        date != _today ||
+        !_canSubmit ||
+        _saving ||
+        !_form.currentState!.validate()) return;
     if (submit && _content['summary']?.trim().isNotEmpty != true) {
       showRecordError(
           context,
@@ -222,7 +264,7 @@ class _DailySummaryEditorState extends State<DailySummaryEditor> {
       await widget.api.postWork(
           'summaries',
           {
-            'report_date': widget.date,
+            'report_date': date,
             'revision': recordNumber(_report['revision']),
             'action': submit ? 'submit' : 'save',
             'record_ids': _selected.toList(),
@@ -241,7 +283,7 @@ class _DailySummaryEditorState extends State<DailySummaryEditor> {
   @override
   Widget build(BuildContext context) => PopScope(
         canPop: !_saving,
-        child: Scaffold(
+        child: RecordScaffold(
           appBar: AppBar(title: Text(workText(context, 'Daily Summary'))),
           body: FutureBuilder<void>(
             future: _initial,
@@ -254,19 +296,37 @@ class _DailySummaryEditorState extends State<DailySummaryEditor> {
                     retry: () => setState(() {
                           _initial = _load();
                         }));
-              final editable = _report.isEmpty ||
+              final open = _report.isEmpty ||
                   ['draft', 'returned'].contains(_report['status']);
-              if (!editable) {
-                return Center(
-                    child: FilledButton(
-                  onPressed: () => Navigator.of(context).push<void>(recordRoute(
-                    builder: (_) => _SummaryDetail(
-                        api: widget.api,
-                        id: recordNumber(_report['id']),
-                        manager: false),
-                  )),
-                  child: Text(workText(context, 'Open submitted report')),
-                ));
+              final sameDay = _date != null && _date == _today;
+              if (!open || !_canSubmit || !sameDay) {
+                return ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    if (_date != null) Text('$_date ICT'),
+                    if (open) ...[
+                      recordSpacing,
+                      Text(workText(
+                          context,
+                          !_canSubmit
+                              ? 'Your role cannot submit daily reports.'
+                              : 'Daily reports can only be saved or submitted on the reporting date.')),
+                    ],
+                    if (_report.isNotEmpty) ...[
+                      recordSpacing,
+                      FilledButton(
+                        onPressed: () =>
+                            Navigator.of(context).push<void>(recordRoute(
+                          builder: (_) => _SummaryDetail(
+                              api: widget.api,
+                              id: recordNumber(_report['id']),
+                              manager: false),
+                        )),
+                        child: Text(workText(context, 'Open report')),
+                      ),
+                    ],
+                  ],
+                );
               }
               return Form(
                 key: _form,
@@ -275,7 +335,7 @@ class _DailySummaryEditorState extends State<DailySummaryEditor> {
                   child: ListView(
                     padding: const EdgeInsets.all(16),
                     children: [
-                      Text('${widget.date} ICT',
+                      Text('$_date ICT',
                           style: Theme.of(context).textTheme.titleLarge),
                       RecordHeading(
                           "${workText(context, 'Records to include')} (${_selected.length})"),
@@ -437,7 +497,10 @@ class _SummaryDetail extends StatelessWidget {
               ],
             ),
           recordSpacing,
-          if (!manager && ['draft', 'returned'].contains(report['status']))
+          if (!manager &&
+              data['can_submit_report'] == true &&
+              date == data['reporting_today'] &&
+              ['draft', 'returned'].contains(report['status']))
             FilledButton(
                 onPressed: () async {
                   final saved = await Navigator.of(context).push<bool>(

@@ -313,6 +313,7 @@
     "other": "دیگر"
   },
   "employee_detail_screen": {
+    "load_failed": "بارگیری جزئیات نمایه ممکن نبود.",
     "profile": "پروفایل",
     "basic_details": "جزئیات اصلی",
     "change": "تغییر",
@@ -616,6 +617,7 @@
     "time_leave": "Time Leave",
     "leave_request": "Leave Request",
     "time_leave_request": "Time Leave Request",
+    "day_off": "روز استراحت",
     "holiday": "Holiday",
     "weekend": "Weekend",
     "late": "Late",

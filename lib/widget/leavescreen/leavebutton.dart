@@ -53,7 +53,9 @@ class LeaveButton extends StatelessWidget {
                 )),
           )),
         if (provider.features['mobile.function.Leave.saveLeaveRequestDetail'] ==
-            '1')
+                '1' &&
+            provider.features['mobile.function.Leave.saveTimeLeaveRequest'] ==
+                '1')
           Expanded(
               child: Padding(
             padding: const EdgeInsets.only(left: 4),

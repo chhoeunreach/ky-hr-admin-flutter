@@ -16,6 +16,7 @@ import 'package:cnattendance/screen/profile/admin_chat_thread_screen.dart';
 import 'package:cnattendance/screen/profile/chatscreen.dart';
 import 'package:cnattendance/screen/profile/group_chat_screen.dart';
 import 'package:cnattendance/utils/app_badge_sync.dart';
+import 'package:cnattendance/utils/chat/chat_sender_name.dart';
 import 'package:cnattendance/utils/chat_unread_store.dart';
 import 'package:cnattendance/utils/chat/notification_payload_parser.dart';
 import 'package:cnattendance/utils/fcm_token.dart';
@@ -38,7 +39,35 @@ class PushNotificationService {
   static Future<void>? _initialNotificationOpen;
   static ReceivedAction? _initialLocalAction;
 
+  static String _chatSenderTitle(
+    Map<String, dynamic> data, [
+    String? notificationTitle,
+  ]) {
+    final username = data['sender_username']?.toString().trim() ?? '';
+    return chatSenderDisplayName(
+          [
+            data['sender_name'],
+            if (data['type'] != 'group_chat') ...[
+              data['title'],
+              data['notification_title'],
+              notificationTitle,
+            ],
+          ],
+          username: username.isNotEmpty
+              ? username
+              : data['admin_username']?.toString() ?? '',
+        ) ??
+        chatAlertFallbackTitle;
+  }
+
+  @visibleForTesting
+  static String notificationTitleFor(RemoteMessage message) =>
+      _messageTitle(message);
+
   static String _messageTitle(RemoteMessage message) {
+    if (message.data['type'] == 'chat') {
+      return _chatSenderTitle(message.data, message.notification?.title);
+    }
     return message.notification?.title ??
         message.data["notification_title"] ??
         message.data["sender_name"] ??
@@ -222,12 +251,9 @@ class PushNotificationService {
     final isGroupChat = type == 'group_chat';
     final isDirectChat = type == 'chat';
     final isChat = isGroupChat || isDirectChat;
-    final senderName = (payload['sender_name']?.trim().isNotEmpty ?? false)
-        ? payload['sender_name']!.trim()
-        : _messageTitle(message);
     final conversationTitle = isGroupChat
-        ? (payload['title'] ?? 'Digital HRMS Chat')
-        : (isDirectChat ? senderName : _messageTitle(message));
+        ? (payload['title'] ?? chatAlertFallbackTitle)
+        : _messageTitle(message);
     final avatar = payload['sender_image']?.trim() ?? '';
 
     return NotificationContent(
@@ -236,7 +262,7 @@ class PushNotificationService {
       title: conversationTitle,
       body: _messageBody(message),
       summary: isChat
-          ? (isGroupChat ? senderName : 'Digital HRMS Chat')
+          ? (isGroupChat ? _chatSenderTitle(payload) : chatAlertFallbackTitle)
           : 'Digital HRMS',
       category:
           isChat ? NotificationCategory.Message : NotificationCategory.Reminder,
@@ -295,7 +321,7 @@ class PushNotificationService {
           'internal_conversation_id': payload['internal_conversation_id'],
         });
         Get.to(const AdminChatThreadScreen(), arguments: {
-          "name": payload["sender_name"] ?? payload["title"] ?? "Admin",
+          "name": _chatSenderTitle(payload),
           "avatar": payload["sender_image"] ?? "",
           "conversationId": payload["conversation_id"] ?? "",
           "adminId": payload["admin_id"] ?? "",
@@ -309,7 +335,7 @@ class PushNotificationService {
       }
 
       Get.to(ChatScreen(), arguments: {
-        "name": payload["sender_name"] ?? payload["title"] ?? "Notification",
+        "name": _chatSenderTitle(payload),
         "avatar": payload["sender_image"] ?? "",
         "username": payload["sender_username"] ?? "",
       });
@@ -466,8 +492,9 @@ class PushNotificationService {
       return;
     }
 
-    final title = (message.data["title"]?.toString().trim().isNotEmpty ?? false)
-        ? message.data["title"]!.toString().trim()
+    final groupTitle = message.data['title']?.toString().trim() ?? '';
+    final title = message.data['type'] == 'group_chat' && groupTitle.isNotEmpty
+        ? groupTitle
         : _messageTitle(message);
 
     if (Get.isRegistered<ChatBadgeController>()) {

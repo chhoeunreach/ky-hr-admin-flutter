@@ -52,7 +52,15 @@ class ChatContact {
 
     return ChatContact(
       id: _firstString(map, ['id', 'employee_id', 'user_id']),
-      name: _firstString(map, ['name', 'full_name', 'employee_name']),
+      name: _firstString(map, [
+        'name',
+        'full_name',
+        'employee_name',
+        'name_khmer',
+        'khmer_name',
+        'name_english',
+        'english_name',
+      ]),
       username: _firstString(map, ['username', 'user_name', 'login']),
       email: _stringValue(map['email']),
       phone: _stringValue(map['phone']),

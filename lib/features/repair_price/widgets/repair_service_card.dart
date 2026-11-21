@@ -12,6 +12,7 @@ class RepairServiceCard extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onTap;
   final VoidCallback? onEditPrice;
+  final VoidCallback? onAddPrice;
 
   const RepairServiceCard({
     super.key,
@@ -21,6 +22,7 @@ class RepairServiceCard extends StatelessWidget {
     this.isSelected = false,
     required this.onTap,
     this.onEditPrice,
+    this.onAddPrice,
   });
 
   @override
@@ -102,10 +104,11 @@ class RepairServiceCard extends StatelessWidget {
                             color: enterprise.accent,
                           ),
                         ),
-                        if (canManagePrices && onEditPrice != null) ...[
+                        if ((canManagePrices && onEditPrice != null) ||
+                            onAddPrice != null) ...[
                           const SizedBox(height: 3),
                           InkWell(
-                            onTap: onEditPrice,
+                            onTap: onAddPrice ?? onEditPrice,
                             borderRadius: BorderRadius.circular(5),
                             child: Container(
                               padding: const EdgeInsets.symmetric(
@@ -121,11 +124,17 @@ class RepairServiceCard extends StatelessWidget {
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.edit_note_rounded,
-                                      size: 13, color: enterprise.accent),
+                                  Icon(
+                                      onAddPrice != null
+                                          ? Icons.add_rounded
+                                          : Icons.edit_note_rounded,
+                                      size: 13,
+                                      color: enterprise.accent),
                                   const SizedBox(width: 3),
                                   Text(
-                                    translate('repair_screen.edit_price'),
+                                    onAddPrice != null
+                                        ? 'Add Repair Price'
+                                        : translate('repair_screen.edit_price'),
                                     style: TextStyle(
                                       fontSize: 9.5,
                                       fontWeight: FontWeight.w700,

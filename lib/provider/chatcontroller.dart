@@ -10,6 +10,7 @@ import 'package:cnattendance/services/chat_media_upload_service.dart';
 import 'package:cnattendance/services/voice_recorder_service.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:cnattendance/utils/chat_background_store.dart';
+import 'package:cnattendance/utils/chat/chat_sender_name.dart';
 import 'package:cnattendance/utils/chat/direct_conversation_id.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
@@ -101,13 +102,14 @@ class ChatController extends GetxController {
         "type": "text",
         "media_url": "",
         "sender": senderUsername,
+        if (senderName != null) "sender_name": senderName,
         "reciever": hostUsername,
         "edited": false,
         "deleted": false,
       });
 
       unawaited(_sendPushNotificationSafely(
-        senderName,
+        senderName ?? chatAlertFallbackTitle,
         message,
         convoId,
         "chat",
@@ -299,11 +301,12 @@ class ChatController extends GetxController {
         "latitude": latitude,
         "longitude": longitude,
         "sender": senderUsername,
+        if (senderName != null) "sender_name": senderName,
         "reciever": hostUsername
       });
 
       unawaited(_sendPushNotificationSafely(
-        senderName,
+        senderName ?? chatAlertFallbackTitle,
         "Shared a location",
         convoId,
         "chat",
@@ -343,11 +346,12 @@ class ChatController extends GetxController {
       "media_height": upload.height,
       "duration_seconds": durationSeconds,
       "sender": senderUsername,
+      if (senderName != null) "sender_name": senderName,
       "reciever": hostUsername
     });
 
     unawaited(_sendPushNotificationSafely(
-      senderName,
+      senderName ?? chatAlertFallbackTitle,
       pushMessage,
       convoId,
       "chat",
@@ -358,10 +362,9 @@ class ChatController extends GetxController {
     ));
   }
 
-  Future<String> _senderDisplayName(String senderUsername) async {
-    final fullName = await pref.getFullName();
-    return fullName.trim().isNotEmpty ? fullName.trim() : senderUsername;
-  }
+  Future<String?> _senderDisplayName(String senderUsername) async =>
+      chatSenderDisplayName([await pref.getFullName()],
+          username: senderUsername);
 
   Future<void> _sendPushNotificationSafely(
     String title,

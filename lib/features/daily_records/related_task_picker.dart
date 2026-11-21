@@ -13,25 +13,28 @@ Future<RecordData?> pickRelatedTask(
       showDragHandle: true,
       builder: (context) => FractionallySizedBox(
         heightFactor: .7,
-        child: Column(
-          children: [
-            RecordHeading(workText(context, 'Related task')),
-            Expanded(
-              child: RecordList(
-                load: (page) =>
-                    api.get('tasks', {'page': '$page', 'tab': 'history'}),
-                empty: workText(context, 'No matching records.'),
-                itemBuilder: (context, item) => ListTile(
-                  title: Text(item['title'].toString()),
-                  subtitle:
-                      Text(workText(context, recordLabel(item['status']))),
-                  enabled: item['archived_at'] == null &&
-                      item['superseded_at'] == null,
-                  onTap: () => Navigator.pop(context, item),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            children: [
+              RecordHeading(workText(context, 'Related task')),
+              Expanded(
+                child: RecordList(
+                  load: (page) =>
+                      api.get('tasks', {'page': '$page', 'tab': 'history'}),
+                  empty: workText(context, 'No matching records.'),
+                  itemBuilder: (context, item) => ListTile(
+                    title: Text(item['title'].toString()),
+                    subtitle:
+                        Text(workText(context, recordLabel(item['status']))),
+                    enabled: item['archived_at'] == null &&
+                        item['superseded_at'] == null,
+                    onTap: () => Navigator.pop(context, item),
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

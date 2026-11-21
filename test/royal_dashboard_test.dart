@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:cnattendance/data/source/network/model/attendancestatus/AttendanceStatus.dart';
 import 'package:cnattendance/data/source/network/model/attendancestatus/AttendanceStatusResponse.dart';
+import 'package:cnattendance/features/repair_price/providers/repair_price_provider.dart';
 import 'package:cnattendance/model/banner_slideshow_config.dart';
 import 'package:cnattendance/model/home_banner_config.dart';
 import 'package:cnattendance/models/monthly_attendance_summary.dart';
@@ -39,7 +40,11 @@ class _QrPreference extends PrefProvider {
 class _AttendanceProvider extends DashboardProvider {
   _AttendanceProvider() {
     attendanceMethods = ['QR'];
-    features = {'attendance': '1'};
+    features = {
+      'attendance': '1',
+      'quote.view': '1',
+      'home_highlight.view': '1',
+    };
     animated = false;
     workspaceLatitude = 11.5;
     workspaceLongitude = 104.8;
@@ -127,6 +132,7 @@ Widget _app(Widget child,
       providers: [
         ChangeNotifierProvider<DashboardProvider>.value(value: dashboard),
         ChangeNotifierProvider<PrefProvider>(create: (_) => _QrPreference()),
+        ChangeNotifierProvider(create: (_) => RepairPriceProvider()),
       ],
       child: MaterialApp(
         locale: locale,
@@ -353,6 +359,8 @@ void main() {
     final dashboard = DashboardProvider()
       ..features = {
         'social_feed.stories.view': '1',
+        'quote.view': '1',
+        'home_highlight.view': '1',
       };
     addTearDown(dashboard.dispose);
     final client = _api();

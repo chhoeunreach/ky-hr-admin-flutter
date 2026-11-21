@@ -8,7 +8,16 @@ import 'package:flutter/material.dart';
 
 class PremiumBackground extends StatefulWidget {
   final Widget child;
-  const PremiumBackground({Key? key, required this.child}) : super(key: key);
+
+  /// Pins the original deep-navy backdrop regardless of the active theme so
+  /// screens with fixed light foregrounds (e.g. the login form) stay readable.
+  final bool brandBackdrop;
+
+  const PremiumBackground({
+    Key? key,
+    required this.child,
+    this.brandBackdrop = false,
+  }) : super(key: key);
 
   @override
   State<PremiumBackground> createState() => _PremiumBackgroundState();
@@ -34,7 +43,9 @@ class _PremiumBackgroundState extends State<PremiumBackground> {
   @override
   Widget build(BuildContext context) {
     final enterprise = EnterpriseTheme.of(context);
-    final recipe = _PremiumBackgroundRecipe.forMode(enterprise.mode);
+    final recipe = widget.brandBackdrop
+        ? _PremiumBackgroundRecipe.branded
+        : _PremiumBackgroundRecipe.forMode(enterprise.mode);
     return Stack(
       children: [
         RepaintBoundary(
@@ -560,23 +571,40 @@ class _PremiumBackgroundRecipe {
     required this.blurBottom,
   });
 
+  static final _PremiumBackgroundRecipe branded = _recipe(
+    colors: const [
+      Color(0xff04122e),
+      Color(0xff0b2f6b),
+      Color(0xff1e5bb8),
+      Color(0xffa8c8f0),
+    ],
+    mapTint: const Color(0xff5eb1ff),
+    mapOpacity: 0.12,
+    glow: const Color(0xff0066ff),
+    accent: const Color(0xff5eb1ff),
+    wave: const Color(0xff3d8bff),
+    detail: _BackgroundDetailStyle.bubbles,
+    detailColor: const Color(0xff7dd3ff),
+    light: true,
+  );
+
   static _PremiumBackgroundRecipe forMode(AppThemeMode mode) {
     switch (mode) {
       case AppThemeMode.light:
         return _recipe(
           colors: const [
-            Color(0xff04122e),
-            Color(0xff0b2f6b),
-            Color(0xff1e5bb8),
-            Color(0xffa8c8f0),
+            Color(0xffeef4fc),
+            Color(0xffdbe8fa),
+            Color(0xffc6d9f5),
+            Color(0xffaecbf0),
           ],
-          mapTint: const Color(0xff5eb1ff),
-          mapOpacity: 0.12,
-          glow: const Color(0xff0066ff),
-          accent: const Color(0xff5eb1ff),
-          wave: const Color(0xff3d8bff),
+          mapTint: const Color(0xff2f6fed),
+          mapOpacity: 0.10,
+          glow: const Color(0xff8ab4ff),
+          accent: const Color(0xff0284c7),
+          wave: const Color(0xffffffff),
           detail: _BackgroundDetailStyle.bubbles,
-          detailColor: const Color(0xff7dd3ff),
+          detailColor: const Color(0xffeaf3ff),
           light: true,
         );
       case AppThemeMode.dark:

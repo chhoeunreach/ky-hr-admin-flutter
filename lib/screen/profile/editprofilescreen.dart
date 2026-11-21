@@ -178,20 +178,23 @@ class EditProfileScreenState extends State<EditProfileScreen> {
             backgroundColor: Colors.transparent,
             title: Text(translate('edit_profile_screen.edit_profile')),
           ),
-          bottomNavigationBar: Padding(
-            padding: const EdgeInsets.all(20),
-            child: TextButton(
-                style: TextButton.styleFrom(
-                    backgroundColor: HexColor("#036eb7"),
-                    shape: ButtonBorder(),
-                    fixedSize: Size(double.maxFinite, 55)),
-                onPressed: () {
-                  validateValue();
-                },
-                child: Text(
-                  translate('edit_profile_screen.update'),
-                  style: TextStyle(color: Colors.white),
-                )),
+          bottomNavigationBar: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: TextButton(
+                  style: TextButton.styleFrom(
+                      backgroundColor: HexColor("#036eb7"),
+                      shape: ButtonBorder(),
+                      fixedSize: Size(double.maxFinite, 55)),
+                  onPressed: () {
+                    validateValue();
+                  },
+                  child: Text(
+                    translate('edit_profile_screen.update'),
+                    style: TextStyle(color: Colors.white),
+                  )),
+            ),
           ),
           body: Form(
             key: _form,

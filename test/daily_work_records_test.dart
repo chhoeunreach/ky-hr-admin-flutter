@@ -4,8 +4,10 @@ import 'dart:typed_data';
 import 'package:cnattendance/data/source/datastore/preferences.dart';
 import 'package:cnattendance/features/daily_records/daily_records_api.dart';
 import 'package:cnattendance/features/daily_records/daily_summaries.dart';
+import 'package:cnattendance/features/daily_records/monthly_report_progress.dart';
 import 'package:cnattendance/features/daily_records/quick_create.dart';
 import 'package:cnattendance/features/daily_records/record_widgets.dart';
+import 'package:cnattendance/features/daily_records/related_task_picker.dart';
 import 'package:cnattendance/features/daily_records/work_record_editor.dart';
 import 'package:cnattendance/screen/dashboard/dashboard_screen.dart';
 import 'package:cnattendance/theme/app_theme_data.dart';
@@ -151,14 +153,25 @@ void _expectReadableScreen(WidgetTester tester, Color header) {
 
 void main() {
   for (final mode in AppThemeMode.values) {
-    testWidgets('Daily Records routes stay readable in ${mode.name}',
+    testWidgets('Daily Records routes clear Android navigation in ${mode.name}',
         (tester) async {
       await tester.binding.setSurfaceSize(const Size(320, 640));
       addTearDown(() => tester.binding.setSurfaceSize(null));
+      tester.view.devicePixelRatio = 1;
+      tester.view.padding = const FakeViewPadding(bottom: 48);
+      tester.view.viewPadding = const FakeViewPadding(bottom: 48);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPadding);
+      addTearDown(tester.view.resetViewPadding);
       final api = _api((request) async {
         final path = request.url.path;
         if (path.endsWith('/capabilities')) {
-          return _data({'work_records': true, 'review_reports': true});
+          return _data({
+            'work_records': true,
+            'review_reports': true,
+            'can_submit_report': true,
+            'reporting_today': '2026-11-20',
+          });
         }
         if (path.endsWith('/catalog')) {
           return _data(request.url.queryParameters['kind'] == 'incident'
@@ -167,6 +180,10 @@ void main() {
         }
         if (path.endsWith('/preview'))
           return _data({
+            'report': null,
+            'report_date': '2026-11-20',
+            'reporting_today': '2026-11-20',
+            'can_submit_report': true,
             'records': {'data': []}
           });
         return _data({'data': []});
@@ -182,19 +199,146 @@ void main() {
         'My Records',
         'My Tasks',
         'Daily Summary',
+        'My Submitted Reports',
         'Review Reports',
       ]) {
         await tester.tap(find.byTooltip('Create Record'));
         await tester.pumpAndSettle();
+        expect(tester.getBottomLeft(find.byType(SingleChildScrollView)).dy,
+            lessThanOrEqualTo(592));
         await _press(tester, action);
         _expectReadableScreen(
             tester, AppThemeData.info(mode).colors.primaryColor);
+        expect(tester.getBottomLeft(find.byType(ListView).first).dy, 592,
+            reason: action);
         expect(tester.takeException(), isNull, reason: action);
+        if (action == 'My Submitted Reports') {
+          await _press(tester, 'Monthly report progress');
+          expect(find.widgetWithText(AppBar, 'Monthly report progress'),
+              findsOneWidget);
+          expect(
+              tester
+                  .widgetList<RecordFailure>(find.byType(RecordFailure))
+                  .map((failure) => failure.error),
+              isEmpty);
+          _expectReadableScreen(
+              tester, AppThemeData.info(mode).colors.primaryColor);
+          expect(find.byType(LinearProgressIndicator), findsOneWidget);
+          expect(tester.getBottomLeft(find.byType(Scrollable)).dy, 592);
+          await tester.pageBack();
+          await tester.pumpAndSettle();
+        }
         await tester.pageBack();
         await tester.pumpAndSettle();
       }
     });
   }
+
+  testWidgets('Report actions clear gesture navigation and the keyboard',
+      (tester) async {
+    tester.view.physicalSize = const Size(360, 640);
+    tester.view.devicePixelRatio = 1;
+    tester.view.viewPadding = const FakeViewPadding(bottom: 24);
+    tester.view.padding = const FakeViewPadding(bottom: 24);
+    addTearDown(tester.view.reset);
+    final api = _api((_) async => _data({
+          'report': null,
+          'report_date': '2026-11-20',
+          'reporting_today': '2026-11-20',
+          'can_submit_report': true,
+        }));
+    await tester.pumpWidget(
+        MaterialApp(home: DailySummaryEditor(api: api, date: '2026-11-20')));
+    await tester.pumpAndSettle();
+    await _text(tester, 'Completed work summary', 'Updated inventory');
+    final submit = find.widgetWithText(FilledButton, 'Submit report');
+    if (submit.evaluate().isEmpty) {
+      await tester.scrollUntilVisible(submit, 200,
+          scrollable: find.byType(Scrollable).first);
+    }
+    await tester.ensureVisible(submit);
+    await tester.pump();
+    expect(tester.getBottomLeft(submit).dy, lessThan(616));
+
+    tester.view.padding = const FakeViewPadding();
+    tester.view.viewInsets = const FakeViewPadding(bottom: 280);
+    await tester.pumpAndSettle();
+    if (submit.evaluate().isEmpty) {
+      await tester.scrollUntilVisible(submit, 200,
+          scrollable: find.byType(Scrollable).first);
+    }
+    await tester.ensureVisible(submit);
+    await tester.pump();
+    expect(tester.getBottomLeft(find.byType(ListView)).dy, 360);
+    expect(tester.getBottomLeft(submit).dy, lessThanOrEqualTo(360));
+    expect(submit.hitTestable(), findsOneWidget);
+  });
+
+  testWidgets('Related-task sheet keeps its list above Android navigation',
+      (tester) async {
+    tester.view.physicalSize = const Size(360, 640);
+    tester.view.devicePixelRatio = 1;
+    tester.view.viewPadding = const FakeViewPadding(bottom: 48);
+    tester.view.padding = const FakeViewPadding(bottom: 48);
+    addTearDown(tester.view.reset);
+    final api = _api((_) async => _data({
+          'data': [
+            for (var index = 1; index <= 12; index++)
+              {'id': index, 'title': 'Task $index'},
+          ],
+        }));
+    RecordData? selected;
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: Builder(builder: (context) {
+          return TextButton(
+            onPressed: () async =>
+                selected = await pickRelatedTask(context, api),
+            child: const Text('Open tasks'),
+          );
+        }),
+      ),
+    ));
+    await _press(tester, 'Open tasks');
+    expect(tester.getBottomLeft(find.byType(Scrollable)).dy, 592);
+    await _press(tester, 'Task 12');
+    expect(selected?['id'], 12);
+  });
+
+  testWidgets('Quick Create hides daily submissions without the role grant',
+      (tester) async {
+    final api = _api((_) async => _data({
+          'work_records': false,
+          'can_submit_report': false,
+          'reporting_today': '2026-11-21',
+        }));
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(floatingActionButton: CreateRecordButton(api: api))));
+    await tester.tap(find.byTooltip('Create Record'));
+    await tester.pumpAndSettle();
+    expect(find.text('Submit daily report'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('A historical report stays viewable and cannot be edited',
+      (tester) async {
+    final api = _api((_) async => _data({
+          'report': {'id': 20, 'status': 'returned'},
+          'report_date': '2026-11-20',
+          'reporting_today': '2026-11-21',
+          'can_submit_report': true,
+        }));
+    await tester.pumpWidget(
+        MaterialApp(home: DailySummaryEditor(api: api, date: '2026-11-20')));
+    await tester.pumpAndSettle();
+    expect(
+      find.text(
+          'Daily reports can only be saved or submitted on the reporting date.'),
+      findsOneWidget,
+    );
+    expect(find.text('Submit correction'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('Custom colors apply to the activity form and date picker',
       (tester) async {
@@ -289,6 +433,8 @@ void main() {
           'work_records': true,
           'assign_tasks': false,
           'review_reports': true,
+          'can_submit_report': true,
+          'reporting_today': '2026-11-20',
         }));
     await tester.binding.setSurfaceSize(const Size(320, 640));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -387,6 +533,9 @@ void main() {
         return _data({'id': 5});
       }
       return _data({
+        'report_date': '2026-11-20',
+        'reporting_today': '2026-11-20',
+        'can_submit_report': true,
         'report': null,
         'records': {
           'data': [
@@ -406,6 +555,97 @@ void main() {
     expect(submitted?['record_ids'], [6]);
     expect(submitted?['report_date'], '2026-11-20');
     expect(submitted?['summary'], 'Finished the shift count');
+  });
+
+  test('Monthly progress reads every current-month page and classifies days',
+      () async {
+    final pages = <String>[];
+    final api = _api((request) async {
+      expect(request.url.path, endsWith('/summaries'));
+      expect(request.headers['Authorization'], 'Bearer token');
+      final page = request.url.queryParameters['page']!;
+      pages.add(page);
+      return _data({
+        'next_page_url': 'next',
+        'data': page == '1'
+            ? [
+                {'report_date': '2028-02-07', 'status': 'submitted'},
+                {'report_date': '2028-02-06', 'status': 'approved'},
+                {'report_date': '2028-02-05', 'status': 'returned'},
+                {'report_date': '2028-02-04', 'status': 'draft'},
+              ]
+            : [
+                {'report_date': '2028-02-02', 'status': 'under_review'},
+                {'report_date': '2028-02-01', 'status': 'submitted'},
+                {'report_date': '2028-01-31', 'status': 'approved'},
+              ],
+      });
+    });
+
+    final progress =
+        await MonthlyReportProgress.load(api, DateTime.utc(2028, 2, 6));
+    expect(pages, ['1', '2']);
+    expect(progress.completed, 3);
+    expect(progress.fraction, .5);
+    expect(progress.incomplete, [
+      (DateTime.utc(2028, 2, 5), 'returned'),
+      (DateTime.utc(2028, 2, 4), 'draft'),
+      (DateTime.utc(2028, 2, 3), null),
+    ]);
+  });
+
+  testWidgets(
+      'Submitting a missing daily report updates monthly progress to 100%',
+      (tester) async {
+    final today = workToday();
+    final day = DateTime.parse(today).day;
+    var submitted = false;
+    final api = _api((request) async {
+      if (request.url.path.endsWith('/preview')) {
+        expect(request.url.queryParameters['date'], today);
+        return _data({
+          'report': null,
+          'report_date': today,
+          'reporting_today': today,
+          'can_submit_report': true,
+        });
+      }
+      if (request.method == 'POST') {
+        final body = jsonDecode(request.body);
+        expect(body['report_date'], today);
+        expect(body['action'], 'submit');
+        submitted = true;
+        return _data({'id': day});
+      }
+      return _data({
+        'can_submit_report': true,
+        'reporting_today': today,
+        'data': [
+          for (int date = submitted ? day : day - 1; date >= 1; date--)
+            {
+              'id': date,
+              'report_date':
+                  '${today.substring(0, 8)}${date.toString().padLeft(2, '0')}',
+              'status': 'submitted',
+            },
+        ],
+      });
+    });
+
+    await tester.pumpWidget(MaterialApp(home: DailySummariesScreen(api: api)));
+    await tester.pumpAndSettle();
+    await _press(tester, 'Monthly report progress');
+    expect(find.text('${day - 1} of $day days complete'), findsOneWidget);
+    expect(find.text('Incomplete days'), findsOneWidget);
+    await _press(tester, 'Missing report');
+    await _text(tester, 'Completed work summary', 'Finished the shift count');
+    await _press(tester, 'Submit report');
+
+    expect(submitted, true);
+    expect(find.text('100%'), findsOneWidget);
+    expect(
+        find.text('All reports through today are complete.'), findsOneWidget);
+    expect(find.text('Incomplete days'), findsNothing);
   });
 
   testWidgets(
@@ -446,6 +686,7 @@ void main() {
     await tester.pumpWidget(
         MaterialApp(home: DailySummariesScreen(api: api, manager: true)));
     await tester.pumpAndSettle();
+    expect(find.text('Monthly report progress'), findsNothing);
     await _press(tester, 'Operations One');
     await _press(tester, 'Approve');
     expect(approved, true);

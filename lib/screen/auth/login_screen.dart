@@ -198,10 +198,11 @@ class loginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final hasUrl = context.watch<Auth>().appUrl.isNotEmpty;
     return PremiumBackground(
+      brandBackdrop: true,
       child: Scaffold(
-        extendBody: true,
         backgroundColor: Colors.transparent,
-        bottomNavigationBar: Container(
+        bottomNavigationBar: SafeArea(
+          top: false,
           child: Row(
             children: [
               Spacer(),

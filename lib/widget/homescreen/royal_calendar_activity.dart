@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:cnattendance/data/source/network/model/attendancereport/AttendanceReportResponse.dart';
 import 'package:cnattendance/data/source/network/model/attendancereport/EmployeeAttendance.dart';
+import 'package:cnattendance/data/source/network/model/attendancereport/EmployeeTodayAttendance.dart';
 import 'package:cnattendance/data/source/network/model/employeeleavecalendarbyday/EmployeeLeavesByDayResponse.dart';
 import 'package:cnattendance/data/source/network/model/hollidays/Holidays.dart';
 import 'package:cnattendance/provider/holidaycontroller.dart';
@@ -8,6 +10,8 @@ import 'package:cnattendance/provider/leavecalendarcontroller.dart';
 import 'package:cnattendance/repositories/attendancereportrepository.dart';
 import 'package:cnattendance/screen/dashboard/attendancescreen.dart';
 import 'package:cnattendance/theme/royal_colors.dart';
+import 'package:cnattendance/utils/attendance_status.dart';
+import 'package:cnattendance/widget/attendancescreen/attendance_status_label.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
@@ -16,6 +20,23 @@ import 'package:nepali_date_picker/nepali_date_picker.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import 'royal_dashboard_widgets.dart';
+
+typedef RoyalCalendarBuilder = Widget Function(
+    BuildContext context, RoyalCalendarParts parts);
+
+class RoyalCalendarParts {
+  const RoyalCalendarParts({
+    this.clock,
+    this.today,
+    this.calendar,
+    this.recent,
+  });
+
+  final Widget? clock;
+  final Widget? today;
+  final Widget? calendar;
+  final Widget? recent;
+}
 
 class RoyalCalendarActivity extends StatefulWidget {
   const RoyalCalendarActivity({
@@ -32,7 +53,7 @@ class RoyalCalendarActivity extends StatefulWidget {
     required this.isAd,
     required this.attendanceLoading,
     required this.attendanceError,
-    required this.between,
+    required this.builder,
   });
 
   final ValueListenable<DateTime> clock;
@@ -40,7 +61,7 @@ class RoyalCalendarActivity extends StatefulWidget {
   final bool hasAttendance, hasHolidays, hasOfficeCalendar, isAd;
   final bool showClock, showTodayAttendance;
   final bool attendanceLoading, attendanceError;
-  final List<Widget> between;
+  final RoyalCalendarBuilder builder;
 
   @override
   State<RoyalCalendarActivity> createState() => _RoyalCalendarActivityState();
@@ -50,7 +71,7 @@ class _RoyalCalendarActivityState extends State<RoyalCalendarActivity> {
   final _attendance = AttendanceReportRepository();
   final _holidays = HolidayController();
   final _officeCalendar = LeaveCalendarController();
-  final _reports = <(int, int), Future<List<EmployeeAttendance>>>{};
+  final _reports = <(int, int), Future<AttendanceReportResponse>>{};
   final _details = <String, Future<EmployeeLeavesByDayResponse>>{};
   Future<List<Holidays>>? _holidayList;
   Future<Set<String>>? _companyLeaveDates;
@@ -59,7 +80,9 @@ class _RoyalCalendarActivityState extends State<RoyalCalendarActivity> {
   late DateTime _focused;
   late Future<_MonthData> _month;
   late Future<List<EmployeeAttendance>> _recent;
-  late Future<List<EmployeeAttendance>> _todayRows;
+  late Future<
+          ({List<EmployeeAttendance> rows, EmployeeTodayAttendance? summary})>
+      _todayAttendance;
 
   String _dateKey(DateTime date) => DateFormat('yyyy-MM-dd', 'en').format(date);
 
@@ -99,11 +122,23 @@ class _RoyalCalendarActivityState extends State<RoyalCalendarActivity> {
   void _load() {
     _loadMonth();
     final previous = DateTime(_today.year, _today.month - 1, 1);
-    _todayRows = _rowsFor(_today);
-    _recent = Future.wait([_todayRows, _rowsFor(previous)]).then(
+    _todayAttendance = _loadTodayAttendance(_rowsFor(_today));
+    _recent = Future.wait([
+      _todayAttendance.then((today) => today.rows),
+      _rowsFor(previous),
+    ]).then(
       (months) => months.expand((rows) => rows).toList()
         ..sort((a, b) => b.attendanceDateAd.compareTo(a.attendanceDateAd)),
     );
+  }
+
+  Future<({List<EmployeeAttendance> rows, EmployeeTodayAttendance? summary})>
+      _loadTodayAttendance(Future<List<EmployeeAttendance>> todayRows) async {
+    final date = widget.isAd ? _today : _today.toNepaliDateTime();
+    final currentMonth = _reports[(date.year, date.month)];
+    final rows = await todayRows;
+    final report = await currentMonth;
+    return (rows: rows, summary: report?.data.employeeTodayAttendance);
   }
 
   void _loadMonth() {
@@ -161,12 +196,12 @@ class _RoyalCalendarActivityState extends State<RoyalCalendarActivity> {
             key,
             () => _attendance
                 .getAttendanceReport(key.$2 - 1)
-                .timeout(const Duration(seconds: 15))
-                .then((response) => response.data.employeeAttendance),
+                .timeout(const Duration(seconds: 15)),
           ),
     ]);
     return [
-      for (final row in results.expand((rows) => rows))
+      for (final row
+          in results.expand((report) => report.data.employeeAttendance))
         if (DateTime.tryParse(row.attendanceDateAd) case final DateTime value)
           if (value.year == date.year && value.month == date.month) row,
     ];
@@ -186,59 +221,71 @@ class _RoyalCalendarActivityState extends State<RoyalCalendarActivity> {
     return FutureBuilder<_MonthData>(
       future: _month,
       builder: (context, snapshot) {
-        final clock = RoyalClockCard(clock: widget.clock);
         final showAttendance =
             widget.hasAttendance && widget.showTodayAttendance;
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: 8,
-          children: [
-            if (widget.showClock && showAttendance)
-              RoyalPanelPair(first: clock, second: _buildToday(snapshot.data))
-            else if (showAttendance)
-              _buildToday(snapshot.data)
-            else if (widget.showClock)
-              clock,
-            ...widget.between,
-            if (showCalendar && widget.hasAttendance)
-              RoyalPanelPair(
-                first: _buildCalendar(snapshot),
-                second: _buildRecent(),
-              )
-            else if (showCalendar)
-              _buildCalendar(snapshot),
-          ],
+        return widget.builder(
+          context,
+          RoyalCalendarParts(
+            clock:
+                widget.showClock ? RoyalClockCard(clock: widget.clock) : null,
+            today: showAttendance ? _buildToday(snapshot) : null,
+            calendar: showCalendar ? _buildCalendar(snapshot) : null,
+            recent: widget.hasAttendance ? _buildRecent() : null,
+          ),
         );
       },
     );
   }
 
-  Widget _buildToday(_MonthData? calendar) =>
-      FutureBuilder<List<EmployeeAttendance>>(
-        future: _todayRows,
+  Widget _buildToday(AsyncSnapshot<_MonthData> calendar) => FutureBuilder<
+          ({List<EmployeeAttendance> rows, EmployeeTodayAttendance? summary})>(
+        future: _todayAttendance,
         builder: (context, snapshot) {
           final key = _dateKey(_today);
-          final today = (snapshot.data ?? const <EmployeeAttendance>[])
-              .where((row) => row.attendanceDateAd == key)
-              .firstOrNull;
-          final hasCheckIn = royalHasTime(widget.checkIn);
-          final status = hasCheckIn
-              ? null
-              : widget.attendanceError
-                  ? translate('royal.attendance_unavailable')
-                  : widget.attendanceLoading
-                      ? translate('royal.attendance_pending')
-                      : switch (today?.dayStatus) {
-                          'leave' => translate('royal.on_leave'),
-                          'leave_request' =>
-                            translate('royal.attendance_pending'),
-                          _ => calendar?.holidays.containsKey(key) == true
-                              ? translate('attendance_screen.holiday')
-                              : null,
-                        };
+          final rows = (snapshot.data?.rows ?? const <EmployeeAttendance>[])
+              .where((row) => row.attendanceDateAd == key);
+          final summary = snapshot.data?.summary;
+          final summaryStatus = summary?.resolvedDayStatus;
+          final exception = rows
+                  .map((row) => row.resolvedDayStatus)
+                  .where(attendanceExceptions.contains)
+                  .firstOrNull ??
+              (attendanceExceptions.contains(summaryStatus)
+                  ? summaryStatus
+                  : null);
+          String withReportedTime(String value, String? summaryValue,
+              String Function(EmployeeAttendance) timeForRow) {
+            if (hasAttendanceTime(value)) return value;
+            if (summaryValue != null && hasAttendanceTime(summaryValue)) {
+              return summaryValue;
+            }
+            return rows.map(timeForRow).where(hasAttendanceTime).firstOrNull ??
+                '-';
+          }
+
+          final checkIn = withReportedTime(
+              widget.checkIn, summary?.checkInAt, (row) => row.checkIn);
+          final checkOut = withReportedTime(
+              widget.checkOut, summary?.checkOutAt, (row) => row.checkOut);
+          final loading = widget.attendanceLoading ||
+              snapshot.connectionState != ConnectionState.done ||
+              (widget.hasHolidays &&
+                  !calendar.hasData &&
+                  calendar.connectionState != ConnectionState.done);
+          final status = switch (exception) {
+            final String dayStatus => attendanceStatusLabel(dayStatus, ''),
+            _ when hasAttendanceTime(checkIn) || hasAttendanceTime(checkOut) =>
+              null,
+            _ when calendar.data?.holidays.containsKey(key) == true =>
+              attendanceStatusLabel('holiday', ''),
+            _ when widget.attendanceError || snapshot.hasError =>
+              translate('royal.attendance_unavailable'),
+            _ when loading => translate('royal.attendance_pending'),
+            _ => attendanceStatusLabel('absent', ''),
+          };
           return RoyalTodayAttendance(
-            checkIn: widget.checkIn,
-            checkOut: widget.checkOut,
+            checkIn: checkIn,
+            checkOut: checkOut,
             hours: widget.hours,
             status: status,
           );
@@ -373,7 +420,44 @@ class _RoyalCalendarActivityState extends State<RoyalCalendarActivity> {
           ? null
           : () => _changeMonth(next),
       icon: Icon(direction < 0 ? Icons.chevron_left : Icons.chevron_right,
+          color: RoyalColors.lightGold,
           size: 18),
+    );
+  }
+
+  Widget _activityBadge(IconData icon, [Color? color]) {
+    final gradient = switch (icon) {
+      Icons.logout => const [Color(0xFFE11D48), Color(0xFFFB7185)],
+      Icons.login => const [Color(0xFF059669), Color(0xFF34D399)],
+      Icons.event_busy => const [Color(0xFF9333EA), Color(0xFFC084FC)],
+      Icons.schedule => const [Color(0xFFEA580C), Color(0xFFFBBF24)],
+      Icons.celebration => const [Color(0xFFEC4899), Color(0xFFF472B6)],
+      Icons.cake_outlined => const [Color(0xFF8B5CF6), Color(0xFFA78BFA)],
+      _ => color != null
+          ? [color, Color.lerp(color, Colors.white, 0.28)!]
+          : const [Color(0xFF3B82F6), Color(0xFF60A5FA)],
+    };
+    return Container(
+      width: 26,
+      height: 26,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(7),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: gradient,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: gradient.first.withValues(alpha: 0.38),
+            blurRadius: 6,
+            offset: const Offset(0, 1.5),
+          ),
+        ],
+      ),
+      child: Center(
+        child: Icon(icon, color: Colors.white, size: 14),
+      ),
     );
   }
 
@@ -422,9 +506,9 @@ class _RoyalCalendarActivityState extends State<RoyalCalendarActivity> {
                         child: ConstrainedBox(
                           constraints: const BoxConstraints(minHeight: 48),
                           child: Row(
-                            spacing: 5,
+                            spacing: 8,
                             children: [
-                              Icon(icon, color: color, size: 15),
+                              _activityBadge(icon, color),
                               Expanded(
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,
@@ -541,12 +625,12 @@ class _RoyalCalendarActivityState extends State<RoyalCalendarActivity> {
             if (row != null)
               for (final (title, _, detail, color, icon) in _activityItems(row))
                 ListTile(
-                    leading: Icon(icon, color: color),
+                    leading: _activityBadge(icon, color),
                     title: Text(title),
                     subtitle: Text(detail)),
             if (holiday != null)
               ListTile(
-                  leading: const Icon(Icons.celebration),
+                  leading: _activityBadge(Icons.celebration),
                   title: Text(holiday.event),
                   subtitle: Text(holiday.description)),
             if (details != null)
@@ -569,17 +653,17 @@ class _RoyalCalendarActivityState extends State<RoyalCalendarActivity> {
                   final items = [
                     if (office?.holidays case final item? when holiday == null)
                       ListTile(
-                          leading: const Icon(Icons.celebration),
+                          leading: _activityBadge(Icons.celebration),
                           title: Text(item.event),
                           subtitle: Text(item.description)),
                     for (final leave in office?.employeeLeaves ?? [])
                       ListTile(
-                          leading: const Icon(Icons.event_busy),
+                          leading: _activityBadge(Icons.event_busy),
                           title: Text(leave.userName),
                           subtitle: Text(_requestStatus(leave.leaveStatus))),
                     for (final birthday in office?.birthdays ?? [])
                       ListTile(
-                          leading: const Icon(Icons.cake_outlined),
+                          leading: _activityBadge(Icons.cake_outlined),
                           title: Text(birthday.name)),
                   ];
                   return items.isEmpty &&

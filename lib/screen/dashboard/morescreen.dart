@@ -127,7 +127,9 @@ class MoreScreenState extends State<MoreScreen> {
       final foregroundColor = effectiveSelected || enterprise.isDark
           ? Colors.white
           : enterprise.text;
-      final disabledColor = Colors.white.withValues(alpha: 0.45);
+      final disabledColor =
+          (enterprise.isDark ? Colors.white : enterprise.text)
+              .withValues(alpha: 0.45);
       final borderColor = effectiveSelected
           ? Colors.white.withValues(alpha: 0.58)
           : enterprise.accent.withValues(
@@ -452,12 +454,12 @@ class MoreScreenState extends State<MoreScreen> {
                                 minLeadingWidth: 5,
                                 leading: Icon(
                                   Icons.landscape,
-                                  color: Colors.white,
+                                  color: enterprise.text,
                                 ),
                                 title: Text(
                                   translate('more_screen.dark_mode'),
                                   style: TextStyle(
-                                      color: Colors.white, fontSize: 13),
+                                      color: enterprise.text, fontSize: 13),
                                 ),
                                 onTap: () {
                                   context.read<ThemeProvider>().setMode(
@@ -467,9 +469,9 @@ class MoreScreenState extends State<MoreScreen> {
                                 },
                                 selected: true,
                               ),
-                              const Divider(
+                              Divider(
                                 height: 1,
-                                color: Colors.white24,
+                                color: enterprise.cardBorder,
                                 indent: 15,
                                 endIndent: 15,
                               ),

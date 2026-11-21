@@ -181,10 +181,13 @@ class ThemeSelectorPage extends StatelessWidget {
               if (!context.mounted) return;
               _showThemeSnack(context, 'Theme reset to system mode');
             },
-            child: const Text(
+            child: Text(
               'Reset',
-              style:
-                  TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+              style: TextStyle(
+                color: Theme.of(context).appBarTheme.foregroundColor ??
+                    Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ],
@@ -231,7 +234,8 @@ class _ThemePreviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final info = AppThemeData.info(mode);
-    final colors = info.colors;
+    final colors = context.watch<ThemeProvider>().colorsForMode(mode);
+    final onDark = colors.isDark;
     return InkWell(
       borderRadius: BorderRadius.circular(22),
       onTap: () async {
@@ -250,7 +254,11 @@ class _ThemePreviewCard extends StatelessWidget {
           ),
           borderRadius: BorderRadius.circular(22),
           border: Border.all(
-            color: selected ? colors.accentColor : Colors.white24,
+            color: selected
+                ? colors.accentColor
+                : onDark
+                    ? Colors.white24
+                    : Colors.black.withValues(alpha: 0.10),
             width: selected ? 2 : 1,
           ),
           boxShadow: [
@@ -309,10 +317,13 @@ class _ThemePreviewCard extends StatelessWidget {
             SizedBox(height: compact ? 4 : 8),
             Row(
               children: [
-                _ColorDot(color: colors.primaryColor),
-                _ColorDot(color: colors.secondaryColor),
-                _ColorDot(color: colors.accentColor),
-                _ColorDot(color: colors.cardColor),
+                _ColorDot(
+                    color: colors.primaryColor, onDark: onDark),
+                _ColorDot(
+                    color: colors.secondaryColor, onDark: onDark),
+                _ColorDot(
+                    color: colors.accentColor, onDark: onDark),
+                _ColorDot(color: colors.cardColor, onDark: onDark),
               ],
             ),
           ],
@@ -336,7 +347,10 @@ class _MiniDashboardPreview extends StatelessWidget {
       decoration: BoxDecoration(
         color: colors.cardColor.withValues(alpha: colors.isDark ? 0.76 : 0.9),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white24),
+        border: Border.all(
+            color: colors.isDark
+                ? Colors.white24
+                : Colors.black.withValues(alpha: 0.10)),
       ),
       child: Column(
         children: [
@@ -398,8 +412,9 @@ class _PreviewTile extends StatelessWidget {
 
 class _ColorDot extends StatelessWidget {
   final Color color;
+  final bool onDark;
 
-  const _ColorDot({required this.color});
+  const _ColorDot({required this.color, required this.onDark});
 
   @override
   Widget build(BuildContext context) {
@@ -410,7 +425,8 @@ class _ColorDot extends StatelessWidget {
       decoration: BoxDecoration(
         color: color,
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.white54),
+        border: Border.all(
+            color: onDark ? Colors.white54 : Colors.black.withValues(alpha: 0.16)),
       ),
     );
   }

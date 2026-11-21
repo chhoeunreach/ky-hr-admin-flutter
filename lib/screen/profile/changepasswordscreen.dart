@@ -112,24 +112,27 @@ class ChangePasswordState extends State<ChangePassword> {
           title: Text(translate('change_password_screen.change_password')),
           backgroundColor: Colors.transparent,
         ),
-        bottomNavigationBar: Padding(
-          padding: const EdgeInsets.all(20),
-          child: TextButton(
-              style: TextButton.styleFrom(
-                  backgroundColor: HexColor("#036eb7"),
-                  shape: ButtonBorder(),
-                  fixedSize: Size(double.maxFinite, 55)),
-              onPressed: () {
-                changePassword();
-              },
-              child: Text(
-                translate('change_password_screen.change_password'),
-                style: TextStyle(color: Colors.white),
-              )),
+        bottomNavigationBar: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: TextButton(
+                style: TextButton.styleFrom(
+                    backgroundColor: HexColor("#036eb7"),
+                    shape: ButtonBorder(),
+                    fixedSize: Size(double.maxFinite, 55)),
+                onPressed: () {
+                  changePassword();
+                },
+                child: Text(
+                  translate('change_password_screen.change_password'),
+                  style: TextStyle(color: Colors.white),
+                )),
+          ),
         ),
         body: Form(
           key: _form,
-          child: Container(
+          child: SingleChildScrollView(
             padding: EdgeInsets.all(20),
             child: Column(
               children: [

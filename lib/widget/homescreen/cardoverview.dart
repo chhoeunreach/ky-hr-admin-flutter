@@ -26,8 +26,11 @@ class CardOverView extends StatelessWidget {
     final base = enterprise.isKhmerHeritage || enterprise.layout.accent != null
         ? enterprise.primary
         : chipColor ?? enterprise.primary;
-    final iconColor =
-        enterprise.isKhmerHeritage ? enterprise.accent : Colors.white;
+    final iconColor = enterprise.isKhmerHeritage
+        ? enterprise.accent
+        : ThemeData.estimateBrightnessForColor(base) == Brightness.dark
+            ? Colors.white
+            : const Color(0xFF0F172A);
 
     return RepaintBoundary(
       child: InkWell(
@@ -82,9 +85,7 @@ class CardOverView extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: enterprise.isKhmerHeritage
-                      ? enterprise.text
-                      : Colors.white,
+                  color: enterprise.text,
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
                   height: 1.15,

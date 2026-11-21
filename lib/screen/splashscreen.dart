@@ -8,6 +8,7 @@ import 'package:cnattendance/screen/dashboard/dashboard_screen.dart';
 import 'package:cnattendance/core/ky_security/ky_security_manager.dart';
 import 'package:cnattendance/core/ky_security/ky_optional_update_prompt.dart';
 import 'package:cnattendance/core/ky_security/security_gate_screen.dart';
+import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -197,19 +198,28 @@ class SplashState extends State<SplashScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    final enterprise = EnterpriseTheme.of(context);
+    final onLight = !enterprise.isDark;
     return Container(
       decoration: RadialDecoration(),
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Image.asset("assets/icons/logo_bnw.png", width: 120, height: 120),
+            Image.asset(
+              "assets/icons/logo_bnw.png",
+              width: 120,
+              height: 120,
+              color: onLight ? enterprise.text : null,
+            ),
             if (_checkingClock) ...[
               const SizedBox(height: 18),
-              const CircularProgressIndicator(color: Colors.white),
+              CircularProgressIndicator(
+                  color: onLight ? enterprise.primary : Colors.white),
               const SizedBox(height: 10),
               Text(translate('device_clock.checking'),
-                  style: const TextStyle(color: Colors.white)),
+                  style: TextStyle(
+                      color: onLight ? enterprise.text : Colors.white)),
             ],
           ],
         ),

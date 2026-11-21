@@ -97,22 +97,57 @@ class RoyalPanelPair extends StatelessWidget {
 }
 
 class RoyalPanelTitle extends StatelessWidget {
-  const RoyalPanelTitle(this.icon, this.label, {super.key});
+  const RoyalPanelTitle(this.icon, this.label, {super.key, this.color});
 
   final IconData icon;
   final String label;
+  final Color? color;
 
   @override
-  Widget build(BuildContext context) => Row(
-        spacing: 6,
-        children: [
-          Icon(icon, color: EnterpriseTheme.of(context).accent, size: 17),
-          Expanded(
-            child: Text(label,
-                style: const TextStyle(fontWeight: FontWeight.w800)),
+  Widget build(BuildContext context) {
+    final theme = EnterpriseTheme.of(context);
+    final List<Color> gradient = color != null
+        ? [color!, Color.lerp(color!, Colors.white, 0.28)!]
+        : switch (icon) {
+            Icons.badge_outlined => const [Color(0xFF2563EB), Color(0xFF60A5FA)],
+            Icons.trending_up => const [Color(0xFF059669), Color(0xFF34D399)],
+            Icons.auto_awesome => const [Color(0xFFF59E0B), Color(0xFFFBBF24)],
+            Icons.calendar_month => const [Color(0xFF9333EA), Color(0xFFC084FC)],
+            Icons.history => const [Color(0xFF0284C7), Color(0xFF38BDF8)],
+            _ => [theme.accent, RoyalColors.lightGold],
+          };
+    return Row(
+      spacing: 7,
+      children: [
+        Container(
+          width: 24,
+          height: 24,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(7),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: gradient,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: gradient.first.withValues(alpha: 0.38),
+                blurRadius: 6,
+                offset: const Offset(0, 1.5),
+              ),
+            ],
           ),
-        ],
-      );
+          child: Center(
+            child: Icon(icon, color: Colors.white, size: 13.5),
+          ),
+        ),
+        Expanded(
+          child: Text(label,
+              style: const TextStyle(fontWeight: FontWeight.w800)),
+        ),
+      ],
+    );
+  }
 }
 
 class RoyalClockCard extends StatelessWidget {
@@ -183,7 +218,7 @@ class RoyalClockCard extends StatelessWidget {
                       spacing: 5,
                       children: [
                         const Icon(Icons.calendar_today_outlined,
-                            size: 12, color: RoyalColors.textSecondary),
+                            size: 12, color: RoyalColors.gold),
                         Expanded(
                           child: Text(
                             DateFormat.yMMMMEEEEd(locale).format(now),
@@ -400,12 +435,17 @@ class RoyalAttendanceHighlights extends StatelessWidget {
                     spacing: 6,
                     children: [
                       _metric(
-                          Icons.schedule,
+                          Icons.schedule_rounded,
                           RoyalColors.danger,
+                          const [Color(0xFFEF4444), Color(0xFFF87171)],
                           translate('royal.late_month'),
                           '${monthly?.totalLateCount ?? monthly?.lateCount ?? '—'}'),
-                      _metric(Icons.savings_outlined, RoyalColors.success,
-                          translate('royal.bonus_target'), currency ?? '—'),
+                      _metric(
+                          Icons.savings_rounded,
+                          RoyalColors.success,
+                          const [Color(0xFF10B981), Color(0xFF34D399)],
+                          translate('royal.bonus_target'),
+                          currency ?? '—'),
                     ],
                   ),
                 ),
@@ -421,7 +461,8 @@ class RoyalAttendanceHighlights extends StatelessWidget {
           children: [
             RoyalPanelTitle(Icons.auto_awesome, translate('royal.highlights')),
             _link(
-              icon: Icons.emoji_events,
+              icon: Icons.emoji_events_rounded,
+              gradient: const [Color(0xFFF59E0B), Color(0xFFFBBF24)],
               title: translate('royal.top_bonus'),
               subtitle: ranked.isEmpty && !loading
                   ? translate('royal.no_rankings')
@@ -439,6 +480,7 @@ class RoyalAttendanceHighlights extends StatelessWidget {
             if (quote != null)
               _link(
                 icon: Icons.format_quote_rounded,
+                gradient: const [Color(0xFF2563EB), Color(0xFF60A5FA)],
                 title: translate('royal.quotation'),
                 subtitle: quote!,
                 onTap: onQuote,
@@ -449,21 +491,49 @@ class RoyalAttendanceHighlights extends StatelessWidget {
     );
   }
 
-  Widget _metric(IconData icon, Color color, String label, String value) => Row(
-        spacing: 5,
+  Widget _metric(IconData icon, Color color, List<Color> gradient,
+          String label, String value) =>
+      Row(
+        spacing: 7,
         children: [
-          Icon(icon, size: 16, color: color),
-          Expanded(child: Text(label, style: const TextStyle(fontSize: 10))),
+          Container(
+            width: 22,
+            height: 22,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(6),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: gradient,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: gradient.first.withValues(alpha: 0.38),
+                  blurRadius: 5,
+                  offset: const Offset(0, 1.5),
+                ),
+              ],
+            ),
+            child: Center(
+              child: Icon(icon, size: 13, color: Colors.white),
+            ),
+          ),
+          Expanded(
+              child: Text(label,
+                  style: const TextStyle(
+                      fontSize: 10, fontWeight: FontWeight.w600))),
           Flexible(
             child: Text(value,
                 textAlign: TextAlign.end,
-                style: TextStyle(color: color, fontWeight: FontWeight.w800)),
+                style: TextStyle(
+                    color: gradient.first, fontWeight: FontWeight.w900)),
           ),
         ],
       );
 
   Widget _link({
     required IconData icon,
+    required List<Color> gradient,
     required String title,
     required String subtitle,
     VoidCallback? onTap,
@@ -472,26 +542,51 @@ class RoyalAttendanceHighlights extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(9),
         child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 48),
+          constraints: const BoxConstraints(minHeight: 46),
           child: Row(
-            spacing: 5,
+            spacing: 7,
             children: [
-              Icon(icon, color: RoyalColors.gold, size: 17),
+              Container(
+                width: 26,
+                height: 26,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(7),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: gradient,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: gradient.first.withValues(alpha: 0.40),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Icon(icon, color: Colors.white, size: 14),
+                ),
+              ),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(title, style: const TextStyle(fontSize: 12)),
+                    Text(title,
+                        style: const TextStyle(
+                            fontSize: 11.5, fontWeight: FontWeight.w800)),
                     Text(subtitle,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                            fontSize: 10, color: RoyalColors.textSecondary)),
+                            fontSize: 9.5, color: RoyalColors.textSecondary)),
                   ],
                 ),
               ),
-              if (onTap != null) const Icon(Icons.chevron_right, size: 14),
+              if (onTap != null)
+                const Icon(Icons.chevron_right,
+                    size: 14, color: RoyalColors.gold),
             ],
           ),
         ),
@@ -501,7 +596,7 @@ class RoyalAttendanceHighlights extends StatelessWidget {
         radius: 13,
         backgroundColor: RoyalColors.navy,
         child: employee.avatar.isEmpty
-            ? const Icon(Icons.person, size: 15)
+            ? const Icon(Icons.person, size: 15, color: RoyalColors.lightGold)
             : ClipOval(
                 child: CachedNetworkImage(
                   imageUrl: employee.avatar,
@@ -509,8 +604,8 @@ class RoyalAttendanceHighlights extends StatelessWidget {
                   height: 26,
                   fit: BoxFit.cover,
                   memCacheWidth: 104,
-                  errorWidget: (_, __, ___) =>
-                      const Icon(Icons.person, size: 15),
+                  errorWidget: (_, __, ___) => const Icon(Icons.person,
+                      size: 15, color: RoyalColors.lightGold),
                 ),
               ),
       );

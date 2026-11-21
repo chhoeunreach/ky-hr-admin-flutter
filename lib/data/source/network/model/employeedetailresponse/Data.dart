@@ -34,21 +34,22 @@ class Data {
 
   factory Data.fromJson(Map<String, dynamic> json) {
     return Data(
-      address: json['address'],
-      avatar: json['avatar'],
-      branch: json['branch'],
-      department: json['department'],
-      dob: json['dob'],
-      employment_type: json['employment_type'],
-      gender: json['gender'],
-      joining_date: json['joining_date'],
-      name: json['name'],
-      phone: json['phone'].toString(),
-      post: json['post'],
-      user_type: json['user_type'],
-      username: json['username'],
-      all_awards: (json['awards'] as List)
-          .map((i) => AllAward.fromJson(i))
+      address: json['address']?.toString() ?? '',
+      avatar: json['avatar']?.toString() ?? '',
+      branch: json['branch']?.toString() ?? '',
+      department: json['department']?.toString() ?? '',
+      dob: json['dob']?.toString() ?? '',
+      employment_type: json['employment_type']?.toString() ?? '',
+      gender: json['gender']?.toString() ?? '',
+      joining_date: json['joining_date']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      phone: json['phone']?.toString() ?? '',
+      post: json['post']?.toString() ?? '',
+      user_type: json['user_type']?.toString() ?? '',
+      username: json['username']?.toString() ?? '',
+      all_awards: (json['awards'] as List? ?? const [])
+          .whereType<Map<String, dynamic>>()
+          .map(AllAward.fromJson)
           .toList(),
     );
   }
