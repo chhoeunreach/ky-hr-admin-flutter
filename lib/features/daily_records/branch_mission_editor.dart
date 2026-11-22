@@ -513,8 +513,10 @@ class _BranchMissionEditorState extends State<BranchMissionEditor> {
       (b) => b != _activeRoute!.currentBranchName,
       orElse: () => _branchOptions.isNotEmpty ? _branchOptions[0] : _activeRoute!.currentBranchName,
     );
+    final customBranchCtrl = TextEditingController();
     final notesCtrl = TextEditingController();
-    final List<String> photos = [];
+    String? arrivalSelfie;
+    final List<String> additionalPhotos = [];
     double? cpLat;
     double? cpLng;
     bool gettingGps = true;
@@ -535,8 +537,13 @@ class _BranchMissionEditorState extends State<BranchMissionEditor> {
 
     await showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: Colors.transparent,
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.9,
+      ),
       builder: (sheetContext) {
         return StatefulBuilder(
           builder: (context, setSheetState) {
@@ -545,14 +552,15 @@ class _BranchMissionEditorState extends State<BranchMissionEditor> {
               padding: EdgeInsets.only(
                 left: 16,
                 right: 16,
-                top: 16,
-                bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+                top: 14,
+                bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 24,
               ),
               decoration: BoxDecoration(
                 color: theme.colors.cardColor,
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
               ),
               child: SingleChildScrollView(
+                physics: const ClampingScrollPhysics(),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -592,11 +600,39 @@ class _BranchMissionEditorState extends State<BranchMissionEditor> {
                       items: [
                         for (final b in _branchOptions)
                           DropdownMenuItem(value: b, child: Text(b, overflow: TextOverflow.ellipsis)),
+                        const DropdownMenuItem(
+                          value: otherBranchOption,
+                          child: Row(
+                            children: [
+                              Icon(Icons.add_circle_outline, size: 16, color: AppColors.customFF059669),
+                              SizedBox(width: 6),
+                              Text(
+                                otherBranchOption,
+                                style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.customFF059669),
+                              ),
+                            ],
+                          ),
+                        ),
                       ],
                       onChanged: (val) {
                         if (val != null) setSheetState(() => currentBranch = val);
                       },
                     ),
+                    if (currentBranch == otherBranchOption) ...[
+                      const SizedBox(height: 10),
+                      TextFormField(
+                        controller: customBranchCtrl,
+                        decoration: InputDecoration(
+                          labelText: 'បញ្ចូលឈ្មោះសាខាថ្មី (Custom Branch Name) *',
+                          hintText: 'ឧ. សាខាស្ទឹងមានជ័យ, សាខាខេត្ត...',
+                          prefixIcon: const Icon(Icons.edit_location_alt_outlined),
+                          filled: true,
+                          fillColor: theme.accent.withValues(alpha: 0.06),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        autofocus: true,
+                      ),
+                    ],
                     const SizedBox(height: 12),
                     Row(
                       children: [
@@ -618,23 +654,78 @@ class _BranchMissionEditorState extends State<BranchMissionEditor> {
                     ),
                     const SizedBox(height: 14),
                     Text(
-                      'រូបភាពភស្តុតាងការងារ (Work Photos/Evidence)',
+                      'រូបភាពភស្តុតាងការងារ / Selfie (Work Photo & Selfie) *',
                       style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: theme.text),
                     ),
                     const SizedBox(height: 8),
+                    if (arrivalSelfie != null)
+                      Row(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.file(
+                              File(arrivalSelfie!),
+                              width: 72,
+                              height: 72,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          ElevatedButton.icon(
+                            icon: const Icon(Icons.replay_rounded, size: 16),
+                            label: const Text('ថត Selfie ម្តងទៀត'),
+                            style: ElevatedButton.styleFrom(visualDensity: VisualDensity.compact),
+                            onPressed: () async {
+                              final f = await Navigator.of(context, rootNavigator: true).push<File>(
+                                MaterialPageRoute(
+                                  fullscreenDialog: true,
+                                  builder: (_) => const AttendanceSelfieCamera(),
+                                ),
+                              );
+                              if (f != null) {
+                                final compressed = await _compressImage(f.path);
+                                setSheetState(() => arrivalSelfie = compressed);
+                              }
+                            },
+                          ),
+                        ],
+                      )
+                    else
+                      OutlinedButton.icon(
+                        icon: const Icon(Icons.camera_front_rounded, color: AppColors.customFF059669),
+                        label: const Text('ថតរូប Selfie មកដល់សាខា (Mandatory Selfie) *'),
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size(double.infinity, 48),
+                          side: const BorderSide(color: AppColors.customFF059669),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        onPressed: () async {
+                          final f = await Navigator.of(context, rootNavigator: true).push<File>(
+                            MaterialPageRoute(
+                              fullscreenDialog: true,
+                              builder: (_) => const AttendanceSelfieCamera(),
+                            ),
+                          );
+                          if (f != null) {
+                            final compressed = await _compressImage(f.path);
+                            setSheetState(() => arrivalSelfie = compressed);
+                          }
+                        },
+                      ),
+                    const SizedBox(height: 12),
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
                       children: [
-                        for (var i = 0; i < photos.length; i++)
+                        for (var i = 0; i < additionalPhotos.length; i++)
                           Stack(
                             children: [
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(10),
                                 child: Image.file(
-                                  File(photos[i]),
-                                  width: 64,
-                                  height: 64,
+                                  File(additionalPhotos[i]),
+                                  width: 60,
+                                  height: 60,
                                   fit: BoxFit.cover,
                                 ),
                               ),
@@ -643,7 +734,7 @@ class _BranchMissionEditorState extends State<BranchMissionEditor> {
                                 right: -4,
                                 child: IconButton(
                                   icon: const Icon(Icons.cancel, color: AppColors.customFFE11D48, size: 18),
-                                  onPressed: () => setSheetState(() => photos.removeAt(i)),
+                                  onPressed: () => setSheetState(() => additionalPhotos.removeAt(i)),
                                 ),
                               ),
                             ],
@@ -655,18 +746,18 @@ class _BranchMissionEditorState extends State<BranchMissionEditor> {
                             final img = await picker.pickImage(source: ImageSource.camera);
                             if (img != null) {
                               final compressed = await _compressImage(img.path);
-                              setSheetState(() => photos.add(compressed));
+                              setSheetState(() => additionalPhotos.add(compressed));
                             }
                           },
                           child: Container(
-                            width: 64,
-                            height: 64,
+                            width: 60,
+                            height: 60,
                             decoration: BoxDecoration(
-                              color: theme.accent.withValues(alpha: 0.12),
+                              color: theme.accent.withValues(alpha: 0.08),
                               borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: theme.accent.withValues(alpha: 0.4)),
+                              border: Border.all(color: theme.accent.withValues(alpha: 0.3)),
                             ),
-                            child: Icon(Icons.add_a_photo_outlined, color: theme.accent, size: 24),
+                            child: Icon(Icons.add_a_photo_outlined, color: theme.accent, size: 22),
                           ),
                         ),
                       ],
@@ -685,22 +776,62 @@ class _BranchMissionEditorState extends State<BranchMissionEditor> {
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         icon: const Icon(Icons.check_circle_outline),
-                        label: const Text('បញ្ជាក់ការមកដល់សាខា'),
+                        label: const Text('រក្សាទុក Check-in សាខានេះ'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.customFF059669,
                           foregroundColor: AppColors.white,
                           padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                        onPressed: () {
+                        onPressed: () async {
+                          final finalBranchName = currentBranch == otherBranchOption
+                              ? customBranchCtrl.text.trim()
+                              : currentBranch;
+
+                          if (finalBranchName.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('សូមបញ្ចូលឈ្មោះសាខា!'),
+                                backgroundColor: AppColors.customFFE11D48,
+                              ),
+                            );
+                            return;
+                          }
+
+                          // Mandatory Arrival Selfie Check when saving
+                          if (arrivalSelfie == null) {
+                            final f = await Navigator.of(context, rootNavigator: true).push<File>(
+                              MaterialPageRoute(
+                                fullscreenDialog: true,
+                                builder: (_) => const AttendanceSelfieCamera(),
+                              ),
+                            );
+                            if (f == null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('សូមថតរូប Selfie បញ្ជាក់ការមកដល់សាខាជាមុនសិន!'),
+                                  backgroundColor: AppColors.customFFE11D48,
+                                ),
+                              );
+                              return;
+                            }
+                            arrivalSelfie = await _compressImage(f.path);
+                          }
+
+                          final allPhotos = [
+                            if (arrivalSelfie != null) arrivalSelfie!,
+                            ...additionalPhotos.where((p) => p != arrivalSelfie),
+                          ];
+
                           final cp = RouteCheckpoint(
                             id: const Uuid().v4(),
-                            branchName: currentBranch,
+                            branchName: finalBranchName,
                             actionType: 'arrival',
                             arrivedAt: arrivalServerTime,
                             latitude: cpLat,
                             longitude: cpLng,
                             notes: notesCtrl.text.trim(),
-                            photoPaths: photos,
+                            photoPaths: allPhotos,
                           );
 
                           final updatedCheckpoints = [..._activeRoute!.checkpoints, cp];
@@ -708,13 +839,19 @@ class _BranchMissionEditorState extends State<BranchMissionEditor> {
                             checkpoints: updatedCheckpoints,
                             targetBranches: [
                               ..._activeRoute!.targetBranches,
-                              if (!_activeRoute!.targetBranches.contains(currentBranch)) currentBranch,
+                              if (!_activeRoute!.targetBranches.contains(finalBranchName)) finalBranchName,
                             ],
                           );
 
-                          BranchRouteStorage.saveActiveRoute(updatedRoute);
-                          setState(() => _activeRoute = updatedRoute);
-                          Navigator.pop(sheetContext);
+                          if (!_branchOptions.contains(finalBranchName)) {
+                            _branchOptions.add(finalBranchName);
+                          }
+
+                          await BranchRouteStorage.saveActiveRoute(updatedRoute);
+                          if (mounted) {
+                            setState(() => _activeRoute = updatedRoute);
+                            Navigator.pop(sheetContext);
+                          }
                         },
                       ),
                     ),
@@ -752,8 +889,13 @@ class _BranchMissionEditorState extends State<BranchMissionEditor> {
 
     await showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: Colors.transparent,
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+      ),
       builder: (sheetContext) {
         return StatefulBuilder(
           builder: (context, setSheetState) {
@@ -762,14 +904,15 @@ class _BranchMissionEditorState extends State<BranchMissionEditor> {
               padding: EdgeInsets.only(
                 left: 16,
                 right: 16,
-                top: 16,
-                bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+                top: 14,
+                bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 24,
               ),
               decoration: BoxDecoration(
                 color: theme.colors.cardColor,
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
               ),
               child: SingleChildScrollView(
+                physics: const ClampingScrollPhysics(),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -868,6 +1011,7 @@ class _BranchMissionEditorState extends State<BranchMissionEditor> {
                           backgroundColor: Colors.orange.shade700,
                           foregroundColor: AppColors.white,
                           padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                         onPressed: () {
                           final cp = RouteCheckpoint(
@@ -903,6 +1047,7 @@ class _BranchMissionEditorState extends State<BranchMissionEditor> {
     if (_activeRoute == null) return;
 
     String finalBranch = _activeRoute!.currentBranchName;
+    final customFinalBranchCtrl = TextEditingController();
     String? endSelfie;
     final summaryCtrl = TextEditingController();
     double? endLat;
@@ -917,8 +1062,13 @@ class _BranchMissionEditorState extends State<BranchMissionEditor> {
 
     await showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: Colors.transparent,
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.9,
+      ),
       builder: (sheetContext) {
         return StatefulBuilder(
           builder: (context, setSheetState) {
@@ -927,14 +1077,15 @@ class _BranchMissionEditorState extends State<BranchMissionEditor> {
               padding: EdgeInsets.only(
                 left: 16,
                 right: 16,
-                top: 16,
-                bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+                top: 14,
+                bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 24,
               ),
               decoration: BoxDecoration(
                 color: theme.colors.cardColor,
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
               ),
               child: SingleChildScrollView(
+                physics: const ClampingScrollPhysics(),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -993,20 +1144,45 @@ class _BranchMissionEditorState extends State<BranchMissionEditor> {
                     DropdownButtonFormField<String>(
                       initialValue: finalBranch,
                       decoration: const InputDecoration(
-                        labelText: 'សាខាបញ្ចប់ (Final Branch)',
+                        labelText: 'សាខាបញ្ចប់ (Final Branch) *',
                         prefixIcon: Icon(Icons.location_on_outlined),
                       ),
                       items: [
                         for (final b in _branchOptions)
                           DropdownMenuItem(value: b, child: Text(b, overflow: TextOverflow.ellipsis)),
+                        const DropdownMenuItem(
+                          value: otherBranchOption,
+                          child: Row(
+                            children: [
+                              Icon(Icons.add_circle_outline, size: 16, color: AppColors.customFF059669),
+                              SizedBox(width: 6),
+                              Text(otherBranchOption, style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.customFF059669)),
+                            ],
+                          ),
+                        ),
                       ],
                       onChanged: (val) {
                         if (val != null) setSheetState(() => finalBranch = val);
                       },
                     ),
+                    if (finalBranch == otherBranchOption) ...[
+                      const SizedBox(height: 10),
+                      TextFormField(
+                        controller: customFinalBranchCtrl,
+                        decoration: InputDecoration(
+                          labelText: 'បញ្ចូលឈ្មោះសាខាបញ្ចប់ (Custom Final Branch) *',
+                          hintText: 'ឧ. សាខាស្ទឹងមានជ័យ...',
+                          prefixIcon: const Icon(Icons.edit_location_alt_outlined),
+                          filled: true,
+                          fillColor: theme.accent.withValues(alpha: 0.06),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        autofocus: true,
+                      ),
+                    ],
                     const SizedBox(height: 14),
                     Text(
-                      'ថតរូប Selfie បញ្ចប់បេសកកម្ម (Mandatory Final Selfie)',
+                      'ថតរូប Selfie បញ្ចប់បេសកកម្ម (Mandatory Final Selfie) *',
                       style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: theme.text),
                     ),
                     const SizedBox(height: 8),
@@ -1023,13 +1199,16 @@ class _BranchMissionEditorState extends State<BranchMissionEditor> {
                             label: const Text('ថតម្តងទៀត'),
                             style: ElevatedButton.styleFrom(visualDensity: VisualDensity.compact),
                             onPressed: () async {
-                              final f = await Navigator.of(context).push<File>(
+                              final f = await Navigator.of(context, rootNavigator: true).push<File>(
                                 MaterialPageRoute(
                                   fullscreenDialog: true,
                                   builder: (_) => const AttendanceSelfieCamera(),
                                 ),
                               );
-                              if (f != null) setSheetState(() => endSelfie = f.path);
+                              if (f != null) {
+                                final compressed = await _compressImage(f.path);
+                                setSheetState(() => endSelfie = compressed);
+                              }
                             },
                           ),
                         ],
@@ -1037,18 +1216,22 @@ class _BranchMissionEditorState extends State<BranchMissionEditor> {
                     else
                       OutlinedButton.icon(
                         icon: const Icon(Icons.camera_front_rounded),
-                        label: const Text('ថតរូប Selfie បញ្ចប់ (Front Camera)'),
+                        label: const Text('ថតរូប Selfie បញ្ចប់ (Front Camera) *'),
                         style: OutlinedButton.styleFrom(
                           minimumSize: const Size(double.infinity, 48),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                         onPressed: () async {
-                          final f = await Navigator.of(context).push<File>(
+                          final f = await Navigator.of(context, rootNavigator: true).push<File>(
                             MaterialPageRoute(
                               fullscreenDialog: true,
                               builder: (_) => const AttendanceSelfieCamera(),
                             ),
                           );
-                          if (f != null) setSheetState(() => endSelfie = f.path);
+                          if (f != null) {
+                            final compressed = await _compressImage(f.path);
+                            setSheetState(() => endSelfie = compressed);
+                          }
                         },
                       ),
                     const SizedBox(height: 14),
@@ -1070,16 +1253,40 @@ class _BranchMissionEditorState extends State<BranchMissionEditor> {
                           backgroundColor: AppColors.customFF059669,
                           foregroundColor: AppColors.white,
                           padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                         onPressed: () async {
-                          if (endSelfie == null) {
+                          final resolvedFinalBranch = finalBranch == otherBranchOption
+                              ? customFinalBranchCtrl.text.trim()
+                              : finalBranch;
+
+                          if (resolvedFinalBranch.isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text('សូមថត Selfie បញ្ចប់បេសកកម្មជាមុនសិន!'),
+                                content: Text('សូមបញ្ចូលឈ្មោះសាខាបញ្ចប់!'),
                                 backgroundColor: AppColors.customFFE11D48,
                               ),
                             );
                             return;
+                          }
+
+                          if (endSelfie == null) {
+                            final f = await Navigator.of(context, rootNavigator: true).push<File>(
+                              MaterialPageRoute(
+                                fullscreenDialog: true,
+                                builder: (_) => const AttendanceSelfieCamera(),
+                              ),
+                            );
+                            if (f == null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('សូមថត Selfie បញ្ចប់បេសកកម្មជាមុនសិន!'),
+                                  backgroundColor: AppColors.customFFE11D48,
+                                ),
+                              );
+                              return;
+                            }
+                            endSelfie = await _compressImage(f.path);
                           }
 
                           final completedRoute = _activeRoute!.copyWith(
@@ -1092,7 +1299,7 @@ class _BranchMissionEditorState extends State<BranchMissionEditor> {
                             totalMinutes: _activeRoute!.currentDuration.inMinutes,
                             targetBranches: [
                               ..._activeRoute!.targetBranches,
-                              if (!_activeRoute!.targetBranches.contains(finalBranch)) finalBranch,
+                              if (!_activeRoute!.targetBranches.contains(resolvedFinalBranch)) resolvedFinalBranch,
                             ],
                           );
 
@@ -1125,29 +1332,6 @@ class _BranchMissionEditorState extends State<BranchMissionEditor> {
     );
   }
 
-  Future<void> _cancelMission() async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('លុបចោលបេសកកម្ម?'),
-        content: const Text('តើអ្នកពិតជាចង់លុបចោលបេសកកម្មដែលកំពុងដំណើរការនេះមែនទេ?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('ទេ')),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: AppColors.customFFE11D48),
-            child: const Text('លុបចោល'),
-          ),
-        ],
-      ),
-    );
-    if (ok == true && mounted) {
-      await BranchRouteStorage.clearActiveRoute();
-      setState(() => _activeRoute = null);
-      _tickerTimer?.cancel();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = EnterpriseTheme.of(context);
@@ -1162,6 +1346,13 @@ class _BranchMissionEditorState extends State<BranchMissionEditor> {
     return Scaffold(
       backgroundColor: theme.colors.backgroundColor,
       appBar: AppBar(
+        leading: widget.asModal
+            ? IconButton(
+                icon: const Icon(Icons.close_rounded),
+                tooltip: 'បិទផ្ទាំង',
+                onPressed: () => Navigator.of(context).pop(),
+              )
+            : null,
         title: Text(
           _activeRoute?.isProcessing == true
               ? 'បេសកកម្មកំពុងដំណើរការ'
@@ -1174,19 +1365,30 @@ class _BranchMissionEditorState extends State<BranchMissionEditor> {
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        actions: [
-          if (_activeRoute?.isProcessing == true)
-            IconButton(
-              tooltip: 'លុបចោលបេសកកម្ម',
-              icon: const Icon(Icons.cancel_outlined, color: AppColors.customFFE11D48),
-              onPressed: _cancelMission,
-            ),
-        ],
+        actions: const [], // Can't cancel mission - only continue checkpoint or finish
       ),
       body: SafeArea(
-        child: _activeRoute?.isProcessing == true
-            ? _buildProcessingView(theme)
-            : _buildStartView(theme),
+        child: Column(
+          children: [
+            if (widget.asModal)
+              Center(
+                child: Container(
+                  width: 44,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 6),
+                  decoration: BoxDecoration(
+                    color: theme.text.withValues(alpha: 0.25),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+            Expanded(
+              child: _activeRoute?.isProcessing == true
+                  ? _buildProcessingView(theme)
+                  : _buildStartView(theme),
+            ),
+          ],
+        ),
       ),
     );
   }

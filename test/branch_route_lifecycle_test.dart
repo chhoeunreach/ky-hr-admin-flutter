@@ -257,6 +257,67 @@ void main() {
       expect(find.text('ចេញបន្ត (Depart)'), findsNothing);
       expect(find.text('បញ្ចប់បេសកកម្ម'), findsNothing);
       expect(find.textContaining('កំពុងធ្វើដំណើរ (ចេញពី៖ សាខាទី១ - ទួលគោក (Toul Kork))'), findsOneWidget);
+
+      // Verify mission cannot be cancelled (no cancel button)
+      expect(find.byIcon(Icons.cancel_outlined), findsNothing);
+      expect(find.text('លុបចោលបេសកកម្ម'), findsNothing);
+    });
+
+    testWidgets('BranchMissionEditor arrival sheet displays system branches, other option, and mandatory selfie', (tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      final active = BranchRoute(
+        id: 'route_proc_arrival_test',
+        purpose: 'ចុះថតរូប',
+        originBranch: 'សាខាទី១ - ទួលគោក (Toul Kork)',
+        targetBranches: [],
+        status: 'processing',
+        startTime: DateTime.now().subtract(const Duration(minutes: 10)),
+      );
+      await BranchRouteStorage.saveActiveRoute(active);
+
+      await tester.pumpWidget(MaterialApp(
+        home: BranchMissionEditor(api: DailyRecordsApi()),
+      ));
+      await tester.pumpAndSettle();
+
+      // Tap arrival button to open arrival sheet modal
+      await tester.tap(find.text('មកដល់សាខា (Arrive at Branch)'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.text('មកដល់សាខា (Arrival Check-in)'), findsOneWidget);
+      expect(find.text('សាខាដែលបានមកដល់ (Arrived Branch) *'), findsOneWidget);
+      expect(find.text('ថតរូប Selfie មកដល់សាខា (Mandatory Selfie) *'), findsOneWidget);
+      expect(find.text('រក្សាទុក Check-in សាខានេះ'), findsOneWidget);
+    });
+
+    testWidgets('BranchMissionEditor supports asModal rendering with drag handle and close button', (tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      final active = BranchRoute(
+        id: 'route_modal_test',
+        purpose: 'ការងារចល័ត',
+        originBranch: 'សាខាទី១ - ទួលគោក (Toul Kork)',
+        targetBranches: [],
+        status: 'processing',
+        startTime: DateTime.now().subtract(const Duration(minutes: 5)),
+      );
+      await BranchRouteStorage.saveActiveRoute(active);
+
+      await tester.pumpWidget(MaterialApp(
+        home: BranchMissionEditor(api: DailyRecordsApi(), asModal: true),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.close_rounded), findsOneWidget);
+      expect(find.text('បេសកកម្មកំពុងដំណើរការ'), findsOneWidget);
+      // Still can't cancel
+      expect(find.byIcon(Icons.cancel_outlined), findsNothing);
     });
 
     testWidgets('BranchMissionEditor renders Stage 2 processing view when arrived at branch', (tester) async {

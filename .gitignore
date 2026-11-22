@@ -50,4 +50,4 @@ app.*.map.json
 *.aab
 
 # Release folders
-release-apk/
+release-apk/*.apk
