@@ -59,9 +59,6 @@ class AttendanceDetailBottomSheetState
     final statusItem =
         EmployeeAttendanceReport.statusForDay(widget.attendances);
     final dayStatus = statusItem.dayStatus;
-    final statusLabel =
-        attendanceStatusLabel(dayStatus, statusItem.statusLabel);
-
     for (final att in widget.attendances) {
       workedHr = workedHr + att.worked_hours_min;
     }
@@ -126,7 +123,7 @@ class AttendanceDetailBottomSheetState
             ],
           ),
           const SizedBox(height: 6),
-          if (dayStatus != 'present')
+          if (dayStatus != 'present' || statusItem.isEarlyCheckOut)
             Container(
               width: double.infinity,
               margin: const EdgeInsets.only(top: 4, bottom: 8),
@@ -138,7 +135,9 @@ class AttendanceDetailBottomSheetState
                     color: enterprise.accent.withValues(alpha: 0.25)),
               ),
               child: Text(
-                statusLabel,
+                statusItem.isEarlyCheckOut
+                    ? translate('attendance_status.early_check_out')
+                    : attendanceStatusLabel(dayStatus, statusItem.statusLabel),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                     color: enterprise.accent,
@@ -154,38 +153,61 @@ class AttendanceDetailBottomSheetState
               final attendance = widget.attendances[index];
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Expanded(
-                      child: Text(
-                        attendance.check_in,
-                        textAlign: TextAlign.start,
-                        style: TextStyle(
-                            color: enterprise.text,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600),
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            attendance.check_in,
+                            textAlign: TextAlign.start,
+                            style: TextStyle(
+                                color: enterprise.text,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            attendance.check_out,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                                color: enterprise.text,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            attendance.worked_hours,
+                            textAlign: TextAlign.end,
+                            style: TextStyle(
+                                color: enterprise.text,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
                     ),
-                    Expanded(
-                      child: Text(
-                        attendance.check_out,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                            color: enterprise.text,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600),
+                    if (attendance.isEarlyCheckOut)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 5),
+                        child: Row(
+                          children: [
+                            Icon(Icons.schedule,
+                                size: 14, color: enterprise.accent),
+                            const SizedBox(width: 5),
+                            Text(
+                              '${translate('attendance_status.early_check_out')}${attendance.earlyCheckOutMinutes > 0 ? ' (${attendance.earlyCheckOutMinutes} min)' : ''}',
+                              style: TextStyle(
+                                  color: enterprise.accent,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    Expanded(
-                      child: Text(
-                        attendance.worked_hours,
-                        textAlign: TextAlign.end,
-                        style: TextStyle(
-                            color: enterprise.text,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600),
-                      ),
-                    ),
                   ],
                 ),
               );

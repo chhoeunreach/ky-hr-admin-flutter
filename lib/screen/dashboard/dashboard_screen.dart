@@ -400,6 +400,72 @@ class DashboardScreenState extends State<DashboardScreen>
       ));
     }
 
+    void addBottomMenu(String menu) {
+      if (menu == 'social-feed' && features[menu] == '1') {
+        addTab(
+          LayoutItem.social,
+          SocialFeedScreen(
+            showBackButton: false,
+            onImmersiveChanged: _handleSocialFeedImmersive,
+          ),
+          getItemConfig(
+            const Icon(Icons.dynamic_feed_outlined),
+            translate('community.social_feed'),
+          ),
+        );
+        return;
+      }
+      if (menu == 'repair' && canRepair) {
+        addTab(
+          LayoutItem.repair,
+          RepairDevicePage(
+            showBackButton: false,
+            onNavigationVisibilityChanged: (visible) {
+              if (_repairNavigationVisible == visible || !mounted) return;
+              setState(() => _repairNavigationVisible = visible);
+            },
+          ),
+          getItemConfig(
+            const Icon(Icons.build_circle_outlined),
+            translate(enterprise.isRoyalBlueGold
+                ? 'royal.repair'
+                : 'dashboard_screen.repair_list'),
+          ),
+        );
+        return;
+      }
+      if (menu == 'leave-request' && features[menu] == '1') {
+        addTab(
+          LayoutItem.leave,
+          LeaveScreen(),
+          getItemConfig(
+            const Icon(Icons.sick),
+            translate('dashboard_screen.leave'),
+          ),
+        );
+        return;
+      }
+      if (menu == 'attendance' && features[menu] == '1') {
+        addTab(
+          LayoutItem.attendance,
+          AttendanceScreen(),
+          getItemConfig(
+            const Icon(Icons.co_present_outlined),
+            translate('dashboard_screen.attendance'),
+          ),
+        );
+        return;
+      }
+      if (dashboard.mobileLayoutConfigured && features[menu] == '1') {
+        addTab(
+          LayoutItem.more,
+          _RoleFunctionTab(menu, _controller),
+          getItemConfig(const Icon(Icons.apps_outlined), _roleMenuLabel(menu)),
+          tabKey: 'role-$menu',
+        );
+      }
+    }
+
     addTab(
       LayoutItem.home,
       HomeScreen(_controller),
@@ -408,68 +474,18 @@ class DashboardScreenState extends State<DashboardScreen>
         translate('dashboard_screen.home'),
       ),
     );
-    if (features["social-feed"] == "1" &&
-        dashboard.isMobileMenuAt("social-feed", "bottom"))
-      addTab(
-        LayoutItem.social,
-        SocialFeedScreen(
-            showBackButton: false,
-            onImmersiveChanged: _handleSocialFeedImmersive),
-        getItemConfig(
-          const Icon(Icons.dynamic_feed_outlined),
-          translate('community.social_feed'),
-        ),
-      );
-    if (canRepair && dashboard.isMobileMenuAt("repair", "bottom"))
-      addTab(
-        LayoutItem.repair,
-        RepairDevicePage(
-          showBackButton: false,
-          onNavigationVisibilityChanged: (visible) {
-            if (_repairNavigationVisible == visible || !mounted) return;
-            setState(() => _repairNavigationVisible = visible);
-          },
-        ),
-        getItemConfig(
-          const Icon(Icons.build_circle_outlined),
-          translate(enterprise.isRoyalBlueGold
-              ? 'royal.repair'
-              : 'dashboard_screen.repair_list'),
-        ),
-      );
-    if (features["leave-request"] == "1" &&
-        dashboard.isMobileMenuAt("leave-request", "bottom"))
-      addTab(
-        LayoutItem.leave,
-        LeaveScreen(),
-        getItemConfig(
-          const Icon(Icons.sick),
-          translate('dashboard_screen.leave'),
-        ),
-      );
-    if (features["attendance"] == "1" &&
-        dashboard.isMobileMenuAt("attendance", "bottom"))
-      addTab(
-        LayoutItem.attendance,
-        AttendanceScreen(),
-        getItemConfig(
-          const Icon(Icons.co_present_outlined),
-          translate('dashboard_screen.attendance'),
-        ),
-      );
     if (dashboard.mobileLayoutConfigured) {
-      const builtInTabs = {'social-feed', 'repair', 'leave-request', 'attendance'};
-      for (final entry in dashboard.mobileLayout.entries) {
-        final menu = entry.key;
-        if (!entry.value.contains('bottom') ||
-            builtInTabs.contains(menu) ||
-            features[menu] != '1') continue;
-        addTab(
-          LayoutItem.more,
-          _RoleFunctionTab(menu, _controller),
-          getItemConfig(const Icon(Icons.apps_outlined), _roleMenuLabel(menu)),
-          tabKey: 'role-$menu',
-        );
+      for (final menu in dashboard.mobileMenusAt('bottom')) {
+        addBottomMenu(menu);
+      }
+    } else {
+      for (final menu in const [
+        'social-feed',
+        'repair',
+        'leave-request',
+        'attendance',
+      ]) {
+        addBottomMenu(menu);
       }
     }
     addTab(
@@ -510,7 +526,7 @@ class DashboardScreenState extends State<DashboardScreen>
       children: [
         PersistentTabView(
           key: ValueKey(
-              'tabs_${features["social-feed"]}_${features["leave-request"]}_${features["attendance"]}_${canRepair}_${dashboard.mobileLayout.hashCode}'),
+              'tabs_${features["social-feed"]}_${features["leave-request"]}_${features["attendance"]}_${canRepair}_${dashboard.mobileLayout.hashCode}_${dashboard.mobileLayoutPositions.hashCode}'),
           controller: _controller,
           onTabChanged: (index) {
             WidgetsBinding.instance.addPostFrameCallback((_) {

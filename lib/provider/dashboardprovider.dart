@@ -107,11 +107,25 @@ class DashboardProvider with ChangeNotifier {
 
   late Map<String, String> features = {};
   Map<String, List<String>> mobileLayout = {};
+  Map<String, Map<String, int>> mobileLayoutPositions = {};
   bool mobileLayoutConfigured = false;
 
   bool isMobileMenuAt(String menu, String zone) {
     if (!mobileLayoutConfigured || !mobileLayout.containsKey(menu)) return true;
     return mobileLayout[menu]?.contains(zone) ?? true;
+  }
+
+  int mobileMenuPosition(String menu, String zone) =>
+      mobileLayoutPositions[menu]?[zone] ?? 1 << 20;
+
+  List<String> mobileMenusAt(String zone) {
+    final menus = mobileLayout.entries
+        .where((entry) => entry.value.contains(zone))
+        .map((entry) => entry.key)
+        .toList();
+    menus.sort((left, right) =>
+        mobileMenuPosition(left, zone).compareTo(mobileMenuPosition(right, zone)));
+    return menus;
   }
 
   final Map<String, double> locationStatus = {
@@ -202,6 +216,7 @@ class DashboardProvider with ChangeNotifier {
     final Preferences preferences = Preferences();
     features = await preferences.getFeatures();
     mobileLayout = await preferences.getRoleMobileLayout();
+    mobileLayoutPositions = await preferences.getRoleMobileLayoutPositions();
     mobileLayoutConfigured = await preferences.isRoleMobileLayoutConfigured();
     notifyListeners();
   }
@@ -250,7 +265,9 @@ class DashboardProvider with ChangeNotifier {
         },
       ).timeout(const Duration(seconds: 8));
       if (layoutResponse.statusCode == 200 &&
-          token == await preferences.getToken()) {
+          token == await preferences.getToken() &&
+          request == _lastAppliedFeatureRequest &&
+          !_summaryDisposed) {
         final layoutPayload = _decodeResponseBody(layoutResponse.body);
         final rawLayout = layoutPayload['data'];
         if (rawLayout is Map) {
@@ -267,8 +284,28 @@ class DashboardProvider with ChangeNotifier {
                   )),
                 )
               : <String, List<String>>{};
+          final rawPositions = layoutPayload['positions'];
+          mobileLayoutPositions = mobileLayoutConfigured && rawPositions is Map
+              ? Map<String, Map<String, int>>.fromEntries(
+                  rawPositions.entries.map((entry) {
+                    final zonePositions = entry.value is Map
+                        ? Map<String, int>.fromEntries(
+                            (entry.value as Map).entries.map((position) =>
+                                MapEntry(
+                                  position.key.toString(),
+                                  int.tryParse(position.value.toString()) ?? 0,
+                                )),
+                          )
+                        : <String, int>{};
+                    return MapEntry(entry.key.toString(), zonePositions);
+                  }),
+                )
+              : <String, Map<String, int>>{};
           await preferences.cacheRoleMobileLayout(
-              mobileLayoutConfigured, mobileLayout);
+            mobileLayoutConfigured,
+            mobileLayout,
+            positions: mobileLayoutPositions,
+          );
         }
       }
       notifyListeners();

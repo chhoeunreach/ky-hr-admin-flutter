@@ -82,6 +82,7 @@ class Preferences with ChangeNotifier {
     final prefs = await _sharedPrefs;
 
     await prefs.remove('role_features_v2');
+    await prefs.remove(_roleMobileLayoutKey);
     await prefs.setString(USER_TOKEN, data.tokens);
     await prefs.setInt(USER_ID, user.id);
     await prefs.setString(USER_AVATAR, user.avatar);
@@ -164,6 +165,28 @@ class Preferences with ChangeNotifier {
     }
   }
 
+  Future<Map<String, Map<String, int>>> getRoleMobileLayoutPositions() async {
+    final prefs = await _sharedPrefs;
+    final raw = prefs.getString(_roleMobileLayoutKey);
+    if (raw == null || raw.trim().isEmpty) return {};
+    try {
+      final value = jsonDecode(raw) as Map<String, dynamic>;
+      final data = value['positions'];
+      if (value['configured'] != true || data is! Map) return {};
+      return Map<String, Map<String, int>>.fromEntries(data.entries.map((entry) {
+        final positions = entry.value is Map
+            ? (entry.value as Map).map((zone, position) => MapEntry(
+                  zone.toString(),
+                  int.tryParse(position.toString()) ?? 0,
+                ))
+            : <String, int>{};
+        return MapEntry(entry.key.toString(), positions);
+      }));
+    } catch (_) {
+      return {};
+    }
+  }
+
   Future<bool> isRoleMobileLayoutConfigured() async {
     final prefs = await _sharedPrefs;
     final raw = prefs.getString(_roleMobileLayoutKey);
@@ -176,11 +199,15 @@ class Preferences with ChangeNotifier {
   }
 
   Future<void> cacheRoleMobileLayout(
-      bool configured, Map<String, List<String>> layout) async {
+    bool configured,
+    Map<String, List<String>> layout, {
+    Map<String, Map<String, int>> positions = const {},
+  }) async {
     final prefs = await _sharedPrefs;
     await prefs.setString(_roleMobileLayoutKey, jsonEncode({
       'configured': configured,
       'data': layout,
+      'positions': positions,
     }));
   }
 
@@ -212,6 +239,7 @@ class Preferences with ChangeNotifier {
     await prefs.remove('login_server');
     await prefs.remove('verified_company_server');
     await prefs.remove('role_features_v2');
+    await prefs.remove(_roleMobileLayoutKey);
 
     await prefs.setInt(USER_ID, 0);
     await prefs.setString(USER_TOKEN, '');

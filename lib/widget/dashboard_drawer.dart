@@ -34,6 +34,32 @@ Color sidebarForeground(EnterpriseTheme enterprise) {
 
 Color sidebarTone(Color color) => Color.lerp(color, AppColors.black, 0.42)!;
 
+void _openRoleMenu(BuildContext context, String menu, int employeeId) {
+  Navigator.of(context).pop();
+  switch (menu) {
+    case 'sell-staff-report':
+      Get.to(() => const PosWorkspaceScreen());
+      break;
+    case 'social-feed':
+      Get.to(() => const SocialFeedScreen());
+      break;
+    case 'loan':
+      Get.to(() => LoanCalculateScreen());
+      break;
+    case 'social-rewards':
+      Get.to(() => SocialSubmissionScreen(employeeId: employeeId));
+      break;
+    case 'id-card':
+      Get.to(() => const FrontSidePreviewPage());
+      break;
+    case 'links':
+      Get.to(() => const LinkListScreen());
+      break;
+    default:
+      Get.to(() => MoreScreen());
+  }
+}
+
 class DashboardDrawer extends StatelessWidget {
   const DashboardDrawer({super.key});
 
@@ -63,137 +89,105 @@ class DashboardDrawer extends StatelessWidget {
                 branchName.isEmpty ? 'Branch' : branchName,
                 paymentQrCodes,
               ),
-              _drawerSectionLabel(enterprise, 'Services'),
-              _drawerMenuItem(context, enterprise,
-                  icon: Icons.dashboard_outlined,
-                  label: translate('pos.dashboard'),
-                  permissionKey: 'sell-staff-report', onTap: () {
-                Navigator.of(context).pop();
-                Get.to(() => const PosWorkspaceScreen());
-              }),
-              _sellOutDrawerItem(
-                context,
-                enterprise,
-                translate('home_screen.service_sell'),
-                Icons.point_of_sale,
-              ),
-              _sellOutDrawerItem(
-                context,
-                enterprise,
-                translate('home_screen.service_sell_sim'),
-                Icons.sim_card,
-                serviceTypeValue: 'SellSim',
-              ),
-              _sellOutDrawerItem(
-                context,
-                enterprise,
-                translate('home_screen.service_material'),
-                Icons.inventory_2_outlined,
-              ),
-              _sellOutDrawerItem(
-                context,
-                enterprise,
-                translate('home_screen.service_iron'),
-                Icons.local_laundry_service,
-              ),
-              _sellOutDrawerItem(
-                context,
-                enterprise,
-                translate('home_screen.service_repair'),
-                Icons.build_circle_outlined,
-              ),
-              _sellOutDrawerItem(
-                context,
-                enterprise,
-                translate('home_screen.service_buy_in'),
-                Icons.add_shopping_cart,
-              ),
-              _sellOutDrawerItem(
-                context,
-                enterprise,
-                translate('home_screen.service_icloud_cus'),
-                Icons.cloud_outlined,
-                serviceTypeValue: 'iCloud Cus',
-              ),
-              _drawerDivider(enterprise),
-              _drawerSectionLabel(enterprise, 'Tools'),
-              _drawerMenuItem(context, enterprise,
-                  icon: Icons.dynamic_feed_outlined,
-                  label: translate('community.social_feed'),
-                  permissionKey: 'social-feed', onTap: () {
-                Navigator.of(context).pop();
-                Get.to(() => const SocialFeedScreen());
-              }),
-              _drawerMenuItem(
-                context,
-                enterprise,
-                icon: Icons.calculate_outlined,
-                label: translate('loan_calculate_screen.loan_calculator'),
-                permissionKey: 'loan',
-                onTap: () {
+              if (!dashboardProvider.mobileLayoutConfigured) ...[
+                _drawerSectionLabel(enterprise, 'Services'),
+                _drawerMenuItem(context, enterprise,
+                    icon: Icons.dashboard_outlined,
+                    label: translate('pos.dashboard'),
+                    permissionKey: 'sell-staff-report', onTap: () {
                   Navigator.of(context).pop();
-                  Get.to(() => LoanCalculateScreen());
-                },
-              ),
-              _drawerMenuItem(
-                context,
-                enterprise,
-                icon: Icons.campaign_outlined,
-                label: translate('dashboard_screen.social_rewards'),
-                permissionKey: 'social-rewards',
-                onTap: () {
+                  Get.to(() => const PosWorkspaceScreen());
+                }),
+                _sellOutDrawerItem(context, enterprise,
+                    translate('home_screen.service_sell'), Icons.point_of_sale),
+                _sellOutDrawerItem(
+                  context,
+                  enterprise,
+                  translate('home_screen.service_sell_sim'),
+                  Icons.sim_card,
+                  serviceTypeValue: 'SellSim',
+                ),
+                _sellOutDrawerItem(context, enterprise,
+                    translate('home_screen.service_material'), Icons.inventory_2_outlined),
+                _sellOutDrawerItem(context, enterprise,
+                    translate('home_screen.service_iron'), Icons.local_laundry_service),
+                _sellOutDrawerItem(context, enterprise,
+                    translate('home_screen.service_repair'), Icons.build_circle_outlined),
+                _sellOutDrawerItem(context, enterprise,
+                    translate('home_screen.service_buy_in'), Icons.add_shopping_cart),
+                _sellOutDrawerItem(
+                  context,
+                  enterprise,
+                  translate('home_screen.service_icloud_cus'),
+                  Icons.cloud_outlined,
+                  serviceTypeValue: 'iCloud Cus',
+                ),
+                _drawerDivider(enterprise),
+                _drawerSectionLabel(enterprise, 'Tools'),
+                _drawerMenuItem(context, enterprise,
+                    icon: Icons.dynamic_feed_outlined,
+                    label: translate('community.social_feed'),
+                    permissionKey: 'social-feed', onTap: () {
                   Navigator.of(context).pop();
-                  Get.to(
-                    () => SocialSubmissionScreen(employeeId: employeeId),
-                  );
-                },
-              ),
-              _drawerMenuItem(
-                context,
-                enterprise,
-                icon: Icons.badge_rounded,
-                label: translate('dashboard_screen.view_my_card'),
-                permissionKey: 'id-card',
-                onTap: () {
-                  Navigator.of(context).pop();
-                  Get.to(() => const FrontSidePreviewPage());
-                },
-              ),
-              _drawerMenuItem(
-                context,
-                enterprise,
-                icon: Icons.link,
-                label: translate('more_screen.links'),
-                permissionKey: 'links',
-                onTap: () {
-                  Navigator.of(context).pop();
-                  Get.to(() => const LinkListScreen());
-                },
-              ),
+                  Get.to(() => const SocialFeedScreen());
+                }),
+                _drawerMenuItem(
+                  context,
+                  enterprise,
+                  icon: Icons.calculate_outlined,
+                  label: translate('loan_calculate_screen.loan_calculator'),
+                  permissionKey: 'loan',
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    Get.to(() => LoanCalculateScreen());
+                  },
+                ),
+                _drawerMenuItem(
+                  context,
+                  enterprise,
+                  icon: Icons.campaign_outlined,
+                  label: translate('dashboard_screen.social_rewards'),
+                  permissionKey: 'social-rewards',
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    Get.to(() => SocialSubmissionScreen(employeeId: employeeId));
+                  },
+                ),
+                _drawerMenuItem(
+                  context,
+                  enterprise,
+                  icon: Icons.badge_rounded,
+                  label: translate('dashboard_screen.view_my_card'),
+                  permissionKey: 'id-card',
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    Get.to(() => const FrontSidePreviewPage());
+                  },
+                ),
+                _drawerMenuItem(
+                  context,
+                  enterprise,
+                  icon: Icons.link,
+                  label: translate('more_screen.links'),
+                  permissionKey: 'links',
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    Get.to(() => const LinkListScreen());
+                  },
+                ),
+              ],
               if (dashboardProvider.mobileLayoutConfigured) ...[
                 _drawerDivider(enterprise),
                 _drawerSectionLabel(enterprise, 'Role functions'),
-                for (final entry in dashboardProvider.mobileLayout.entries)
-                  if (entry.value.contains('sidebar') &&
-                      dashboardProvider.features[entry.key] == '1' &&
-                      !const {
-                        'sell-staff-report',
-                        'social-feed',
-                        'loan',
-                        'social-rewards',
-                        'id-card',
-                        'links',
-                      }.contains(entry.key))
+                for (final menu in dashboardProvider.mobileMenusAt('sidebar'))
+                  if (dashboardProvider.features[menu] == '1')
                     _drawerMenuItem(
                       context,
                       enterprise,
                       icon: Icons.apps_outlined,
-                      label: _roleMenuLabel(entry.key),
-                      permissionKey: entry.key,
-                      onTap: () {
-                        Navigator.of(context).pop();
-                        Get.to(() => MoreScreen());
-                      },
+                      label: _roleMenuLabel(menu),
+                      permissionKey: menu,
+                      onTap: () => _openRoleMenu(context, menu, employeeId),
                     ),
               ],
             ],

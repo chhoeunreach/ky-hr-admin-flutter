@@ -12,6 +12,8 @@ class EmployeeAttendanceReport with ChangeNotifier {
   String check_out;
   bool isOverTime;
   bool isUnderTime;
+  bool isEarlyCheckOut;
+  int earlyCheckOutMinutes;
   String overTime;
   String underTime;
   double worked_hours_min;
@@ -25,6 +27,7 @@ class EmployeeAttendanceReport with ChangeNotifier {
   String? timeLeaveTo;
 
   String get statusLabel {
+    if (isEarlyCheckOut) return 'Early Check Out';
     if (rawStatusLabel.trim().isNotEmpty) return rawStatusLabel;
     if (dayStatus == 'absent') return 'Absent';
     if (dayStatus == 'leave') return 'Leave';
@@ -40,7 +43,7 @@ class EmployeeAttendanceReport with ChangeNotifier {
   }
 
   bool get isPositiveStatus =>
-      dayStatus == 'present' && !isUnderTime && dayStatus != 'absent';
+      dayStatus == 'present' && !isUnderTime && !isEarlyCheckOut && dayStatus != 'absent';
 
   bool get hasAttendance =>
       hasAttendanceTime(check_in) || hasAttendanceTime(check_out);
@@ -70,6 +73,8 @@ class EmployeeAttendanceReport with ChangeNotifier {
     required this.check_out,
     required this.isOverTime,
     required this.isUnderTime,
+    required this.isEarlyCheckOut,
+    required this.earlyCheckOutMinutes,
     required this.overTime,
     required this.underTime,
     required this.worked_hours_min,

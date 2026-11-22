@@ -244,7 +244,8 @@ class ThemeProvider extends ChangeNotifier {
         previous.heartGlow == config.heartGlow &&
         previous.sparkleEffects == config.sparkleEffects &&
         previous.emojiEffect == config.emojiEffect &&
-        previous.emojiChar == config.emojiChar) {
+        previous.emojiChar == config.emojiChar &&
+        _sameCustomEffects(previous.customEffects, config.customEffects)) {
       return;
     }
     _serverAppearance = config;
@@ -254,6 +255,19 @@ class ThemeProvider extends ChangeNotifier {
     } catch (error) {
       debugPrint('Unable to cache app appearance: $error');
     }
+  }
+
+  bool _sameCustomEffects(
+    List<Map<String, dynamic>> previous,
+    List<Map<String, dynamic>> next,
+  ) {
+    if (previous.length != next.length) return false;
+    for (var index = 0; index < previous.length; index++) {
+      for (final key in const ['id', 'name', 'emoji', 'enabled']) {
+        if (previous[index][key] != next[index][key]) return false;
+      }
+    }
+    return true;
   }
 
   Future<void> setMode(AppThemeMode mode) async {

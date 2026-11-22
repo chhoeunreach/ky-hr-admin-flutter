@@ -3,6 +3,7 @@ import 'dart:convert';
 class RouteCheckpoint {
   final String id;
   final String branchName;
+  final String actionType; // 'departure' ('ចេញ') | 'arrival' ('មកដល់')
   final DateTime arrivedAt;
   final double? latitude;
   final double? longitude;
@@ -12,6 +13,7 @@ class RouteCheckpoint {
   RouteCheckpoint({
     required this.id,
     required this.branchName,
+    this.actionType = 'arrival',
     required this.arrivedAt,
     this.latitude,
     this.longitude,
@@ -19,9 +21,13 @@ class RouteCheckpoint {
     this.photoPaths = const [],
   });
 
+  bool get isDeparture => actionType == 'departure';
+  bool get isArrival => actionType == 'arrival';
+
   Map<String, dynamic> toMap() => {
         'id': id,
         'branch_name': branchName,
+        'action_type': actionType,
         'arrived_at': arrivedAt.toIso8601String(),
         'latitude': latitude,
         'longitude': longitude,
@@ -33,6 +39,7 @@ class RouteCheckpoint {
     return RouteCheckpoint(
       id: (map['id'] ?? '').toString(),
       branchName: (map['branch_name'] ?? '').toString(),
+      actionType: (map['action_type'] ?? 'arrival').toString(),
       arrivedAt: map['arrived_at'] != null
           ? DateTime.tryParse(map['arrived_at'].toString()) ?? DateTime.now()
           : DateTime.now(),
@@ -68,6 +75,9 @@ class BranchRoute {
   final String? finalSummary;
   final int totalMinutes;
   final bool isSynced;
+  final List<String> supportingPhotos;
+  final List<String> supportingFiles;
+  final List<String> supportingLinks;
 
   BranchRoute({
     required this.id,
@@ -88,6 +98,9 @@ class BranchRoute {
     this.finalSummary,
     this.totalMinutes = 0,
     this.isSynced = false,
+    this.supportingPhotos = const [],
+    this.supportingFiles = const [],
+    this.supportingLinks = const [],
   });
 
   bool get isProcessing => status == 'processing';
@@ -116,6 +129,28 @@ class BranchRoute {
     return '$hours:$minutes:$seconds';
   }
 
+  /// Returns the latest action type: 'departure' (ចេញ) or 'arrival' (មកដល់)
+  String get latestAction {
+    if (checkpoints.isEmpty) {
+      return 'departure';
+    }
+    return checkpoints.last.actionType;
+  }
+
+  /// True if currently departed / in transit to a branch
+  bool get isDeparted => latestAction == 'departure';
+
+  /// True if currently arrived at a branch
+  bool get isArrived => latestAction == 'arrival';
+
+  /// Current branch location or last departed branch
+  String get currentBranchName {
+    if (checkpoints.isEmpty) {
+      return originBranch;
+    }
+    return checkpoints.last.branchName;
+  }
+
   BranchRoute copyWith({
     String? id,
     String? purpose,
@@ -135,6 +170,9 @@ class BranchRoute {
     String? finalSummary,
     int? totalMinutes,
     bool? isSynced,
+    List<String>? supportingPhotos,
+    List<String>? supportingFiles,
+    List<String>? supportingLinks,
   }) {
     return BranchRoute(
       id: id ?? this.id,
@@ -155,6 +193,9 @@ class BranchRoute {
       finalSummary: finalSummary ?? this.finalSummary,
       totalMinutes: totalMinutes ?? this.totalMinutes,
       isSynced: isSynced ?? this.isSynced,
+      supportingPhotos: supportingPhotos ?? this.supportingPhotos,
+      supportingFiles: supportingFiles ?? this.supportingFiles,
+      supportingLinks: supportingLinks ?? this.supportingLinks,
     );
   }
 
@@ -177,6 +218,9 @@ class BranchRoute {
         'final_summary': finalSummary,
         'total_minutes': totalMinutes,
         'is_synced': isSynced,
+        'supporting_photos': supportingPhotos,
+        'supporting_files': supportingFiles,
+        'supporting_links': supportingLinks,
       };
 
   factory BranchRoute.fromMap(Map<String, dynamic> map) {
@@ -217,6 +261,12 @@ class BranchRoute {
           ? int.tryParse(map['total_minutes'].toString()) ?? 0
           : 0,
       isSynced: map['is_synced'] == true,
+      supportingPhotos:
+          (map['supporting_photos'] as List?)?.map((e) => '$e').toList() ?? [],
+      supportingFiles:
+          (map['supporting_files'] as List?)?.map((e) => '$e').toList() ?? [],
+      supportingLinks:
+          (map['supporting_links'] as List?)?.map((e) => '$e').toList() ?? [],
     );
   }
 

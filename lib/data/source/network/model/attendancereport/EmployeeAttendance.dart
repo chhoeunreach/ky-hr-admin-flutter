@@ -11,6 +11,8 @@ class EmployeeAttendance {
     required this.checkOut,
     required this.isOverTime,
     required this.isUnderTime,
+    required this.isEarlyCheckOut,
+    required this.earlyCheckOutMinutes,
     required this.overTime,
     required this.underTime,
     required this.workingHour,
@@ -41,6 +43,8 @@ class EmployeeAttendance {
         workedhrsMin: _toDouble(json['worked_hours_min']),
         isOverTime: json['is_overtime'] ?? false,
         isUnderTime: json['is_undertime'] ?? false,
+        isEarlyCheckOut: _toBool(json['is_early_check_out']),
+        earlyCheckOutMinutes: _toDouble(json['early_check_out_minutes']).round(),
         overTime: _toText(json['overtime'], fallback: "-"),
         underTime: _toText(json['undertime'], fallback: "-"),
         dayStatus: json['day_status']?.toString() ?? "present",
@@ -62,6 +66,8 @@ class EmployeeAttendance {
   String checkOut;
   bool isOverTime;
   bool isUnderTime;
+  bool isEarlyCheckOut;
+  int earlyCheckOutMinutes;
   String overTime;
   String underTime;
   String workingHour;
@@ -99,6 +105,12 @@ class EmployeeAttendance {
   static double _toDouble(dynamic value) {
     if (value is num) return value.toDouble();
     return double.tryParse(value?.toString() ?? '') ?? 0.0;
+  }
+
+  static bool _toBool(dynamic value) {
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+    return value?.toString().toLowerCase() == 'true' || value?.toString() == '1';
   }
 
   static String _toText(dynamic value, {String fallback = ""}) {

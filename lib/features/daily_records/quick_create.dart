@@ -49,6 +49,29 @@ class _CreateRecordButtonState extends State<CreateRecordButton> {
     setState(() => _sheetOpen = false);
     if (choice == null) return;
 
+    if (choice == 'branch-mission') {
+      final saved = await showModalBottomSheet<bool>(
+        context: context,
+        useRootNavigator: true,
+        isScrollControlled: true,
+        useSafeArea: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => FractionallySizedBox(
+          heightFactor: 0.95,
+          child: ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            child: BranchMissionEditor(api: service, asModal: true),
+          ),
+        ),
+      );
+      if (saved == true && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(workText(context, 'Branch mission record saved.'))),
+        );
+      }
+      return;
+    }
+
     final screen = switch (choice) {
       'tasks' => MyTasksScreen(api: service),
       'records' => MyDailyRecordsScreen(api: service),

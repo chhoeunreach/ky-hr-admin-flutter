@@ -223,51 +223,76 @@ class _OverviewDashboardState extends State<OverviewDashboard> {
         ? LayoutItem.values.where((item) => item.area == LayoutArea.shortcuts)
         : enterprise.layout.visible(LayoutArea.shortcuts);
     List<Widget> tilesForZone(String zone) {
-      final tiles = <Widget>[
-        for (final item in shortcutItems)
-          if (tilesByItem[item] case final Widget tile)
-            if (widget.forceMenu != null
-                ? menuFor(item) == widget.forceMenu
-                : menuFor(item) == null
-                    ? zone == 'home_quick'
-                    : dashboard.mobileLayoutConfigured
-                        ? dashboard.isMobileMenuAt(menuFor(item)!, zone)
-                        : zone == 'home_quick')
-              KeyedSubtree(key: ValueKey('${item.name}_$zone'), child: tile),
-      ];
       if (widget.forceMenu != null || !dashboard.mobileLayoutConfigured) {
-        return tiles;
+        return [
+          for (final item in shortcutItems)
+            if (tilesByItem[item] case final Widget tile)
+              if (widget.forceMenu != null
+                  ? menuFor(item) == widget.forceMenu
+                  : menuFor(item) == null
+                      ? zone == 'home_quick'
+                      : zone == 'home_quick')
+                KeyedSubtree(key: ValueKey('${item.name}_$zone'), child: tile),
+        ];
       }
+
+      final tiles = <({int position, String key, Widget widget})>[];
       final represented = tilesByItem.keys
           .map(menuFor)
           .whereType<String>()
           .toSet();
-      for (final entry in dashboard.mobileLayout.entries) {
-        if (entry.value.contains(zone) &&
-            dashboard.features[entry.key] == '1' &&
-            !represented.contains(entry.key)) {
-          final label = entry.key
+      final representedInZone = <String>{};
+      for (final item in shortcutItems) {
+        final menu = menuFor(item);
+        final tile = tilesByItem[item];
+        if (menu == null ||
+            tile == null ||
+            representedInZone.contains(menu) ||
+            !dashboard.isMobileMenuAt(menu, zone)) {
+          continue;
+        }
+        representedInZone.add(menu);
+        tiles.add((
+          position: dashboard.mobileMenuPosition(menu, zone),
+          key: menu,
+          widget: KeyedSubtree(
+            key: ValueKey('${item.name}_$zone'),
+            child: tile,
+          ),
+        ));
+      }
+      for (final menu in dashboard.mobileMenusAt(zone)) {
+        if (dashboard.features[menu] == '1' && !represented.contains(menu)) {
+          final label = menu
               .split('-')
               .map((word) => word.isEmpty
                   ? word
                   : '${word[0].toUpperCase()}${word.substring(1)}')
               .join(' ');
-          tiles.add(KeyedSubtree(
-            key: ValueKey('${entry.key}_$zone'),
-            child: CardOverView(
-              type: label,
-              value: '',
-              icon: Icons.apps_outlined,
-              callback: () => pushScreen(
-                context,
-                screen: MoreScreen(),
-                withNavBar: false,
+          tiles.add((
+            position: dashboard.mobileMenuPosition(menu, zone),
+            key: menu,
+            widget: KeyedSubtree(
+              key: ValueKey('${menu}_$zone'),
+              child: CardOverView(
+                type: label,
+                value: '',
+                icon: Icons.apps_outlined,
+                callback: () => pushScreen(
+                  context,
+                  screen: MoreScreen(),
+                  withNavBar: false,
+                ),
               ),
             ),
           ));
         }
       }
-      return tiles;
+      tiles.sort((left, right) {
+        final byPosition = left.position.compareTo(right.position);
+        return byPosition != 0 ? byPosition : left.key.compareTo(right.key);
+      });
+      return tiles.map((entry) => entry.widget).toList();
     }
     final tiles = tilesForZone('home_quick');
     final topTiles = tilesForZone('top');

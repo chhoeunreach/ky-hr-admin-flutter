@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:cnattendance/features/appearance/app_appearance_api.dart';
 import 'package:cnattendance/model/app_theme_option.dart';
 import 'package:cnattendance/theme/app_theme_data.dart';
 import 'package:cnattendance/theme/app_theme_mode.dart';
@@ -47,6 +48,7 @@ class ThemeSelector extends StatelessWidget {
                       ),
                     ),
                   ),
+                  const _RefreshAppearanceButton(),
                   IconButton(
                     tooltip: 'Customize layout',
                     color: enterprise.accent,
@@ -103,6 +105,65 @@ class ThemeSelector extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _RefreshAppearanceButton extends StatefulWidget {
+  const _RefreshAppearanceButton();
+
+  @override
+  State<_RefreshAppearanceButton> createState() =>
+      _RefreshAppearanceButtonState();
+}
+
+class _RefreshAppearanceButtonState extends State<_RefreshAppearanceButton> {
+  bool _refreshing = false;
+
+  Future<void> _refresh() async {
+    if (_refreshing) return;
+    setState(() => _refreshing = true);
+    try {
+      final config = await AppAppearanceApi().fetch();
+      if (!mounted) return;
+      await context.read<ThemeProvider>().applyServerAppearance(config);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('App appearance and floating effects refreshed'),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Could not refresh app appearance. Check your connection and try again.',
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _refreshing = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final enterprise = EnterpriseTheme.of(context);
+    return IconButton(
+      tooltip: 'Refresh app appearance and floating effects',
+      color: enterprise.accent,
+      onPressed: _refreshing ? null : _refresh,
+      icon: _refreshing
+          ? SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: enterprise.accent,
+              ),
+            )
+          : const Icon(Icons.refresh_rounded, size: 18),
     );
   }
 }

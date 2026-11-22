@@ -103,6 +103,13 @@ class BranchRouteStorage {
     addFileIfPresent(route.startSelfiePath, 'start_selfie');
     addFileIfPresent(route.endSelfiePath, 'end_selfie');
 
+    for (var i = 0; i < route.supportingPhotos.length; i++) {
+      addFileIfPresent(route.supportingPhotos[i], 'support_photo_$i');
+    }
+    for (var i = 0; i < route.supportingFiles.length; i++) {
+      addFileIfPresent(route.supportingFiles[i], 'support_file_$i');
+    }
+
     for (var i = 0; i < route.checkpoints.length; i++) {
       final cp = route.checkpoints[i];
       for (var j = 0; j < cp.photoPaths.length; j++) {

@@ -588,6 +588,7 @@ class AppColors extends ThemeExtension<AppColors> {
   static const customFFFFFBEB = AppPalette.customFFFFFBEB;
   static const cyan = AppPalette.cyanSwatch;
   static const dangerToken = AppPalette.danger;
+  static const customFF059669 = Color(0xFF059669);
   static const deepOrange = AppPalette.danger;
   static const emerald200Token = AppPalette.emerald200;
   static const emerald300Token = AppPalette.emerald300;

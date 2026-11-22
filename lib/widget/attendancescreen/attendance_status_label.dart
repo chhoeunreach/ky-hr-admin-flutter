@@ -26,6 +26,9 @@ String attendanceStatusLabel(String status, String fallback) {
       return translate('attendance_status.late');
     case 'early':
       return translate('attendance_status.early');
+    case 'early check out':
+    case 'early_check_out':
+      return translate('attendance_status.early_check_out');
   }
 
   if (normalizedFallback == 'on review' || normalizedFallback == 'pending') {

@@ -57,6 +57,19 @@ void main() {
       expect(restored.emojiChar, '🎄');
     });
 
+    test('retains enabled custom floating effects for rendering', () {
+      final config = AppAppearanceConfig.fromJson({
+        'custom_effects': [
+          {'id': 'stars', 'name': 'Celebration stars', 'emoji': '🌟', 'enabled': true},
+          {'id': 'hidden', 'name': 'Hidden', 'emoji': '🫥', 'enabled': false},
+        ],
+      });
+
+      expect(config.customEffects, hasLength(2));
+      expect(config.customFloatingEmojis, ['🌟']);
+      expect(config.toJson()['custom_effects'], hasLength(2));
+    });
+
     test('treats a missing url or type none as no custom background', () {
       final withoutUrl = AppAppearanceConfig.fromJson(const {
         'background_type': 'image',
@@ -115,6 +128,33 @@ void main() {
       await provider.applyServerAppearance(config);
 
       expect(notifications, 0);
+    });
+
+    test('custom effect edits and removals update live appearance', () async {
+      SharedPreferences.setMockInitialValues({});
+      final provider = ThemeProvider();
+      await provider.applyServerAppearance(AppAppearanceConfig.fromJson({
+        'custom_effects': [
+          {'id': 'stars', 'name': 'Stars', 'emoji': '🌟', 'enabled': true},
+          {'id': 'hearts', 'name': 'Hearts', 'emoji': '💖', 'enabled': true},
+        ],
+      }));
+
+      var notifications = 0;
+      provider.addListener(() => notifications++);
+      await provider.applyServerAppearance(AppAppearanceConfig.fromJson({
+        'custom_effects': [
+          {'id': 'stars', 'name': 'Company stars', 'emoji': '🎉', 'enabled': true},
+        ],
+      }));
+
+      expect(notifications, 1);
+      expect(provider.serverAppearance?.customFloatingEmojis, ['🎉']);
+      final prefs = await SharedPreferences.getInstance();
+      final saved = AppAppearanceConfig.fromJson(
+        jsonDecode(prefs.getString('app_appearance_v1')!) as Map<String, dynamic>,
+      );
+      expect(saved.customFloatingEmojis, ['🎉']);
     });
 
     test('caches the applied config for the next cold start', () async {

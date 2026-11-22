@@ -134,6 +134,8 @@ class AttendanceReportProvider with ChangeNotifier {
         underTime: item.underTime,
         isOverTime: item.isOverTime,
         isUnderTime: item.isUnderTime,
+        isEarlyCheckOut: item.isEarlyCheckOut,
+        earlyCheckOutMinutes: item.earlyCheckOutMinutes,
         worked_hours_min: item.workedhrsMin,
         working_hours_min: item.workingHourMin,
         dayStatus: item.resolvedDayStatus,

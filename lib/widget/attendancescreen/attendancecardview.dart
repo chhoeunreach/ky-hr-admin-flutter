@@ -3,6 +3,7 @@ import 'package:cnattendance/model/employeeattendancereport.dart';
 import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/widget/profile/attendance_detail_bottom_sheet.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_translate/flutter_translate.dart';
 import 'package:cnattendance/core/theme/app_colors.dart';
 
 class AttendanceCardView extends StatelessWidget {
@@ -31,8 +32,9 @@ class AttendanceCardView extends StatelessWidget {
         : enterprise.text.withValues(alpha: 0.66);
     final statusItem = EmployeeAttendanceReport.statusForDay(attendances);
     final statusColor = _statusColor(statusItem.dayStatus, statusItem);
-    final statusLabel =
-        attendanceStatusLabel(statusItem.dayStatus, statusItem.statusLabel);
+    final statusLabel = statusItem.isEarlyCheckOut
+        ? translate('attendance_status.early_check_out')
+        : attendanceStatusLabel(statusItem.dayStatus, statusItem.statusLabel);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),

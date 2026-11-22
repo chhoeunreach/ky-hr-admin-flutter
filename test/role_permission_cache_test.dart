@@ -1,5 +1,6 @@
 import 'package:cnattendance/data/source/network/model/dashboard/Feature.dart';
 import 'package:cnattendance/data/source/datastore/preferences.dart';
+import 'package:cnattendance/provider/dashboardprovider.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -32,8 +33,61 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     final preferences = Preferences();
     await preferences.setFeatures({'attendance': '1', 'id-card': '1'});
+    await preferences.cacheRoleMobileLayout(
+      true,
+      {'attendance': ['bottom'], 'holiday': ['sidebar']},
+      positions: {
+        'attendance': {'bottom': 1},
+        'holiday': {'sidebar': 0},
+      },
+    );
     await preferences.clearPrefs();
     expect(await preferences.getFeatures(), isEmpty);
+    expect(await preferences.getRoleMobileLayout(), isEmpty);
+    expect(await preferences.getRoleMobileLayoutPositions(), isEmpty);
+  });
+
+  test('role layout cache retains placements and per-zone ordering', () async {
+    SharedPreferences.setMockInitialValues({});
+    final preferences = Preferences();
+    await preferences.cacheRoleMobileLayout(
+      true,
+      {'attendance': ['bottom', 'home_quick'], 'holiday': ['bottom']},
+      positions: {
+        'attendance': {'bottom': 1, 'home_quick': 0},
+        'holiday': {'bottom': 0},
+      },
+    );
+
+    expect(await preferences.isRoleMobileLayoutConfigured(), isTrue);
+    expect(await preferences.getRoleMobileLayout(), {
+      'attendance': ['bottom', 'home_quick'],
+      'holiday': ['bottom'],
+    });
+    expect(await preferences.getRoleMobileLayoutPositions(), {
+      'attendance': {'bottom': 1, 'home_quick': 0},
+      'holiday': {'bottom': 0},
+    });
+  });
+
+  test('dashboard role menus follow saved placement order and visibility', () {
+    final dashboard = DashboardProvider()
+      ..mobileLayoutConfigured = true
+      ..mobileLayout = {
+        'attendance': ['bottom', 'home_quick'],
+        'holiday': ['bottom'],
+        'notice': [],
+      }
+      ..mobileLayoutPositions = {
+        'attendance': {'bottom': 1, 'home_quick': 0},
+        'holiday': {'bottom': 0},
+        'notice': {},
+      };
+
+    expect(dashboard.mobileMenusAt('bottom'), ['holiday', 'attendance']);
+    expect(dashboard.mobileMenusAt('home_quick'), ['attendance']);
+    expect(dashboard.isMobileMenuAt('notice', 'sidebar'), isFalse);
+    dashboard.dispose();
   });
 
   test('feature statuses normalize booleans and default to denied', () {
