@@ -11,6 +11,7 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class FrontSidePreviewPage extends StatefulWidget {
   static const String routeName = '/front-side-preview';
@@ -115,9 +116,9 @@ class _FrontSidePreviewPageState extends State<FrontSidePreviewPage> {
     final card = _card ?? IdCardProfile.fromProfile(fallbackProfile);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.white,
         foregroundColor: _FrontCardPainter.navy,
         elevation: 0,
         title: Text(translate('more_screen.my_id_card')),
@@ -184,7 +185,7 @@ class _FrontSidePreviewPageState extends State<FrontSidePreviewPage> {
                                 if (_loading)
                                   const Positioned.fill(
                                     child: ColoredBox(
-                                      color: Color(0x44ffffff),
+                                      color: AppColors.custom44FFFFFF,
                                       child: Center(
                                         child: CircularProgressIndicator(
                                           color: _FrontCardPainter.gold,
@@ -366,7 +367,7 @@ class _FrontIdCard extends StatelessWidget {
                   child: _QrBlock(
                     label: 'TELEGRAM QR',
                     data: card.telegramQrData,
-                    borderColor: const Color(0xff17a7e7),
+                    borderColor: AppColors.customFF17A7E7,
                     sendBadge: true,
                   ),
                 ),
@@ -417,11 +418,11 @@ class _BrandCopy extends StatelessWidget {
           maxLines: 1,
         ),
         SizedBox(height: 4),
-        Divider(height: 1, color: Colors.white70),
+        Divider(height: 1, color: AppColors.white70),
         SizedBox(height: 7),
         _FitText(
           'PHONE SHOP',
-          color: Colors.white,
+          color: AppColors.white,
           fontSize: 10,
           fontWeight: FontWeight.w900,
           letterSpacing: 1.6,
@@ -442,7 +443,7 @@ class _RoundLogo extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(5),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.white,
         shape: BoxShape.circle,
         border: Border.all(color: _FrontCardPainter.lightGold, width: 4),
       ),
@@ -466,12 +467,12 @@ class _EmployeePhoto extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: const Color(0xffeee7db),
+        color: AppColors.customFFEEE7DB,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: _FrontCardPainter.gold, width: 4),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x36000000),
+            color: AppColors.custom36000000,
             blurRadius: 22,
             offset: Offset(0, 12),
           ),
@@ -654,14 +655,14 @@ class _QrBlock extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.white,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: borderColor, width: 2.6),
                 ),
                 child: QrImageView(
                   data:
                       data.trim().isEmpty ? 'https://www.kneayerng.com' : data,
-                  backgroundColor: Colors.white,
+                  backgroundColor: AppColors.white,
                   padding: EdgeInsets.zero,
                 ),
               ),
@@ -673,12 +674,12 @@ class _QrBlock extends StatelessWidget {
                     width: 23,
                     height: 23,
                     decoration: const BoxDecoration(
-                      color: Color(0xff17a7e7),
+                      color: AppColors.customFF17A7E7,
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
                       Icons.north_east_rounded,
-                      color: Colors.white,
+                      color: AppColors.white,
                       size: 15,
                     ),
                   ),
@@ -723,7 +724,7 @@ class _EmployeeCodeText extends StatelessWidget {
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: const TextStyle(
-          color: Colors.white,
+          color: AppColors.white,
           fontSize: 15,
           fontWeight: FontWeight.w900,
           letterSpacing: 0.6,
@@ -854,7 +855,7 @@ class _LoadWarning extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white.withValues(alpha: 0.95),
+      color: AppColors.white.withValues(alpha: 0.95),
       borderRadius: BorderRadius.circular(8),
       child: Padding(
         padding: const EdgeInsets.all(10),
@@ -881,10 +882,10 @@ class _LoadWarning extends StatelessWidget {
 class _FrontCardPainter extends CustomPainter {
   const _FrontCardPainter();
 
-  static const Color navy = Color(0xff0b172a);
-  static const Color gold = Color(0xffc59b27);
-  static const Color lightGold = Color(0xfff3d36b);
-  static const Color background = Color(0xfffaf8f5);
+  static const Color navy = AppColors.customFF0B172A;
+  static const Color gold = AppColors.customFFC59B27;
+  static const Color lightGold = AppColors.customFFF3D36B;
+  static const Color background = AppColors.customFFFAF8F5;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -966,9 +967,9 @@ class _FrontCardPainter extends CustomPainter {
     canvas.drawPath(bottomDivider, goldPaint);
 
     _drawDots(canvas, size, Offset(size.width * 0.065, size.height * 0.72), 4,
-        5, Colors.white.withValues(alpha: 0.28));
+        5, AppColors.white.withValues(alpha: 0.28));
     _drawDots(canvas, size, Offset(size.width * 0.86, size.height * 0.14), 3, 5,
-        const Color(0xffeef3f7));
+        AppColors.customFFEEF3F7);
   }
 
   void _drawDots(

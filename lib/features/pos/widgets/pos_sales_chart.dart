@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../models/pos_report.dart';
 import '../providers/pos_reporting_provider.dart';
 import 'pos_components.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class PosSalesChart extends StatefulWidget {
   const PosSalesChart({super.key, required this.report, required this.model});
@@ -153,7 +154,7 @@ class _PosSalesChartState extends State<PosSalesChart> {
                               .map((s) => LineTooltipItem(
                                   '${DateFormat.MMMd().format(points[s.x.toInt()].date)}\n${_quantity ? s.y.toInt() : posMoney(s.y, report.currency)}',
                                   const TextStyle(
-                                      color: Colors.white, fontSize: 11)))
+                                      color: AppColors.white, fontSize: 11)))
                               .toList())),
                 )))),
     ]));

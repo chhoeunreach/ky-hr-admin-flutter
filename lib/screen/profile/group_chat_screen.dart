@@ -14,6 +14,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class GroupChatScreen extends StatefulWidget {
   final int groupId;
@@ -67,15 +68,19 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
           title: Obx(() {
             final group = _controller.currentGroup.value;
             return GestureDetector(
-              onTap: () => Get.to(() => GroupInfoScreen(groupId: widget.groupId)),
+              onTap: () =>
+                  Get.to(() => GroupInfoScreen(groupId: widget.groupId)),
               child: Row(
                 children: [
                   CircleAvatar(
                     radius: 18,
-                    backgroundColor: Colors.white12,
-                    backgroundImage: group?.avatar != null ? NetworkImage(group!.avatar!) : null,
+                    backgroundColor: AppColors.white12,
+                    backgroundImage: group?.avatar != null
+                        ? NetworkImage(group!.avatar!)
+                        : null,
                     child: group?.avatar == null
-                        ? const Icon(Icons.group, size: 18, color: Colors.white54)
+                        ? const Icon(Icons.group,
+                            size: 18, color: AppColors.white54)
                         : null,
                   ),
                   const SizedBox(width: 10),
@@ -84,12 +89,16 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                     children: [
                       Text(
                         group?.name ?? _controller.currentGroupName.value,
-                        style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                        style: const TextStyle(
+                            color: AppColors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600),
                       ),
                       if (group != null)
                         Text(
                           '${group.memberCount} members',
-                          style: const TextStyle(color: Colors.white54, fontSize: 12),
+                          style: const TextStyle(
+                              color: AppColors.white54, fontSize: 12),
                         ),
                     ],
                   ),
@@ -99,12 +108,13 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
           }),
           actions: [
             IconButton(
-              icon: const Icon(Icons.wallpaper_rounded, color: Colors.white),
+              icon: const Icon(Icons.wallpaper_rounded, color: AppColors.white),
               onPressed: _showBackgroundOptions,
             ),
             IconButton(
-              icon: const Icon(Icons.info_outline, color: Colors.white),
-              onPressed: () => Get.to(() => GroupInfoScreen(groupId: widget.groupId)),
+              icon: const Icon(Icons.info_outline, color: AppColors.white),
+              onPressed: () =>
+                  Get.to(() => GroupInfoScreen(groupId: widget.groupId)),
             ),
           ],
         ),
@@ -113,24 +123,30 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
             children: [
               Expanded(
                 child: Obx(() {
-                  if (_controller.isLoading.value && _controller.chatMessages.isEmpty) {
-                    return const Center(child: CircularProgressIndicator(color: Colors.white));
+                  if (_controller.isLoading.value &&
+                      _controller.chatMessages.isEmpty) {
+                    return const Center(
+                        child:
+                            CircularProgressIndicator(color: AppColors.white));
                   }
                   if (_controller.chatMessages.isEmpty) {
                     return Center(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.chat_bubble_outline, color: Colors.white24, size: 56),
+                          Icon(Icons.chat_bubble_outline,
+                              color: AppColors.white24, size: 56),
                           const SizedBox(height: 12),
                           const Text(
                             'No messages yet',
-                            style: TextStyle(color: Colors.white38, fontSize: 15),
+                            style: TextStyle(
+                                color: AppColors.white38, fontSize: 15),
                           ),
                           const SizedBox(height: 4),
                           const Text(
                             'Say hello to the group!',
-                            style: TextStyle(color: Colors.white24, fontSize: 13),
+                            style: TextStyle(
+                                color: AppColors.white24, fontSize: 13),
                           ),
                         ],
                       ),
@@ -139,52 +155,67 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                   return Stack(
                     children: [
                       Obx(() => DecoratedBox(
-                        decoration: _groupBackgroundDecoration(_controller.backgroundPath.value),
-                        child: ListView.builder(
-                          controller: _controller.scrollController,
-                          padding: const EdgeInsets.only(top: 8, bottom: 8),
-                          itemCount: _controller.chatMessages.length,
-                          itemBuilder: (context, index) {
-                          final message = _controller.chatMessages[index];
-                          final isMe = message.senderId == _controller.currentUserId.value;
+                            decoration: _groupBackgroundDecoration(
+                                _controller.backgroundPath.value),
+                            child: ListView.builder(
+                              controller: _controller.scrollController,
+                              padding: const EdgeInsets.only(top: 8, bottom: 8),
+                              itemCount: _controller.chatMessages.length,
+                              itemBuilder: (context, index) {
+                                final message = _controller.chatMessages[index];
+                                final isMe = message.senderId ==
+                                    _controller.currentUserId.value;
 
-                          final prev = index > 0 ? _controller.chatMessages[index - 1] : null;
-                          final next = index < _controller.chatMessages.length - 1
-                              ? _controller.chatMessages[index + 1]
-                              : null;
+                                final prev = index > 0
+                                    ? _controller.chatMessages[index - 1]
+                                    : null;
+                                final next =
+                                    index < _controller.chatMessages.length - 1
+                                        ? _controller.chatMessages[index + 1]
+                                        : null;
 
-                          final showDate = _isDifferentDay(prev?.createdAt, message.createdAt);
-                          final showSender = !isMe && (prev == null || prev.senderId != message.senderId || _isDifferentDay(prev.createdAt, message.createdAt));
-                          final isGroupStart = showSender || showDate;
-                          final isGroupEnd = next == null || next.senderId != message.senderId || _isDifferentDay(message.createdAt, next.createdAt);
+                                final showDate = _isDifferentDay(
+                                    prev?.createdAt, message.createdAt);
+                                final showSender = !isMe &&
+                                    (prev == null ||
+                                        prev.senderId != message.senderId ||
+                                        _isDifferentDay(
+                                            prev.createdAt, message.createdAt));
+                                final isGroupStart = showSender || showDate;
+                                final isGroupEnd = next == null ||
+                                    next.senderId != message.senderId ||
+                                    _isDifferentDay(
+                                        message.createdAt, next.createdAt);
 
-                          return Column(
-                            children: [
-                              if (showDate && message.createdAt != null)
-                                _DateSeparator(date: message.createdAt!),
-                              _MessageBubble(
-                                message: message,
-                                isMe: isMe,
-                                showSender: showSender,
-                                isGroupStart: isGroupStart,
-                                isGroupEnd: isGroupEnd,
-                                onTap: () => _handleMessageTap(message),
-                                onLongPress: () => _handleMessageLongPress(message),
-                              ),
-                            ],
-                          );
-                        },
-                        ),
-                      )),
+                                return Column(
+                                  children: [
+                                    if (showDate && message.createdAt != null)
+                                      _DateSeparator(date: message.createdAt!),
+                                    _MessageBubble(
+                                      message: message,
+                                      isMe: isMe,
+                                      showSender: showSender,
+                                      isGroupStart: isGroupStart,
+                                      isGroupEnd: isGroupEnd,
+                                      onTap: () => _handleMessageTap(message),
+                                      onLongPress: () =>
+                                          _handleMessageLongPress(message),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                          )),
                       Obx(() {
                         if (!_controller.isAtBottom.value) {
                           return Positioned(
                             bottom: 8,
                             right: 16,
                             child: FloatingActionButton.small(
-                              backgroundColor: const Color(0xFF036eb7),
+                              backgroundColor: AppColors.customFF036EB7,
                               onPressed: _controller.scrollToBottom,
-                              child: const Icon(Icons.keyboard_arrow_down, color: Colors.white),
+                              child: const Icon(Icons.keyboard_arrow_down,
+                                  color: AppColors.white),
                             ),
                           );
                         }
@@ -199,7 +230,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                 groupId: widget.groupId,
                 picker: _picker,
                 showAttachments: _showAttachments,
-                onToggleAttachments: () => setState(() => _showAttachments = !_showAttachments),
+                onToggleAttachments: () =>
+                    setState(() => _showAttachments = !_showAttachments),
                 onPickImage: _pickImage,
                 onPickFile: _pickFile,
                 onPickLocation: _pickLocation,
@@ -213,7 +245,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
 
   void _handleMessageTap(GroupChatMessage message) {
     if (message.isImage && message.mediaUrl != null) {
-      _showImagePreview(message.mediaUrl!, message.mediaWidth, message.mediaHeight);
+      _showImagePreview(
+          message.mediaUrl!, message.mediaWidth, message.mediaHeight);
     }
   }
 
@@ -306,21 +339,27 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   void _showImagePreview(String url, int? width, int? height) {
     Get.dialog(
       Dialog(
-        backgroundColor: Colors.black,
+        backgroundColor: AppColors.black,
         insetPadding: const EdgeInsets.all(12),
         child: Stack(
           children: [
             InteractiveViewer(
               child: Center(
-                child: Image.network(url, fit: BoxFit.contain, width: double.infinity, height: double.infinity,
-                  errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, color: Colors.white54, size: 64),
+                child: Image.network(
+                  url,
+                  fit: BoxFit.contain,
+                  width: double.infinity,
+                  height: double.infinity,
+                  errorBuilder: (_, __, ___) => const Icon(Icons.broken_image,
+                      color: AppColors.white54, size: 64),
                 ),
               ),
             ),
             Positioned(
-              top: 8, right: 8,
+              top: 8,
+              right: 8,
               child: IconButton(
-                icon: const Icon(Icons.close, color: Colors.white, size: 28),
+                icon: const Icon(Icons.close, color: AppColors.white, size: 28),
                 onPressed: () => Get.back(),
               ),
             ),
@@ -360,35 +399,40 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     final lngController = TextEditingController();
     Get.dialog(
       AlertDialog(
-        backgroundColor: const Color(0xFF0A1E3D),
-        title: const Text('Send Location', style: TextStyle(color: Colors.white)),
+        backgroundColor: AppColors.customFF0A1E3D,
+        title: const Text('Send Location',
+            style: TextStyle(color: AppColors.white)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: latController,
               keyboardType: TextInputType.number,
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(color: AppColors.white),
               decoration: InputDecoration(
                 labelText: 'Latitude',
-                labelStyle: const TextStyle(color: Colors.white54),
-                enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
-                focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: Colors.amber)),
+                labelStyle: const TextStyle(color: AppColors.white54),
+                enabledBorder: const OutlineInputBorder(
+                    borderSide: BorderSide(color: AppColors.white24)),
+                focusedBorder: const OutlineInputBorder(
+                    borderSide: BorderSide(color: AppColors.amber)),
               ),
-              cursorColor: Colors.white,
+              cursorColor: AppColors.white,
             ),
             const SizedBox(height: 10),
             TextField(
               controller: lngController,
               keyboardType: TextInputType.number,
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(color: AppColors.white),
               decoration: InputDecoration(
                 labelText: 'Longitude',
-                labelStyle: const TextStyle(color: Colors.white54),
-                enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
-                focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: Colors.amber)),
+                labelStyle: const TextStyle(color: AppColors.white54),
+                enabledBorder: const OutlineInputBorder(
+                    borderSide: BorderSide(color: AppColors.white24)),
+                focusedBorder: const OutlineInputBorder(
+                    borderSide: BorderSide(color: AppColors.amber)),
               ),
-              cursorColor: Colors.white,
+              cursorColor: AppColors.white,
             ),
           ],
         ),
@@ -405,7 +449,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                 showToast('Invalid coordinates');
               }
             },
-            child: const Text('Send', style: TextStyle(color: Colors.amber)),
+            child: const Text('Send', style: TextStyle(color: AppColors.amber)),
           ),
         ],
       ),
@@ -438,7 +482,9 @@ class _DateSeparator extends StatelessWidget {
         label = 'Today';
       } else {
         final yesterday = now.subtract(const Duration(days: 1));
-        if (dt.year == yesterday.year && dt.month == yesterday.month && dt.day == yesterday.day) {
+        if (dt.year == yesterday.year &&
+            dt.month == yesterday.month &&
+            dt.day == yesterday.day) {
           label = 'Yesterday';
         } else {
           label = DateFormat('MMMM dd, yyyy').format(dt);
@@ -454,12 +500,15 @@ class _DateSeparator extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.08),
+            color: AppColors.white.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
             label,
-            style: const TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.w600),
+            style: const TextStyle(
+                color: AppColors.white54,
+                fontSize: 12,
+                fontWeight: FontWeight.w600),
           ),
         ),
       ),
@@ -503,7 +552,8 @@ class _MessageBubble extends StatelessWidget {
         bottom: isGroupEnd ? 6 : 1,
       ),
       child: Column(
-        crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        crossAxisAlignment:
+            isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
           if (showSender && !isMe)
             Padding(
@@ -526,10 +576,13 @@ class _MessageBubble extends StatelessWidget {
                   padding: const EdgeInsets.only(right: 6),
                   child: CircleAvatar(
                     radius: 14,
-                    backgroundColor: Colors.white12,
-                    backgroundImage: message.senderAvatar != null ? NetworkImage(message.senderAvatar!) : null,
+                    backgroundColor: AppColors.white12,
+                    backgroundImage: message.senderAvatar != null
+                        ? NetworkImage(message.senderAvatar!)
+                        : null,
                     child: message.senderAvatar == null
-                        ? const Icon(Icons.person, size: 14, color: Colors.white38)
+                        ? const Icon(Icons.person,
+                            size: 14, color: AppColors.white38)
                         : null,
                   ),
                 )
@@ -541,11 +594,15 @@ class _MessageBubble extends StatelessWidget {
                   onLongPress: onLongPress,
                   child: Container(
                     constraints: BoxConstraints(
-                      maxWidth: isMe ? MediaQuery.of(context).size.width * 0.75 : MediaQuery.of(context).size.width * 0.7,
+                      maxWidth: isMe
+                          ? MediaQuery.of(context).size.width * 0.75
+                          : MediaQuery.of(context).size.width * 0.7,
                     ),
                     padding: EdgeInsets.all(message.isImage ? 4 : 12),
                     decoration: BoxDecoration(
-                      color: isMe ? const Color(0xFF1A3A6B) : Colors.white.withOpacity(0.08),
+                      color: isMe
+                          ? AppColors.customFF1A3A6B
+                          : AppColors.white.withValues(alpha: 0.08),
                       borderRadius: borderRadius,
                     ),
                     child: Column(
@@ -556,17 +613,24 @@ class _MessageBubble extends StatelessWidget {
                           const Text(
                             'Message deleted',
                             style: TextStyle(
-                              color: Colors.white54,
+                              color: AppColors.white54,
                               fontSize: 15,
                               fontStyle: FontStyle.italic,
                             ),
                           ),
-                        if (!message.isDeleted && message.isText && message.message != null)
+                        if (!message.isDeleted &&
+                            message.isText &&
+                            message.message != null)
                           Text(
                             message.message!,
-                            style: const TextStyle(color: Colors.white, fontSize: 15, height: 1.3),
+                            style: const TextStyle(
+                                color: AppColors.white,
+                                fontSize: 15,
+                                height: 1.3),
                           ),
-                        if (!message.isDeleted && message.isImage && message.mediaUrl != null)
+                        if (!message.isDeleted &&
+                            message.isImage &&
+                            message.mediaUrl != null)
                           ClipRRect(
                             borderRadius: BorderRadius.circular(12),
                             child: ChatImageBubble(
@@ -602,17 +666,22 @@ class _MessageBubble extends StatelessWidget {
                               Text(
                                 _formatTime(message.createdAt!),
                                 style: TextStyle(
-                                  color: isMe ? Colors.white38 : Colors.white38,
+                                  color: isMe
+                                      ? AppColors.white38
+                                      : AppColors.white38,
                                   fontSize: 11,
                                 ),
                               ),
                             if (isMe) ...[
                               const SizedBox(width: 4),
-                              Icon(Icons.check, size: 14, color: Colors.white38),
+                              Icon(Icons.check,
+                                  size: 14, color: AppColors.white38),
                             ],
                             if (message.isEdited && !message.isDeleted) ...[
                               const SizedBox(width: 5),
-                              const Text('Edited', style: TextStyle(color: Colors.white38, fontSize: 11)),
+                              const Text('Edited',
+                                  style: TextStyle(
+                                      color: AppColors.white38, fontSize: 11)),
                             ],
                           ],
                         ),
@@ -621,8 +690,7 @@ class _MessageBubble extends StatelessWidget {
                   ),
                 ),
               ),
-              if (!isMe && !isGroupEnd)
-                const SizedBox(width: 34),
+              if (!isMe && !isGroupEnd) const SizedBox(width: 34),
             ],
           ),
         ],
@@ -633,13 +701,13 @@ class _MessageBubble extends StatelessWidget {
   Color _senderColor(String name) {
     final hash = name.hashCode;
     final colors = [
-      Colors.amber[200],
-      Colors.green[200],
-      Colors.purple[200],
-      Colors.orange[200],
-      Colors.teal[200],
-      Colors.pink[200],
-      Colors.cyan[200],
+      AppColors.amber[200],
+      AppColors.green[200],
+      AppColors.purple[200],
+      AppColors.orange[200],
+      AppColors.teal[200],
+      AppColors.pink[200],
+      AppColors.cyan[200],
     ];
     return colors[hash.abs() % colors.length]!;
   }
@@ -653,8 +721,6 @@ class _MessageBubble extends StatelessWidget {
   }
 }
 
-
-
 BoxDecoration _groupBackgroundDecoration(String path) {
   if (path.trim().isNotEmpty && File(path).existsSync()) {
     return BoxDecoration(
@@ -662,7 +728,7 @@ BoxDecoration _groupBackgroundDecoration(String path) {
         image: FileImage(File(path)),
         fit: BoxFit.cover,
         colorFilter: const ColorFilter.mode(
-          Color(0xaa06142f),
+          AppColors.customAA06142F,
           BlendMode.darken,
         ),
       ),
@@ -681,7 +747,7 @@ class _GroupActionSheet extends StatelessWidget {
     return SafeArea(
       child: Container(
         decoration: const BoxDecoration(
-          color: Color(0xff0d1f41),
+          color: AppColors.customFF0D1F41,
           borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
         ),
         padding: const EdgeInsets.fromLTRB(14, 12, 14, 16),
@@ -706,7 +772,7 @@ class _GroupActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isDestructive ? const Color(0xffff6b6b) : Colors.white;
+    final color = isDestructive ? AppColors.customFFFF6B6B : AppColors.white;
     return ListTile(
       leading: Icon(icon, color: color),
       title: Text(label, style: TextStyle(color: color)),
@@ -739,7 +805,8 @@ class _ChatInputBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final isRecordingActive = controller.isRecording.value || controller.hasPendingVoiceRecording.value;
+      final isRecordingActive = controller.isRecording.value ||
+          controller.hasPendingVoiceRecording.value;
       return Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -747,31 +814,52 @@ class _ChatInputBar extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.15),
-                border: Border(top: BorderSide(color: Colors.white.withOpacity(0.05))),
+                color: AppColors.black.withValues(alpha: 0.15),
+                border: Border(
+                    top: BorderSide(
+                        color: AppColors.white.withValues(alpha: 0.05))),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _AttachmentButton(icon: Icons.image, label: 'Photo', color: Colors.purple[300]!, onTap: onPickImage),
-                  _AttachmentButton(icon: Icons.insert_drive_file, label: 'File', color: Colors.blue[300]!, onTap: onPickFile),
-                  _AttachmentButton(icon: Icons.mic, label: 'Voice', color: Colors.amber[300]!, onTap: () {
-                    FocusScope.of(context).unfocus();
-                    onToggleAttachments();
-                    controller.startVoiceRecording();
-                  }),
-                  _AttachmentButton(icon: Icons.location_on, label: 'Location', color: Colors.green[300]!, onTap: onPickLocation),
+                  _AttachmentButton(
+                      icon: Icons.image,
+                      label: 'Photo',
+                      color: AppColors.purple[300]!,
+                      onTap: onPickImage),
+                  _AttachmentButton(
+                      icon: Icons.insert_drive_file,
+                      label: 'File',
+                      color: AppColors.blue[300]!,
+                      onTap: onPickFile),
+                  _AttachmentButton(
+                      icon: Icons.mic,
+                      label: 'Voice',
+                      color: AppColors.amber[300]!,
+                      onTap: () {
+                        FocusScope.of(context).unfocus();
+                        onToggleAttachments();
+                        controller.startVoiceRecording();
+                      }),
+                  _AttachmentButton(
+                      icon: Icons.location_on,
+                      label: 'Location',
+                      color: AppColors.green[300]!,
+                      onTap: onPickLocation),
                 ],
               ),
             ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
-              border: Border(top: BorderSide(color: Colors.white.withOpacity(0.08))),
+              color: AppColors.white.withValues(alpha: 0.05),
+              border: Border(
+                  top: BorderSide(
+                      color: AppColors.white.withValues(alpha: 0.08))),
             ),
             child: isRecordingActive
-                ? _GroupRecordingControls(controller: controller, groupId: groupId)
+                ? _GroupRecordingControls(
+                    controller: controller, groupId: groupId)
                 : Row(
                     children: [
                       GestureDetector(
@@ -780,12 +868,14 @@ class _ChatInputBar extends StatelessWidget {
                           width: 36,
                           height: 36,
                           decoration: BoxDecoration(
-                            color: showAttachments ? const Color(0xFF036eb7) : Colors.white.withOpacity(0.1),
+                            color: showAttachments
+                                ? AppColors.customFF036EB7
+                                : AppColors.white.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(18),
                           ),
                           child: Icon(
                             showAttachments ? Icons.close : Icons.add,
-                            color: Colors.white,
+                            color: AppColors.white,
                             size: 20,
                           ),
                         ),
@@ -802,12 +892,12 @@ class _ChatInputBar extends StatelessWidget {
                           width: 36,
                           height: 36,
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.1),
+                            color: AppColors.white.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(18),
                           ),
                           child: const Icon(
                             Icons.mic,
-                            color: Colors.white,
+                            color: AppColors.white,
                             size: 20,
                           ),
                         ),
@@ -817,21 +907,24 @@ class _ChatInputBar extends StatelessWidget {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.06),
+                            color: AppColors.white.withValues(alpha: 0.06),
                             borderRadius: BorderRadius.circular(22),
                           ),
                           child: TextField(
                             controller: controller.chatController,
-                            style: const TextStyle(color: Colors.white, fontSize: 15),
+                            style: const TextStyle(
+                                color: AppColors.white, fontSize: 15),
                             decoration: const InputDecoration(
                               hintText: 'Message...',
-                              hintStyle: TextStyle(color: Colors.grey),
+                              hintStyle: TextStyle(color: AppColors.grey),
                               border: InputBorder.none,
-                              contentPadding: EdgeInsets.symmetric(vertical: 10),
+                              contentPadding:
+                                  EdgeInsets.symmetric(vertical: 10),
                             ),
-                            cursorColor: Colors.white,
+                            cursorColor: AppColors.white,
                             textInputAction: TextInputAction.send,
-                            onSubmitted: (value) => controller.sendTextMessage(groupId, value),
+                            onSubmitted: (value) =>
+                                controller.sendTextMessage(groupId, value),
                           ),
                         ),
                       ),
@@ -842,7 +935,8 @@ class _ChatInputBar extends StatelessWidget {
                               child: SizedBox(
                                 width: 22,
                                 height: 22,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white54),
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: AppColors.white54),
                               ),
                             )
                           : GestureDetector(
@@ -856,10 +950,11 @@ class _ChatInputBar extends StatelessWidget {
                                 width: 36,
                                 height: 36,
                                 decoration: const BoxDecoration(
-                                  color: Color(0xFF036eb7),
+                                  color: AppColors.customFF036EB7,
                                   shape: BoxShape.circle,
                                 ),
-                                child: const Icon(Icons.send, color: Colors.white, size: 18),
+                                child: const Icon(Icons.send,
+                                    color: AppColors.white, size: 18),
                               ),
                             ),
                     ],
@@ -895,12 +990,12 @@ class _GroupRecordingControls extends StatelessWidget {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: const Color(0xffef4444).withOpacity(0.2),
+                color: AppColors.dangerToken.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
                 Icons.close_rounded,
-                color: Color(0xffef4444),
+                color: AppColors.dangerToken,
                 size: 20,
               ),
             ),
@@ -911,22 +1006,22 @@ class _GroupRecordingControls extends StatelessWidget {
               height: 42,
               padding: const EdgeInsets.symmetric(horizontal: 14),
               decoration: BoxDecoration(
-                color: const Color(0xff14264c),
+                color: AppColors.customFF14264C,
                 borderRadius: BorderRadius.circular(21),
-                border: Border.all(color: const Color(0xff24406f)),
+                border: Border.all(color: AppColors.customFF24406F),
               ),
               child: Row(
                 children: [
                   Icon(
                     isRecording ? Icons.mic : Icons.check_circle,
-                    color: const Color(0xffef4444),
+                    color: AppColors.dangerToken,
                     size: 20,
                   ),
                   const SizedBox(width: 8),
                   Text(
                     _formatDuration(seconds),
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AppColors.white,
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
                     ),
@@ -934,12 +1029,14 @@ class _GroupRecordingControls extends StatelessWidget {
                   const Spacer(),
                   if (isRecording)
                     IconButton(
-                      constraints: const BoxConstraints.tightFor(width: 34, height: 34),
+                      constraints:
+                          const BoxConstraints.tightFor(width: 34, height: 34),
                       padding: EdgeInsets.zero,
-                      onPressed: isSending ? null : controller.stopVoiceRecording,
+                      onPressed:
+                          isSending ? null : controller.stopVoiceRecording,
                       icon: const Icon(
                         Icons.stop_circle,
-                        color: Color(0xffef4444),
+                        color: AppColors.dangerToken,
                         size: 24,
                       ),
                     ),
@@ -954,7 +1051,8 @@ class _GroupRecordingControls extends StatelessWidget {
                   child: SizedBox(
                     width: 22,
                     height: 22,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white54),
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: AppColors.white54),
                   ),
                 )
               : GestureDetector(
@@ -963,10 +1061,11 @@ class _GroupRecordingControls extends StatelessWidget {
                     width: 36,
                     height: 36,
                     decoration: const BoxDecoration(
-                      color: Color(0xFF036eb7),
+                      color: AppColors.customFF036EB7,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.send, color: Colors.white, size: 18),
+                    child: const Icon(Icons.send,
+                        color: AppColors.white, size: 18),
                   ),
                 ),
         ],
@@ -1002,12 +1101,15 @@ class _AttachmentButton extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 48, height: 48,
-            decoration: BoxDecoration(color: color.withOpacity(0.2), shape: BoxShape.circle),
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.2), shape: BoxShape.circle),
             child: Icon(icon, color: color, size: 24),
           ),
           const SizedBox(height: 4),
-          Text(label, style: const TextStyle(color: Colors.white54, fontSize: 11)),
+          Text(label,
+              style: const TextStyle(color: AppColors.white54, fontSize: 11)),
         ],
       ),
     );

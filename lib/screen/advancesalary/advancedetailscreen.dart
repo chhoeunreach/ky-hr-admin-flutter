@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
 import 'package:html/parser.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class AdvanceDetailScreen extends StatelessWidget {
   @override
@@ -44,19 +45,19 @@ class AdvanceDetailScreen extends StatelessWidget {
                                   Card(
                                     elevation: 0,
                                     color: isPending
-                                        ? Colors.orange.shade500
+                                        ? AppColors.orange.shade500
                                         : model.advanceSalary.value.status
                                                     .toLowerCase() ==
                                                 "rejected"
-                                            ? Colors.red.shade500
-                                            : Colors.green.shade500,
+                                            ? AppColors.red.shade500
+                                            : AppColors.green.shade500,
                                     child: Padding(
                                       padding: const EdgeInsets.all(8.0),
                                       child: Text(
                                           model.advanceSalary.value.status
                                               .toUpperCase(),
                                           style: const TextStyle(
-                                            color: Colors.white,
+                                            color: AppColors.white,
                                             fontSize: 18,
                                             fontWeight: FontWeight.bold,
                                           )),
@@ -66,14 +67,14 @@ class AdvanceDetailScreen extends StatelessWidget {
                                   Text(
                                     "${translate('advance_detail_screen.total')} ",
                                     style: TextStyle(
-                                        color: Colors.grey, fontSize: 18),
+                                        color: AppColors.grey, fontSize: 18),
                                   ),
                                   Text(
                                       "${translate('advance_detail_screen.rs')} " +
                                           model.advanceSalary.value
                                               .released_amount,
                                       style: const TextStyle(
-                                        color: Colors.white,
+                                        color: AppColors.white,
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold,
                                       )),
@@ -87,7 +88,8 @@ class AdvanceDetailScreen extends StatelessWidget {
                                   Expanded(
                                     child: ElevatedButton(
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.green.shade600,
+                                        backgroundColor:
+                                            AppColors.green.shade600,
                                         shape: ButtonBorder(),
                                       ),
                                       onPressed: model.approveAdvanceSalary,
@@ -98,7 +100,7 @@ class AdvanceDetailScreen extends StatelessWidget {
                                   Expanded(
                                     child: ElevatedButton(
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.red.shade600,
+                                        backgroundColor: AppColors.red.shade600,
                                         shape: ButtonBorder(),
                                       ),
                                       onPressed: model.rejectAdvanceSalary,
@@ -124,17 +126,21 @@ class AdvanceDetailScreen extends StatelessWidget {
                               children: [
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         "Requested Date",
                                         style: TextStyle(
-                                            color: Colors.grey, fontSize: 12),
+                                            color: AppColors.grey,
+                                            fontSize: 12),
                                       ),
                                       Text(
-                                        model.advanceSalary.value.requested_date,
+                                        model
+                                            .advanceSalary.value.requested_date,
                                         style: TextStyle(
-                                            color: Colors.white, fontSize: 15),
+                                            color: AppColors.white,
+                                            fontSize: 15),
                                       ),
                                     ],
                                   ),
@@ -144,7 +150,7 @@ class AdvanceDetailScreen extends StatelessWidget {
                                   child: VerticalDivider(
                                     width: 1,
                                     thickness: 1,
-                                    color: Colors.white54,
+                                    color: AppColors.white54,
                                   ),
                                 ),
                                 Expanded(
@@ -154,12 +160,14 @@ class AdvanceDetailScreen extends StatelessWidget {
                                       Text(
                                         "Released Date",
                                         style: TextStyle(
-                                            color: Colors.grey, fontSize: 12),
+                                            color: AppColors.grey,
+                                            fontSize: 12),
                                       ),
                                       Text(
                                         model.advanceSalary.value.released_date,
                                         style: TextStyle(
-                                            color: Colors.white, fontSize: 15),
+                                            color: AppColors.white,
+                                            fontSize: 15),
                                       ),
                                     ],
                                   ),
@@ -172,7 +180,7 @@ class AdvanceDetailScreen extends StatelessWidget {
                             Card(
                               elevation: 0,
                               shape: ButtonBorder(),
-                              color: Colors.white24,
+                              color: AppColors.white24,
                               margin: EdgeInsets.zero,
                               child: Container(
                                 width: double.infinity,
@@ -184,12 +192,13 @@ class AdvanceDetailScreen extends StatelessWidget {
                                       translate(
                                           'advance_detail_screen.requested_amount'),
                                       style: TextStyle(
-                                          color: Colors.grey, fontSize: 15),
+                                          color: AppColors.grey, fontSize: 15),
                                     ),
                                     Text(
-                                      model.advanceSalary.value.requested_amount,
+                                      model
+                                          .advanceSalary.value.requested_amount,
                                       style: TextStyle(
-                                          color: Colors.white, fontSize: 20),
+                                          color: AppColors.white, fontSize: 20),
                                     ),
                                     SizedBox(
                                       height: 10,
@@ -198,12 +207,12 @@ class AdvanceDetailScreen extends StatelessWidget {
                                       translate(
                                           'advance_detail_screen.released_amount'),
                                       style: TextStyle(
-                                          color: Colors.grey, fontSize: 15),
+                                          color: AppColors.grey, fontSize: 15),
                                     ),
                                     Text(
                                       model.advanceSalary.value.released_amount,
                                       style: TextStyle(
-                                          color: Colors.white, fontSize: 20),
+                                          color: AppColors.white, fontSize: 20),
                                     ),
                                   ],
                                 ),
@@ -216,13 +225,15 @@ class AdvanceDetailScreen extends StatelessWidget {
                               children: [
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         translate(
                                             'advance_detail_screen.is_settled'),
                                         style: TextStyle(
-                                            color: Colors.grey, fontSize: 12),
+                                            color: AppColors.grey,
+                                            fontSize: 12),
                                       ),
                                       Text(
                                         !model.advanceSalary.value.is_settled
@@ -231,7 +242,8 @@ class AdvanceDetailScreen extends StatelessWidget {
                                             : translate(
                                                 'advance_detail_screen.yes'),
                                         style: TextStyle(
-                                            color: Colors.white, fontSize: 15),
+                                            color: AppColors.white,
+                                            fontSize: 15),
                                       ),
                                     ],
                                   ),
@@ -241,7 +253,7 @@ class AdvanceDetailScreen extends StatelessWidget {
                                   child: VerticalDivider(
                                     width: 1,
                                     thickness: 1,
-                                    color: Colors.white54,
+                                    color: AppColors.white54,
                                   ),
                                 ),
                                 Expanded(
@@ -252,7 +264,8 @@ class AdvanceDetailScreen extends StatelessWidget {
                                         translate(
                                             'advance_detail_screen.verified_by'),
                                         style: TextStyle(
-                                            color: Colors.grey, fontSize: 12),
+                                            color: AppColors.grey,
+                                            fontSize: 12),
                                       ),
                                       Text(
                                         parse(model.advanceSalary.value
@@ -261,7 +274,8 @@ class AdvanceDetailScreen extends StatelessWidget {
                                             .body!
                                             .text,
                                         style: TextStyle(
-                                            color: Colors.white, fontSize: 15),
+                                            color: AppColors.white,
+                                            fontSize: 15),
                                       ),
                                     ],
                                   ),
@@ -274,7 +288,7 @@ class AdvanceDetailScreen extends StatelessWidget {
                             Card(
                               elevation: 0,
                               shape: ButtonBorder(),
-                              color: Colors.white24,
+                              color: AppColors.white24,
                               margin: EdgeInsets.zero,
                               child: Container(
                                 width: double.infinity,
@@ -285,7 +299,7 @@ class AdvanceDetailScreen extends StatelessWidget {
                                     Text(
                                       translate('advance_detail_screen.reason'),
                                       style: TextStyle(
-                                          color: Colors.grey, fontSize: 15),
+                                          color: AppColors.grey, fontSize: 15),
                                     ),
                                     Text(
                                       parse(model.advanceSalary.value
@@ -294,7 +308,7 @@ class AdvanceDetailScreen extends StatelessWidget {
                                           .body!
                                           .text,
                                       style: TextStyle(
-                                          color: Colors.white, fontSize: 18),
+                                          color: AppColors.white, fontSize: 18),
                                     ),
                                   ],
                                 ),
@@ -304,7 +318,7 @@ class AdvanceDetailScreen extends StatelessWidget {
                             Card(
                               elevation: 0,
                               shape: ButtonBorder(),
-                              color: Colors.white24,
+                              color: AppColors.white24,
                               margin: EdgeInsets.zero,
                               child: Container(
                                 width: double.infinity,
@@ -313,9 +327,10 @@ class AdvanceDetailScreen extends StatelessWidget {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      translate('advance_detail_screen.remarks'),
+                                      translate(
+                                          'advance_detail_screen.remarks'),
                                       style: TextStyle(
-                                          color: Colors.grey, fontSize: 15),
+                                          color: AppColors.grey, fontSize: 15),
                                     ),
                                     Text(
                                       parse(model.advanceSalary.value.remark ??
@@ -323,7 +338,7 @@ class AdvanceDetailScreen extends StatelessWidget {
                                           .body!
                                           .text,
                                       style: TextStyle(
-                                          color: Colors.white, fontSize: 15),
+                                          color: AppColors.white, fontSize: 15),
                                     ),
                                   ],
                                 ),

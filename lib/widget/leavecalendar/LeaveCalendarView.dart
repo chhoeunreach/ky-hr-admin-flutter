@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:nepali_english_calendar/nepali_english_calendar.dart';
 import 'package:nepali_utils/nepali_utils.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class LeaveCalendarView extends StatelessWidget {
   @override
@@ -23,28 +24,28 @@ class LeaveCalendarView extends StatelessWidget {
     return TableCalendar(
       daysOfWeekStyle: DaysOfWeekStyle(
           weekdayStyle:
-              TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              TextStyle(color: AppColors.white, fontWeight: FontWeight.bold),
           weekendStyle:
-              TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              TextStyle(color: AppColors.white, fontWeight: FontWeight.bold)),
       headerStyle: const HeaderStyle(
-          titleTextStyle: TextStyle(color: Colors.white),
+          titleTextStyle: TextStyle(color: AppColors.white),
           formatButtonTextStyle: TextStyle(
             color: Colors.transparent,
           ),
           formatButtonDecoration: BoxDecoration(color: Colors.transparent),
           leftChevronIcon: Icon(
             Icons.arrow_left,
-            color: Colors.white,
+            color: AppColors.white,
           ),
           rightChevronIcon: Icon(
             Icons.arrow_right,
-            color: Colors.white,
+            color: AppColors.white,
           )),
       calendarStyle: CalendarStyle(
-          defaultTextStyle: TextStyle(color: Colors.white),
-          weekendTextStyle: TextStyle(color: Colors.white),
+          defaultTextStyle: TextStyle(color: AppColors.white),
+          weekendTextStyle: TextStyle(color: AppColors.white),
           markerDecoration: BoxDecoration(
-              color: Colors.red,
+              color: AppColors.red,
               borderRadius: BorderRadius.all(Radius.circular(20)))),
       eventLoader: (day) {
         final inputDate = day;
@@ -57,9 +58,10 @@ class LeaveCalendarView extends StatelessWidget {
         }
       },
       currentDay: model.current.value,
-      firstDay: DateTime.utc(model.current.value.year, model.currentMonth.value, 01),
-      lastDay: DateTime.utc(
-          model.current.value.add(Duration(days: 60)).year, model.nextMonth.value, 30),
+      firstDay:
+          DateTime.utc(model.current.value.year, model.currentMonth.value, 01),
+      lastDay: DateTime.utc(model.current.value.add(Duration(days: 60)).year,
+          model.nextMonth.value, 30),
       focusedDay: model.selected.value,
       selectedDayPredicate: (day) {
         return isSameDay(model.selected.value, day);
@@ -78,12 +80,16 @@ class LeaveCalendarView extends StatelessWidget {
           initialCalendarMode: DatePickerMode.day,
           language: NepaliUtils(),
           monthYearPickerStyle: TextStyle(
-              color: Colors.white, fontWeight: FontWeight.bold, fontSize: 24),
+              color: AppColors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 24),
           //Color to left right button
-          rightLeftButtonColor: Colors.blue,
+          rightLeftButtonColor: AppColors.blue,
           //Styles to Week Row
           weekHeaderStyle: TextStyle(
-              color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+              color: AppColors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 15),
           firstDate: NepaliDateTime(
               NepaliDateTime.now().year, NepaliDateTime.now().month),
           lastDate: NepaliDateTime(
@@ -104,7 +110,7 @@ class LeaveCalendarView extends StatelessWidget {
                       NepaliUtils().language == Language.english
                           ? '${dayToBuild.day}'
                           : NepaliUnicode.convert('${dayToBuild.day}'),
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(color: AppColors.white),
                     ),
                   ),
                   Positioned(
@@ -114,7 +120,7 @@ class LeaveCalendarView extends StatelessWidget {
                       child: Icon(
                         Icons.circle,
                         size: 10,
-                        color: Colors.red,
+                        color: AppColors.red,
                       ))
                 ],
               );
@@ -126,7 +132,7 @@ class LeaveCalendarView extends StatelessWidget {
                       NepaliUtils().language == Language.english
                           ? '${dayToBuild.day}'
                           : NepaliUnicode.convert('${dayToBuild.day}'),
-                      style: TextStyle(color: Colors.white70),
+                      style: TextStyle(color: AppColors.white70),
                     ),
                   ),
                 ],
@@ -134,11 +140,11 @@ class LeaveCalendarView extends StatelessWidget {
             }
           },
           selectedDayDecoration: BoxDecoration(
-            color: Colors.blue,
+            color: AppColors.blue,
             shape: BoxShape.circle,
           ),
           todayDecoration: BoxDecoration(
-            color: Colors.red,
+            color: AppColors.red,
             shape: BoxShape.circle,
           ),
           initialDate: model.selected.value.toNepaliDateTime(),

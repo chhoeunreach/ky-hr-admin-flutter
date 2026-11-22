@@ -1,6 +1,7 @@
 import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:flutter/material.dart';
 import '../models/repair_brand.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class RepairEditBrandSheet extends StatefulWidget {
   final RepairBrand? brand;
@@ -99,7 +100,7 @@ class _RepairEditBrandSheetState extends State<RepairEditBrandSheet> {
               ? 'បានបន្ថែមម៉ាកយីហោថ្មីជោគជ័យ! / Brand added successfully!'
               : 'បានកែប្រែម៉ាកយីហោជោគជ័យ! / Brand updated successfully!',
         ),
-        backgroundColor: const Color(0xFF10B981),
+        backgroundColor: AppColors.successToken,
       ),
     );
   }
@@ -116,7 +117,7 @@ class _RepairEditBrandSheetState extends State<RepairEditBrandSheet> {
         title: Row(
           children: [
             const Icon(Icons.warning_amber_rounded,
-                color: Colors.redAccent, size: 24),
+                color: AppColors.redAccent, size: 24),
             const SizedBox(width: 8),
             Text(
               'លុបម៉ាកយីហោ / Delete Brand',
@@ -142,8 +143,8 @@ class _RepairEditBrandSheetState extends State<RepairEditBrandSheet> {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              foregroundColor: Colors.white,
+              backgroundColor: AppColors.redAccent,
+              foregroundColor: AppColors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -157,7 +158,7 @@ class _RepairEditBrandSheetState extends State<RepairEditBrandSheet> {
                   content: Text(
                     'បានលុប "${widget.brand!.name}" ជោគជ័យ! / Brand deleted!',
                   ),
-                  backgroundColor: Colors.redAccent,
+                  backgroundColor: AppColors.redAccent,
                 ),
               );
             },
@@ -262,7 +263,7 @@ class _RepairEditBrandSheetState extends State<RepairEditBrandSheet> {
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: enterprise.primary,
-                    foregroundColor: Colors.white,
+                    foregroundColor: AppColors.white,
                     padding: const EdgeInsets.symmetric(vertical: 13),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -289,8 +290,9 @@ class _RepairEditBrandSheetState extends State<RepairEditBrandSheet> {
                   width: double.infinity,
                   child: OutlinedButton.icon(
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.redAccent,
-                      side: const BorderSide(color: Colors.redAccent, width: 1),
+                      foregroundColor: AppColors.redAccent,
+                      side: const BorderSide(
+                          color: AppColors.redAccent, width: 1),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -345,8 +347,8 @@ class _RepairEditBrandSheetState extends State<RepairEditBrandSheet> {
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             filled: true,
-            fillColor:
-                Colors.white.withValues(alpha: enterprise.isDark ? 0.06 : 0.4),
+            fillColor: AppColors.white
+                .withValues(alpha: enterprise.isDark ? 0.06 : 0.4),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
               borderSide: BorderSide(color: enterprise.glassStroke),

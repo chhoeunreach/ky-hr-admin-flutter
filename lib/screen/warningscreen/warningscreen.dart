@@ -4,6 +4,7 @@ import 'package:cnattendance/widget/profile/warning_bottom_sheet.dart';
 import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class WarningScreen extends StatelessWidget {
   @override
@@ -52,8 +53,8 @@ class WarningScreen extends StatelessWidget {
                       child: Card(
                         shape: ButtonBorder(),
                         color: warning.response.isEmpty
-                            ? Colors.blue.withValues(alpha: .5)
-                            : Colors.white24,
+                            ? AppColors.blue.withValues(alpha: .5)
+                            : AppColors.white24,
                         elevation: 0,
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
@@ -66,14 +67,14 @@ class WarningScreen extends StatelessWidget {
                                     Text(
                                       warning.warningDate,
                                       style: TextStyle(
-                                          color: Colors.white70,
+                                          color: AppColors.white70,
                                           fontSize: 12,
                                           fontWeight: FontWeight.normal),
                                     ),
                                     Text(
                                       warning.subject,
                                       style: TextStyle(
-                                          color: Colors.white,
+                                          color: AppColors.white,
                                           fontSize: 18,
                                           fontWeight: FontWeight.bold),
                                     ),
@@ -84,7 +85,7 @@ class WarningScreen extends StatelessWidget {
                                 warning.response.isNotEmpty
                                     ? Icons.reply
                                     : Icons.warning,
-                                color: Colors.white,
+                                color: AppColors.white,
                               )
                             ],
                           ),

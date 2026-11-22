@@ -14,6 +14,7 @@ import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
 import 'package:provider/provider.dart';
 
 import 'royal_dashboard_widgets.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class RoyalQuickActions extends StatelessWidget {
   const RoyalQuickActions({super.key});
@@ -45,21 +46,21 @@ class RoyalQuickActions extends StatelessWidget {
         (
           'dashboard_screen.attendance',
           Icons.event_available_rounded,
-          const [Color(0xFF2563EB), Color(0xFF60A5FA)],
+          const [AppColors.customFF2563EB, AppColors.customFF60A5FA],
           () => open(AttendanceScreen())
         ),
       if (features['leave-request'] == '1')
         (
           'dashboard_screen.leave',
           Icons.calendar_month_rounded,
-          const [Color(0xFF9333EA), Color(0xFFC084FC)],
+          const [AppColors.customFF9333EA, AppColors.customFFC084FC],
           () => open(LeaveScreen())
         ),
       if (canRequest && canTimeLeave)
         (
           'royal.time_off',
           Icons.flight_takeoff_rounded,
-          const [Color(0xFFEA580C), Color(0xFFFBBF24)],
+          const [AppColors.customFFEA580C, AppColors.customFFFBBF24],
           () => request(EarlyLeaveSheet(checkedIn))
         ),
       if (canRequest)
@@ -73,27 +74,27 @@ class RoyalQuickActions extends StatelessWidget {
         (
           'royal.repair',
           Icons.handyman_rounded,
-          const [Color(0xFFE11D48), Color(0xFFFB7185)],
+          const [AppColors.customFFE11D48, AppColors.customFFFB7185],
           () => open(const RepairDevicePage())
         ),
       if (features['project-management'] == '1')
         (
           'home_screen.task',
           Icons.assignment_turned_in_rounded,
-          const [Color(0xFF0284C7), Color(0xFF38BDF8)],
+          const [AppColors.customFF0284C7, AppColors.customFF38BDF8],
           () => open(ProjectScreen())
         ),
       if (features['chat'] == '1')
         (
           'dashboard_screen.chat',
           Icons.chat_bubble_rounded,
-          const [Color(0xFF6366F1), Color(0xFFA78BFA)],
+          const [AppColors.customFF6366F1, AppColors.customFFA78BFA],
           () => open(const ChatListScreen())
         ),
       (
         'dashboard_screen.more',
         Icons.grid_view_rounded,
-        const [Color(0xFF3B82F6), Color(0xFF818CF8)],
+        const [AppColors.customFF3B82F6, AppColors.customFF818CF8],
         () => open(MoreScreen())
       ),
     ];
@@ -135,14 +136,16 @@ class RoyalQuickActions extends StatelessWidget {
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: gradient.first.withValues(alpha: 0.42),
+                                    color:
+                                        gradient.first.withValues(alpha: 0.42),
                                     blurRadius: 8,
                                     offset: const Offset(0, 2.5),
                                   ),
                                 ],
                               ),
                               child: Center(
-                                child: Icon(icon, color: Colors.white, size: 20),
+                                child: Icon(icon,
+                                    color: AppColors.white, size: 20),
                               ),
                             ),
                             Text(translate(key),
@@ -150,7 +153,7 @@ class RoyalQuickActions extends StatelessWidget {
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
-                                    color: Colors.white,
+                                    color: AppColors.white,
                                     fontSize: 10,
                                     fontWeight: FontWeight.w800)),
                           ],

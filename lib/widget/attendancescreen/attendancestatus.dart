@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:percent_indicator/linear_percent_indicator.dart';
 import 'package:provider/provider.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class AttendanceStatus extends StatelessWidget {
   @override
@@ -51,7 +52,7 @@ class AttendanceStatus extends StatelessWidget {
                 center: Text(
                   status['production_hour']!,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: AppColors.white,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -93,13 +94,13 @@ class AttendanceStatus extends StatelessWidget {
 Color _statusColor(String status, bool active, EnterpriseTheme enterprise) {
   switch (status) {
     case 'absent':
-      return const Color(0xffdc2626);
+      return AppColors.customFFDC2626;
     case 'leave':
     case 'time_leave':
-      return const Color(0xff2563eb);
+      return AppColors.customFF2563EB;
     case 'leave_request':
     case 'time_leave_request':
-      return const Color(0xfff59e0b);
+      return AppColors.customFFF59E0B;
     default:
       return active ? enterprise.accent : enterprise.secondary;
   }

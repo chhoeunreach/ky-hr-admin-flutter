@@ -1,16 +1,17 @@
 import 'package:cnattendance/model/attachment.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery_image_viewer/gallery_image_viewer.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
-class ItemListBottom extends StatelessWidget{
+class ItemListBottom extends StatelessWidget {
   final List<Attachment> attachments;
 
   ItemListBottom(this.attachments);
   @override
   Widget build(BuildContext context) {
     final attachList = <Attachment>[];
-    for(var attach in attachments){
-      if(attach.type == "image"){
+    for (var attach in attachments) {
+      if (attach.type == "image") {
         attachList.add(attach);
       }
     }
@@ -24,13 +25,9 @@ class ItemListBottom extends StatelessWidget{
           final Attachment item = attachList[index];
           return GestureDetector(
               onTap: () {
-                final imageProvider = Image.network(
-                    item.url)
-                    .image;
+                final imageProvider = Image.network(item.url).image;
                 showImageViewer(context, imageProvider,
-                    swipeDismissible: true,
-                    onViewerDismissed: () {
-                    });
+                    swipeDismissible: true, onViewerDismissed: () {});
               },
               child: Stack(children: [
                 Image.network(
@@ -42,16 +39,17 @@ class ItemListBottom extends StatelessWidget{
                     bottom: 10,
                     right: 10,
                     child: GestureDetector(
-                      onTap: () {
-
-                      },
+                      onTap: () {},
                       child: Card(
                         elevation: 0,
-                        color: Colors.black,
+                        color: AppColors.black,
                         shape: CircleBorder(),
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
-                          child: Icon(Icons.download,color: Colors.white,),
+                          child: Icon(
+                            Icons.download,
+                            color: AppColors.white,
+                          ),
                         ),
                       ),
                     ))
@@ -60,5 +58,4 @@ class ItemListBottom extends StatelessWidget{
       ),
     );
   }
-
 }

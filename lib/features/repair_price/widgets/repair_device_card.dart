@@ -2,6 +2,7 @@ import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../models/repair_device.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class RepairDeviceCard extends StatelessWidget {
   final RepairDevice device;
@@ -23,13 +24,14 @@ class RepairDeviceCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: enterprise.isDark ? 0.08 : 0.16),
+        color:
+            AppColors.white.withValues(alpha: enterprise.isDark ? 0.08 : 0.16),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: enterprise.glassStroke, width: 1),
         boxShadow: [
           BoxShadow(
-            color:
-                Colors.black.withValues(alpha: enterprise.isDark ? 0.20 : 0.06),
+            color: AppColors.black
+                .withValues(alpha: enterprise.isDark ? 0.20 : 0.06),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -50,8 +52,8 @@ class RepairDeviceCard extends StatelessWidget {
                       : Radius.zero,
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   child: Row(
                     children: [
                       // Device Icon / Image
@@ -59,7 +61,7 @@ class RepairDeviceCard extends StatelessWidget {
                         width: 44,
                         height: 44,
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.08),
+                          color: AppColors.white.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
                               color: enterprise.glassStroke, width: 0.8),
@@ -200,12 +202,12 @@ class RepairDeviceCard extends StatelessWidget {
                       child: Row(
                         children: [
                           Icon(Icons.delete_outline_rounded,
-                              size: 16, color: Colors.redAccent),
+                              size: 16, color: AppColors.redAccent),
                           SizedBox(width: 8),
                           Text(
                             'លុប / Delete',
                             style: TextStyle(
-                                fontSize: 12.5, color: Colors.redAccent),
+                                fontSize: 12.5, color: AppColors.redAccent),
                           ),
                         ],
                       ),

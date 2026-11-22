@@ -2,6 +2,7 @@ import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import '../models/repair_brand.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class RepairBrandFilter extends StatelessWidget {
   final List<RepairBrand> brands;
@@ -77,7 +78,9 @@ class RepairBrandFilter extends StatelessWidget {
           final isSelected = isAll
               ? selectedBrandId == null
               : selectedBrandId == brands[index - 1].id;
-          final title = isAll ? translate('repair_screen.all_brands') : brands[index - 1].name;
+          final title = isAll
+              ? translate('repair_screen.all_brands')
+              : brands[index - 1].name;
           final brand = isAll ? null : brands[index - 1];
 
           return Material(
@@ -101,7 +104,7 @@ class RepairBrandFilter extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: isSelected
                       ? enterprise.primary
-                      : Colors.white.withValues(alpha: 0.08),
+                      : AppColors.white.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color:
@@ -128,7 +131,8 @@ class RepairBrandFilter extends StatelessWidget {
                         fontSize: 11.5,
                         fontWeight:
                             isSelected ? FontWeight.w700 : FontWeight.w500,
-                        color: isSelected ? Colors.white : enterprise.mutedText,
+                        color:
+                            isSelected ? AppColors.white : enterprise.mutedText,
                       ),
                     ),
                     if (!isAll &&
@@ -141,7 +145,7 @@ class RepairBrandFilter extends StatelessWidget {
                         child: Icon(
                           Icons.edit_rounded,
                           size: 12,
-                          color: Colors.white.withValues(alpha: 0.8),
+                          color: AppColors.white.withValues(alpha: 0.8),
                         ),
                       ),
                     ],

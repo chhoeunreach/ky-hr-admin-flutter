@@ -8,6 +8,7 @@ import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class LeaveCalendarScreen extends StatelessWidget {
   @override
@@ -19,15 +20,15 @@ class LeaveCalendarScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         appBar: AppBar(
           title: Text(translate('leave_calendar_screen.leave_calendar'),
-              style: TextStyle(color: Colors.white)),
-          iconTheme: IconThemeData(color: Colors.white),
+              style: TextStyle(color: AppColors.white)),
+          iconTheme: IconThemeData(color: AppColors.white),
           elevation: 0,
           actions: [
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: Tooltip(
-                  textStyle: TextStyle(color: Colors.black),
-                  decoration: BoxDecoration(color: Colors.white),
+                  textStyle: TextStyle(color: AppColors.black),
+                  decoration: BoxDecoration(color: AppColors.white),
                   message: "⏱️ -> Time Leave ",
                   child: Icon(Icons.info)),
             )
@@ -35,16 +36,23 @@ class LeaveCalendarScreen extends StatelessWidget {
           backgroundColor: Colors.transparent,
         ),
         body: SingleChildScrollView(
-          child: Obx(() => Column(
+          child: Obx(
+            () => Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 LeaveCalendarView(),
                 Container(
                     padding: EdgeInsets.symmetric(vertical: 20, horizontal: 20),
                     child: CalendarToggle()),
-                model.toggleValue.value == 0 ? LeaveListView() : SizedBox.shrink(),
-                model.toggleValue.value == 1 ? HolidayListView() : SizedBox.shrink(),
-                model.toggleValue.value == 2 ? BirthdayListView() : SizedBox.shrink(),
+                model.toggleValue.value == 0
+                    ? LeaveListView()
+                    : SizedBox.shrink(),
+                model.toggleValue.value == 1
+                    ? HolidayListView()
+                    : SizedBox.shrink(),
+                model.toggleValue.value == 2
+                    ? BirthdayListView()
+                    : SizedBox.shrink(),
               ],
             ),
           ),

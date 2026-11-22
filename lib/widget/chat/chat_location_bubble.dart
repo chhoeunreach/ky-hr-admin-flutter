@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class ChatLocationBubble extends StatelessWidget {
   final double latitude;
@@ -15,10 +16,10 @@ class ChatLocationBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const foreground = Colors.white;
-    const secondary = Colors.white70;
+    const foreground = AppColors.white;
+    const secondary = AppColors.white70;
     final iconBackground =
-        isIncoming ? const Color(0xff1684f8) : const Color(0x33000000);
+        isIncoming ? AppColors.customFF1684F8 : AppColors.custom33000000;
 
     return InkWell(
       borderRadius: BorderRadius.circular(16),
@@ -33,8 +34,8 @@ class ChatLocationBubble extends StatelessWidget {
               height: 104,
               decoration: BoxDecoration(
                 color: isIncoming
-                    ? const Color(0xff193260)
-                    : const Color(0x22ffffff),
+                    ? AppColors.customFF193260
+                    : AppColors.custom22FFFFFF,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Stack(
@@ -43,8 +44,8 @@ class ChatLocationBubble extends StatelessWidget {
                     child: CustomPaint(
                       painter: _MapGridPainter(
                         lineColor: isIncoming
-                            ? const Color(0x44ffffff)
-                            : const Color(0x40ffffff),
+                            ? AppColors.custom44FFFFFF
+                            : AppColors.custom40FFFFFF,
                       ),
                     ),
                   ),
@@ -58,7 +59,7 @@ class ChatLocationBubble extends StatelessWidget {
                       ),
                       child: const Icon(
                         Icons.location_on_rounded,
-                        color: Colors.white,
+                        color: AppColors.white,
                         size: 28,
                       ),
                     ),

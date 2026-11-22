@@ -4,6 +4,7 @@ import 'package:cnattendance/theme/theme_provider.dart';
 import 'package:cnattendance/theme/theme_layout.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 BoxDecoration RadialDecoration() {
   final colors = themedRadialColors();
@@ -26,7 +27,7 @@ List<Color> themedRadialColors() {
     return layout.colorsFor(AppThemeData.info(mode).colors).gradientColors;
   }
   if (mode == AppThemeMode.dark) {
-    return const [Color(0xff000000), Color(0xff000000)];
+    return const [AppColors.black, AppColors.black];
   }
   return AppThemeData.info(mode).colors.gradientColors;
 }

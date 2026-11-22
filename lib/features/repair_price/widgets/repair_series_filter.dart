@@ -1,6 +1,7 @@
 import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:flutter/material.dart';
 import '../models/repair_device.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class RepairSeriesFilter extends StatelessWidget {
   final List<RepairDeviceSeries> series;
@@ -52,7 +53,7 @@ class RepairSeriesFilter extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: isSelected
                       ? enterprise.primary.withValues(alpha: 0.25)
-                      : Colors.white.withValues(alpha: 0.08),
+                      : AppColors.white.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
                     color:

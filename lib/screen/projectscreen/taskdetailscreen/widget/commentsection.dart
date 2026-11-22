@@ -4,6 +4,7 @@ import 'package:cnattendance/widget/buttonborder.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class CommentSection extends StatelessWidget {
   @override
@@ -11,12 +12,14 @@ class CommentSection extends StatelessWidget {
     final TaskDetailController controller = Get.find();
     return GestureDetector(
       onTap: () {
-        Get.to(CommentScreen(),
-            arguments: {"taskId": controller.taskDetail.value.id.toString(),"members":controller.taskDetail.value.members});
+        Get.to(CommentScreen(), arguments: {
+          "taskId": controller.taskDetail.value.id.toString(),
+          "members": controller.taskDetail.value.members
+        });
       },
       child: Card(
         elevation: 0,
-        color: Colors.white24,
+        color: AppColors.white24,
         margin: EdgeInsets.zero,
         shape: ButtonBorder(),
         child: Padding(
@@ -32,7 +35,7 @@ class CommentSection extends StatelessWidget {
                     () => Text(
                       "${translate('task_detail_screen.comments')} ( ${controller.taskDetail.value.noOfComments} )",
                       style: TextStyle(
-                          color: Colors.white,
+                          color: AppColors.white,
                           fontSize: 16,
                           fontWeight: FontWeight.bold),
                     ),
@@ -41,7 +44,7 @@ class CommentSection extends StatelessWidget {
                     translate('task_detail_screen.view_all'),
                     style: TextStyle(
                         decoration: TextDecoration.underline,
-                        color: Colors.white,
+                        color: AppColors.white,
                         fontSize: 12,
                         fontWeight: FontWeight.normal),
                   ),
@@ -49,7 +52,7 @@ class CommentSection extends StatelessWidget {
               ),
               // SizedBox(height: 10),
               // Card(
-              //   color: Colors.blue,
+              //   color: AppColors.blue,
               //   child: Padding(
               //     padding: const EdgeInsets.all(10),
               //     child: Row(
@@ -57,7 +60,7 @@ class CommentSection extends StatelessWidget {
               //       children: [
               //         Icon(
               //           Icons.comment,
-              //           color: Colors.white,
+              //           color: AppColors.white,
               //         ),
               //         SizedBox(
               //           width: 10,
@@ -65,7 +68,7 @@ class CommentSection extends StatelessWidget {
               //         Text(
               //           "Write a comment",
               //           style: TextStyle(
-              //               color: Colors.white,
+              //               color: AppColors.white,
               //               fontSize: 15,
               //               fontWeight: FontWeight.bold),
               //         ),

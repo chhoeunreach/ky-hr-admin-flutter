@@ -1,6 +1,7 @@
 import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class CreateLoanScreen extends StatelessWidget {
   @override
@@ -24,9 +25,7 @@ class CreateLoanScreen extends StatelessWidget {
                             topRight: Radius.circular(0),
                             bottomLeft: Radius.circular(0),
                             bottomRight: Radius.circular(10)))),
-                onPressed: () {
-
-                },
+                onPressed: () {},
                 child: Padding(
                   padding: const EdgeInsets.all(15),
                   child: Text(translate('create_loan_screen.submit')),
@@ -42,19 +41,20 @@ class CreateLoanScreen extends StatelessWidget {
                 children: [
                   TextFormField(
                     keyboardType: TextInputType.number,
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(color: AppColors.white),
                     validator: (value) {
                       if (value!.isEmpty) {
                         return "Field is required";
                       }
                       return null;
                     },
-                    cursorColor: Colors.white,
+                    cursorColor: AppColors.white,
                     decoration: InputDecoration(
-                      hintText: translate('create_loan_screen.expected_loan_amount'),
-                      hintStyle: TextStyle(color: Colors.white70),
-                      labelStyle: TextStyle(color: Colors.white),
-                      fillColor: Colors.white24,
+                      hintText:
+                          translate('create_loan_screen.expected_loan_amount'),
+                      hintStyle: TextStyle(color: AppColors.white70),
+                      labelStyle: TextStyle(color: AppColors.white),
+                      fillColor: AppColors.white24,
                       filled: true,
                       enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.only(
@@ -87,19 +87,20 @@ class CreateLoanScreen extends StatelessWidget {
                   ),
                   TextFormField(
                     keyboardType: TextInputType.number,
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(color: AppColors.white),
                     validator: (value) {
                       if (value!.isEmpty) {
                         return "Field is required";
                       }
                       return null;
                     },
-                    cursorColor: Colors.white,
+                    cursorColor: AppColors.white,
                     decoration: InputDecoration(
-                      hintText: translate('create_loan_screen.expected_installment_period'),
-                      hintStyle: TextStyle(color: Colors.white70),
-                      labelStyle: TextStyle(color: Colors.white),
-                      fillColor: Colors.white24,
+                      hintText: translate(
+                          'create_loan_screen.expected_installment_period'),
+                      hintStyle: TextStyle(color: AppColors.white70),
+                      labelStyle: TextStyle(color: AppColors.white),
+                      fillColor: AppColors.white24,
                       filled: true,
                       enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.only(
@@ -133,19 +134,19 @@ class CreateLoanScreen extends StatelessWidget {
                   TextFormField(
                     maxLines: 5,
                     keyboardType: TextInputType.name,
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(color: AppColors.white),
                     validator: (value) {
                       if (value!.isEmpty) {
                         return "Field is required";
                       }
                       return null;
                     },
-                    cursorColor: Colors.white,
+                    cursorColor: AppColors.white,
                     decoration: InputDecoration(
                       hintText: translate('create_loan_screen.loan_detail'),
-                      hintStyle: TextStyle(color: Colors.white70),
-                      labelStyle: TextStyle(color: Colors.white),
-                      fillColor: Colors.white24,
+                      hintStyle: TextStyle(color: AppColors.white70),
+                      labelStyle: TextStyle(color: AppColors.white),
+                      fillColor: AppColors.white24,
                       filled: true,
                       enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.only(

@@ -3,6 +3,7 @@ import 'package:cnattendance/widget/buttonborder.dart';
 import 'package:flutter/material.dart';
 import 'package:html/parser.dart';
 import 'package:text_sizer_plus/text_sizer_plus.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class Holidaycard extends StatelessWidget {
   final int id;
@@ -28,8 +29,8 @@ class Holidaycard extends StatelessWidget {
       shape: ButtonBorder(),
       elevation: 0,
       color: enterprise.isDark
-          ? const Color(0xFF1E293B).withValues(alpha: 0.90)
-          : Colors.white.withValues(alpha: 0.90),
+          ? AppColors.customFF1E293B.withValues(alpha: 0.90)
+          : AppColors.white.withValues(alpha: 0.90),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 3),
         child: Row(
@@ -41,7 +42,7 @@ class Holidaycard extends StatelessWidget {
                 shape: ButtonBorder(),
                 elevation: 0,
                 color: isPublicHoliday
-                    ? const Color(0xFFEF4444)
+                    ? AppColors.dangerToken
                     : enterprise.primary,
                 child: SizedBox(
                   width: 48,
@@ -52,7 +53,7 @@ class Holidaycard extends StatelessWidget {
                       Text(
                         day,
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: AppColors.white,
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
@@ -63,7 +64,7 @@ class Holidaycard extends StatelessWidget {
                           month,
                           maxLines: 1,
                           style: const TextStyle(
-                            color: Colors.white,
+                            color: AppColors.white,
                             fontSize: 11,
                           ),
                         ),

@@ -3,6 +3,7 @@ import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class EditTadaScreen extends StatelessWidget {
   @override
@@ -47,19 +48,19 @@ class EditTadaScreen extends StatelessWidget {
                   TextFormField(
                     controller: model.titleController,
                     keyboardType: TextInputType.name,
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(color: AppColors.white),
                     validator: (value) {
                       if (value!.isEmpty) {
                         return "Field is required";
                       }
                       return null;
                     },
-                    cursorColor: Colors.white,
+                    cursorColor: AppColors.white,
                     decoration: InputDecoration(
                       hintText: translate('edit_tada_screen.title'),
-                      hintStyle: TextStyle(color: Colors.white70),
-                      labelStyle: TextStyle(color: Colors.white),
-                      fillColor: Colors.white24,
+                      hintStyle: TextStyle(color: AppColors.white70),
+                      labelStyle: TextStyle(color: AppColors.white),
+                      fillColor: AppColors.white24,
                       filled: true,
                       enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.only(
@@ -94,19 +95,19 @@ class EditTadaScreen extends StatelessWidget {
                     controller: model.descriptionController,
                     maxLines: 5,
                     keyboardType: TextInputType.name,
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(color: AppColors.white),
                     validator: (value) {
                       if (value!.isEmpty) {
                         return "Field is required";
                       }
                       return null;
                     },
-                    cursorColor: Colors.white,
+                    cursorColor: AppColors.white,
                     decoration: InputDecoration(
                       hintText: translate('edit_tada_screen.description'),
-                      hintStyle: TextStyle(color: Colors.white70),
-                      labelStyle: TextStyle(color: Colors.white),
-                      fillColor: Colors.white24,
+                      hintStyle: TextStyle(color: AppColors.white70),
+                      labelStyle: TextStyle(color: AppColors.white),
+                      fillColor: AppColors.white24,
                       filled: true,
                       enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.only(
@@ -140,19 +141,19 @@ class EditTadaScreen extends StatelessWidget {
                   TextFormField(
                     controller: model.expensesController,
                     keyboardType: TextInputType.number,
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(color: AppColors.white),
                     validator: (value) {
                       if (value!.isEmpty) {
                         return "Field is required";
                       }
                       return null;
                     },
-                    cursorColor: Colors.white,
+                    cursorColor: AppColors.white,
                     decoration: InputDecoration(
                       hintText: translate('edit_tada_screen.total_expenses'),
-                      hintStyle: TextStyle(color: Colors.white70),
-                      labelStyle: TextStyle(color: Colors.white),
-                      fillColor: Colors.white24,
+                      hintStyle: TextStyle(color: AppColors.white70),
+                      labelStyle: TextStyle(color: AppColors.white),
+                      fillColor: AppColors.white24,
                       filled: true,
                       enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.only(
@@ -187,7 +188,7 @@ class EditTadaScreen extends StatelessWidget {
                     padding: const EdgeInsets.all(8.0),
                     child: Text(
                       translate('edit_tada_screen.attachment'),
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(color: AppColors.white),
                     ),
                   ),
                   SizedBox(
@@ -206,7 +207,7 @@ class EditTadaScreen extends StatelessWidget {
                             onTap: () {
                               model.launchUrls(file.url);
                             },
-                            tileColor: Colors.white12,
+                            tileColor: AppColors.white12,
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.only(
                                     topLeft: Radius.circular(10),
@@ -216,7 +217,7 @@ class EditTadaScreen extends StatelessWidget {
                             minVerticalPadding: 10,
                             title: Text(
                               file.url,
-                              style: TextStyle(color: Colors.white),
+                              style: TextStyle(color: AppColors.white),
                             ),
                             trailing: GestureDetector(
                                 onTap: () {
@@ -224,7 +225,7 @@ class EditTadaScreen extends StatelessWidget {
                                 },
                                 child: Icon(
                                   Icons.close,
-                                  color: Colors.white,
+                                  color: AppColors.white,
                                 )),
                           ),
                         );
@@ -238,7 +239,7 @@ class EditTadaScreen extends StatelessWidget {
                     padding: const EdgeInsets.all(8.0),
                     child: Text(
                       translate('edit_tada_screen.add_attachment'),
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(color: AppColors.white),
                     ),
                   ),
                   SizedBox(
@@ -250,12 +251,12 @@ class EditTadaScreen extends StatelessWidget {
                     },
                     child: Card(
                         shape: CircleBorder(),
-                        color: Colors.white54,
+                        color: AppColors.white54,
                         child: Padding(
                           padding: const EdgeInsets.all(15),
                           child: Icon(
                             Icons.add,
-                            color: Colors.white,
+                            color: AppColors.white,
                           ),
                         )),
                   ),
@@ -278,7 +279,7 @@ class EditTadaScreen extends StatelessWidget {
                           },
                           title: Text(
                             file.name,
-                            style: TextStyle(color: Colors.white),
+                            style: TextStyle(color: AppColors.white),
                           ),
                           trailing: GestureDetector(
                               onTap: () {
@@ -286,7 +287,7 @@ class EditTadaScreen extends StatelessWidget {
                               },
                               child: Icon(
                                 Icons.close,
-                                color: Colors.white,
+                                color: AppColors.white,
                               )),
                         );
                       },

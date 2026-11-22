@@ -21,6 +21,9 @@ class RepairService {
 
   Object get priceKey => repairPriceId ?? (id, partType);
 
+  String get categoryName => category?.name ?? '';
+  int? get categoryId => category?.id;
+
   const RepairService({
     required this.id,
     required this.name,

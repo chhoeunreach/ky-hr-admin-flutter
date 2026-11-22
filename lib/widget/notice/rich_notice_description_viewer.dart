@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
+import 'package:cnattendance/core/theme/app_palette.dart';
 
 class RichNoticeDescriptionViewer extends StatefulWidget {
   final String html;
@@ -30,7 +32,7 @@ class _RichNoticeDescriptionViewerState
     super.initState();
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(Colors.white)
+      ..setBackgroundColor(AppColors.white)
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageFinished: (_) {
@@ -78,8 +80,8 @@ class _RichNoticeDescriptionViewerState
       padding: 0;
       width: 100%;
       min-height: 100%;
-      background: #ffffff;
-      color: #263247;
+      background: ${AppPalette.cssRgb(AppPalette.white)};
+      color: ${AppPalette.cssRgb(AppPalette.customFF263247)};
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       font-size: 16px;
       line-height: 1.65;
@@ -130,13 +132,13 @@ class _RichNoticeDescriptionViewerState
     }
 
     th, td {
-      border: 1px solid #d8e0ec;
+      border: 1px solid ${AppPalette.cssRgb(AppPalette.customFFD8E0EC)};
       padding: 8px;
       vertical-align: top;
     }
 
     a {
-      color: #036eb7;
+      color: ${AppPalette.cssRgb(AppPalette.customFF036EB7)};
     }
   </style>
 </head>
@@ -216,7 +218,7 @@ class _RichNoticeDescriptionViewerState
           const Center(
             child: CircularProgressIndicator(
               strokeWidth: 2,
-              color: Color(0xFF036EB7),
+              color: AppColors.customFF036EB7,
             ),
           ),
       ],

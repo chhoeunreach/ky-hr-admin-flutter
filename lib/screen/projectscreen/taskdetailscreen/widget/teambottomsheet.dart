@@ -5,6 +5,7 @@ import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class TeamBottomSheet extends StatelessWidget {
   final List<Member> members;
@@ -30,7 +31,7 @@ class TeamBottomSheet extends StatelessWidget {
                     Text(
                       translate('task_detail_screen.team_members'),
                       style: TextStyle(
-                          color: Colors.white,
+                          color: AppColors.white,
                           fontSize: 16,
                           fontWeight: FontWeight.bold),
                     ),
@@ -40,7 +41,7 @@ class TeamBottomSheet extends StatelessWidget {
                         },
                         child: Icon(
                           Icons.close,
-                          color: Colors.white,
+                          color: AppColors.white,
                         )),
                   ],
                 ),
@@ -50,8 +51,8 @@ class TeamBottomSheet extends StatelessWidget {
                   primary: false,
                   padding: EdgeInsets.symmetric(vertical: 5, horizontal: 15),
                   itemCount: members.length,
-                  itemBuilder: (ctx, i) =>
-                      Padding(padding: EdgeInsets.all(5), child: teamCard(members[i]))),
+                  itemBuilder: (ctx, i) => Padding(
+                      padding: EdgeInsets.all(5), child: teamCard(members[i]))),
             ],
           ),
         ),
@@ -63,7 +64,7 @@ class TeamBottomSheet extends StatelessWidget {
     return Card(
       shape: ButtonBorder(),
       elevation: 0,
-      color: Colors.white10,
+      color: AppColors.white10,
       child: Container(
         padding: EdgeInsets.all(10),
         child: Row(
@@ -71,7 +72,7 @@ class TeamBottomSheet extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(25),
               child: CachedNetworkImage(
-                imageUrl:member.image,
+                imageUrl: member.image,
                 width: 50,
                 height: 50,
                 fit: BoxFit.cover,
@@ -86,11 +87,11 @@ class TeamBottomSheet extends StatelessWidget {
                   children: [
                     Text(
                       member.name,
-                      style: TextStyle(color: Colors.white, fontSize: 18),
+                      style: TextStyle(color: AppColors.white, fontSize: 18),
                     ),
                     SizedBox(height: 5),
                     Text(member.post,
-                        style: TextStyle(color: Colors.white70)),
+                        style: TextStyle(color: AppColors.white70)),
                   ],
                 ),
               ),

@@ -3,6 +3,8 @@ import 'dart:ui';
 import 'dart:async';
 
 import 'package:cnattendance/data/source/datastore/preferences.dart';
+import 'package:cnattendance/features/appearance/app_appearance_api.dart';
+import 'package:cnattendance/features/appearance/theme_modes_api.dart';
 import 'package:cnattendance/provider/dashboardprovider.dart';
 import 'package:cnattendance/provider/prefprovider.dart';
 import 'package:cnattendance/screen/dashboard/homescreen.dart';
@@ -11,9 +13,11 @@ import 'package:cnattendance/screen/dashboard/attendancescreen.dart';
 import 'package:cnattendance/screen/dashboard/morescreen.dart';
 import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/theme/theme_layout.dart';
+import 'package:cnattendance/theme/theme_provider.dart';
 import 'package:cnattendance/widget/dashboard_drawer.dart';
 import 'package:cnattendance/widget/dashboard_drawer_scope.dart';
 import 'package:cnattendance/widget/radialDecoration.dart';
+import 'package:cnattendance/widget/homescreen/overviewdashboard.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:cnattendance/theme/royal_colors.dart';
@@ -24,6 +28,7 @@ import 'package:provider/provider.dart';
 import 'package:cnattendance/features/repair_price/pages/repair_device_page.dart';
 import 'package:cnattendance/features/repair_price/providers/repair_price_provider.dart';
 import 'package:cnattendance/features/daily_records/quick_create.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class DashboardScreen extends StatefulWidget {
   static const String routeName = '/dashboard';
@@ -58,14 +63,42 @@ class DashboardScreenState extends State<DashboardScreen>
       }
       _loadedUser = true;
       context.read<PrefProvider>().getUser();
+      unawaited(_refreshAppAppearance());
+      unawaited(_refreshThemeModes());
+      unawaited(context.read<DashboardProvider>().refreshMobileFeatures());
     });
     _restoreRailState();
+  }
+
+  /// Pulls the admin-managed background + floating-effect switches so the
+  /// whole app reflects the latest configuration.
+  Future<void> _refreshAppAppearance() async {
+    try {
+      final config = await AppAppearanceApi().fetch();
+      if (!mounted) return;
+      await context.read<ThemeProvider>().applyServerAppearance(config);
+    } catch (_) {
+      // Keep the last cached appearance while the server is unreachable.
+    }
+  }
+
+  /// Pulls active and role-filtered theme modes and admin default colors.
+  Future<void> _refreshThemeModes() async {
+    try {
+      final modes = await ThemeModesApi().fetch();
+      if (!mounted) return;
+      await context.read<ThemeProvider>().applyRemoteThemeModes(modes);
+    } catch (_) {
+      // Keep the last cached theme modes while the server is unreachable.
+    }
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (mounted && state == AppLifecycleState.resumed) {
       unawaited(context.read<DashboardProvider>().refreshMobileFeatures());
+      unawaited(_refreshAppAppearance());
+      unawaited(_refreshThemeModes());
       unawaited(_repairProvider?.loadWebPermissions());
     }
   }
@@ -96,10 +129,10 @@ class DashboardScreenState extends State<DashboardScreen>
   ItemConfig getItemConfig(Icon icon, String title) {
     return ItemConfig(
       icon: icon,
-      activeColorSecondary: Colors.white,
-      activeForegroundColor: Colors.white,
-      inactiveBackgroundColor: Colors.white30,
-      inactiveForegroundColor: Colors.white30,
+      activeColorSecondary: AppColors.white,
+      activeForegroundColor: AppColors.white,
+      inactiveBackgroundColor: AppColors.white30,
+      inactiveForegroundColor: AppColors.white30,
       title: title,
     );
   }
@@ -212,7 +245,7 @@ class DashboardScreenState extends State<DashboardScreen>
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.12),
+                color: AppColors.black.withValues(alpha: 0.12),
                 blurRadius: 20,
                 offset: const Offset(7, 0),
               ),
@@ -349,18 +382,21 @@ class DashboardScreenState extends State<DashboardScreen>
   Widget _buildMobileTabs(BuildContext context) {
     final enterprise = EnterpriseTheme.of(context);
     final sidebarFg = sidebarForeground(enterprise);
-    final features = context.watch<DashboardProvider>().features;
+    final dashboard = context.watch<DashboardProvider>();
+    final features = dashboard.features;
     final canRepair = context.watch<RepairPriceProvider>().canView;
 
     final tabIds = <LayoutItem>[];
+    final tabKeys = <String>[];
     final tabs = <PersistentTabConfig>[];
 
-    void addTab(LayoutItem id, Widget screen, ItemConfig item) {
+    void addTab(LayoutItem id, Widget screen, ItemConfig item, {String? tabKey}) {
       tabIds.add(id);
+      tabKeys.add(tabKey ?? id.name);
       tabs.add(PersistentTabConfig(
         screen: screen,
         item: item,
-        navigatorConfig: _mobileTabNavigatorConfig(id.name),
+        navigatorConfig: _mobileTabNavigatorConfig(tabKey ?? id.name),
       ));
     }
 
@@ -372,7 +408,8 @@ class DashboardScreenState extends State<DashboardScreen>
         translate('dashboard_screen.home'),
       ),
     );
-    if (features["social-feed"] == "1")
+    if (features["social-feed"] == "1" &&
+        dashboard.isMobileMenuAt("social-feed", "bottom"))
       addTab(
         LayoutItem.social,
         SocialFeedScreen(
@@ -383,7 +420,7 @@ class DashboardScreenState extends State<DashboardScreen>
           translate('community.social_feed'),
         ),
       );
-    if (canRepair)
+    if (canRepair && dashboard.isMobileMenuAt("repair", "bottom"))
       addTab(
         LayoutItem.repair,
         RepairDevicePage(
@@ -400,7 +437,8 @@ class DashboardScreenState extends State<DashboardScreen>
               : 'dashboard_screen.repair_list'),
         ),
       );
-    if (features["leave-request"] == "1")
+    if (features["leave-request"] == "1" &&
+        dashboard.isMobileMenuAt("leave-request", "bottom"))
       addTab(
         LayoutItem.leave,
         LeaveScreen(),
@@ -409,7 +447,8 @@ class DashboardScreenState extends State<DashboardScreen>
           translate('dashboard_screen.leave'),
         ),
       );
-    if (features["attendance"] == "1")
+    if (features["attendance"] == "1" &&
+        dashboard.isMobileMenuAt("attendance", "bottom"))
       addTab(
         LayoutItem.attendance,
         AttendanceScreen(),
@@ -418,6 +457,21 @@ class DashboardScreenState extends State<DashboardScreen>
           translate('dashboard_screen.attendance'),
         ),
       );
+    if (dashboard.mobileLayoutConfigured) {
+      const builtInTabs = {'social-feed', 'repair', 'leave-request', 'attendance'};
+      for (final entry in dashboard.mobileLayout.entries) {
+        final menu = entry.key;
+        if (!entry.value.contains('bottom') ||
+            builtInTabs.contains(menu) ||
+            features[menu] != '1') continue;
+        addTab(
+          LayoutItem.more,
+          _RoleFunctionTab(menu, _controller),
+          getItemConfig(const Icon(Icons.apps_outlined), _roleMenuLabel(menu)),
+          tabKey: 'role-$menu',
+        );
+      }
+    }
     addTab(
       LayoutItem.more,
       MoreScreen(),
@@ -433,7 +487,7 @@ class DashboardScreenState extends State<DashboardScreen>
 
     final activeTabIndex = _controller.index.clamp(0, tabIds.length - 1);
     final activeNavigator =
-        _tabNavigatorKeys[tabIds[activeTabIndex].name]?.currentState;
+        _tabNavigatorKeys[tabKeys[activeTabIndex]]?.currentState;
     final isSocialFeedActive = tabIds[activeTabIndex] == LayoutItem.social;
     final immersive = isSocialFeedActive && _socialFeedImmersive;
     final socialDetailOpen =
@@ -443,9 +497,11 @@ class DashboardScreenState extends State<DashboardScreen>
         isRepairActive && (activeNavigator?.canPop() ?? false);
     final hideMenuButton = immersive || (activeNavigator?.canPop() ?? false);
 
-    final visibleTabs = enterprise.layout.visibleTabIndices(tabIds);
+    final visibleTabs = dashboard.mobileLayoutConfigured
+        ? List<int>.generate(tabIds.length, (index) => index)
+        : enterprise.layout.visibleTabIndices(tabIds);
     final menuOnRight = enterprise.layout.menuOnRight;
-    final moreSlot = visibleTabs.indexOf(tabIds.indexOf(LayoutItem.more));
+    final moreSlot = visibleTabs.indexOf(tabIds.lastIndexOf(LayoutItem.more));
     final showCreateRecord = moreSlot >= 0 &&
         !hideMenuButton &&
         MediaQuery.viewInsetsOf(context).bottom == 0;
@@ -454,7 +510,7 @@ class DashboardScreenState extends State<DashboardScreen>
       children: [
         PersistentTabView(
           key: ValueKey(
-              'tabs_${features["social-feed"]}_${features["leave-request"]}_${features["attendance"]}_$canRepair'),
+              'tabs_${features["social-feed"]}_${features["leave-request"]}_${features["attendance"]}_${canRepair}_${dashboard.mobileLayout.hashCode}'),
           controller: _controller,
           onTabChanged: (index) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -558,6 +614,40 @@ class DashboardScreenState extends State<DashboardScreen>
   }
 }
 
+String _roleMenuLabel(String menu) => menu
+    .split('-')
+    .map((word) => word.isEmpty ? word : '${word[0].toUpperCase()}${word.substring(1)}')
+    .join(' ');
+
+class _RoleFunctionTab extends StatelessWidget {
+  const _RoleFunctionTab(this.menu, this.controller);
+
+  final String menu;
+  final PersistentTabController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    const quickServiceMenus = {
+      'holiday',
+      'leave-request',
+      'event',
+      'project-management',
+      'award',
+      'training',
+      'social-rewards',
+      'chat',
+      'home-highlights',
+    };
+    if (!quickServiceMenus.contains(menu)) return MoreScreen();
+    return Scaffold(
+      appBar: AppBar(title: Text(_roleMenuLabel(menu))),
+      body: SingleChildScrollView(
+        child: OverviewDashboard(controller, forceMenu: menu),
+      ),
+    );
+  }
+}
+
 class DashboardNavigationBar extends StatelessWidget {
   final NavBarConfig navBarConfig;
 
@@ -599,7 +689,7 @@ class DashboardNavigationBar extends StatelessWidget {
             spreadRadius: 0.5,
           ),
           BoxShadow(
-            color: Colors.black
+            color: AppColors.black
                 .withValues(alpha: enterprise.isRoyalDay ? .05 : .35),
             blurRadius: 22,
             offset: const Offset(0, 8),
@@ -672,15 +762,15 @@ class _EnterpriseNavItem extends StatelessWidget {
         ? (enterprise.isRoyalDay
             ? enterprise.isRoyalLuxuryDay
                 ? KhmerLuxuryColors.darkText
-                : Colors.white
+                : AppColors.white
             : royal
                 ? RoyalColors.navy
                 : heritage
                     ? enterprise.colors.backgroundColor
-                    : Colors.white)
+                    : AppColors.white)
         : ThemeData.estimateBrightnessForColor(customAccent) == Brightness.dark
-            ? Colors.white
-            : const Color(0xff211720);
+            ? AppColors.white
+            : AppColors.customFF211720;
     final textColor = selected ? activeColor : inactiveColor;
     final iconTheme = IconThemeData(
       color: textColor,
@@ -696,9 +786,9 @@ class _EnterpriseNavItem extends StatelessWidget {
                     customAccent,
                     Color.lerp(
                         customAccent,
-                        activeColor == Colors.white
-                            ? Colors.black
-                            : Colors.white,
+                        activeColor == AppColors.white
+                            ? AppColors.black
+                            : AppColors.white,
                         .16)!,
                   ]
                 : enterprise.isRoyalDay
@@ -775,7 +865,7 @@ class _EnterpriseNavItem extends StatelessWidget {
                         selected && !heritage && !royal && customAccent == null
                             ? const [
                                 Shadow(
-                                  color: Colors.black45,
+                                  color: AppColors.black45,
                                   blurRadius: 4,
                                   offset: Offset(0, 1),
                                 ),

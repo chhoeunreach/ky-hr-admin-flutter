@@ -4,6 +4,7 @@ import 'package:cnattendance/provider/morescreenprovider.dart';
 import 'package:cnattendance/provider/prefprovider.dart';
 import 'package:cnattendance/screen/advancesalary/advancesalaryscreen.dart';
 import 'package:cnattendance/screen/advancesalary/admin/admin_advancesalary_screen.dart';
+import 'package:cnattendance/screen/assetscreen/admin_asset_list_screen.dart';
 import 'package:cnattendance/screen/assetscreen/assetscreen.dart';
 import 'package:cnattendance/screen/awards/awardsscreen.dart';
 import 'package:cnattendance/screen/complainscreen/complainscreen.dart';
@@ -45,6 +46,7 @@ import 'package:cnattendance/widget/morescreen/services.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:focus_detector/focus_detector.dart';
 import 'package:provider/provider.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class MoreScreen extends StatefulWidget {
   @override
@@ -125,13 +127,13 @@ class MoreScreenState extends State<MoreScreen> {
       final isSelected = attendanceType == type;
       final effectiveSelected = enabled && isSelected;
       final foregroundColor = effectiveSelected || enterprise.isDark
-          ? Colors.white
+          ? AppColors.white
           : enterprise.text;
       final disabledColor =
-          (enterprise.isDark ? Colors.white : enterprise.text)
+          (enterprise.isDark ? AppColors.white : enterprise.text)
               .withValues(alpha: 0.45);
       final borderColor = effectiveSelected
-          ? Colors.white.withValues(alpha: 0.58)
+          ? AppColors.white.withValues(alpha: 0.58)
           : enterprise.accent.withValues(
               alpha: enabled ? (enterprise.isDark ? 0.46 : 0.68) : 0.24);
       final fillColor = enterprise.surface.withValues(
@@ -162,7 +164,7 @@ class MoreScreenState extends State<MoreScreen> {
             border: Border.all(color: borderColor, width: 1.2),
             boxShadow: [
               BoxShadow(
-                color: (effectiveSelected ? enterprise.accent : Colors.black)
+                color: (effectiveSelected ? enterprise.accent : AppColors.black)
                     .withValues(alpha: effectiveSelected ? 0.28 : 0.12),
                 blurRadius: effectiveSelected ? 18 : 10,
                 offset: const Offset(0, 8),
@@ -209,8 +211,8 @@ class MoreScreenState extends State<MoreScreen> {
                     Services(translate('community.social_feed'),
                         Icons.dynamic_feed_outlined, const SocialFeedScreen()),
                   Padding(
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 6),
                       child: Text(
                         translate('more_screen.attendance_default_method'),
                         style: TextStyle(
@@ -247,8 +249,8 @@ class MoreScreenState extends State<MoreScreen> {
                     ),
                   ),
                   Padding(
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 6),
                       child: Text(
                         translate('more_screen.account'),
                         style: TextStyle(
@@ -387,6 +389,12 @@ class MoreScreenState extends State<MoreScreen> {
                           translate('more_screen.banner_manager'),
                           Icons.view_carousel_rounded,
                           const BannerAdminScreen()),
+                  (features["assets-admin"] != "1" && features["list_assets"] != "1")
+                      ? SizedBox.shrink()
+                      : Services(
+                          translate('more_screen.admin_assets'),
+                          Icons.inventory_2_outlined,
+                          const AdminAssetListScreen()),
                   /*features["loan"] != "1"
                                 ? SizedBox.shrink()
                                 : Services(translate('more_screen.loans'),
@@ -442,7 +450,7 @@ class MoreScreenState extends State<MoreScreen> {
                             children: [
                               ListTile(
                                 trailing: Switch(
-                                  activeThumbColor: Colors.blue,
+                                  activeThumbColor: AppColors.blue,
                                   value: selectedThemeMode == AppThemeMode.dark,
                                   onChanged: (value) {
                                     context.read<ThemeProvider>().setMode(value

@@ -33,6 +33,7 @@ import 'package:cnattendance/utils/app_device_info.dart';
 import 'package:cnattendance/widget/app_update_dialog.dart';
 import '../firebase_options.dart';
 import '../utils/constant.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class PushNotificationService {
   static Future<void>? _initialization;
@@ -600,11 +601,11 @@ class PushNotificationService {
         child: Container(
           margin: const EdgeInsets.fromLTRB(14, 16, 14, 0),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.white,
             borderRadius: BorderRadius.circular(22),
             boxShadow: const [
               BoxShadow(
-                color: Color.fromRGBO(0, 0, 0, 0.18),
+                color: AppColors.black18,
                 blurRadius: 22,
                 offset: Offset(0, 10),
               ),
@@ -620,14 +621,14 @@ class PushNotificationService {
                   ? CircleAvatar(
                       radius: 24,
                       backgroundImage: NetworkImage(avatar),
-                      backgroundColor: Colors.grey.shade200,
+                      backgroundColor: AppColors.grey.shade200,
                     )
                   : CircleAvatar(
                       radius: 24,
-                      backgroundColor: const Color(0xffeaf1ff),
+                      backgroundColor: AppColors.customFFEAF1FF,
                       child: Icon(
                         isChat ? Icons.person : Icons.notifications,
-                        color: const Color(0xff011754),
+                        color: AppColors.customFF011754,
                       ),
                     ),
               title: Text(
@@ -635,7 +636,7 @@ class PushNotificationService {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  color: Color(0xff011754),
+                  color: AppColors.customFF011754,
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
                 ),
@@ -647,7 +648,7 @@ class PushNotificationService {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    color: Color(0xff5d6785),
+                    color: AppColors.customFF5D6785,
                     fontSize: 13,
                     height: 1.25,
                   ),
@@ -655,7 +656,7 @@ class PushNotificationService {
               ),
               trailing: const Icon(
                 Icons.chevron_right_rounded,
-                color: Color(0xff7d88a5),
+                color: AppColors.customFF7D88A5,
               ),
             ),
           ),
@@ -791,8 +792,8 @@ class PushNotificationService {
           channelName: 'Digital Hr notifications',
           channelDescription: 'Digital HR Alert',
           channelShowBadge: true,
-          defaultColor: const Color(0xFF9D50DD),
-          ledColor: Colors.white,
+          defaultColor: AppColors.customFF9D50DD,
+          ledColor: AppColors.white,
           importance: NotificationImportance.High,
         ),
         NotificationChannel(
@@ -801,8 +802,8 @@ class PushNotificationService {
           channelName: 'Digital Hr alerts',
           channelDescription: 'Digital HR Updates & Alerts',
           channelShowBadge: true,
-          defaultColor: const Color(0xFF9D50DD),
-          ledColor: Colors.white,
+          defaultColor: AppColors.customFF9D50DD,
+          ledColor: AppColors.white,
           importance: NotificationImportance.High,
         ),
       ],

@@ -7,6 +7,7 @@ import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
 import 'package:html/parser.dart';
 import 'package:readmore/readmore.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class TadaDetailScreen extends StatelessWidget {
   @override
@@ -33,7 +34,8 @@ class TadaDetailScreen extends StatelessWidget {
                         children: [
                           Text(
                             model.tada.value.title,
-                            style: TextStyle(color: Colors.white, fontSize: 24),
+                            style:
+                                TextStyle(color: AppColors.white, fontSize: 24),
                           ),
                           SizedBox(
                             height: 10,
@@ -48,11 +50,12 @@ class TadaDetailScreen extends StatelessWidget {
                                   children: [
                                     Text(
                                       "Date",
-                                      style: TextStyle(color: Colors.white70),
+                                      style:
+                                          TextStyle(color: AppColors.white70),
                                     ),
                                     Text(model.tada.value.submittedDate,
                                         style: TextStyle(
-                                            color: Colors.white,
+                                            color: AppColors.white,
                                             fontWeight: FontWeight.normal,
                                             fontSize: 12)),
                                   ],
@@ -62,7 +65,7 @@ class TadaDetailScreen extends StatelessWidget {
                                 height: 30,
                                 child: VerticalDivider(
                                   width: 1,
-                                  color: Colors.white54,
+                                  color: AppColors.white54,
                                 ),
                               ),
                               Expanded(
@@ -72,11 +75,12 @@ class TadaDetailScreen extends StatelessWidget {
                                   children: [
                                     Text(
                                       "Status",
-                                      style: TextStyle(color: Colors.white70),
+                                      style:
+                                          TextStyle(color: AppColors.white70),
                                     ),
                                     Text(model.tada.value.status,
                                         style: TextStyle(
-                                            color: Colors.white,
+                                            color: AppColors.white,
                                             fontWeight: FontWeight.normal,
                                             fontSize: 12)),
                                   ],
@@ -86,7 +90,7 @@ class TadaDetailScreen extends StatelessWidget {
                                 height: 30,
                                 child: VerticalDivider(
                                   width: 1,
-                                  color: Colors.white54,
+                                  color: AppColors.white54,
                                 ),
                               ),
                               Expanded(
@@ -96,11 +100,12 @@ class TadaDetailScreen extends StatelessWidget {
                                   children: [
                                     Text(
                                       "Total",
-                                      style: TextStyle(color: Colors.white70),
+                                      style:
+                                          TextStyle(color: AppColors.white70),
                                     ),
                                     Text("Rs " + model.tada.value.expenses,
                                         style: TextStyle(
-                                            color: Colors.white,
+                                            color: AppColors.white,
                                             fontWeight: FontWeight.normal,
                                             fontSize: 12)),
                                   ],
@@ -114,7 +119,7 @@ class TadaDetailScreen extends StatelessWidget {
                           SizedBox(height: 15),
                           Card(
                             elevation: 0,
-                            color: Colors.white24,
+                            color: AppColors.white24,
                             margin: EdgeInsets.zero,
                             shape: ButtonBorder(),
                             child: Container(
@@ -126,7 +131,7 @@ class TadaDetailScreen extends StatelessWidget {
                                   Text(
                                     "Description",
                                     style: TextStyle(
-                                        color: Colors.white,
+                                        color: AppColors.white,
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold),
                                   ),
@@ -138,20 +143,20 @@ class TadaDetailScreen extends StatelessWidget {
                                         .body!
                                         .text,
                                     trimLines: 15,
-                                    colorClickableText: Colors.blue,
+                                    colorClickableText: AppColors.blue,
                                     trimMode: TrimMode.Line,
                                     trimCollapsedText: ' Show more',
                                     trimExpandedText: ' Show less',
                                     style: TextStyle(
-                                        color: Colors.white70,
+                                        color: AppColors.white70,
                                         fontSize: 15,
                                         fontWeight: FontWeight.normal),
                                     lessStyle: TextStyle(
-                                        color: Colors.white,
+                                        color: AppColors.white,
                                         fontSize: 14,
                                         fontWeight: FontWeight.bold),
                                     moreStyle: TextStyle(
-                                        color: Colors.white,
+                                        color: AppColors.white,
                                         fontSize: 14,
                                         fontWeight: FontWeight.bold),
                                   ),
@@ -174,7 +179,7 @@ class TadaDetailScreen extends StatelessWidget {
                             },
                             child: Card(
                               elevation: 0,
-                              color: Colors.white24,
+                              color: AppColors.white24,
                               margin: EdgeInsets.zero,
                               shape: ButtonBorder(),
                               child: Padding(
@@ -192,7 +197,7 @@ class TadaDetailScreen extends StatelessWidget {
                                           () => Text(
                                             "Attachments ( ${model.tada.value.attachments!.length.toString()} )",
                                             style: TextStyle(
-                                                color: Colors.white,
+                                                color: AppColors.white,
                                                 fontSize: 16,
                                                 fontWeight: FontWeight.bold),
                                           ),
@@ -203,7 +208,7 @@ class TadaDetailScreen extends StatelessWidget {
                                           style: TextStyle(
                                               decoration:
                                                   TextDecoration.underline,
-                                              color: Colors.white,
+                                              color: AppColors.white,
                                               fontSize: 12,
                                               fontWeight: FontWeight.normal),
                                         ),
@@ -211,7 +216,7 @@ class TadaDetailScreen extends StatelessWidget {
                                     ),
                                     // SizedBox(height: 10),
                                     // Card(
-                                    //   color: Colors.blue,
+                                    //   color: AppColors.blue,
                                     //   child: Padding(
                                     //     padding: const EdgeInsets.all(10),
                                     //     child: Row(
@@ -219,7 +224,7 @@ class TadaDetailScreen extends StatelessWidget {
                                     //       children: [
                                     //         Icon(
                                     //           Icons.comment,
-                                    //           color: Colors.white,
+                                    //           color: AppColors.white,
                                     //         ),
                                     //         SizedBox(
                                     //           width: 10,
@@ -227,7 +232,7 @@ class TadaDetailScreen extends StatelessWidget {
                                     //         Text(
                                     //           "Write a comment",
                                     //           style: TextStyle(
-                                    //               color: Colors.white,
+                                    //               color: AppColors.white,
                                     //               fontSize: 15,
                                     //               fontWeight: FontWeight.bold),
                                     //         ),

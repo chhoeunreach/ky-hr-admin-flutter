@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../config/repair_price_config.dart';
 import '../models/repair_device.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class RepairDeviceFilter extends StatelessWidget {
   final List<RepairDeviceType> deviceTypes;
@@ -79,8 +80,9 @@ class RepairDeviceFilter extends StatelessWidget {
                   onSelected: (_) => onSelected(slug),
                   selectedColor: RepairPriceConfig.primaryBlue,
                   labelStyle: TextStyle(
-                    color:
-                        isSelected ? Colors.white : RepairPriceConfig.mainText,
+                    color: isSelected
+                        ? AppColors.white
+                        : RepairPriceConfig.mainText,
                     fontWeight: FontWeight.w700,
                   ),
                   backgroundColor: RepairPriceConfig.card,

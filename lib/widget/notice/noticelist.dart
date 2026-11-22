@@ -2,6 +2,7 @@ import 'package:cnattendance/provider/noticecontroller.dart';
 import 'package:cnattendance/widget/notice/noticecard.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class NoticeList extends StatefulWidget {
   @override
@@ -21,7 +22,7 @@ class NoticeListState extends State<NoticeList> {
             children: [
               Icon(
                 Icons.campaign_outlined,
-                color: Colors.white.withValues(alpha: 0.36),
+                color: AppColors.white.withValues(alpha: 0.36),
                 size: 58,
               ),
               const SizedBox(height: 14),
@@ -29,7 +30,7 @@ class NoticeListState extends State<NoticeList> {
                 'No notices available',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.74),
+                  color: AppColors.white.withValues(alpha: 0.74),
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
                 ),

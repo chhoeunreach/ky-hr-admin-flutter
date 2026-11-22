@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:intl/intl.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class MeetingAttendanceScreen extends StatefulWidget {
   const MeetingAttendanceScreen({Key? key}) : super(key: key);
@@ -168,7 +169,7 @@ class _ScanCard extends StatelessWidget {
               ),
             ),
             child: const Icon(Icons.qr_code_scanner_rounded,
-                color: Colors.white, size: 28),
+                color: AppColors.white, size: 28),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -227,8 +228,8 @@ class _MeetingAttendanceCard extends StatelessWidget {
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: meeting.isJoined
-                      ? Colors.green.withValues(alpha: 0.18)
-                      : Colors.orange.withValues(alpha: 0.18),
+                      ? AppColors.green.withValues(alpha: 0.18)
+                      : AppColors.orange.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
@@ -241,7 +242,8 @@ class _MeetingAttendanceCard extends StatelessWidget {
                           _ => 'Pending',
                         },
                   style: TextStyle(
-                    color: meeting.isJoined ? Colors.green : Colors.orange,
+                    color:
+                        meeting.isJoined ? AppColors.green : AppColors.orange,
                     fontWeight: FontWeight.w900,
                     fontSize: 12,
                   ),

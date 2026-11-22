@@ -5,6 +5,7 @@ import 'package:cnattendance/widget/leavescreen/issueleavesheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:provider/provider.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class LeaveButton extends StatelessWidget {
   @override
@@ -48,7 +49,7 @@ class LeaveButton extends StatelessWidget {
                   child: Text(
                     translate('leave_screen.issue_leave'),
                     style: const TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.w800),
+                        color: AppColors.white, fontWeight: FontWeight.w800),
                   ),
                 )),
           )),
@@ -107,7 +108,7 @@ class LeaveButton extends StatelessWidget {
                   padding: EdgeInsets.zero,
                   child: Text(
                     translate('leave_screen.time_leave'),
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(color: AppColors.white),
                   ),
                 )),
           )),

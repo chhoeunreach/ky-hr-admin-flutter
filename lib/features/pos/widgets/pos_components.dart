@@ -1,32 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:intl/intl.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 const posDashboardRoute = '/mobile-pos';
-const posBlue = Color(0xff0759c7);
-const posBackground = Color(0xfff4f6fa);
-const posBorder = Color(0xffe0e8f2);
-const posInk = Color(0xff14233b);
-const posMuted = Color(0xff63758e);
+const posBlue = AppColors.customFF0759C7;
+const posBackground = AppColors.customFFF4F6FA;
+const posBorder = AppColors.customFFE0E8F2;
+const posInk = AppColors.customFF14233B;
+const posMuted = AppColors.customFF63758E;
 ThemeData posWorkspaceTheme(ThemeData base) => base.copyWith(
       colorScheme:
           ColorScheme.fromSeed(seedColor: posBlue, brightness: Brightness.light)
               .copyWith(
-                  surface: Colors.white,
+                  surface: AppColors.white,
                   surfaceTint: Colors.transparent,
                   onSurface: posInk,
-                  primaryContainer: const Color(0xffe8f1fd),
+                  primaryContainer: AppColors.customFFE8F1FD,
                   onPrimaryContainer: posBlue,
-                  secondaryContainer: const Color(0xffe8f1fd),
+                  secondaryContainer: AppColors.customFFE8F1FD,
                   onSecondaryContainer: posBlue,
                   outline: posBorder,
                   outlineVariant: posBorder,
-                  surfaceContainerHighest: const Color(0xffedf2f7)),
+                  surfaceContainerHighest: AppColors.customFFEDF2F7),
       scaffoldBackgroundColor: posBackground,
-      canvasColor: Colors.white,
+      canvasColor: AppColors.white,
       textTheme: base.textTheme.apply(bodyColor: posInk, displayColor: posInk),
       popupMenuTheme: PopupMenuThemeData(
-          color: Colors.white,
+          color: AppColors.white,
           surfaceTintColor: Colors.transparent,
           elevation: 6,
           shape:
@@ -34,7 +35,7 @@ ThemeData posWorkspaceTheme(ThemeData base) => base.copyWith(
           textStyle: base.textTheme.bodyMedium?.copyWith(color: posInk)),
       dropdownMenuTheme: const DropdownMenuThemeData(
           menuStyle: MenuStyle(
-              backgroundColor: WidgetStatePropertyAll(Colors.white),
+              backgroundColor: WidgetStatePropertyAll(AppColors.white),
               surfaceTintColor: WidgetStatePropertyAll(Colors.transparent))),
     );
 
@@ -69,9 +70,9 @@ IconData posModuleIcon(String type) => switch (type) {
       _ => Icons.shopping_cart_outlined,
     };
 Color posModuleColor(String type) => switch (type) {
-      'iron' => const Color(0xff7952cc),
-      'repair' => const Color(0xff16885f),
-      'buy_in' => const Color(0xffd38115),
+      'iron' => AppColors.customFF7952CC,
+      'repair' => AppColors.customFF16885F,
+      'buy_in' => AppColors.customFFD38115,
       _ => posBlue,
     };
 
@@ -86,7 +87,7 @@ class PosPanel extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         padding: padding,
         decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.white,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: posBorder),
             boxShadow: [
@@ -144,9 +145,9 @@ class PosStatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = status == 'qualified'
-        ? const Color(0xff16885f)
+        ? AppColors.customFF16885F
         : status == 'failed'
-            ? const Color(0xffcf4353)
+            ? AppColors.customFFCF4353
             : posMuted;
     return Container(
         padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
@@ -179,13 +180,13 @@ class PosLoadingSkeleton extends StatelessWidget {
                                 height: 76,
                                 margin: EdgeInsets.only(left: i == 1 ? 8 : 0),
                                 decoration: BoxDecoration(
-                                    color: const Color(0xffe8eef6),
+                                    color: AppColors.customFFE8EEF6,
                                     borderRadius:
                                         BorderRadius.circular(12)))))))),
         Container(
             height: 140,
             decoration: BoxDecoration(
-                color: const Color(0xffe8eef6),
+                color: AppColors.customFFE8EEF6,
                 borderRadius: BorderRadius.circular(12))),
       ]));
 }
@@ -215,7 +216,7 @@ class PosNavigation extends StatelessWidget {
         ];
         return Container(
             decoration: const BoxDecoration(
-                color: Colors.white,
+                color: AppColors.white,
                 border: Border(top: BorderSide(color: posBorder))),
             child: SafeArea(
                 top: false,

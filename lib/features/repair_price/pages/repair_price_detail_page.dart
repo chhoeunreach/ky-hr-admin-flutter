@@ -15,6 +15,7 @@ import '../widgets/repair_price_card.dart';
 import '../widgets/repair_search_bar.dart';
 import '../widgets/repair_service_card.dart';
 import '../widgets/repair_status_badge.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class RepairPriceDetailPage extends StatelessWidget {
   final RepairDevice device;
@@ -153,7 +154,7 @@ class _RepairPriceDetailView extends StatelessWidget {
             ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
                 backgroundColor: RepairPriceConfig.primaryBlue,
-                foregroundColor: Colors.white,
+                foregroundColor: AppColors.white,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 shape: RoundedRectangleBorder(
@@ -219,8 +220,8 @@ class _RepairPriceDetailView extends StatelessWidget {
         Expanded(
           flex: 6,
           child: Container(
-            color:
-                Colors.white.withValues(alpha: enterprise.isDark ? 0.04 : 0.08),
+            color: AppColors.white
+                .withValues(alpha: enterprise.isDark ? 0.04 : 0.08),
             child: provider.selectedService != null
                 ? _buildTabletDetailPanel(
                     context, provider, provider.selectedService!)
@@ -243,7 +244,7 @@ class _RepairPriceDetailView extends StatelessWidget {
   Widget _buildHeader(BuildContext context, RepairPriceProvider provider) {
     final enterprise = EnterpriseTheme.of(context);
     return Container(
-      color: Colors.white.withValues(alpha: enterprise.isDark ? 0.06 : 0.12),
+      color: AppColors.white.withValues(alpha: enterprise.isDark ? 0.06 : 0.12),
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -262,7 +263,7 @@ class _RepairPriceDetailView extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.08),
+                color: AppColors.white.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(color: enterprise.glassStroke, width: 0.8),
               ),
@@ -272,7 +273,7 @@ class _RepairPriceDetailView extends StatelessWidget {
                     width: 38,
                     height: 38,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.08),
+                      color: AppColors.white.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(8),
                       border:
                           Border.all(color: enterprise.glassStroke, width: 0.8),
@@ -337,6 +338,7 @@ class _RepairPriceDetailView extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 14),
             child: RepairSearchBar(
               hintText: translate('repair_screen.search_service_hint'),
+              initialValue: provider.serviceSearchQuery,
               onChanged: provider.onServiceSearchChanged,
               onClear: () => provider.onServiceSearchChanged(''),
             ),
@@ -402,7 +404,7 @@ class _RepairPriceDetailView extends StatelessWidget {
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: enterprise.primary,
-                    foregroundColor: Colors.white,
+                    foregroundColor: AppColors.white,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10)),
                     padding: const EdgeInsets.symmetric(
@@ -556,7 +558,7 @@ class _RepairPriceDetailView extends StatelessWidget {
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: enterprise.primary,
-                        foregroundColor: Colors.white,
+                        foregroundColor: AppColors.white,
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 6),
                         shape: RoundedRectangleBorder(
@@ -595,7 +597,7 @@ class _RepairPriceDetailView extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.08),
+                color: AppColors.white.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: enterprise.glassStroke, width: 0.8),
               ),
@@ -673,7 +675,7 @@ class _RepairPriceDetailView extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.08),
+        color: AppColors.white.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: enterprise.glassStroke, width: 0.8),
       ),

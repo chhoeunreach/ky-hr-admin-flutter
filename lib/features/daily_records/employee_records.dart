@@ -1,4 +1,5 @@
 import 'package:file_picker/file_picker.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
@@ -352,6 +353,115 @@ class DailyRecordScreen extends StatelessWidget {
             ] else if (entry['body'] != null) ...[
               recordSpacing,
               Text(entry['body'].toString())
+            ],
+            if (fields['from_branch'] != null ||
+                fields['to_branch'] != null) ...[
+              recordSpacing,
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .primary
+                      .withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .primary
+                        .withValues(alpha: 0.25),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.alt_route_rounded,
+                            color: Theme.of(context).colorScheme.primary,
+                            size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            '${fields['from_branch'] ?? ''} ➔ ${fields['to_branch'] ?? ''}',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleSmall
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                          ),
+                        ),
+                        if (recordFlag(fields['gps_verified']))
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: AppColors.green.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.verified_outlined,
+                                    size: 13, color: AppColors.green),
+                                SizedBox(width: 4),
+                                Text('GPS Verified',
+                                    style: TextStyle(
+                                        color: AppColors.green,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w600)),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                    if (fields['departure_time'] != null ||
+                        fields['arrival_time'] != null) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        '${fields['departure_time'] != null ? '${workText(context, 'Departure Time')}: ${fields['departure_time']}' : ''}'
+                        '${fields['departure_time'] != null && fields['arrival_time'] != null ? '  |  ' : ''}'
+                        '${fields['arrival_time'] != null ? '${workText(context, 'Arrival Time')}: ${fields['arrival_time']}' : ''}',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                    if (fields['shoot_types'] != null ||
+                        fields['media_types'] != null ||
+                        fields['shoot_count'] != null) ...[
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
+                        children: [
+                          if ((fields['shoot_types'] ?? fields['media_types']) is List)
+                            for (final t in ((fields['shoot_types'] ?? fields['media_types']) as List))
+                              Chip(
+                                visualDensity: VisualDensity.compact,
+                                label: Text(t.toString(),
+                                    style: const TextStyle(fontSize: 11)),
+                              )
+                          else if ((fields['shoot_types'] ?? fields['media_types']) != null)
+                            Chip(
+                              visualDensity: VisualDensity.compact,
+                              label: Text((fields['shoot_types'] ?? fields['media_types']).toString(),
+                                  style: const TextStyle(fontSize: 11)),
+                            ),
+                          if (fields['shoot_count'] != null)
+                            Chip(
+                              visualDensity: VisualDensity.compact,
+                              avatar: const Icon(Icons.photo_camera, size: 14),
+                              label: Text(
+                                  '${fields['shoot_count']} shots/items',
+                                  style: const TextStyle(fontSize: 11)),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
             ],
             if (entry['solution'] != null) ...[
               const RecordHeading('Solution'),

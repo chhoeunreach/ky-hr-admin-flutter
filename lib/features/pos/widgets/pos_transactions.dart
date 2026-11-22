@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../models/pos_report.dart';
 import '../providers/pos_reporting_provider.dart';
 import 'pos_components.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class PosTransactions extends StatelessWidget {
   const PosTransactions(
@@ -60,7 +61,7 @@ class PosTransactions extends StatelessWidget {
             width: 78,
             child: DropdownButton<int>(
                 key: const ValueKey('pos-page-size'),
-                dropdownColor: Colors.white,
+                dropdownColor: AppColors.white,
                 borderRadius: BorderRadius.circular(12),
                 elevation: 6,
                 isExpanded: true,

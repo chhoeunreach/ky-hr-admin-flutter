@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:intl/intl.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 const _decorations = 'assets/royal_blue_gold/decorations';
 
@@ -65,7 +66,7 @@ class RoyalPanel extends StatelessWidget {
           color: (goldEdge
                   ? theme.accent
                   : day
-                      ? Colors.white
+                      ? AppColors.white
                       : RoyalColors.skyBlue)
               .withValues(alpha: .65),
         ),
@@ -87,7 +88,9 @@ class RoyalPanel extends StatelessWidget {
         borderRadius: shape,
         boxShadow: const [
           BoxShadow(
-              color: Color(0x240D47A1), blurRadius: 14, offset: Offset(0, 5)),
+              color: const Color(0x240D47A1),
+              blurRadius: 14,
+              offset: const Offset(0, 5)),
         ],
       ),
       child: panel,
@@ -153,19 +156,28 @@ class RoyalPanelTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = EnterpriseTheme.of(context);
     final List<Color> gradient = color != null
-        ? [color!, Color.lerp(color!, Colors.white, 0.28)!]
+        ? [color!, Color.lerp(color!, AppColors.white, 0.28)!]
         : switch (icon) {
             Icons.badge_outlined => const [
-                Color(0xFF2563EB),
-                Color(0xFF60A5FA)
+                AppColors.customFF2563EB,
+                AppColors.customFF60A5FA
               ],
-            Icons.trending_up => const [Color(0xFF059669), Color(0xFF34D399)],
-            Icons.auto_awesome => const [Color(0xFFF59E0B), Color(0xFFFBBF24)],
+            Icons.trending_up => const [
+                Color(0xFF059669),
+                Color(0xFF34D399)
+              ],
+            Icons.auto_awesome => const [
+                AppColors.customFFF59E0B,
+                AppColors.customFFFBBF24
+              ],
             Icons.calendar_month => const [
-                Color(0xFF9333EA),
-                Color(0xFFC084FC)
+                AppColors.customFF9333EA,
+                AppColors.customFFC084FC
               ],
-            Icons.history => const [Color(0xFF0284C7), Color(0xFF38BDF8)],
+            Icons.history => const [
+                AppColors.customFF0284C7,
+                AppColors.customFF38BDF8
+              ],
             _ => [theme.accent, RoyalColors.lightGold],
           };
     return Row(
@@ -190,14 +202,14 @@ class RoyalPanelTitle extends StatelessWidget {
             ],
           ),
           child: Center(
-            child: Icon(icon, color: Colors.white, size: 13.5),
+            child: Icon(icon, color: AppColors.white, size: 13.5),
           ),
         ),
         Expanded(
           child: Text(label,
               style: TextStyle(
                   color: light
-                      ? Colors.white
+                      ? AppColors.white
                       : theme.isRoyalDay
                           ? theme.primary
                           : null,
@@ -269,7 +281,7 @@ class RoyalClockCard extends StatelessWidget {
                   },
                   style: TextStyle(
                       fontSize: 12,
-                      color: day || embedded ? Colors.white : null),
+                      color: day || embedded ? AppColors.white : null),
                 ),
                 FittedBox(
                   fit: BoxFit.scaleDown,
@@ -280,7 +292,7 @@ class RoyalClockCard extends StatelessWidget {
                             : DateFormat.Hms(locale))
                         .format(now),
                     style: TextStyle(
-                      color: day || embedded ? Colors.white : null,
+                      color: day || embedded ? AppColors.white : null,
                       fontSize: embedded
                           ? 44
                           : day
@@ -302,7 +314,7 @@ class RoyalClockCard extends StatelessWidget {
                         style: TextStyle(
                             fontSize: 10,
                             color: day || embedded
-                                ? Colors.white70
+                                ? AppColors.white70
                                 : RoyalColors.textSecondary),
                       ),
                     ),
@@ -389,12 +401,12 @@ class RoyalTodayAttendance extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(translate('royal.total_hours'),
-                        style:
-                            const TextStyle(color: Colors.white, fontSize: 10)),
+                        style: const TextStyle(
+                            color: AppColors.white, fontSize: 10)),
                   ),
                   Text(royalHasTime(hours) ? hours : '—',
                       style: const TextStyle(
-                          color: Colors.white,
+                          color: AppColors.white,
                           fontSize: 14,
                           fontWeight: FontWeight.w900)),
                 ],
@@ -407,7 +419,8 @@ class RoyalTodayAttendance extends StatelessWidget {
             if (!day || status != null)
               Text(state,
                   style: TextStyle(
-                      color: day ? Colors.white70 : RoyalColors.textSecondary,
+                      color:
+                          day ? AppColors.white70 : RoyalColors.textSecondary,
                       fontSize: 11)),
           ],
         ));
@@ -417,7 +430,7 @@ class RoyalTodayAttendance extends StatelessWidget {
       DecoratedBox(
         decoration: BoxDecoration(
           color: day
-              ? Colors.white.withValues(alpha: .94)
+              ? AppColors.white.withValues(alpha: .94)
               : RoyalColors.navy.withValues(alpha: .62),
           borderRadius: BorderRadius.circular(9),
         ),
@@ -512,13 +525,13 @@ class RoyalQuotation extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                           fontSize: 11,
-                          color: day || embedded ? Colors.white : null)),
+                          color: day || embedded ? AppColors.white : null)),
                 if (author != null && author!.trim().isNotEmpty)
                   Text(author!,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                           fontSize: 10,
-                          color: day || embedded ? Colors.white : null)),
+                          color: day || embedded ? AppColors.white : null)),
               ],
             ),
           ),
@@ -528,8 +541,8 @@ class RoyalQuotation extends StatelessWidget {
     return embedded
         ? DecoratedBox(
             decoration: const BoxDecoration(
-              color: Color(0x33061A40),
-              border: Border(top: BorderSide(color: Color(0x55FFFFFF))),
+              color: AppColors.custom33061A40,
+              border: Border(top: BorderSide(color: AppColors.custom55FFFFFF)),
             ),
             child: content,
           )
@@ -605,7 +618,10 @@ class RoyalAttendanceHighlights extends StatelessWidget {
                       _metric(
                           Icons.schedule_rounded,
                           RoyalColors.danger,
-                          const [Color(0xFFEF4444), Color(0xFFF87171)],
+                          const [
+                            AppColors.dangerToken,
+                            AppColors.customFFF87171
+                          ],
                           translate('royal.late_month'),
                           '${monthly?.totalLateCount ?? monthly?.lateCount ?? '—'}'),
                       _metric(
@@ -630,7 +646,10 @@ class RoyalAttendanceHighlights extends StatelessWidget {
             RoyalPanelTitle(Icons.auto_awesome, translate('royal.highlights')),
             _link(
               icon: Icons.emoji_events_rounded,
-              gradient: const [Color(0xFFF59E0B), Color(0xFFFBBF24)],
+              gradient: const [
+                AppColors.customFFF59E0B,
+                AppColors.customFFFBBF24
+              ],
               title: translate('royal.top_bonus'),
               subtitle: ranked.isEmpty && !loading
                   ? translate('royal.no_rankings')
@@ -648,7 +667,10 @@ class RoyalAttendanceHighlights extends StatelessWidget {
             if (quote != null)
               _link(
                 icon: Icons.format_quote_rounded,
-                gradient: const [Color(0xFF2563EB), Color(0xFF60A5FA)],
+                gradient: const [
+                  AppColors.customFF2563EB,
+                  AppColors.customFF60A5FA
+                ],
                 title: translate('royal.quotation'),
                 subtitle: quote!,
                 onTap: onQuote,
@@ -925,7 +947,7 @@ class RoyalAttendanceHighlights extends StatelessWidget {
               ],
             ),
             child: Center(
-              child: Icon(icon, size: 13, color: Colors.white),
+              child: Icon(icon, size: 13, color: AppColors.white),
             ),
           ),
           Expanded(
@@ -975,7 +997,7 @@ class RoyalAttendanceHighlights extends StatelessWidget {
                   ],
                 ),
                 child: Center(
-                  child: Icon(icon, color: Colors.white, size: 14),
+                  child: Icon(icon, color: AppColors.white, size: 14),
                 ),
               ),
               Expanded(
@@ -1128,7 +1150,7 @@ class RoyalAttendanceScanner extends StatelessWidget {
                         : method.toLowerCase() == 'nfc'
                             ? Icons.nfc_rounded
                             : Icons.fingerprint_rounded,
-                    color: Colors.white,
+                    color: AppColors.white,
                     size: day ? 40 : 62,
                   ),
                 ),

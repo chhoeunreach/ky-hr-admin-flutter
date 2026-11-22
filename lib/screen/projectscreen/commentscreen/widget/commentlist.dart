@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
 import 'package:html/parser.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class CommentList extends StatelessWidget {
   @override
@@ -23,7 +24,7 @@ class CommentList extends StatelessWidget {
           return Card(
             margin: EdgeInsets.symmetric(vertical: 8, horizontal: 10),
             elevation: 0,
-            color: Colors.white12,
+            color: AppColors.white12,
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(20),
@@ -57,7 +58,7 @@ class CommentList extends StatelessWidget {
                             Text(
                               comment.name,
                               style: TextStyle(
-                                  color: Colors.white,
+                                  color: AppColors.white,
                                   fontSize: 15,
                                   fontWeight: FontWeight.bold),
                             ),
@@ -66,7 +67,7 @@ class CommentList extends StatelessWidget {
                             ),
                             Text(comment.createdAt,
                                 style: TextStyle(
-                                    color: Colors.white54, fontSize: 12)),
+                                    color: AppColors.white54, fontSize: 12)),
                           ],
                         ),
                         SizedBox(
@@ -76,19 +77,20 @@ class CommentList extends StatelessWidget {
                           for (var mention in comment.mentions) ...[
                             WidgetSpan(
                                 child: Card(
-                              color: Colors.white24,
+                              color: AppColors.white24,
                               elevation: 0,
                               child: InkWell(
                                 onTap: () {
-                                  Get.to(EmployeeDetailScreen(),
-                                      arguments: {"employeeId": mention.userId.toString()});
+                                  Get.to(EmployeeDetailScreen(), arguments: {
+                                    "employeeId": mention.userId.toString()
+                                  });
                                 },
                                 child: Padding(
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 5, vertical: 3),
                                   child: Text(
                                     "@" + mention.name,
-                                    style: TextStyle(color: Colors.white),
+                                    style: TextStyle(color: AppColors.white),
                                   ),
                                 ),
                               ),
@@ -102,7 +104,7 @@ class CommentList extends StatelessWidget {
                               padding: const EdgeInsets.all(2),
                               child: Text(
                                 parse(comment.description).body!.text,
-                                style: TextStyle(color: Colors.white),
+                                style: TextStyle(color: AppColors.white),
                               ),
                             ),
                           ))
@@ -127,7 +129,7 @@ class CommentList extends StatelessWidget {
                                       child: Text(
                                         translate('comment_list_screen.delete'),
                                         style: TextStyle(
-                                            color: Colors.white,
+                                            color: AppColors.white,
                                             fontSize: 12,
                                             fontWeight: FontWeight.bold),
                                       ),
@@ -145,9 +147,10 @@ class CommentList extends StatelessWidget {
                                     model.commentId.value.toString() !=
                                             comment.id.toString()
                                         ? translate('comment_list_screen.reply')
-                                        : translate('comment_list_screen.cancel_reply'),
+                                        : translate(
+                                            'comment_list_screen.cancel_reply'),
                                     style: TextStyle(
-                                        color: Colors.white,
+                                        color: AppColors.white,
                                         fontSize: 12,
                                         fontWeight: FontWeight.bold),
                                   ),
@@ -204,7 +207,7 @@ class CommentList extends StatelessWidget {
                                               Text(
                                                 reply.name,
                                                 style: TextStyle(
-                                                    color: Colors.white,
+                                                    color: AppColors.white,
                                                     fontSize: 15,
                                                     fontWeight:
                                                         FontWeight.bold),
@@ -214,7 +217,7 @@ class CommentList extends StatelessWidget {
                                               ),
                                               Text(reply.createdAt,
                                                   style: TextStyle(
-                                                      color: Colors.white54,
+                                                      color: AppColors.white54,
                                                       fontSize: 12)),
                                             ],
                                           ),
@@ -226,17 +229,17 @@ class CommentList extends StatelessWidget {
                                                 in reply.mentions) ...[
                                               WidgetSpan(
                                                   child: Card(
-                                                color: Colors.white24,
+                                                color: AppColors.white24,
                                                 elevation: 0,
                                                 child: Padding(
                                                   padding: const EdgeInsets
-                                                          .symmetric(
+                                                      .symmetric(
                                                       horizontal: 5,
                                                       vertical: 3),
                                                   child: Text(
                                                     "@" + mention.name,
                                                     style: TextStyle(
-                                                        color: Colors.white),
+                                                        color: AppColors.white),
                                                   ),
                                                 ),
                                               ))
@@ -251,7 +254,7 @@ class CommentList extends StatelessWidget {
                                                 child: Text(
                                                   reply.description,
                                                   style: TextStyle(
-                                                      color: Colors.white),
+                                                      color: AppColors.white),
                                                 ),
                                               ),
                                             ))
@@ -275,10 +278,11 @@ class CommentList extends StatelessWidget {
                                                                   .toString());
                                                         },
                                                         child: Text(
-                                                          translate('comment_list_screen.delete'),
+                                                          translate(
+                                                              'comment_list_screen.delete'),
                                                           style: TextStyle(
-                                                              color:
-                                                                  Colors.white,
+                                                              color: AppColors
+                                                                  .white,
                                                               fontSize: 12,
                                                               fontWeight:
                                                                   FontWeight

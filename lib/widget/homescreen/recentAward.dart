@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class RecentAward extends StatelessWidget {
   @override
@@ -59,8 +60,8 @@ class RecentAward extends StatelessWidget {
                       elevation: 0,
                       margin: EdgeInsets.zero,
                       color: enterprise.isDark
-                          ? const Color(0xFF1E293B).withValues(alpha: 0.90)
-                          : Colors.white.withValues(alpha: 0.90),
+                          ? AppColors.customFF1E293B.withValues(alpha: 0.90)
+                          : AppColors.white.withValues(alpha: 0.90),
                       child: Container(
                         width: MediaQuery.of(context).size.width - 30,
                         child: Padding(

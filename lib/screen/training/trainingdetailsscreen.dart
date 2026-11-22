@@ -5,6 +5,7 @@ import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:readmore/readmore.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class TrainingDetailScreen extends StatelessWidget {
   final model = Get.put(TrainingDetailController());
@@ -40,7 +41,7 @@ class TrainingDetailScreen extends StatelessWidget {
                       child: Text(
                         training.trainingType,
                         style: TextStyle(
-                            color: Colors.white,
+                            color: AppColors.white,
                             fontSize: 21,
                             fontWeight: FontWeight.bold),
                       ),
@@ -55,13 +56,13 @@ class TrainingDetailScreen extends StatelessWidget {
                             children: [
                               Text(
                                 "Start-End Date",
-                                style: TextStyle(color: Colors.white70),
+                                style: TextStyle(color: AppColors.white70),
                               ),
                               Row(
                                 children: [
                                   Text(training.startDate,
                                       style: TextStyle(
-                                          color: Colors.white,
+                                          color: AppColors.white,
                                           fontWeight: FontWeight.normal,
                                           fontSize: 12)),
                                   SizedBox(
@@ -70,7 +71,7 @@ class TrainingDetailScreen extends StatelessWidget {
                                   if (training.endDate.isNotEmpty)
                                     Text(" - ",
                                         style: TextStyle(
-                                            color: Colors.white,
+                                            color: AppColors.white,
                                             fontWeight: FontWeight.normal,
                                             fontSize: 12)),
                                   if (training.endDate.isNotEmpty)
@@ -80,7 +81,7 @@ class TrainingDetailScreen extends StatelessWidget {
                                   if (training.endDate.isNotEmpty)
                                     Text(training.endDate,
                                         style: TextStyle(
-                                            color: Colors.white,
+                                            color: AppColors.white,
                                             fontWeight: FontWeight.normal,
                                             fontSize: 12)),
                                 ],
@@ -92,7 +93,7 @@ class TrainingDetailScreen extends StatelessWidget {
                           height: 30,
                           child: VerticalDivider(
                             width: 1,
-                            color: Colors.white54,
+                            color: AppColors.white54,
                           ),
                         ),
                         Expanded(
@@ -102,7 +103,7 @@ class TrainingDetailScreen extends StatelessWidget {
                             children: [
                               Text(
                                 "Start-End Time",
-                                style: TextStyle(color: Colors.white70),
+                                style: TextStyle(color: AppColors.white70),
                               ),
                               Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -110,13 +111,13 @@ class TrainingDetailScreen extends StatelessWidget {
                                 children: [
                                   Text(training.startTime,
                                       style: TextStyle(
-                                          color: Colors.white,
+                                          color: AppColors.white,
                                           fontWeight: FontWeight.normal,
                                           fontSize: 12)),
                                   if (training.endTime.isNotEmpty)
                                     Text(" - ",
                                         style: TextStyle(
-                                            color: Colors.white,
+                                            color: AppColors.white,
                                             fontWeight: FontWeight.normal,
                                             fontSize: 12)),
                                   if (training.endTime.isNotEmpty)
@@ -126,7 +127,7 @@ class TrainingDetailScreen extends StatelessWidget {
                                   if (training.endTime.isNotEmpty)
                                     Text(training.endTime,
                                         style: TextStyle(
-                                            color: Colors.white,
+                                            color: AppColors.white,
                                             fontWeight: FontWeight.normal,
                                             fontSize: 12)),
                                 ],
@@ -149,11 +150,11 @@ class TrainingDetailScreen extends StatelessWidget {
                             children: [
                               Text(
                                 "Venue",
-                                style: TextStyle(color: Colors.white70),
+                                style: TextStyle(color: AppColors.white70),
                               ),
                               Text(training.venue,
                                   style: TextStyle(
-                                      color: Colors.white,
+                                      color: AppColors.white,
                                       fontWeight: FontWeight.normal,
                                       fontSize: 12)),
                             ],
@@ -163,7 +164,7 @@ class TrainingDetailScreen extends StatelessWidget {
                           height: 30,
                           child: VerticalDivider(
                             width: 1,
-                            color: Colors.white54,
+                            color: AppColors.white54,
                           ),
                         ),
                         Expanded(
@@ -173,11 +174,11 @@ class TrainingDetailScreen extends StatelessWidget {
                             children: [
                               Text(
                                 "Cost",
-                                style: TextStyle(color: Colors.white70),
+                                style: TextStyle(color: AppColors.white70),
                               ),
                               Text(training.cost,
                                   style: TextStyle(
-                                      color: Colors.white,
+                                      color: AppColors.white,
                                       fontWeight: FontWeight.normal,
                                       fontSize: 12)),
                             ],
@@ -190,7 +191,7 @@ class TrainingDetailScreen extends StatelessWidget {
                 SizedBox(height: 15),
                 Card(
                   elevation: 0,
-                  color: Colors.white24,
+                  color: AppColors.white24,
                   margin: EdgeInsets.zero,
                   shape: ButtonBorder(),
                   child: Container(
@@ -202,7 +203,7 @@ class TrainingDetailScreen extends StatelessWidget {
                         Text(
                           "Description",
                           style: TextStyle(
-                              color: Colors.white,
+                              color: AppColors.white,
                               fontSize: 16,
                               fontWeight: FontWeight.bold),
                         ),
@@ -212,20 +213,20 @@ class TrainingDetailScreen extends StatelessWidget {
                         ReadMoreText(
                           training.description,
                           trimLines: 15,
-                          colorClickableText: Colors.blue,
+                          colorClickableText: AppColors.blue,
                           trimMode: TrimMode.Line,
                           trimCollapsedText: ' Show more',
                           trimExpandedText: ' Show less',
                           style: TextStyle(
-                              color: Colors.white,
+                              color: AppColors.white,
                               fontSize: 15,
                               fontWeight: FontWeight.normal),
                           lessStyle: TextStyle(
-                              color: Colors.white,
+                              color: AppColors.white,
                               fontSize: 14,
                               fontWeight: FontWeight.bold),
                           moreStyle: TextStyle(
-                              color: Colors.white,
+                              color: AppColors.white,
                               fontSize: 14,
                               fontWeight: FontWeight.bold),
                         ),
@@ -238,7 +239,7 @@ class TrainingDetailScreen extends StatelessWidget {
                 ),
                 Card(
                   elevation: 0,
-                  color: Colors.white24,
+                  color: AppColors.white24,
                   margin: EdgeInsets.zero,
                   shape: ButtonBorder(),
                   child: Padding(
@@ -250,7 +251,7 @@ class TrainingDetailScreen extends StatelessWidget {
                             Text(
                               "Trainer(s)",
                               style: TextStyle(
-                                  color: Colors.white,
+                                  color: AppColors.white,
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold),
                             ),
@@ -258,7 +259,7 @@ class TrainingDetailScreen extends StatelessWidget {
                             Text(
                               "Expertise",
                               style: TextStyle(
-                                  color: Colors.white,
+                                  color: AppColors.white,
                                   fontSize: 14,
                                   fontWeight: FontWeight.bold),
                             ),
@@ -271,22 +272,25 @@ class TrainingDetailScreen extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(horizontal: 3.0),
                           child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
-                              children: training.trainer.asMap().entries.map((entry) {
+                              children:
+                                  training.trainer.asMap().entries.map((entry) {
                                 final int index = entry.key; // Get the index
                                 final e = entry.value; // Get the trainer object
 
                                 return Column(
                                   children: [
                                     Row(
-                                      mainAxisAlignment: MainAxisAlignment.start,
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Expanded(
                                           child: Text(
                                             "${e.name}",
                                             style: TextStyle(
                                               fontSize: 14,
-                                              color: Colors.white,
+                                              color: AppColors.white,
                                               fontWeight: FontWeight.normal,
                                             ),
                                           ),
@@ -298,15 +302,17 @@ class TrainingDetailScreen extends StatelessWidget {
                                             textAlign: TextAlign.end,
                                             style: TextStyle(
                                               fontSize: 12,
-                                              color: Colors.white,
+                                              color: AppColors.white,
                                               fontWeight: FontWeight.normal,
                                             ),
                                           ),
                                         ),
                                       ],
                                     ),
-                                    if(index != training.trainer.length - 1)
-                                    Divider(color: Colors.white30,)
+                                    if (index != training.trainer.length - 1)
+                                      Divider(
+                                        color: AppColors.white30,
+                                      )
                                   ],
                                 );
                               }).toList()),
@@ -320,7 +326,7 @@ class TrainingDetailScreen extends StatelessWidget {
                 ),
                 Card(
                   elevation: 0,
-                  color: Colors.white24,
+                  color: AppColors.white24,
                   margin: EdgeInsets.zero,
                   shape: ButtonBorder(),
                   child: Padding(
@@ -331,7 +337,7 @@ class TrainingDetailScreen extends StatelessWidget {
                         Text(
                           "Participant(s)",
                           style: TextStyle(
-                              color: Colors.white,
+                              color: AppColors.white,
                               fontSize: 16,
                               fontWeight: FontWeight.bold),
                         ),
@@ -360,7 +366,7 @@ class TrainingDetailScreen extends StatelessWidget {
                                             // Display index
                                             style: TextStyle(
                                               fontSize: 14,
-                                              color: Colors.white,
+                                              color: AppColors.white,
                                               fontWeight: FontWeight.normal,
                                             ),
                                           ),
@@ -372,24 +378,27 @@ class TrainingDetailScreen extends StatelessWidget {
                                             // Display index
                                             style: TextStyle(
                                               fontSize: 14,
-                                              color: Colors.white,
+                                              color: AppColors.white,
                                               fontWeight: FontWeight.normal,
                                             ),
                                           ),
                                         ),
                                       ],
                                     ),
-                                    if(index + 1 != training.employees.length)
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(vertical: 5.0),
-                                      child: Divider(
-                                        height: 1,
-                                        indent: 2,
-                                        endIndent: 2,
-                                        color: Colors.white12,
+                                    if (index + 1 != training.employees.length)
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 5.0),
+                                        child: Divider(
+                                          height: 1,
+                                          indent: 2,
+                                          endIndent: 2,
+                                          color: AppColors.white12,
+                                        ),
                                       ),
-                                    ),
-                                    SizedBox(height: 5,)
+                                    SizedBox(
+                                      height: 5,
+                                    )
                                   ],
                                 );
                               }).toList(),
@@ -408,7 +417,7 @@ class TrainingDetailScreen extends StatelessWidget {
                           Text(
                             "Certificate",
                             style: TextStyle(
-                                color: Colors.white,
+                                color: AppColors.white,
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold),
                           ),
@@ -424,7 +433,7 @@ class TrainingDetailScreen extends StatelessWidget {
                             },
                             child: Icon(
                               Icons.download,
-                              color: Colors.white,
+                              color: AppColors.white,
                             ))*/
                         ],
                       ),

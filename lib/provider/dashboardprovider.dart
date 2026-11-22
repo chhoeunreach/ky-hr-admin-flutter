@@ -35,11 +35,11 @@ import 'package:flutter_translate/flutter_translate.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
-import 'package:hexcolor/hexcolor.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:nepali_date_picker/nepali_date_picker.dart';
 import 'package:flutter/foundation.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class DashboardProvider with ChangeNotifier {
   DashboardProvider({
@@ -106,6 +106,13 @@ class DashboardProvider with ChangeNotifier {
   };
 
   late Map<String, String> features = {};
+  Map<String, List<String>> mobileLayout = {};
+  bool mobileLayoutConfigured = false;
+
+  bool isMobileMenuAt(String menu, String zone) {
+    if (!mobileLayoutConfigured || !mobileLayout.containsKey(menu)) return true;
+    return mobileLayout[menu]?.contains(zone) ?? true;
+  }
 
   final Map<String, double> locationStatus = {
     'latitude': 0.0,
@@ -194,6 +201,8 @@ class DashboardProvider with ChangeNotifier {
   Future<void> getFeatures() async {
     final Preferences preferences = Preferences();
     features = await preferences.getFeatures();
+    mobileLayout = await preferences.getRoleMobileLayout();
+    mobileLayoutConfigured = await preferences.isRoleMobileLayoutConfigured();
     notifyListeners();
   }
 
@@ -210,19 +219,58 @@ class DashboardProvider with ChangeNotifier {
       final base = await preferences.getAppUrl();
       final response = await KyHttp.get(
         Uri.parse('$base${Constant.MOBILE_FEATURES_URL}'),
-        headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token'
+        },
       ).timeout(const Duration(seconds: 8));
       if (response.statusCode != 200) return;
       final payload = _decodeResponseBody(response.body);
       final data = payload['data'];
-      if (data is! List || data.isEmpty ||
-          !data.every((item) => item is Map && item['key'] is String &&
-              item['key'].toString().isNotEmpty && item.containsKey('status'))) {
+      if (data is! List ||
+          data.isEmpty ||
+          !data.every((item) =>
+              item is Map &&
+              item['key'] is String &&
+              item['key'].toString().isNotEmpty &&
+              item.containsKey('status'))) {
         return;
       }
-      if (token != await preferences.getToken() || request < _lastAppliedFeatureRequest || _summaryDisposed) return;
+      if (token != await preferences.getToken() ||
+          request < _lastAppliedFeatureRequest ||
+          _summaryDisposed) return;
       _lastAppliedFeatureRequest = request;
       await controlFeatures(data.map(Feature.fromJson).toList());
+
+      final layoutResponse = await KyHttp.get(
+        Uri.parse('$base${Constant.MOBILE_LAYOUT_URL}'),
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(const Duration(seconds: 8));
+      if (layoutResponse.statusCode == 200 &&
+          token == await preferences.getToken()) {
+        final layoutPayload = _decodeResponseBody(layoutResponse.body);
+        final rawLayout = layoutPayload['data'];
+        if (rawLayout is Map) {
+          mobileLayoutConfigured = layoutPayload['configured'] == true;
+          mobileLayout = mobileLayoutConfigured
+              ? Map<String, List<String>>.fromEntries(
+                  rawLayout.entries.map((entry) => MapEntry(
+                    entry.key.toString(),
+                    entry.value is List
+                        ? (entry.value as List)
+                            .map((zone) => zone.toString())
+                            .toList()
+                        : <String>[],
+                  )),
+                )
+              : <String, List<String>>{};
+          await preferences.cacheRoleMobileLayout(
+              mobileLayoutConfigured, mobileLayout);
+        }
+      }
       notifyListeners();
     } catch (_) {
       // Server authorization still applies while the last snapshot is shown.
@@ -250,10 +298,16 @@ class DashboardProvider with ChangeNotifier {
         headers['X-App-Version'] = appDetails.appVersion;
         headers['App-Version'] = appDetails.appVersion;
       }
-    } catch (error) { if (kDebugMode) debugPrint('Dashboard: failed to read app version details: $error'); }
+    } catch (error) {
+      if (kDebugMode)
+        debugPrint('Dashboard: failed to read app version details: $error');
+    }
 
     final signedHeaders = await KySecurityManager.shared.authorizeRequest(
-      method: 'GET', uri: uri, body: '', existingHeaders: headers,
+      method: 'GET',
+      uri: uri,
+      body: '',
+      existingHeaders: headers,
     );
     if (signedHeaders != null) headers.addAll(signedHeaders);
     final response = await KyHttp.get(uri, headers: headers);
@@ -1025,7 +1079,8 @@ class DashboardProvider with ChangeNotifier {
 
   Future<AttendanceStatusResponse> checkInAttendance() async {
     final Preferences preferences = Preferences();
-    final uri = Uri.parse(await preferences.getAppUrl() + Constant.CHECK_IN_URL);
+    final uri =
+        Uri.parse(await preferences.getAppUrl() + Constant.CHECK_IN_URL);
 
     final String token = await preferences.getToken();
 
@@ -1151,7 +1206,8 @@ class DashboardProvider with ChangeNotifier {
 
   Future<AttendanceStatusResponse> checkOutAttendance() async {
     final Preferences preferences = Preferences();
-    final uri = Uri.parse(await preferences.getAppUrl() + Constant.CHECK_OUT_URL);
+    final uri =
+        Uri.parse(await preferences.getAppUrl() + Constant.CHECK_OUT_URL);
 
     final String token = await preferences.getToken();
 
@@ -1299,7 +1355,7 @@ class DashboardProvider with ChangeNotifier {
     }
   }
 
-  final Color leftBarColor = HexColor("#FFFFFF");
+  final Color leftBarColor = AppColors.white;
 
   final double width = 15;
 

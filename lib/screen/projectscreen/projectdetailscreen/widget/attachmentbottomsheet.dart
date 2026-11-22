@@ -4,6 +4,7 @@ import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class AttachmentBottomSheet extends StatelessWidget {
   @override
@@ -25,7 +26,7 @@ class AttachmentBottomSheet extends StatelessWidget {
                   Text(
                     translate('project_detail_screen.attachments'),
                     style: TextStyle(
-                        color: Colors.white,
+                        color: AppColors.white,
                         fontSize: 16,
                         fontWeight: FontWeight.bold),
                   ),
@@ -35,7 +36,7 @@ class AttachmentBottomSheet extends StatelessWidget {
                       },
                       child: Icon(
                         Icons.close,
-                        color: Colors.white,
+                        color: AppColors.white,
                       )),
                 ],
               ),
@@ -48,11 +49,11 @@ class AttachmentBottomSheet extends StatelessWidget {
               children: [
                 Text(
                   translate('project_detail_screen.image'),
-                  style: TextStyle(color: Colors.white, fontSize: 15),
+                  style: TextStyle(color: AppColors.white, fontSize: 15),
                 ),
                 Text(
                   translate('project_detail_screen.files'),
-                  style: TextStyle(color: Colors.white, fontSize: 15),
+                  style: TextStyle(color: AppColors.white, fontSize: 15),
                 ),
               ],
             ),

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
 import 'package:image_stack/image_stack.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class TeamSection extends StatelessWidget {
   @override
@@ -12,7 +13,11 @@ class TeamSection extends StatelessWidget {
     final ProjectDetailController model = Get.find();
     return GestureDetector(
       onTap: () {
-        Get.bottomSheet(TeamBottomSheet(model.project.value.leaders,model.project.value.members,),
+        Get.bottomSheet(
+            TeamBottomSheet(
+              model.project.value.leaders,
+              model.project.value.members,
+            ),
             isDismissible: true,
             enableDrag: true,
             isScrollControlled: false,
@@ -20,7 +25,7 @@ class TeamSection extends StatelessWidget {
       },
       child: Card(
         elevation: 0,
-        color: Colors.white24,
+        color: AppColors.white24,
         margin: EdgeInsets.zero,
         shape: ButtonBorder(),
         child: Padding(
@@ -35,7 +40,7 @@ class TeamSection extends StatelessWidget {
                   Text(
                     translate('project_detail_screen.team_leads'),
                     style: TextStyle(
-                        color: Colors.white,
+                        color: AppColors.white,
                         fontSize: 16,
                         fontWeight: FontWeight.bold),
                   ),
@@ -43,7 +48,8 @@ class TeamSection extends StatelessWidget {
                     translate('project_detail_screen.view_all'),
                     style: TextStyle(
                         decoration: TextDecoration.underline,
-                        color: Colors.white,decorationColor: Colors.white,
+                        color: AppColors.white,
+                        decorationColor: AppColors.white,
                         fontSize: 12,
                         fontWeight: FontWeight.normal),
                   ),
@@ -55,21 +61,23 @@ class TeamSection extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Obx(() =>ImageStack(
+                  Obx(
+                    () => ImageStack(
                       imageList: List<String>.from(model.memberImages),
                       totalCount: model.project.value.members.length,
                       imageRadius: 25,
                       imageCount: 4,
-                      imageBorderColor: Colors.white,
+                      imageBorderColor: AppColors.white,
                       imageBorderWidth: 1,
                     ),
                   ),
-                  Obx(() => ImageStack(
+                  Obx(
+                    () => ImageStack(
                       imageList: List<String>.from(model.leaderImages),
                       totalCount: model.project.value.leaders.length,
                       imageRadius: 25,
                       imageCount: 1,
-                      imageBorderColor: Colors.white,
+                      imageBorderColor: AppColors.white,
                       imageBorderWidth: 1,
                     ),
                   ),

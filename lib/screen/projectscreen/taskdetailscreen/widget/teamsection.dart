@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
 import 'package:image_stack/image_stack.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class TeamSection extends StatelessWidget {
   @override
@@ -21,7 +22,7 @@ class TeamSection extends StatelessWidget {
       child: Card(
         elevation: 0,
         margin: EdgeInsets.zero,
-        color: Colors.white24,
+        color: AppColors.white24,
         shape: ButtonBorder(),
         child: Padding(
           padding: const EdgeInsets.all(8.0),
@@ -36,7 +37,7 @@ class TeamSection extends StatelessWidget {
                   Text(
                     translate('task_detail_screen.teams'),
                     style: TextStyle(
-                        color: Colors.white,
+                        color: AppColors.white,
                         fontSize: 16,
                         fontWeight: FontWeight.bold),
                   ),
@@ -44,8 +45,8 @@ class TeamSection extends StatelessWidget {
                     translate('task_detail_screen.view_all'),
                     style: TextStyle(
                         decoration: TextDecoration.underline,
-                        decorationColor: Colors.white,
-                        color: Colors.white,
+                        decorationColor: AppColors.white,
+                        color: AppColors.white,
                         fontSize: 12,
                         fontWeight: FontWeight.normal),
                   ),
@@ -54,12 +55,13 @@ class TeamSection extends StatelessWidget {
               SizedBox(
                 height: 10,
               ),
-              Obx(() => ImageStack(
+              Obx(
+                () => ImageStack(
                   imageList: List<String>.from(controller.memberImages),
                   totalCount: controller.memberImages.length,
                   imageRadius: 25,
                   imageCount: 4,
-                  imageBorderColor: Colors.white,
+                  imageBorderColor: AppColors.white,
                   imageBorderWidth: 1,
                 ),
               ),

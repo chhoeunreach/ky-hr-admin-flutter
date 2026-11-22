@@ -4,6 +4,7 @@ import 'package:cnattendance/widget/buttonborder.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class CheckListSection extends StatelessWidget {
   @override
@@ -22,7 +23,7 @@ class CheckListSection extends StatelessWidget {
             Text(
               translate('task_detail_screen.checklists'),
               style: TextStyle(
-                  color: Colors.white,
+                  color: AppColors.white,
                   fontSize: 16,
                   fontWeight: FontWeight.bold),
             ),
@@ -36,13 +37,18 @@ class CheckListSection extends StatelessWidget {
                         padding: const EdgeInsets.all(20.0),
                         child: Text(
                           translate('task_detail_screen.no_checklist_found'),
-                          style: TextStyle(color: Colors.white),
+                          style: TextStyle(color: AppColors.white),
                         ),
                       ),
                     )
                   : ListView.separated(
                       separatorBuilder: (context, index) {
-                        return Divider(height: 1,indent: 0,endIndent: 0,color: Colors.white30,);
+                        return Divider(
+                          height: 1,
+                          indent: 0,
+                          endIndent: 0,
+                          color: AppColors.white30,
+                        );
                       },
                       primary: false,
                       physics: NeverScrollableScrollPhysics(),
@@ -85,8 +91,8 @@ class CheckListSection extends StatelessWidget {
                                           ? Icons.check_box
                                           : Icons.check_box_outline_blank,
                                       color: state == true
-                                          ? Colors.white
-                                          : Colors.white,
+                                          ? AppColors.white
+                                          : AppColors.white,
                                     ),
                                   ),
                                   SizedBox(
@@ -97,7 +103,7 @@ class CheckListSection extends StatelessWidget {
                                         maxLines: 2,
                                         style: TextStyle(
                                             height: 1.2,
-                                            color: Colors.white,
+                                            color: AppColors.white,
                                             fontWeight: FontWeight.normal,
                                             fontSize: 15)),
                                   ),

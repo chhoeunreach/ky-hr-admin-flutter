@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import '../models/repair_service.dart';
 import '../utils/repair_price_helper.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class RepairPriceCard extends StatelessWidget {
   final RepairService service;
@@ -21,13 +22,14 @@ class RepairPriceCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: enterprise.isDark ? 0.08 : 0.16),
+        color:
+            AppColors.white.withValues(alpha: enterprise.isDark ? 0.08 : 0.16),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: enterprise.glassStroke, width: 1),
         boxShadow: [
           BoxShadow(
-            color:
-                Colors.black.withValues(alpha: enterprise.isDark ? 0.20 : 0.06),
+            color: AppColors.black
+                .withValues(alpha: enterprise.isDark ? 0.20 : 0.06),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),

@@ -1,5 +1,6 @@
 import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 MaterialPageRoute<T> recordRoute<T>({
   required WidgetBuilder builder,
@@ -25,7 +26,7 @@ class RecordTheme extends StatelessWidget {
     final foreground = recordContrastColor(surface, enterprise.text);
     final lighterSurface =
         foreground.computeLuminance() < surface.computeLuminance();
-    final surfaceTint = lighterSurface ? Colors.white : Colors.black;
+    final surfaceTint = lighterSurface ? AppColors.white : AppColors.black;
     Color container(double amount) => Color.lerp(surface, surfaceTint, amount)!;
     final accent = recordContrastColor(
       surface,
@@ -121,8 +122,9 @@ Color recordContrastColor(Color background, Color preferred) {
   }
 
   if (ratio(preferred) >= 4.5) return preferred;
-  final target =
-      ratio(Colors.black) >= ratio(Colors.white) ? Colors.black : Colors.white;
+  final target = ratio(AppColors.black) >= ratio(AppColors.white)
+      ? AppColors.black
+      : AppColors.white;
   var low = 0.0;
   var high = 1.0;
   for (var step = 0; step < 10; step++) {

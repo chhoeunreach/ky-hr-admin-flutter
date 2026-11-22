@@ -6,6 +6,7 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:provider/provider.dart';
 import 'package:cnattendance/widget/buttonborder.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class CancelLeaveBottomSheet extends StatefulWidget {
   final int id;
@@ -130,7 +131,7 @@ class CancelLeaveBottomSheetState extends State<CancelLeaveBottomSheet> {
                             padding: const EdgeInsets.symmetric(vertical: 10),
                             child: Text(
                               translate('common.confirm'),
-                              style: const TextStyle(color: Colors.white),
+                              style: const TextStyle(color: AppColors.white),
                             ),
                           )),
                     ),
@@ -141,8 +142,8 @@ class CancelLeaveBottomSheetState extends State<CancelLeaveBottomSheet> {
                       child: TextButton(
                           style: TextButton.styleFrom(
                               backgroundColor: enterprise.isDark
-                                  ? const Color(0xFF334155)
-                                  : const Color(0xFFE2E8F0),
+                                  ? AppColors.customFF334155
+                                  : AppColors.customFFE2E8F0,
                               shape: ButtonBorder()),
                           onPressed: () {
                             Navigator.pop(context);

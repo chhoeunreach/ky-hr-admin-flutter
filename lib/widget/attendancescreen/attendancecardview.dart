@@ -3,6 +3,7 @@ import 'package:cnattendance/model/employeeattendancereport.dart';
 import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/widget/profile/attendance_detail_bottom_sheet.dart';
 import 'package:flutter/material.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class AttendanceCardView extends StatelessWidget {
   final int index;
@@ -22,11 +23,11 @@ class AttendanceCardView extends StatelessWidget {
     }
     final enterprise = EnterpriseTheme.of(context);
     final rowColor = enterprise.isDark
-        ? Colors.white.withValues(alpha: 0.10)
-        : Colors.white.withValues(alpha: 0.94);
-    final primaryText = enterprise.isDark ? Colors.white : enterprise.text;
+        ? AppColors.white.withValues(alpha: 0.10)
+        : AppColors.white.withValues(alpha: 0.94);
+    final primaryText = enterprise.isDark ? AppColors.white : enterprise.text;
     final secondaryText = enterprise.isDark
-        ? Colors.white70
+        ? AppColors.white70
         : enterprise.text.withValues(alpha: 0.66);
     final statusItem = EmployeeAttendanceReport.statusForDay(attendances);
     final statusColor = _statusColor(statusItem.dayStatus, statusItem);
@@ -166,16 +167,16 @@ class AttendanceCardView extends StatelessWidget {
 Color _statusColor(String status, EmployeeAttendanceReport attendance) {
   switch (status) {
     case 'absent':
-      return const Color(0xffdc2626);
+      return AppColors.customFFDC2626;
     case 'leave':
     case 'time_leave':
-      return const Color(0xff2563eb);
+      return AppColors.customFF2563EB;
     case 'leave_request':
     case 'time_leave_request':
-      return const Color(0xfff59e0b);
+      return AppColors.customFFF59E0B;
     default:
       return attendance.isPositiveStatus
-          ? const Color(0xff16a34a)
-          : const Color(0xfff59e0b);
+          ? AppColors.customFF16A34A
+          : AppColors.customFFF59E0B;
   }
 }

@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:cnattendance/data/source/network/model/login/User.dart';
 import 'package:cnattendance/model/banner_slideshow_config.dart';
+import 'package:cnattendance/model/app_appearance_config.dart';
+import 'package:cnattendance/model/remote_theme_mode.dart';
 import 'package:cnattendance/model/home_banner_config.dart';
 import 'package:cnattendance/data/source/network/model/dashboard/User.dart'
     as DashboardUser;
@@ -136,6 +138,50 @@ class Preferences with ChangeNotifier {
     } catch (_) {
       return {};
     }
+  }
+
+  static const String _roleMobileLayoutKey = 'role_mobile_layout_v1';
+
+  Future<Map<String, List<String>>> getRoleMobileLayout() async {
+    final prefs = await _sharedPrefs;
+    final raw = prefs.getString(_roleMobileLayoutKey);
+    if (raw == null || raw.trim().isEmpty) return {};
+    try {
+      final value = jsonDecode(raw) as Map<String, dynamic>;
+      final data = value['data'];
+      if (value['configured'] != true || data is! Map) return {};
+      return Map<String, List<String>>.fromEntries(
+        data.entries.map((entry) => MapEntry(
+          entry.key.toString(),
+          entry.value is List
+              ? (entry.value as List).map((zone) => zone.toString()).toList()
+              : <String>[],
+        )),
+      );
+    } catch (_) {
+      await prefs.remove(_roleMobileLayoutKey);
+      return {};
+    }
+  }
+
+  Future<bool> isRoleMobileLayoutConfigured() async {
+    final prefs = await _sharedPrefs;
+    final raw = prefs.getString(_roleMobileLayoutKey);
+    if (raw == null || raw.trim().isEmpty) return false;
+    try {
+      return (jsonDecode(raw) as Map<String, dynamic>)['configured'] == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> cacheRoleMobileLayout(
+      bool configured, Map<String, List<String>> layout) async {
+    final prefs = await _sharedPrefs;
+    await prefs.setString(_roleMobileLayoutKey, jsonEncode({
+      'configured': configured,
+      'data': layout,
+    }));
   }
 
   Future<void> setRailExpanded(bool expanded) async {
@@ -514,6 +560,55 @@ class Preferences with ChangeNotifier {
     await prefs.remove('home_banner_link_url');
     await prefs.remove('home_banner_title');
     notifyListeners();
+  }
+
+  static const String _appAppearanceKey = 'app_appearance_v1';
+
+  /// Returns the last server-delivered appearance config, or null when the
+  /// device has never received one.
+  Future<AppAppearanceConfig?> getAppAppearance() async {
+    final prefs = await _sharedPrefs;
+    final raw = prefs.getString(_appAppearanceKey);
+    if (raw == null || raw.trim().isEmpty) return null;
+    try {
+      return AppAppearanceConfig.fromJson(
+          jsonDecode(raw) as Map<String, dynamic>);
+    } catch (_) {
+      await prefs.remove(_appAppearanceKey);
+      return null;
+    }
+  }
+
+  Future<void> cacheAppAppearance(AppAppearanceConfig config) async {
+    final prefs = await _sharedPrefs;
+    await prefs.setString(_appAppearanceKey, jsonEncode(config.toJson()));
+  }
+
+  static const String _themeModesKey = 'app_theme_modes_v1';
+
+  Future<List<RemoteThemeMode>> getThemeModes() async {
+    final prefs = await _sharedPrefs;
+    final raw = prefs.getString(_themeModesKey);
+    if (raw == null || raw.trim().isEmpty) return const [];
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is List) {
+        return decoded
+            .whereType<Map>()
+            .map((item) =>
+                RemoteThemeMode.fromJson(Map<String, dynamic>.from(item)))
+            .toList();
+      }
+    } catch (_) {
+      await prefs.remove(_themeModesKey);
+    }
+    return const [];
+  }
+
+  Future<void> cacheThemeModes(List<RemoteThemeMode> modes) async {
+    final prefs = await _sharedPrefs;
+    await prefs.setString(
+        _themeModesKey, jsonEncode(modes.map((m) => m.toJson()).toList()));
   }
 
   Future<String> getHomeQuote() async {

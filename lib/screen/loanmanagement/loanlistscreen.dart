@@ -6,6 +6,7 @@ import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class LoanListScreen extends StatelessWidget {
   @override
@@ -23,77 +24,77 @@ class LoanListScreen extends StatelessWidget {
             onPressed: () {
               Get.to(CreateLoanScreen());
             },
-            backgroundColor: Colors.blue,
+            backgroundColor: AppColors.blue,
             child: Icon(Icons.add)),
         body: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(15.0),
-              child: ListView.builder(
-                itemCount: 10,
-                itemBuilder: (context, index) {
-                  return Container(
-                    margin: EdgeInsets.symmetric(vertical: 8),
-                    child: ListTile(
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(10),
-                              topRight: Radius.circular(0),
-                              bottomLeft: Radius.circular(0),
-                              bottomRight: Radius.circular(10))),
-                      tileColor: Colors.white12,
-                      onTap: () {
-                        Get.to(LoanDetailScreen());
-                      },
-                      textColor: Colors.white,
-                      iconColor: Colors.white,
-                      title: Text(
-                        "10000",
-                        style: TextStyle(fontSize: 18),
-                      ),
-                      subtitle: Text(
-                        "24 June 2024",
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                      trailing: GestureDetector(
-                        onTap: () {
-                          if("pending" == "pending"){
-                            Get.to(EditLoanScreen());
-                          }else{
-                            showToast("Accepted/Rejected Loan can't be edited");
-                          }
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Icon(Icons.edit),
-                        ),
-                      ),
-                      leading: Card(
-                          color: "pending" == "pending"
-                              ? Colors.orange
-                              : "pending" == "rejected"
-                                  ? Colors.red
-                                  : Colors.green,
-                          shape: CircleBorder(),
-                          child: Padding(
-                            padding: const EdgeInsets.all(15),
-                            child: Text(
-                              "pending" == "pending"
-                                  ? "P"
-                                  : "pending" == "rejected"
-                                      ? "R"
-                                      : "A",
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18),
-                            ),
-                          )),
+          child: Padding(
+            padding: const EdgeInsets.all(15.0),
+            child: ListView.builder(
+              itemCount: 10,
+              itemBuilder: (context, index) {
+                return Container(
+                  margin: EdgeInsets.symmetric(vertical: 8),
+                  child: ListTile(
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(10),
+                            topRight: Radius.circular(0),
+                            bottomLeft: Radius.circular(0),
+                            bottomRight: Radius.circular(10))),
+                    tileColor: AppColors.white12,
+                    onTap: () {
+                      Get.to(LoanDetailScreen());
+                    },
+                    textColor: AppColors.white,
+                    iconColor: AppColors.white,
+                    title: Text(
+                      "10000",
+                      style: TextStyle(fontSize: 18),
                     ),
-                  );
-                },
-              ),
+                    subtitle: Text(
+                      "24 June 2024",
+                      style: TextStyle(color: AppColors.grey),
+                    ),
+                    trailing: GestureDetector(
+                      onTap: () {
+                        if ("pending" == "pending") {
+                          Get.to(EditLoanScreen());
+                        } else {
+                          showToast("Accepted/Rejected Loan can't be edited");
+                        }
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Icon(Icons.edit),
+                      ),
+                    ),
+                    leading: Card(
+                        color: "pending" == "pending"
+                            ? AppColors.orange
+                            : "pending" == "rejected"
+                                ? AppColors.red
+                                : AppColors.green,
+                        shape: CircleBorder(),
+                        child: Padding(
+                          padding: const EdgeInsets.all(15),
+                          child: Text(
+                            "pending" == "pending"
+                                ? "P"
+                                : "pending" == "rejected"
+                                    ? "R"
+                                    : "A",
+                            style: TextStyle(
+                                color: AppColors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18),
+                          ),
+                        )),
+                  ),
+                );
+              },
             ),
           ),
+        ),
       ),
     );
   }

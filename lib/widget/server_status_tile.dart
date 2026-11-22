@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:provider/provider.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class ServerStatusTile extends StatefulWidget {
   const ServerStatusTile({super.key});
@@ -138,8 +139,8 @@ class _ServerStatusTileState extends State<ServerStatusTile> {
         final statusColor = result == null
             ? enterprise.mutedText
             : isConnected
-                ? Colors.greenAccent
-                : Colors.orangeAccent;
+                ? AppColors.greenAccent
+                : AppColors.orangeAccent;
 
         return AlertDialog(
           backgroundColor: enterprise.surface,
@@ -236,10 +237,10 @@ class _ServerStatusTileState extends State<ServerStatusTile> {
     final result = _lastResult;
     final isConnected = result?.isConnected == true;
     final iconColor = result == null
-        ? Colors.white
+        ? AppColors.white
         : isConnected
-            ? Colors.greenAccent
-            : Colors.orangeAccent;
+            ? AppColors.greenAccent
+            : AppColors.orangeAccent;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
@@ -263,7 +264,7 @@ class _ServerStatusTileState extends State<ServerStatusTile> {
                     colors: [enterprise.primary, enterprise.accent],
                   ),
                   border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.24),
+                    color: AppColors.white.withValues(alpha: 0.24),
                   ),
                 ),
                 child: Icon(Icons.dns_rounded, color: iconColor, size: 18),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cnattendance/core/theme/app_palette.dart';
 
 class QuoteStyle {
   final String? fontFamily;
@@ -165,27 +166,29 @@ class QuoteStyle {
 
   static Color? _parseColor(dynamic val) {
     if (val == null) return null;
-    if (val is int) return Color(val);
+    if (val is int) return AppPalette.fromArgb(val);
     if (val is String) {
       var s = val.trim();
       if (s.startsWith('rgba')) {
-        final match = RegExp(
-                r'rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)')
-            .firstMatch(s);
+        final match =
+            RegExp(r'rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)')
+                .firstMatch(s);
         if (match != null) {
           final r = int.parse(match.group(1)!);
           final g = int.parse(match.group(2)!);
           final b = int.parse(match.group(3)!);
           final a =
               match.group(4) != null ? double.parse(match.group(4)!) : 1.0;
-          return Color.fromRGBO(r, g, b, a);
+          return AppPalette.fromRgba(r, g, b, a);
         }
       }
-      s = s.replaceAll('#', '');
+      s = s.startsWith(AppPalette.hexPrefix)
+          ? s.substring(AppPalette.hexPrefix.length)
+          : s;
       if (s.length == 6) s = 'FF$s';
       if (s.length == 8) {
         final intVal = int.tryParse(s, radix: 16);
-        if (intVal != null) return Color(intVal);
+        if (intVal != null) return AppPalette.fromArgb(intVal);
       }
     }
     return null;
@@ -193,7 +196,7 @@ class QuoteStyle {
 
   static String? _colorToHex(Color? c) {
     if (c == null) return null;
-    return '#${(c.toARGB32() & 0xFFFFFFFF).toRadixString(16).padLeft(8, '0')}';
+    return '${AppPalette.hexPrefix}${(c.toARGB32() & AppPalette.argbMask).toRadixString(16).padLeft(8, '0')}';
   }
 
   static FontWeight? _parseFontWeight(dynamic val) {
@@ -297,7 +300,8 @@ class HomeBannerConfig {
   final QuoteStyle? quoteStyle; // Full custom quote style
   final String greetingKhmer; // Khmer greeting (default 'សូមស្វាគមន៍!')
   final bool showQuote; // Whether to display the quote overlay
-  final bool isAngkorWatDefault; // Whether default Angkor Wat silhouette is active
+  final bool
+      isAngkorWatDefault; // Whether default Angkor Wat silhouette is active
 
   const HomeBannerConfig({
     this.bannerImageUrl,

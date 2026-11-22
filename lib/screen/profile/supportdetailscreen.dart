@@ -3,6 +3,7 @@ import 'package:cnattendance/widget/buttonborder.dart';
 import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class SupportDetailScreen extends StatelessWidget {
   final Support support;
@@ -27,9 +28,11 @@ class SupportDetailScreen extends StatelessWidget {
             children: [
               Text(
                 support.title,
-                style: TextStyle(color: Colors.white, fontSize: 18),
+                style: TextStyle(color: AppColors.white, fontSize: 18),
               ),
-              SizedBox(height: 10,),
+              SizedBox(
+                height: 10,
+              ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -38,39 +41,39 @@ class SupportDetailScreen extends StatelessWidget {
                     children: [
                       Text(
                         "Query Date",
-                        style: TextStyle(color: Colors.grey, fontSize: 14),
+                        style: TextStyle(color: AppColors.grey, fontSize: 14),
                       ),
                       Text(
                         support.query_date,
-                        style: TextStyle(color: Colors.white, fontSize: 14),
+                        style: TextStyle(color: AppColors.white, fontSize: 14),
                       ),
                     ],
                   ),
-                  if(support.solved_at != "-")
-                  SizedBox(
-                    height: 20,
-                    child: VerticalDivider(
-                      thickness: 1,
-                      width: 1,
+                  if (support.solved_at != "-")
+                    SizedBox(
+                      height: 20,
+                      child: VerticalDivider(
+                        thickness: 1,
+                        width: 1,
+                      ),
                     ),
-                  ),
-                  if(support.solved_at != "-")
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Text(
-                        "Solved At",
-                        style: TextStyle(color: Colors.grey, fontSize: 14),
-                      ),
-                      Text(
-                        support.solved_at,
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.normal,
-                            fontSize: 15),
-                      ),
-                    ],
-                  ),
+                  if (support.solved_at != "-")
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(
+                          "Solved At",
+                          style: TextStyle(color: AppColors.grey, fontSize: 14),
+                        ),
+                        Text(
+                          support.solved_at,
+                          style: TextStyle(
+                              color: AppColors.white,
+                              fontWeight: FontWeight.normal,
+                              fontSize: 15),
+                        ),
+                      ],
+                    ),
                   SizedBox(
                     height: 20,
                     child: VerticalDivider(
@@ -83,16 +86,16 @@ class SupportDetailScreen extends StatelessWidget {
                     children: [
                       Text(
                         "Status",
-                        style: TextStyle(color: Colors.grey, fontSize: 14),
+                        style: TextStyle(color: AppColors.grey, fontSize: 14),
                       ),
                       Text(
                         support.status,
                         style: TextStyle(
                             color: support.status == "Pending"
-                                ? Colors.deepOrange
+                                ? AppColors.deepOrange
                                 : support.status == "In Progress"
-                                ? Colors.orangeAccent
-                                : Colors.green,
+                                    ? AppColors.orangeAccent
+                                    : AppColors.green,
                             fontWeight: FontWeight.bold,
                             fontSize: 15),
                       ),
@@ -100,7 +103,9 @@ class SupportDetailScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              SizedBox(height: 10,),
+              SizedBox(
+                height: 10,
+              ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -109,11 +114,11 @@ class SupportDetailScreen extends StatelessWidget {
                     children: [
                       Text(
                         translate('support_detail_screen.assigned_to'),
-                        style: TextStyle(color: Colors.grey, fontSize: 14),
+                        style: TextStyle(color: AppColors.grey, fontSize: 14),
                       ),
                       Text(
                         support.requested_department,
-                        style: TextStyle(color: Colors.white, fontSize: 14),
+                        style: TextStyle(color: AppColors.white, fontSize: 14),
                       ),
                     ],
                   ),
@@ -129,12 +134,12 @@ class SupportDetailScreen extends StatelessWidget {
                     children: [
                       Text(
                         translate('support_detail_screen.solved_by'),
-                        style: TextStyle(color: Colors.grey, fontSize: 14),
+                        style: TextStyle(color: AppColors.grey, fontSize: 14),
                       ),
                       Text(
                         support.solved_by,
                         style: TextStyle(
-                            color: Colors.white,
+                            color: AppColors.white,
                             fontWeight: FontWeight.normal,
                             fontSize: 15),
                       ),
@@ -142,14 +147,16 @@ class SupportDetailScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              SizedBox(height: 15,),
+              SizedBox(
+                height: 15,
+              ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Card(
                     elevation: 0,
                     margin: EdgeInsets.zero,
-                    color: Colors.white24,
+                    color: AppColors.white24,
                     shape: ButtonBorder(),
                     child: Container(
                       width: double.infinity,
@@ -159,14 +166,16 @@ class SupportDetailScreen extends StatelessWidget {
                         children: [
                           Text(
                             translate('support_detail_screen.description'),
-                            style: TextStyle(color: Colors.white70, fontSize: 14),
+                            style: TextStyle(
+                                color: AppColors.white70, fontSize: 14),
                           ),
                           SizedBox(
                             height: 5,
                           ),
                           Text(
                             support.description,
-                            style: TextStyle(color: Colors.white, fontSize: 16),
+                            style:
+                                TextStyle(color: AppColors.white, fontSize: 16),
                           ),
                         ],
                       ),

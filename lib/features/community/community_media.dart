@@ -14,6 +14,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
+import 'package:cnattendance/core/theme/app_palette.dart';
 
 /// Only normalized provider URLs may be rendered as embeds. Never render user HTML.
 Uri? communityMediaUri(String type, String value) {
@@ -184,14 +186,14 @@ class _UnavailableMedia extends StatelessWidget {
   Widget build(BuildContext context) => Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-          color: const Color(0xfff3f6fa),
+          color: AppColors.customFFF3F6FA,
           borderRadius: BorderRadius.circular(14)),
       child: Row(children: [
-        const Icon(Icons.link_off_rounded, color: Color(0xff718096)),
+        const Icon(Icons.link_off_rounded, color: AppColors.customFF718096),
         const SizedBox(width: 10),
         Expanded(
             child: Text(communityText('This media link is unavailable.'),
-                style: const TextStyle(color: Color(0xff5f6f82))))
+                style: const TextStyle(color: AppColors.customFF5F6F82)))
       ]));
 }
 
@@ -264,7 +266,7 @@ class _ImageMediaState extends State<_ImageMedia> {
           fadeInDuration: const Duration(milliseconds: 140),
           filterQuality: FilterQuality.medium,
           progressIndicatorBuilder: (_, __, progress) => ColoredBox(
-              color: const Color(0xffedf2f7),
+              color: AppColors.customFFEDF2F7,
               child: Center(
                   child: CircularProgressIndicator(
                       value: progress.progress, strokeWidth: 2))),
@@ -297,11 +299,11 @@ class _ImageViewerScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: AppColors.black,
         appBar: AppBar(
-          backgroundColor: Colors.black,
-          foregroundColor: Colors.white,
-          iconTheme: const IconThemeData(color: Colors.white),
+          backgroundColor: AppColors.black,
+          foregroundColor: AppColors.white,
+          iconTheme: const IconThemeData(color: AppColors.white),
           actions: [
             IconButton(
                 tooltip: communityText('Open image'),
@@ -323,7 +325,7 @@ class _ImageViewerScreen extends StatelessWidget {
                         progressIndicatorBuilder: (_, __, progress) => Center(
                             child: CircularProgressIndicator(
                                 value: progress.progress,
-                                color: Colors.white,
+                                color: AppColors.white,
                                 strokeWidth: 2)),
                         errorWidget: (_, __, ___) => _MediaError(
                             icon: Icons.broken_image_outlined,
@@ -344,11 +346,11 @@ class _DocumentMedia extends StatelessWidget {
       padding: EdgeInsets.symmetric(
           horizontal: compact ? 10 : 14, vertical: compact ? 8 : 10),
       decoration: BoxDecoration(
-          color: const Color(0xfff3f6fa),
+          color: AppColors.customFFF3F6FA,
           borderRadius: BorderRadius.circular(14)),
       child: Row(children: [
         Icon(Icons.description_rounded,
-            color: const Color(0xff5068a0), size: compact ? 25 : 28),
+            color: AppColors.customFF5068A0, size: compact ? 25 : 28),
         const SizedBox(width: 10),
         Expanded(
             child: Text(communityText('Attached document'),
@@ -375,12 +377,12 @@ class _MediaError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ColoredBox(
-      color: const Color(0xffedf2f7),
+      color: AppColors.customFFEDF2F7,
       child: Center(
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Icon(icon, size: 34, color: const Color(0xff718096)),
+        Icon(icon, size: 34, color: AppColors.customFF718096),
         const SizedBox(height: 6),
-        Text(message, style: const TextStyle(color: Color(0xff5f6f82))),
+        Text(message, style: const TextStyle(color: AppColors.customFF5F6F82)),
         TextButton(
             onPressed: () =>
                 launchUrl(uri, mode: LaunchMode.externalApplication),
@@ -396,16 +398,16 @@ class _MediaBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) => DecoratedBox(
       decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: .62),
+          color: AppColors.black.withValues(alpha: .62),
           borderRadius: BorderRadius.circular(20)),
       child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
           child: Row(mainAxisSize: MainAxisSize.min, children: [
-            Icon(icon, color: Colors.white, size: 15),
+            Icon(icon, color: AppColors.white, size: 15),
             const SizedBox(width: 5),
             Text(label,
                 style: const TextStyle(
-                    color: Colors.white,
+                    color: AppColors.white,
                     fontSize: 12,
                     fontWeight: FontWeight.w700))
           ])));
@@ -476,7 +478,7 @@ class _PlayableMediaState extends State<_PlayableMedia> {
       await controller.loadHtmlString('''<!doctype html><html><head>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="referrer" content="strict-origin-when-cross-origin">
-<style>html,body{margin:0;width:100%;height:100%;background:#101826}</style>
+<style>html,body{margin:0;width:100%;height:100%;background:${AppPalette.cssRgb(AppPalette.customFF101826)}}</style>
 </head><body>$content</body></html>''', baseUrl: origin);
       if (mounted) setState(() => _controller = controller);
     } catch (_) {
@@ -546,15 +548,17 @@ class _LinkMedia extends StatelessWidget {
   Widget build(BuildContext context) {
     final Widget content = compact
         ? Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            const Icon(Icons.link_rounded, size: 30, color: Color(0xff1769e8)),
+            const Icon(Icons.link_rounded,
+                size: 30, color: AppColors.customFF1769E8),
             const SizedBox(height: 6),
             Text(communityText('Open link'),
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                    fontWeight: FontWeight.w800, color: Color(0xff24466f)))
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.customFF24466F))
           ])
         : Row(children: [
-            const Icon(Icons.link_rounded, color: Color(0xff1769e8)),
+            const Icon(Icons.link_rounded, color: AppColors.customFF1769E8),
             const SizedBox(width: 8),
             Expanded(
                 child: Text(uri.toString(),
@@ -562,7 +566,7 @@ class _LinkMedia extends StatelessWidget {
             const Icon(Icons.open_in_new, size: 17)
           ]);
     return Material(
-        color: const Color(0xffeef4ff),
+        color: AppColors.customFFEEF4FF,
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
             borderRadius: BorderRadius.circular(16),
@@ -590,7 +594,7 @@ class _VideoPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final playButton = Material(
-        color: Colors.white,
+        color: AppColors.white,
         shape: const CircleBorder(),
         elevation: 4,
         child: InkWell(
@@ -599,7 +603,7 @@ class _VideoPreview extends StatelessWidget {
             child: const Padding(
                 padding: EdgeInsets.all(17),
                 child: Icon(Icons.play_arrow_rounded,
-                    size: 38, color: Color(0xff1769e8)))));
+                    size: 38, color: AppColors.customFF1769E8))));
     final thumbnail =
         thumbnailUrl == null ? null : communityMediaUri('image', thumbnailUrl!);
     final duration = communityMediaDurationLabel(durationSeconds);
@@ -608,7 +612,7 @@ class _VideoPreview extends StatelessWidget {
             gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Color(0xff13243a), Color(0xff07111f)])),
+                colors: [AppColors.customFF13243A, AppColors.customFF07111F])),
         child: Stack(fit: StackFit.expand, children: [
           if (thumbnail != null)
             CachedNetworkImage(
@@ -616,7 +620,7 @@ class _VideoPreview extends StatelessWidget {
                 fit: BoxFit.cover,
                 errorWidget: (_, __, ___) => const SizedBox.shrink()),
           if (thumbnail != null)
-            ColoredBox(color: Colors.black.withValues(alpha: .28)),
+            ColoredBox(color: AppColors.black.withValues(alpha: .28)),
           Positioned(
               top: 14,
               left: 14,
@@ -627,7 +631,7 @@ class _VideoPreview extends StatelessWidget {
                       : '${communityText('Video')} · $duration')),
           Center(
               child: opening
-                  ? const CircularProgressIndicator(color: Colors.white)
+                  ? const CircularProgressIndicator(color: AppColors.white)
                   : playButton),
           Positioned(
               left: 16,
@@ -639,9 +643,11 @@ class _VideoPreview extends StatelessWidget {
                           ? communityText('Tap to play video')
                           : communityText('Open video in browser')),
                   style: const TextStyle(
-                      color: Colors.white,
+                      color: AppColors.white,
                       fontWeight: FontWeight.w700,
-                      shadows: [Shadow(blurRadius: 4, color: Colors.black)])))
+                      shadows: [
+                        Shadow(blurRadius: 4, color: AppColors.black)
+                      ])))
         ]));
   }
 }
@@ -1451,18 +1457,18 @@ class _AutoplayVideoState extends State<_AutoplayVideo> {
     final route = MaterialPageRoute<void>(
       fullscreenDialog: true,
       builder: (context) => Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: AppColors.black,
         appBar: AppBar(
-          backgroundColor: Colors.black,
-          foregroundColor: Colors.white,
+          backgroundColor: AppColors.black,
+          foregroundColor: AppColors.white,
           surfaceTintColor: Colors.transparent,
           leading: IconButton(
             tooltip: communityText('Close'),
             onPressed: () => Navigator.of(context).pop(),
-            icon: const Icon(Icons.close_rounded, color: Colors.white),
+            icon: const Icon(Icons.close_rounded, color: AppColors.white),
           ),
           title: Text(communityText('Video'),
-              style: const TextStyle(color: Colors.white)),
+              style: const TextStyle(color: AppColors.white)),
         ),
         body: SafeArea(
           top: false,
@@ -1473,7 +1479,7 @@ class _AutoplayVideoState extends State<_AutoplayVideo> {
                 return Center(
                     child: Text(
                         communityText('This media link is unavailable.'),
-                        style: const TextStyle(color: Colors.white)));
+                        style: const TextStyle(color: AppColors.white)));
               }
               final controller = _ready ? _controller : null;
               return Column(
@@ -1585,7 +1591,7 @@ class _AutoplayVideoState extends State<_AutoplayVideo> {
             gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Color(0xff13243a), Color(0xff07111f)])),
+                colors: [AppColors.customFF13243A, AppColors.customFF07111F])),
         child: thumbnail == null
             ? const SizedBox.expand()
             : CachedNetworkImage(
@@ -1613,30 +1619,30 @@ class _AutoplayVideoState extends State<_AutoplayVideo> {
   Widget _statusOverlay() {
     if (_failed) {
       return ColoredBox(
-        color: Colors.black.withValues(alpha: .5),
+        color: AppColors.black.withValues(alpha: .5),
         child: Center(
             child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             const Icon(Icons.videocam_off_rounded,
-                color: Colors.white, size: 28),
+                color: AppColors.white, size: 28),
             const SizedBox(height: 6),
             Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Text(communityText('Video could not be loaded. Retry.'),
                     textAlign: TextAlign.center,
                     style: const TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.w600))),
+                        color: AppColors.white, fontWeight: FontWeight.w600))),
             Wrap(alignment: WrapAlignment.center, children: [
               TextButton.icon(
                   onPressed: _retry,
-                  icon: const Icon(Icons.refresh, color: Colors.white),
+                  icon: const Icon(Icons.refresh, color: AppColors.white),
                   label: Text(communityText('Retry'),
-                      style: const TextStyle(color: Colors.white))),
+                      style: const TextStyle(color: AppColors.white))),
               TextButton(
                   onPressed: _openExternal,
                   child: Text(communityText('Open video in browser'),
-                      style: const TextStyle(color: Colors.white))),
+                      style: const TextStyle(color: AppColors.white))),
             ]),
           ]),
         )),
@@ -1644,8 +1650,9 @@ class _AutoplayVideoState extends State<_AutoplayVideo> {
     }
     if (_initializing || (_visible && _manager.isActive(this))) {
       return const ColoredBox(
-          color: Colors.black26,
-          child: Center(child: CircularProgressIndicator(color: Colors.white)));
+          color: AppColors.black26,
+          child:
+              Center(child: CircularProgressIndicator(color: AppColors.white)));
     }
     return const SizedBox.shrink();
   }
@@ -1662,17 +1669,17 @@ class _AutoplayVideoState extends State<_AutoplayVideo> {
                     width: 30,
                     height: 30,
                     child: CircularProgressIndicator(
-                        color: Colors.white, strokeWidth: 2)));
+                        color: AppColors.white, strokeWidth: 2)));
           }
           if (value.isPlaying) return const SizedBox.shrink();
           return Center(
               child: Material(
-                  color: Colors.black.withValues(alpha: .42),
+                  color: AppColors.black.withValues(alpha: .42),
                   shape: const CircleBorder(),
                   child: const Padding(
                       padding: EdgeInsets.all(14),
                       child: Icon(Icons.play_arrow_rounded,
-                          color: Colors.white, size: 34))));
+                          color: AppColors.white, size: 34))));
         });
   }
 
@@ -1688,7 +1695,7 @@ class _AutoplayVideoState extends State<_AutoplayVideo> {
           const Spacer(),
           if (widget.showMuteControl && _ready)
             Material(
-                color: Colors.black.withValues(alpha: .5),
+                color: AppColors.black.withValues(alpha: .5),
                 shape: const CircleBorder(),
                 child: IconButton(
                     tooltip: communityText(_muted ? 'Unmute' : 'Mute'),
@@ -1697,18 +1704,18 @@ class _AutoplayVideoState extends State<_AutoplayVideo> {
                         _muted
                             ? Icons.volume_off_rounded
                             : Icons.volume_up_rounded,
-                        color: Colors.white,
+                        color: AppColors.white,
                         size: 18))),
           if (widget.allowFullscreen) ...[
             const SizedBox(width: 4),
             Material(
-                color: Colors.black.withValues(alpha: .5),
+                color: AppColors.black.withValues(alpha: .5),
                 shape: const CircleBorder(),
                 child: IconButton(
                   tooltip: communityText('Full screen'),
                   onPressed: _openFullscreen,
                   icon: const Icon(Icons.fullscreen_rounded,
-                      color: Colors.white, size: 22),
+                      color: AppColors.white, size: 22),
                 )),
           ],
         ]));
@@ -1723,9 +1730,9 @@ class _AutoplayVideoState extends State<_AutoplayVideo> {
             allowScrubbing: true,
             padding: const EdgeInsets.symmetric(vertical: 5),
             colors: const VideoProgressColors(
-                playedColor: Color(0xff1769e8),
-                bufferedColor: Colors.white24,
-                backgroundColor: Colors.white54)));
+                playedColor: AppColors.customFF1769E8,
+                bufferedColor: AppColors.white24,
+                backgroundColor: AppColors.white54)));
   }
 }
 
@@ -1777,13 +1784,13 @@ class _FullscreenVideoControlsState extends State<_FullscreenVideoControls> {
                 Row(
                   children: [
                     Text(_time(position),
-                        style: const TextStyle(color: Colors.white)),
+                        style: const TextStyle(color: AppColors.white)),
                     Expanded(
                       child: Slider(
                         value: position,
                         max: canSeek ? total : 1,
-                        activeColor: Colors.white,
-                        inactiveColor: Colors.white30,
+                        activeColor: AppColors.white,
+                        inactiveColor: AppColors.white30,
                         label: _time(position),
                         semanticFormatterCallback: _time,
                         onChanged: canSeek
@@ -1796,7 +1803,7 @@ class _FullscreenVideoControlsState extends State<_FullscreenVideoControls> {
                       ),
                     ),
                     Text(_time(total),
-                        style: const TextStyle(color: Colors.white)),
+                        style: const TextStyle(color: AppColors.white)),
                   ],
                 ),
                 Row(
@@ -1806,7 +1813,7 @@ class _FullscreenVideoControlsState extends State<_FullscreenVideoControls> {
                       tooltip: communityText('Back 10 seconds'),
                       onPressed: canSeek ? () => _seek(position - 10000) : null,
                       icon: const Icon(Icons.replay_10_rounded),
-                      color: Colors.white,
+                      color: AppColors.white,
                     ),
                     IconButton(
                       tooltip: communityText(
@@ -1815,13 +1822,13 @@ class _FullscreenVideoControlsState extends State<_FullscreenVideoControls> {
                       icon: Icon(value.isPlaying
                           ? Icons.pause_rounded
                           : Icons.play_arrow_rounded),
-                      color: Colors.white,
+                      color: AppColors.white,
                     ),
                     IconButton(
                       tooltip: communityText('Forward 10 seconds'),
                       onPressed: canSeek ? () => _seek(position + 10000) : null,
                       icon: const Icon(Icons.forward_10_rounded),
-                      color: Colors.white,
+                      color: AppColors.white,
                     ),
                     IconButton(
                       tooltip: communityText(muted ? 'Unmute' : 'Mute'),
@@ -1829,7 +1836,7 @@ class _FullscreenVideoControlsState extends State<_FullscreenVideoControls> {
                       icon: Icon(muted
                           ? Icons.volume_off_rounded
                           : Icons.volume_up_rounded),
-                      color: Colors.white,
+                      color: AppColors.white,
                     ),
                   ],
                 ),

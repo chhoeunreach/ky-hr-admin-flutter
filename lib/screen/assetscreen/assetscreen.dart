@@ -1,12 +1,14 @@
+import 'package:cnattendance/data/source/datastore/preferences.dart';
+import 'package:cnattendance/screen/assetscreen/admin_asset_list_screen.dart';
 import 'package:cnattendance/screen/assetscreen/assetscontroller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
-import 'package:hexcolor/hexcolor.dart';
 
 import '../../widget/buttonborder.dart';
 import '../../widget/profile/asset_bottom_sheet.dart';
 import '../../widget/radialDecoration.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class AssetScreen extends StatelessWidget {
   @override
@@ -20,6 +22,25 @@ class AssetScreen extends StatelessWidget {
           elevation: 0,
           backgroundColor: Colors.transparent,
           title: Text(translate('common.assets')),
+          actions: [
+            FutureBuilder<Map<String, String>>(
+              future: Preferences().getFeatures(),
+              builder: (context, snapshot) {
+                final features = snapshot.data ?? {};
+                final canAdmin = features['assets-admin'] == '1' ||
+                    features['list_assets'] == '1';
+                if (!canAdmin) return const SizedBox.shrink();
+                return IconButton(
+                  icon: const Icon(Icons.admin_panel_settings_outlined),
+                  tooltip: 'Admin Asset Management',
+                  onPressed: () => Get.to(
+                    () => const AdminAssetListScreen(),
+                    transition: Transition.cupertino,
+                  ),
+                );
+              },
+            ),
+          ],
         ),
         body: Obx(
           () => Padding(
@@ -50,8 +71,8 @@ class AssetScreen extends StatelessWidget {
                     child: Card(
                       shape: ButtonBorder(),
                       color: asset.returnedDate == null
-                          ? Colors.blue.withValues(alpha: .5)
-                          : Colors.white24,
+                          ? AppColors.blue.withValues(alpha: .5)
+                          : AppColors.white24,
                       elevation: 0,
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
@@ -64,14 +85,14 @@ class AssetScreen extends StatelessWidget {
                                   Text(
                                     asset.assignedDate,
                                     style: TextStyle(
-                                        color: Colors.white70,
+                                        color: AppColors.white70,
                                         fontSize: 12,
                                         fontWeight: FontWeight.normal),
                                   ),
                                   Text(
                                     asset.asset,
                                     style: TextStyle(
-                                        color: Colors.white,
+                                        color: AppColors.white,
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold),
                                   ),
@@ -81,9 +102,9 @@ class AssetScreen extends StatelessWidget {
                             TextButton(
                                 style: TextButton.styleFrom(
                                   backgroundColor: asset.notes != null
-                                      ? HexColor("#036eb7")
+                                      ? AppColors.customFF036EB7
                                           .withValues(alpha: .3)
-                                      : HexColor("#036eb7"),
+                                      : AppColors.customFF036EB7,
                                   padding: EdgeInsets.zero,
                                   visualDensity: VisualDensity.compact,
                                   shape: ButtonBorder(),
@@ -102,10 +123,11 @@ class AssetScreen extends StatelessWidget {
                                       });
                                 },
                                 child: Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 15.0),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 15.0),
                                   child: Text(
                                     asset.notes == null ? 'Return' : "Returned",
-                                    style: TextStyle(color: Colors.white),
+                                    style: TextStyle(color: AppColors.white),
                                   ),
                                 ))
                           ],

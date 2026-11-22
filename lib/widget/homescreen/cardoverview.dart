@@ -3,6 +3,7 @@ import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/theme/royal_blue_day_theme.dart';
 import 'package:cnattendance/widget/enterprise/khmer_luxury_frame.dart';
 import 'package:flutter/material.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 /// Compact icon tile for the home quick-actions grid (screenshot style):
 /// colored squircle chip + centered label, no counts.
@@ -35,14 +36,15 @@ class _CardOverViewState extends State<CardOverView> {
     final enterprise = EnterpriseTheme.of(context);
     final luxuryDay = enterprise.isRoyalLuxuryDay;
     final brightOriginal = enterprise.mode == AppThemeMode.light;
-    final base = enterprise.isKhmerHeritage || enterprise.layout.accent != null
+    final base = (!enterprise.isRoyalBlueGold &&
+            (enterprise.isKhmerHeritage || enterprise.layout.accent != null))
         ? enterprise.primary
         : widget.chipColor ?? enterprise.primary;
     final iconColor = enterprise.isKhmerHeritage
         ? enterprise.accent
         : ThemeData.estimateBrightnessForColor(base) == Brightness.dark
-            ? Colors.white
-            : const Color(0xFF0F172A);
+            ? AppColors.white
+            : AppColors.ink900;
 
     final tile = InkWell(
       borderRadius: BorderRadius.circular(14),
@@ -87,7 +89,7 @@ class _CardOverViewState extends State<CardOverView> {
                         end: Alignment.bottomRight,
                         colors: brightOriginal
                             ? [
-                                Color.lerp(base, Colors.white, 0.24)!,
+                                Color.lerp(base, AppColors.white, 0.24)!,
                                 Color.lerp(base, enterprise.primary, 0.10)!,
                               ]
                             : [
@@ -96,7 +98,7 @@ class _CardOverViewState extends State<CardOverView> {
                                     base,
                                     enterprise.isKhmerHeritage
                                         ? enterprise.secondary
-                                        : const Color(0xFF0A1F44),
+                                        : AppColors.customFF0A1F44,
                                     0.35)!,
                               ],
                       ),
@@ -104,7 +106,8 @@ class _CardOverViewState extends State<CardOverView> {
                           ? Border.all(color: enterprise.cardBorder)
                           : brightOriginal
                               ? Border.all(
-                                  color: Colors.white.withValues(alpha: 0.72),
+                                  color:
+                                      AppColors.white.withValues(alpha: 0.72),
                                   width: 1,
                                 )
                               : null,
@@ -114,12 +117,10 @@ class _CardOverViewState extends State<CardOverView> {
                               alpha: brightOriginal
                                   ? (_pressed ? 0.42 : 0.28)
                                   : 0.38),
-                          blurRadius: brightOriginal
-                              ? (_pressed ? 24 : 18)
-                              : 14,
-                          spreadRadius: brightOriginal
-                              ? (_pressed ? 2 : 1)
-                              : 0.5,
+                          blurRadius:
+                              brightOriginal ? (_pressed ? 24 : 18) : 14,
+                          spreadRadius:
+                              brightOriginal ? (_pressed ? 2 : 1) : 0.5,
                           offset: const Offset(0, 3),
                         ),
                       ],

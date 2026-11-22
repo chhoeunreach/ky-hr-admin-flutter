@@ -3,6 +3,7 @@ import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:get/get.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class AboutScreen extends StatelessWidget {
   static const routeName = '/about';
@@ -33,8 +34,8 @@ class AboutScreen extends StatelessWidget {
                   visible: model.isLoading.value ? false : true,
                   child: Html(
                     style: {
-                      "body":
-                          Style(color: Colors.white, fontSize: FontSize.medium)
+                      "body": Style(
+                          color: AppColors.white, fontSize: FontSize.medium)
                     },
                     data: model.content['description']!,
                   ),

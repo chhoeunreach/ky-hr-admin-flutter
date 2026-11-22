@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class EmployeeDetailScreen extends StatefulWidget {
   const EmployeeDetailScreen({
@@ -80,9 +81,9 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
 
   Widget _buildProfileAvatar(String imageUrl) {
     const fallback = ColoredBox(
-      color: Colors.white10,
+      color: AppColors.white10,
       child: Center(
-        child: Icon(Icons.person, color: Colors.white70, size: 64),
+        child: Icon(Icons.person, color: AppColors.white70, size: 64),
       ),
     );
     final uri = Uri.tryParse(imageUrl);
@@ -193,7 +194,7 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
                   final url = Uri(scheme: 'tel', path: phone);
                   if (await canLaunchUrl(url)) await launchUrl(url);
                 },
-                icon: const Icon(Icons.call, color: Colors.white),
+                icon: const Icon(Icons.call, color: AppColors.white),
               ),
             if (canStartChat)
               IconButton(
@@ -205,7 +206,7 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
                     'employeeId': details.employeeId,
                   });
                 },
-                icon: const Icon(Icons.message, color: Colors.white),
+                icon: const Icon(Icons.message, color: AppColors.white),
               ),
           ],
         ),
@@ -246,7 +247,7 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
       _heading(title),
       Card(
         shape: ButtonBorder(),
-        color: Colors.white10,
+        color: AppColors.white10,
         elevation: 0,
         child: Padding(
           padding: const EdgeInsets.all(10),
@@ -263,7 +264,7 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
         padding: const EdgeInsets.fromLTRB(10, 10, 10, 5),
         child: Text(
           _label(key),
-          style: const TextStyle(color: Colors.white70, fontSize: 15),
+          style: const TextStyle(color: AppColors.white70, fontSize: 15),
         ),
       );
 

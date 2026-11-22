@@ -61,4 +61,12 @@ extension AppThemeModeX on AppThemeMode {
     }
     return AppThemeMode.light;
   }
+
+  static AppThemeMode? tryFromId(String? id) {
+    if (id == null) return null;
+    for (final mode in AppThemeMode.values) {
+      if (mode.id == id) return mode;
+    }
+    return null;
+  }
 }

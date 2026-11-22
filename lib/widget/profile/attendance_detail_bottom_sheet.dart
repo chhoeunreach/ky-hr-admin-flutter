@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 
 import '../../model/employeeattendancereport.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class AttendanceDetailBottomSheet extends StatefulWidget {
   final String date;
@@ -230,7 +231,7 @@ class AttendanceDetailBottomSheetState
                 Text(
                   "+${convertMinutesToFormattedString(extraTime)}",
                   style: const TextStyle(
-                    color: Colors.green,
+                    color: AppColors.green,
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
                   ),
@@ -248,7 +249,7 @@ class AttendanceDetailBottomSheetState
                 Text(
                   "-${convertMinutesToFormattedString(extraTime)}",
                   style: const TextStyle(
-                    color: Colors.red,
+                    color: AppColors.red,
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
                   ),

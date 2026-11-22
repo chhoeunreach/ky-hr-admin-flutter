@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class BannerBorderAnimation extends StatelessWidget {
   const BannerBorderAnimation({super.key});
@@ -44,7 +45,7 @@ class _PulsingBorderState extends State<_PulsingBorder>
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(22),
             border: Border.all(
-              color: Colors.white.withValues(alpha: opacity),
+              color: AppColors.white.withValues(alpha: opacity),
               width: 2,
             ),
           ),

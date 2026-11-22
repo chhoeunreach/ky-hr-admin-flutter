@@ -11,6 +11,7 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:provider/provider.dart';
 import 'package:cnattendance/widget/buttonborder.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class AttedanceBottomSheet extends StatefulWidget {
   @override
@@ -295,8 +296,8 @@ class AttendanceBottomSheetState extends State<AttedanceBottomSheet> {
                     hintStyle: TextStyle(color: enterprise.mutedText),
                     labelStyle: TextStyle(color: enterprise.text),
                     fillColor: enterprise.isDark
-                        ? const Color(0xFF0F172A)
-                        : const Color(0xFFF8FAFC),
+                        ? AppColors.ink900
+                        : AppColors.customFFF8FAFC,
                     filled: true,
                     enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
@@ -306,10 +307,10 @@ class AttendanceBottomSheetState extends State<AttedanceBottomSheet> {
                         borderSide: BorderSide(color: enterprise.accent)),
                     focusedErrorBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(color: Colors.red)),
+                        borderSide: const BorderSide(color: AppColors.red)),
                     errorBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(color: Colors.red)),
+                        borderSide: const BorderSide(color: AppColors.red)),
                   ),
                 ),
               ),
@@ -323,7 +324,7 @@ class AttendanceBottomSheetState extends State<AttedanceBottomSheet> {
                         padding: const EdgeInsets.only(right: 5),
                         child: TextButton(
                             style: TextButton.styleFrom(
-                                backgroundColor: const Color(0xFF10B981),
+                                backgroundColor: AppColors.successToken,
                                 shape: ButtonBorder()),
                             onPressed: () async {
                               isEnabled
@@ -336,7 +337,7 @@ class AttendanceBottomSheetState extends State<AttedanceBottomSheet> {
                               child: Text(
                                 translate('home_screen.check_in'),
                                 style: const TextStyle(
-                                  color: Colors.white,
+                                  color: AppColors.white,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -348,7 +349,7 @@ class AttendanceBottomSheetState extends State<AttedanceBottomSheet> {
                         padding: const EdgeInsets.only(left: 5),
                         child: TextButton(
                             style: TextButton.styleFrom(
-                                backgroundColor: const Color(0xFFEF4444),
+                                backgroundColor: AppColors.dangerToken,
                                 shape: ButtonBorder()),
                             onPressed: () {
                               isEnabled
@@ -361,7 +362,7 @@ class AttendanceBottomSheetState extends State<AttedanceBottomSheet> {
                               child: Text(
                                 translate('home_screen.check_out'),
                                 style: const TextStyle(
-                                  color: Colors.white,
+                                  color: AppColors.white,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),

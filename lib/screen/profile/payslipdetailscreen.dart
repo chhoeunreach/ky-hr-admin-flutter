@@ -10,6 +10,7 @@ import 'package:flutter_translate/flutter_translate.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class PaySlipDetailScreen extends StatefulWidget {
   static const String routeName = "/paySlipDetail";
@@ -31,7 +32,9 @@ class PaySlipScreenState extends State<PaySlipDetailScreen> {
   }
 
   Future<void> getPaySlipDetail() async {
-    EasyLoading.show(status: translate('loader.loading'), maskType: EasyLoadingMaskType.black);
+    EasyLoading.show(
+        status: translate('loader.loading'),
+        maskType: EasyLoadingMaskType.black);
     _payslipId = ModalRoute.of(context)!.settings.arguments as int;
     await context
         .read<PaySlipDetailProvider>()
@@ -41,7 +44,6 @@ class PaySlipScreenState extends State<PaySlipDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-
     final _flutterNativeHtmlToPdfPlugin = FlutterNativeHtmlToPdf();
 
     Future<void> generateExampleDocument() async {
@@ -81,7 +83,7 @@ class PaySlipScreenState extends State<PaySlipDetailScreen> {
                 },
                 icon: Icon(
                   Icons.picture_as_pdf,
-                  color: Colors.white,
+                  color: AppColors.white,
                 ))
           ],
         ),
@@ -99,7 +101,7 @@ class PaySlipScreenState extends State<PaySlipDetailScreen> {
                   Center(
                     child: CachedNetworkImage(
                       imageUrl: provider.payslipDetail["company_image"]!,
-                      color: Colors.white,
+                      color: AppColors.white,
                       width: 150,
                     ),
                   ),
@@ -113,13 +115,14 @@ class PaySlipScreenState extends State<PaySlipDetailScreen> {
                         Text(
                           provider.payslipDetail["company_name"]!,
                           style: TextStyle(
-                              color: Colors.white,
+                              color: AppColors.white,
                               fontSize: 18,
                               fontWeight: FontWeight.bold),
                         ),
                         Text(
                           provider.payslipDetail["company_address"]!,
-                          style: TextStyle(color: Colors.white, fontSize: 15),
+                          style:
+                              TextStyle(color: AppColors.white, fontSize: 15),
                         ),
                       ],
                     ),
@@ -133,7 +136,8 @@ class PaySlipScreenState extends State<PaySlipDetailScreen> {
                       children: [
                         Text(
                           provider.payslipDetail["salary_title"]!,
-                          style: TextStyle(color: Colors.white, fontSize: 18),
+                          style:
+                              TextStyle(color: AppColors.white, fontSize: 18),
                         ),
                       ],
                     ),
@@ -147,22 +151,22 @@ class PaySlipScreenState extends State<PaySlipDetailScreen> {
                     children: [
                       Text(
                         '${translate('payslipdetail_screen.emp_id')} : ${provider.payslipDetail["employee_code"]!}',
-                        style: TextStyle(color: Colors.white, fontSize: 15),
+                        style: TextStyle(color: AppColors.white, fontSize: 15),
                       ),
                       Text(
                         provider.payslipDetail["employee_name"]!,
                         style: TextStyle(
-                            color: Colors.white,
+                            color: AppColors.white,
                             fontSize: 18,
                             fontWeight: FontWeight.bold),
                       ),
                       Text(
                         provider.payslipDetail["employee_designation"]!,
-                        style: TextStyle(color: Colors.white, fontSize: 15),
+                        style: TextStyle(color: AppColors.white, fontSize: 15),
                       ),
                       Text(
                         '${translate('payslipdetail_screen.joining_date')} : ${provider.payslipDetail["employee_join_date"]}',
-                        style: TextStyle(color: Colors.white, fontSize: 15),
+                        style: TextStyle(color: AppColors.white, fontSize: 15),
                       ),
                     ],
                   ),
@@ -173,12 +177,16 @@ class PaySlipScreenState extends State<PaySlipDetailScreen> {
                       children: [
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 10.0),
-                          child: Divider(color: Colors.white54,indent: 0,endIndent: 0,),
+                          child: Divider(
+                            color: AppColors.white54,
+                            indent: 0,
+                            endIndent: 0,
+                          ),
                         ),
                         Text(
                           translate('payslipdetail_screen.earnings'),
                           style: TextStyle(
-                              color: Colors.white,
+                              color: AppColors.white,
                               fontSize: 18,
                               fontWeight: FontWeight.bold),
                         ),
@@ -187,8 +195,11 @@ class PaySlipScreenState extends State<PaySlipDetailScreen> {
                         ),
                         Card(
                           elevation: 0,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.only(topLeft: Radius.circular(10),bottomRight: Radius.circular(10))),
-                          color: Colors.white24,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.only(
+                                  topLeft: Radius.circular(10),
+                                  bottomRight: Radius.circular(10))),
+                          color: AppColors.white24,
                           child: ListView.builder(
                             primary: false,
                             shrinkWrap: true,
@@ -202,13 +213,14 @@ class PaySlipScreenState extends State<PaySlipDetailScreen> {
                                 title: Text(
                                   provider.earningList[index].name,
                                   style: TextStyle(
-                                      color: Colors.white, fontSize: 15),
+                                      color: AppColors.white, fontSize: 15),
                                 ),
                                 trailing: Text(
                                     '${provider.currency}. ${provider.earningList[index].amount}',
                                     style: TextStyle(
-                                      fontFamily: "",
-                                        color: Colors.white, fontSize: 15)),
+                                        fontFamily: "",
+                                        color: AppColors.white,
+                                        fontSize: 15)),
                               );
                             },
                           ),
@@ -227,7 +239,7 @@ class PaySlipScreenState extends State<PaySlipDetailScreen> {
                         Text(
                           translate('payslipdetail_screen.deductions'),
                           style: TextStyle(
-                              color: Colors.white,
+                              color: AppColors.white,
                               fontSize: 18,
                               fontWeight: FontWeight.bold),
                         ),
@@ -236,8 +248,11 @@ class PaySlipScreenState extends State<PaySlipDetailScreen> {
                         ),
                         Card(
                           elevation: 0,
-                          color: Colors.white24,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.only(topLeft: Radius.circular(10),bottomRight: Radius.circular(10))),
+                          color: AppColors.white24,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.only(
+                                  topLeft: Radius.circular(10),
+                                  bottomRight: Radius.circular(10))),
                           child: ListView.builder(
                             primary: false,
                             shrinkWrap: true,
@@ -251,13 +266,14 @@ class PaySlipScreenState extends State<PaySlipDetailScreen> {
                                 title: Text(
                                   provider.deductionList[index].name,
                                   style: TextStyle(
-                                      color: Colors.white, fontSize: 15),
+                                      color: AppColors.white, fontSize: 15),
                                 ),
                                 trailing: Text(
                                     '${provider.currency} ${provider.deductionList[index].amount}',
                                     style: TextStyle(
                                         fontFamily: "",
-                                        color: Colors.white, fontSize: 15)),
+                                        color: AppColors.white,
+                                        fontSize: 15)),
                               );
                             },
                           ),
@@ -274,26 +290,39 @@ class PaySlipScreenState extends State<PaySlipDetailScreen> {
                         dense: true,
                         title: Text(
                           translate('payslipdetail_screen.actual_salary'),
-                          style: TextStyle(color: Colors.white, fontSize: 18,fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                              color: AppColors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold),
                         ),
                         trailing: Text(
                             '${provider.currency}. ${provider.getTotalEarning() - provider.getTotalDeduction()}',
                             style: TextStyle(
-                                fontFamily: "",color: Colors.white, fontSize: 18,fontWeight: FontWeight.bold)),
+                                fontFamily: "",
+                                color: AppColors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold)),
                       ),
-                      Divider(color: Colors.white54,indent: 10,endIndent: 10,),
+                      Divider(
+                        color: AppColors.white54,
+                        indent: 10,
+                        endIndent: 10,
+                      ),
                       ListTile(
                         tileColor: Colors.transparent,
                         visualDensity: VisualDensity.compact,
                         dense: true,
                         title: Text(
                           translate('payslipdetail_screen.absent_deduction'),
-                          style: TextStyle(color: Colors.white, fontSize: 15),
+                          style:
+                              TextStyle(color: AppColors.white, fontSize: 15),
                         ),
                         trailing: Text(
                             '${provider.currency}. ${provider.payslipDetail["absent_deduction"]}',
                             style: TextStyle(
-                                fontFamily: "",color: Colors.red, fontSize: 15)),
+                                fontFamily: "",
+                                color: AppColors.red,
+                                fontSize: 15)),
                       ),
                       Visibility(
                         visible:
@@ -304,13 +333,15 @@ class PaySlipScreenState extends State<PaySlipDetailScreen> {
                           dense: true,
                           title: Text(
                             translate('payslipdetail_screen.advance_salary'),
-                            style: TextStyle(color: Colors.white, fontSize: 15),
+                            style:
+                                TextStyle(color: AppColors.white, fontSize: 15),
                           ),
                           trailing: Text(
                               '${provider.currency}. ${provider.payslipDetail["advance_salary"]}',
-                              style:
-                                  TextStyle(
-                                      fontFamily: "",color: Colors.red, fontSize: 15)),
+                              style: TextStyle(
+                                  fontFamily: "",
+                                  color: AppColors.red,
+                                  fontSize: 15)),
                         ),
                       ),
                       Visibility(
@@ -321,13 +352,15 @@ class PaySlipScreenState extends State<PaySlipDetailScreen> {
                           dense: true,
                           title: Text(
                             translate('payslipdetail_screen.tada'),
-                            style: TextStyle(color: Colors.white, fontSize: 15),
+                            style:
+                                TextStyle(color: AppColors.white, fontSize: 15),
                           ),
                           trailing: Text(
                               '${provider.currency}. ${provider.payslipDetail["tada"]}',
-                              style:
-                                  TextStyle(
-                                      fontFamily: "",color: Colors.green, fontSize: 15)),
+                              style: TextStyle(
+                                  fontFamily: "",
+                                  color: AppColors.green,
+                                  fontSize: 15)),
                         ),
                       ),
                       Visibility(
@@ -338,13 +371,15 @@ class PaySlipScreenState extends State<PaySlipDetailScreen> {
                           dense: true,
                           title: Text(
                             translate('payslipdetail_screen.overtime'),
-                            style: TextStyle(color: Colors.white, fontSize: 15),
+                            style:
+                                TextStyle(color: AppColors.white, fontSize: 15),
                           ),
                           trailing: Text(
                               '${provider.currency}. ${provider.payslipDetail["overtime"]}',
-                              style:
-                                  TextStyle(
-                                      fontFamily: "",color: Colors.green, fontSize: 15)),
+                              style: TextStyle(
+                                  fontFamily: "",
+                                  color: AppColors.green,
+                                  fontSize: 15)),
                         ),
                       ),
                       Visibility(
@@ -355,21 +390,26 @@ class PaySlipScreenState extends State<PaySlipDetailScreen> {
                           dense: true,
                           title: Text(
                             translate('payslipdetail_screen.undertime'),
-                            style: TextStyle(color: Colors.white, fontSize: 15),
+                            style:
+                                TextStyle(color: AppColors.white, fontSize: 15),
                           ),
                           trailing: Text(
                               '${provider.currency}. ${provider.payslipDetail["undertime"]}',
-                              style:
-                                  TextStyle(
-                                      fontFamily: "",color: Colors.red, fontSize: 15)),
+                              style: TextStyle(
+                                  fontFamily: "",
+                                  color: AppColors.red,
+                                  fontSize: 15)),
                         ),
                       ),
                     ],
                   ),
                   Card(
                     elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.only(topLeft: Radius.circular(10),bottomRight: Radius.circular(10))),
-                    color: Colors.white24,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(10),
+                            bottomRight: Radius.circular(10))),
+                    color: AppColors.white24,
                     child: Container(
                       width: MediaQuery.of(context).size.width,
                       padding: EdgeInsets.all(20),
@@ -378,15 +418,20 @@ class PaySlipScreenState extends State<PaySlipDetailScreen> {
                         children: [
                           Text(
                             translate('payslipdetail_screen.net_salary'),
-                            style: TextStyle(color: Colors.white, fontSize: 18,fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                                color: AppColors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold),
                           ),
                           SizedBox(
                             height: 10,
                           ),
                           RichText(
                             text: TextSpan(
-                                style:
-                                    TextStyle(color: Colors.white, fontSize: 15,fontWeight: FontWeight.bold),
+                                style: TextStyle(
+                                    color: AppColors.white,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold),
                                 text:
                                     '${provider.currency} ${provider.payslipDetail["net_salary"]}',
                                 children: [
@@ -394,7 +439,9 @@ class PaySlipScreenState extends State<PaySlipDetailScreen> {
                                     text:
                                         "  (${provider.payslipDetail["net_salary_in_words"]!})",
                                     style: TextStyle(
-                                        color: Colors.white, fontSize: 12,fontWeight: FontWeight.normal),
+                                        color: AppColors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.normal),
                                   )
                                 ]),
                           ),

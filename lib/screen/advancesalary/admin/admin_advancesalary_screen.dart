@@ -4,6 +4,7 @@ import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class AdminAdvanceSalaryScreen extends StatelessWidget {
   @override
@@ -22,10 +23,10 @@ class AdminAdvanceSalaryScreen extends StatelessWidget {
             onPressed: () {
               model.onAdminAdvanceSalaryCreateClicked();
             },
-            backgroundColor: Colors.blue,
+            backgroundColor: AppColors.blue,
             child: const Icon(
               Icons.add,
-              color: Colors.white,
+              color: AppColors.white,
             )),
         body: Obx(
           () => SafeArea(
@@ -48,26 +49,26 @@ class AdminAdvanceSalaryScreen extends StatelessWidget {
                                 topRight: Radius.circular(0),
                                 bottomLeft: Radius.circular(0),
                                 bottomRight: Radius.circular(10))),
-                        tileColor: Colors.white12,
+                        tileColor: AppColors.white12,
                         onTap: () {
                           model.onAdvanceSalaryClicked(item.id.toString());
                         },
-                        textColor: Colors.white,
-                        iconColor: Colors.white,
+                        textColor: AppColors.white,
+                        iconColor: AppColors.white,
                         title: Text(
                           item.requested_amount,
                           style: const TextStyle(fontSize: 18),
                         ),
                         subtitle: Text(
                           item.submittedDate,
-                          style: const TextStyle(color: Colors.grey),
+                          style: const TextStyle(color: AppColors.grey),
                         ),
                         leading: Card(
                             color: item.status.toLowerCase() == "pending"
-                                ? Colors.orange
+                                ? AppColors.orange
                                 : item.status.toLowerCase() == "rejected"
-                                    ? Colors.red
-                                    : Colors.green,
+                                    ? AppColors.red
+                                    : AppColors.green,
                             shape: const CircleBorder(),
                             child: Padding(
                               padding: const EdgeInsets.all(15),
@@ -78,7 +79,7 @@ class AdminAdvanceSalaryScreen extends StatelessWidget {
                                         ? "R"
                                         : "A",
                                 style: const TextStyle(
-                                    color: Colors.white,
+                                    color: AppColors.white,
                                     fontWeight: FontWeight.bold,
                                     fontSize: 18),
                               ),

@@ -5,6 +5,7 @@ import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:provider/provider.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class AttendanceToggle extends StatefulWidget {
   @override
@@ -70,7 +71,7 @@ class AttendanceToggleState extends State<AttendanceToggle> {
                           ),
                           iconSize: 14,
                           iconEnabledColor: enterprise.mutedText,
-                          iconDisabledColor: Colors.grey,
+                          iconDisabledColor: AppColors.grey,
                         ),
                         buttonStyleData: ButtonStyleData(
                           height: 40,

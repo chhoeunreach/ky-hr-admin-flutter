@@ -4,6 +4,7 @@ import 'package:flutter_translate/flutter_translate.dart';
 import '../models/repair_service.dart';
 import '../utils/repair_price_helper.dart';
 import 'repair_status_badge.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class RepairServiceCard extends StatelessWidget {
   final RepairService service;
@@ -31,7 +32,8 @@ class RepairServiceCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: enterprise.isDark ? 0.08 : 0.16),
+        color:
+            AppColors.white.withValues(alpha: enterprise.isDark ? 0.08 : 0.16),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: isSelected ? enterprise.primary : enterprise.glassStroke,
@@ -41,7 +43,7 @@ class RepairServiceCard extends StatelessWidget {
           BoxShadow(
             color: isSelected
                 ? enterprise.primary.withValues(alpha: 0.2)
-                : Colors.black
+                : AppColors.black
                     .withValues(alpha: enterprise.isDark ? 0.20 : 0.06),
             blurRadius: 8,
             offset: const Offset(0, 2),
@@ -164,7 +166,7 @@ class RepairServiceCard extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 7, vertical: 2.5),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.08),
+                          color: AppColors.white.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(5),
                           border: Border.all(
                               color: enterprise.glassStroke, width: 0.8),
@@ -214,7 +216,7 @@ class RepairServiceCard extends StatelessWidget {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.06),
+                      color: AppColors.white.withValues(alpha: 0.06),
                       borderRadius: BorderRadius.circular(8),
                       border:
                           Border.all(color: enterprise.glassStroke, width: 0.8),

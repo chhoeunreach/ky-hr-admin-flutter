@@ -7,6 +7,7 @@ import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class GroupListScreen extends StatefulWidget {
   @override
@@ -14,7 +15,8 @@ class GroupListScreen extends StatefulWidget {
 }
 
 class _GroupListScreenState extends State<GroupListScreen> {
-  final GroupChatController _controller = Get.put(GroupChatController(), tag: 'group_list');
+  final GroupChatController _controller =
+      Get.put(GroupChatController(), tag: 'group_list');
   final _searchController = TextEditingController();
   var _showSearch = false;
 
@@ -42,20 +44,23 @@ class _GroupListScreenState extends State<GroupListScreen> {
           title: _showSearch
               ? TextField(
                   controller: _searchController,
-                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                  style: const TextStyle(color: AppColors.white, fontSize: 16),
                   decoration: const InputDecoration(
                     hintText: 'Search groups...',
-                    hintStyle: TextStyle(color: Colors.white38),
+                    hintStyle: TextStyle(color: AppColors.white38),
                     border: InputBorder.none,
                   ),
-                  cursorColor: Colors.white,
+                  cursorColor: AppColors.white,
                   autofocus: true,
                   onChanged: (_) => setState(() {}),
                 )
-              : const Text('Chats', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+              : const Text('Chats',
+                  style: TextStyle(
+                      color: AppColors.white, fontWeight: FontWeight.w600)),
           actions: [
             IconButton(
-              icon: Icon(_showSearch ? Icons.close : Icons.search, color: Colors.white),
+              icon: Icon(_showSearch ? Icons.close : Icons.search,
+                  color: AppColors.white),
               onPressed: () {
                 setState(() {
                   _showSearch = !_showSearch;
@@ -64,35 +69,43 @@ class _GroupListScreenState extends State<GroupListScreen> {
               },
             ),
             IconButton(
-              icon: const Icon(Icons.add, color: Colors.white),
+              icon: const Icon(Icons.add, color: AppColors.white),
               onPressed: () => Get.to(() => CreateGroupScreen()),
             ),
           ],
         ),
         body: Obx(() {
           if (_controller.isLoading.value) {
-            return const Center(child: CircularProgressIndicator(color: Colors.white));
+            return const Center(
+                child: CircularProgressIndicator(color: AppColors.white));
           }
 
           final query = _searchController.text.trim().toLowerCase();
           final groups = query.isEmpty
               ? _controller.groups
-              : _controller.groups.where((g) =>
-                  g.name.toLowerCase().contains(query) ||
-                  (g.lastMessage?.message?.toLowerCase().contains(query) ?? false)
-                ).toList();
+              : _controller.groups
+                  .where((g) =>
+                      g.name.toLowerCase().contains(query) ||
+                      (g.lastMessage?.message?.toLowerCase().contains(query) ??
+                          false))
+                  .toList();
 
           if (groups.isEmpty) {
             return Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(query.isEmpty ? Icons.chat_bubble_outline : Icons.search_off,
-                      color: Colors.white24, size: 64),
+                  Icon(
+                      query.isEmpty
+                          ? Icons.chat_bubble_outline
+                          : Icons.search_off,
+                      color: AppColors.white24,
+                      size: 64),
                   const SizedBox(height: 16),
                   Text(
                     query.isEmpty ? 'No conversations yet' : 'No groups found',
-                    style: const TextStyle(color: Colors.white38, fontSize: 16),
+                    style:
+                        const TextStyle(color: AppColors.white38, fontSize: 16),
                   ),
                   if (query.isEmpty) ...[
                     const SizedBox(height: 8),
@@ -106,16 +119,18 @@ class _GroupListScreenState extends State<GroupListScreen> {
             );
           }
           return RefreshIndicator(
-            color: Colors.white,
+            color: AppColors.white,
             onRefresh: () => _controller.loadGroups(),
             child: ListView.separated(
               itemCount: groups.length,
-              separatorBuilder: (_, __) => Divider(color: Colors.white.withOpacity(0.05), height: 1),
+              separatorBuilder: (_, __) => Divider(
+                  color: AppColors.white.withValues(alpha: 0.05), height: 1),
               itemBuilder: (context, index) {
                 final group = groups[index];
                 return _GroupTile(
                   group: group,
-                  onTap: () => Get.to(() => GroupChatScreen(groupId: group.id, groupName: group.name)),
+                  onTap: () => Get.to(() => GroupChatScreen(
+                      groupId: group.id, groupName: group.name)),
                   onLongPress: () => _showGroupOptions(group),
                 );
               },
@@ -130,31 +145,48 @@ class _GroupListScreenState extends State<GroupListScreen> {
     Get.bottomSheet(
       Container(
         decoration: const BoxDecoration(
-          color: Color(0xFF0A1E3D),
+          color: AppColors.customFF0A1E3D,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2))),
+            Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                    color: AppColors.white24,
+                    borderRadius: BorderRadius.circular(2))),
             const SizedBox(height: 20),
             ListTile(
-              leading: const Icon(Icons.info_outline, color: Colors.white),
-              title: const Text('View Info', style: TextStyle(color: Colors.white)),
-              onTap: () { Get.back(); Get.to(() => GroupInfoScreen(groupId: group.id)); },
+              leading: const Icon(Icons.info_outline, color: AppColors.white),
+              title: const Text('View Info',
+                  style: TextStyle(color: AppColors.white)),
+              onTap: () {
+                Get.back();
+                Get.to(() => GroupInfoScreen(groupId: group.id));
+              },
             ),
             if (group.isCreator)
               ListTile(
-                leading: Icon(Icons.delete, color: Colors.red[300]),
-                title: Text('Delete Group', style: TextStyle(color: Colors.red[300])),
-                onTap: () { Get.back(); _confirmDelete(group.id); },
+                leading: Icon(Icons.delete, color: AppColors.red[300]),
+                title: Text('Delete Group',
+                    style: TextStyle(color: AppColors.red[300])),
+                onTap: () {
+                  Get.back();
+                  _confirmDelete(group.id);
+                },
               ),
             if (!group.isCreator)
               ListTile(
-                leading: Icon(Icons.exit_to_app, color: Colors.red[300]),
-                title: Text('Leave Group', style: TextStyle(color: Colors.red[300])),
-                onTap: () { Get.back(); _confirmLeave(group.id); },
+                leading: Icon(Icons.exit_to_app, color: AppColors.red[300]),
+                title: Text('Leave Group',
+                    style: TextStyle(color: AppColors.red[300])),
+                onTap: () {
+                  Get.back();
+                  _confirmLeave(group.id);
+                },
               ),
           ],
         ),
@@ -165,14 +197,19 @@ class _GroupListScreenState extends State<GroupListScreen> {
   void _confirmDelete(int groupId) {
     Get.dialog(
       AlertDialog(
-        backgroundColor: const Color(0xFF0A1E3D),
-        title: const Text('Delete Group?', style: TextStyle(color: Colors.white)),
-        content: const Text('This action cannot be undone.', style: TextStyle(color: Colors.white70)),
+        backgroundColor: AppColors.customFF0A1E3D,
+        title: const Text('Delete Group?',
+            style: TextStyle(color: AppColors.white)),
+        content: const Text('This action cannot be undone.',
+            style: TextStyle(color: AppColors.white70)),
         actions: [
           TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
           TextButton(
-            onPressed: () { Get.back(); _controller.deleteGroup(groupId); },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            onPressed: () {
+              Get.back();
+              _controller.deleteGroup(groupId);
+            },
+            child: const Text('Delete', style: TextStyle(color: AppColors.red)),
           ),
         ],
       ),
@@ -182,14 +219,19 @@ class _GroupListScreenState extends State<GroupListScreen> {
   void _confirmLeave(int groupId) {
     Get.dialog(
       AlertDialog(
-        backgroundColor: const Color(0xFF0A1E3D),
-        title: const Text('Leave Group?', style: TextStyle(color: Colors.white)),
-        content: const Text('You will no longer have access to this group.', style: TextStyle(color: Colors.white70)),
+        backgroundColor: AppColors.customFF0A1E3D,
+        title: const Text('Leave Group?',
+            style: TextStyle(color: AppColors.white)),
+        content: const Text('You will no longer have access to this group.',
+            style: TextStyle(color: AppColors.white70)),
         actions: [
           TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
           TextButton(
-            onPressed: () { Get.back(); _controller.leaveGroup(groupId); },
-            child: const Text('Leave', style: TextStyle(color: Colors.red)),
+            onPressed: () {
+              Get.back();
+              _controller.leaveGroup(groupId);
+            },
+            child: const Text('Leave', style: TextStyle(color: AppColors.red)),
           ),
         ],
       ),
@@ -202,7 +244,8 @@ class _GroupTile extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onLongPress;
 
-  const _GroupTile({required this.group, required this.onTap, required this.onLongPress});
+  const _GroupTile(
+      {required this.group, required this.onTap, required this.onLongPress});
 
   @override
   Widget build(BuildContext context) {
@@ -217,10 +260,12 @@ class _GroupTile extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 26,
-                backgroundColor: Colors.white12,
-                backgroundImage: group.avatar != null ? NetworkImage(group.avatar!) : null,
+                backgroundColor: AppColors.white12,
+                backgroundImage:
+                    group.avatar != null ? NetworkImage(group.avatar!) : null,
                 child: group.avatar == null
-                    ? const Icon(Icons.group, size: 26, color: Colors.white54)
+                    ? const Icon(Icons.group,
+                        size: 26, color: AppColors.white54)
                     : null,
               ),
               const SizedBox(width: 12),
@@ -234,14 +279,18 @@ class _GroupTile extends StatelessWidget {
                         Expanded(
                           child: Text(
                             group.name,
-                            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                            style: const TextStyle(
+                                color: AppColors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         if (group.lastMessageAt != null)
                           Text(
                             _formatTime(group.lastMessageAt!),
-                            style: const TextStyle(color: Colors.white38, fontSize: 12),
+                            style: const TextStyle(
+                                color: AppColors.white38, fontSize: 12),
                           ),
                       ],
                     ),
@@ -254,14 +303,17 @@ class _GroupTile extends StatelessWidget {
                                 ? '${group.lastMessage!.senderName}: ${_previewText(group.lastMessage!)}'
                                 : '${group.memberCount} members',
                             style: TextStyle(
-                              color: group.lastMessage != null ? Colors.white54 : Colors.white38,
+                              color: group.lastMessage != null
+                                  ? AppColors.white54
+                                  : AppColors.white38,
                               fontSize: 13,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        if (group.memberAvatars.isNotEmpty && group.lastMessage == null)
+                        if (group.memberAvatars.isNotEmpty &&
+                            group.lastMessage == null)
                           const SizedBox(width: 4),
                       ],
                     ),

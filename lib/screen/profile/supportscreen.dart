@@ -6,7 +6,7 @@ import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
-import 'package:hexcolor/hexcolor.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class SupportScreen extends StatelessWidget {
   @override
@@ -50,14 +50,14 @@ class SupportScreen extends StatelessWidget {
                     child: Column(
                       children: [
                         Icon(Icons.support_agent_rounded,
-                            color: Colors.white, size: 60),
+                            color: AppColors.white, size: 60),
                         SizedBox(
                           height: 10,
                         ),
                         Text(
                           translate('support_screen.help_desk'),
                           style: TextStyle(
-                              color: Colors.white,
+                              color: AppColors.white,
                               fontSize: 20,
                               fontWeight: FontWeight.bold),
                           textAlign: TextAlign.center,
@@ -67,7 +67,8 @@ class SupportScreen extends StatelessWidget {
                         ),
                         Text(
                           translate('support_screen.contact_us'),
-                          style: TextStyle(color: Colors.white, fontSize: 15),
+                          style:
+                              TextStyle(color: AppColors.white, fontSize: 15),
                           textAlign: TextAlign.center,
                         ),
                       ],
@@ -91,7 +92,7 @@ class SupportScreen extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.black,
+                                  color: AppColors.black,
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -104,7 +105,7 @@ class SupportScreen extends StatelessWidget {
                                     child: Text(
                                       e.name,
                                       style: TextStyle(
-                                          color: Colors.black,
+                                          color: AppColors.black,
                                           fontSize: 14,
                                           fontWeight: FontWeight.bold),
                                     ),
@@ -124,20 +125,21 @@ class SupportScreen extends StatelessWidget {
                                   Icons.arrow_forward_ios_outlined,
                                 ),
                                 iconSize: 14,
-                                iconEnabledColor: Colors.black,
-                                iconDisabledColor: Colors.grey,
+                                iconEnabledColor: AppColors.black,
+                                iconDisabledColor: AppColors.grey,
                               ),
                               buttonStyleData: ButtonStyleData(
                                 height: 50,
                                 width: 160,
-                                padding: const EdgeInsets.only(left: 14, right: 14),
+                                padding:
+                                    const EdgeInsets.only(left: 14, right: 14),
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.only(
                                       topLeft: Radius.circular(10),
                                       topRight: Radius.circular(0),
                                       bottomLeft: Radius.circular(0),
                                       bottomRight: Radius.circular(10)),
-                                  color: HexColor("#FFFFFF"),
+                                  color: AppColors.white,
                                 ),
                                 elevation: 0,
                               ),
@@ -150,13 +152,14 @@ class SupportScreen extends StatelessWidget {
                                       topRight: Radius.circular(10),
                                       bottomLeft: Radius.circular(10),
                                       bottomRight: Radius.circular(10)),
-                                  color: HexColor("#FFFFFF"),
+                                  color: AppColors.white,
                                 ),
                                 elevation: 8,
                               ),
                               menuItemStyleData: MenuItemStyleData(
                                 height: 40,
-                                padding: const EdgeInsets.only(left: 14, right: 14),
+                                padding:
+                                    const EdgeInsets.only(left: 14, right: 14),
                               ),
                             ),
                           ),
@@ -166,19 +169,19 @@ class SupportScreen extends StatelessWidget {
                         controller: model.titleController,
                         textAlignVertical: TextAlignVertical.top,
                         keyboardType: TextInputType.emailAddress,
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(color: AppColors.white),
                         validator: (value) {
                           if (value!.isEmpty) {
                             return "Field can't be empty";
                           }
                           return null;
                         },
-                        cursorColor: Colors.white,
+                        cursorColor: AppColors.white,
                         decoration: InputDecoration(
                           hintText: translate('support_screen.title'),
-                          hintStyle: TextStyle(color: Colors.grey),
-                          labelStyle: TextStyle(color: Colors.white),
-                          fillColor: Colors.white24,
+                          hintStyle: TextStyle(color: AppColors.grey),
+                          labelStyle: TextStyle(color: AppColors.white),
+                          fillColor: AppColors.white24,
                           filled: true,
                           enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.only(
@@ -215,20 +218,20 @@ class SupportScreen extends StatelessWidget {
                         textAlignVertical: TextAlignVertical.top,
                         maxLines: 10,
                         keyboardType: TextInputType.emailAddress,
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(color: AppColors.white),
                         validator: (value) {
                           if (value!.isEmpty) {
                             return "Field can't be empty";
                           }
                           return null;
                         },
-                        cursorColor: Colors.white,
+                        cursorColor: AppColors.white,
                         decoration: InputDecoration(
-                          counterStyle: TextStyle(color: Colors.white),
+                          counterStyle: TextStyle(color: AppColors.white),
                           hintText: translate('support_screen.description'),
-                          hintStyle: TextStyle(color: Colors.grey),
-                          labelStyle: TextStyle(color: Colors.white),
-                          fillColor: Colors.white24,
+                          hintStyle: TextStyle(color: AppColors.grey),
+                          labelStyle: TextStyle(color: AppColors.white),
+                          fillColor: AppColors.white24,
                           filled: true,
                           enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.only(
@@ -263,7 +266,7 @@ class SupportScreen extends StatelessWidget {
                         width: MediaQuery.of(context).size.width,
                         child: TextButton(
                             style: TextButton.styleFrom(
-                              backgroundColor: HexColor("#036eb7"),
+                              backgroundColor: AppColors.customFF036EB7,
                               padding: EdgeInsets.zero,
                               shape: ButtonBorder(),
                             ),
@@ -275,7 +278,7 @@ class SupportScreen extends StatelessWidget {
                               padding: EdgeInsets.all(20.0),
                               child: Text(
                                 translate('support_screen.submit'),
-                                style: TextStyle(color: Colors.white),
+                                style: TextStyle(color: AppColors.white),
                               ),
                             )),
                       )

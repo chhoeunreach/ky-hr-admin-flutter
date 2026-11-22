@@ -4,6 +4,7 @@ import 'package:cnattendance/screen/tadascreen/widget/imagelistbottom.dart';
 import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class AttachmentBottomSheet extends StatelessWidget {
   final List<Attachment> attachments;
@@ -29,7 +30,7 @@ class AttachmentBottomSheet extends StatelessWidget {
                   Text(
                     "Attachments",
                     style: TextStyle(
-                        color: Colors.white,
+                        color: AppColors.white,
                         fontSize: 24,
                         fontWeight: FontWeight.bold),
                   ),
@@ -39,7 +40,7 @@ class AttachmentBottomSheet extends StatelessWidget {
                       },
                       child: Icon(
                         Icons.close,
-                        color: Colors.white,
+                        color: AppColors.white,
                       )),
                 ],
               ),
@@ -52,11 +53,11 @@ class AttachmentBottomSheet extends StatelessWidget {
               children: [
                 Text(
                   "Image",
-                  style: TextStyle(color: Colors.white, fontSize: 15),
+                  style: TextStyle(color: AppColors.white, fontSize: 15),
                 ),
                 Text(
                   "Files",
-                  style: TextStyle(color: Colors.white, fontSize: 15),
+                  style: TextStyle(color: AppColors.white, fontSize: 15),
                 ),
               ],
             ),

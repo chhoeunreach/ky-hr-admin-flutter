@@ -11,6 +11,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:nepali_date_picker/nepali_date_picker.dart' as picker;
 import 'package:nepali_date_picker/nepali_date_picker.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class EarlyLeaveSheet extends StatefulWidget {
   final bool isEarlyLeave;
@@ -157,8 +158,8 @@ class EarlyLeaveSheetState extends State<EarlyLeaveSheet> {
                           Icon(Icons.calendar_month, color: enterprise.accent),
                       labelStyle: TextStyle(color: enterprise.text),
                       fillColor: enterprise.isDark
-                          ? const Color(0xFF0F172A)
-                          : const Color(0xFFF8FAFC),
+                          ? AppColors.ink900
+                          : AppColors.customFFF8FAFC,
                       filled: true,
                       enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
@@ -168,10 +169,10 @@ class EarlyLeaveSheetState extends State<EarlyLeaveSheet> {
                           borderSide: BorderSide(color: enterprise.accent)),
                       focusedErrorBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
-                          borderSide: const BorderSide(color: Colors.red)),
+                          borderSide: const BorderSide(color: AppColors.red)),
                       errorBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
-                          borderSide: const BorderSide(color: Colors.red)),
+                          borderSide: const BorderSide(color: AppColors.red)),
                     ),
                     readOnly: true,
                     //set it true, so that user will not able to edit text
@@ -193,8 +194,9 @@ class EarlyLeaveSheetState extends State<EarlyLeaveSheet> {
 
                       if (pickedDate != null) {
                         if (!(await provider.isAd())) {
-                          final String formattedDate = NepaliDateFormat('yyyy-MM-dd')
-                              .format((pickedDate as NepaliDateTime));
+                          final String formattedDate =
+                              NepaliDateFormat('yyyy-MM-dd')
+                                  .format((pickedDate as NepaliDateTime));
                           startDate = (pickedDate).toDateTime();
                           issueDate.text = formattedDate;
                         } else {
@@ -220,8 +222,8 @@ class EarlyLeaveSheetState extends State<EarlyLeaveSheet> {
                           Icon(Icons.calendar_month, color: enterprise.accent),
                       labelStyle: TextStyle(color: enterprise.text),
                       fillColor: enterprise.isDark
-                          ? const Color(0xFF0F172A)
-                          : const Color(0xFFF8FAFC),
+                          ? AppColors.ink900
+                          : AppColors.customFFF8FAFC,
                       filled: true,
                       enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
@@ -231,10 +233,10 @@ class EarlyLeaveSheetState extends State<EarlyLeaveSheet> {
                           borderSide: BorderSide(color: enterprise.accent)),
                       focusedErrorBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
-                          borderSide: const BorderSide(color: Colors.red)),
+                          borderSide: const BorderSide(color: AppColors.red)),
                       errorBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
-                          borderSide: const BorderSide(color: Colors.red)),
+                          borderSide: const BorderSide(color: AppColors.red)),
                     ),
                     readOnly: true,
                     //set it true, so that user will not able to edit text
@@ -260,11 +262,12 @@ class EarlyLeaveSheetState extends State<EarlyLeaveSheet> {
                 decoration: InputDecoration(
                   hintText: translate('leave_screen.select_end_time'),
                   hintStyle: TextStyle(color: enterprise.mutedText),
-                  prefixIcon: Icon(Icons.calendar_month, color: enterprise.accent),
+                  prefixIcon:
+                      Icon(Icons.calendar_month, color: enterprise.accent),
                   labelStyle: TextStyle(color: enterprise.text),
                   fillColor: enterprise.isDark
-                      ? const Color(0xFF0F172A)
-                      : const Color(0xFFF8FAFC),
+                      ? AppColors.ink900
+                      : AppColors.customFFF8FAFC,
                   filled: true,
                   enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -274,10 +277,10 @@ class EarlyLeaveSheetState extends State<EarlyLeaveSheet> {
                       borderSide: BorderSide(color: enterprise.accent)),
                   focusedErrorBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: Colors.red)),
+                      borderSide: const BorderSide(color: AppColors.red)),
                   errorBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: Colors.red)),
+                      borderSide: const BorderSide(color: AppColors.red)),
                 ),
                 readOnly: true,
                 //set it true, so that user will not able to edit text
@@ -314,8 +317,8 @@ class EarlyLeaveSheetState extends State<EarlyLeaveSheet> {
                   prefixIcon: Icon(Icons.edit_note, color: enterprise.accent),
                   labelStyle: TextStyle(color: enterprise.text),
                   fillColor: enterprise.isDark
-                      ? const Color(0xFF0F172A)
-                      : const Color(0xFFF8FAFC),
+                      ? AppColors.ink900
+                      : AppColors.customFFF8FAFC,
                   filled: true,
                   enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -325,10 +328,10 @@ class EarlyLeaveSheetState extends State<EarlyLeaveSheet> {
                       borderSide: BorderSide(color: enterprise.accent)),
                   focusedErrorBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: Colors.red)),
+                      borderSide: const BorderSide(color: AppColors.red)),
                   errorBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: Colors.red)),
+                      borderSide: const BorderSide(color: AppColors.red)),
                 ),
               ),
               gaps(20),
@@ -349,7 +352,7 @@ class EarlyLeaveSheetState extends State<EarlyLeaveSheet> {
                       child: Text(
                         translate('leave_screen.request_leave'),
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: AppColors.white,
                           fontWeight: FontWeight.bold,
                         ),
                       ),

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
 import 'package:html/parser.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class AwardDetailScreen extends StatelessWidget {
   @override
@@ -46,7 +47,7 @@ class AwardDetailScreen extends StatelessWidget {
                     award.employee_name,
                     style: TextStyle(
                         fontSize: 15,
-                        color: Colors.white,
+                        color: AppColors.white,
                         fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -55,7 +56,7 @@ class AwardDetailScreen extends StatelessWidget {
                     award.award_name,
                     style: TextStyle(
                         fontSize: 24,
-                        color: Colors.white,
+                        color: AppColors.white,
                         fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -71,14 +72,14 @@ class AwardDetailScreen extends StatelessWidget {
                           Text(
                             "${translate('award_detail_screen.awarded_by')}",
                             style: TextStyle(
-                                color: Colors.grey,
+                                color: AppColors.grey,
                                 fontSize: 15,
                                 fontWeight: FontWeight.normal),
                           ),
                           Text(
                             "${award.awarded_by}",
                             style: TextStyle(
-                                color: Colors.white,
+                                color: AppColors.white,
                                 fontSize: 15,
                                 fontWeight: FontWeight.normal),
                           ),
@@ -89,7 +90,7 @@ class AwardDetailScreen extends StatelessWidget {
                       height: 30,
                       child: VerticalDivider(
                         width: 1,
-                        color: Colors.white54,
+                        color: AppColors.white54,
                       ),
                     ),
                     Expanded(
@@ -99,14 +100,14 @@ class AwardDetailScreen extends StatelessWidget {
                           Text(
                             "Awarded Date",
                             style: TextStyle(
-                                color: Colors.grey,
+                                color: AppColors.grey,
                                 fontSize: 15,
                                 fontWeight: FontWeight.normal),
                           ),
                           Text(
                             "${award.awarded_date}",
                             style: TextStyle(
-                                color: Colors.white,
+                                color: AppColors.white,
                                 fontSize: 15,
                                 fontWeight: FontWeight.normal),
                           ),
@@ -126,7 +127,7 @@ class AwardDetailScreen extends StatelessWidget {
                       Text(
                         translate('award_detail_screen.award_detail'),
                         style: TextStyle(
-                            color: Colors.white,
+                            color: AppColors.white,
                             fontSize: 15,
                             fontWeight: FontWeight.normal),
                       ),
@@ -136,14 +137,14 @@ class AwardDetailScreen extends StatelessWidget {
                       Card(
                         shape: ButtonBorder(),
                         elevation: 0,
-                        color: Colors.white12,
+                        color: AppColors.white12,
                         margin: EdgeInsets.zero,
                         child: Container(
                           width: double.infinity,
                           padding: const EdgeInsets.all(8.0),
                           child: Text(
-                              style:
-                                  TextStyle(color: Colors.white, fontSize: 15),
+                              style: TextStyle(
+                                  color: AppColors.white, fontSize: 15),
                               parse(award.award_description).body!.text),
                         ),
                       ),
@@ -161,7 +162,7 @@ class AwardDetailScreen extends StatelessWidget {
                       Text(
                         translate('award_detail_screen.gift_detail'),
                         style: TextStyle(
-                            color: Colors.white,
+                            color: AppColors.white,
                             fontSize: 15,
                             fontWeight: FontWeight.normal),
                       ),
@@ -171,14 +172,15 @@ class AwardDetailScreen extends StatelessWidget {
                       Card(
                         shape: ButtonBorder(),
                         elevation: 0,
-                        color: Colors.white12,
+                        color: AppColors.white12,
                         margin: EdgeInsets.zero,
                         child: Container(
                           width: double.infinity,
                           padding: const EdgeInsets.all(8.0),
                           child: Text(
                             parse(award.gift_description).body!.text,
-                            style: TextStyle(color: Colors.white, fontSize: 15),
+                            style:
+                                TextStyle(color: AppColors.white, fontSize: 15),
                           ),
                         ),
                       ),

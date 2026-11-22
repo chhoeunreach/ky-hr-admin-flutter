@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class RecentEvent extends StatelessWidget {
   @override
@@ -55,8 +56,8 @@ class RecentEvent extends StatelessWidget {
                     elevation: 0,
                     margin: const EdgeInsets.symmetric(vertical: 3),
                     color: enterprise.isDark
-                        ? const Color(0xFF1E293B).withValues(alpha: 0.90)
-                        : Colors.white.withValues(alpha: 0.90),
+                        ? AppColors.customFF1E293B.withValues(alpha: 0.90)
+                        : AppColors.white.withValues(alpha: 0.90),
                     shape: ButtonBorder(),
                     child: InkWell(
                       borderRadius: const BorderRadius.only(

@@ -7,6 +7,7 @@ import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class RecentTraining extends StatelessWidget {
   @override
@@ -25,7 +26,10 @@ class RecentTraining extends StatelessWidget {
               children: [
                 Text(
                   translate('home_screen.training'),
-                  style: TextStyle(color: enterprise.text, fontSize: 16, fontWeight: FontWeight.w900),
+                  style: TextStyle(
+                      color: enterprise.text,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900),
                 ),
                 Spacer(),
                 GestureDetector(
@@ -34,7 +38,10 @@ class RecentTraining extends StatelessWidget {
                   },
                   child: Text(
                     translate('home_screen.show_all'),
-                    style: TextStyle(color: enterprise.accent, fontSize: 12, fontWeight: FontWeight.w700),
+                    style: TextStyle(
+                        color: enterprise.accent,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700),
                   ),
                 ),
               ],
@@ -55,7 +62,9 @@ class RecentTraining extends StatelessWidget {
                           borderRadius: BorderRadius.only(
                               topLeft: Radius.circular(10),
                               bottomRight: Radius.circular(10))),
-                      color: enterprise.isDark ? const Color(0xFF1E293B).withValues(alpha: 0.90) : Colors.white.withValues(alpha: 0.90),
+                      color: enterprise.isDark
+                          ? AppColors.customFF1E293B.withValues(alpha: 0.90)
+                          : AppColors.white.withValues(alpha: 0.90),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 10),

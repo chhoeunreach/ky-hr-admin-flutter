@@ -12,9 +12,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
-import 'package:hexcolor/hexcolor.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class TeamSheetScreen extends StatelessWidget {
   static const routeName = '/teamsheet';
@@ -115,7 +115,7 @@ class TeamSheetState extends State<TeamSheet> {
                                           style: const TextStyle(
                                             fontSize: 14,
                                             fontWeight: FontWeight.bold,
-                                            color: Colors.black,
+                                            color: AppColors.black,
                                           ),
                                           overflow: TextOverflow.ellipsis,
                                         ),
@@ -139,8 +139,8 @@ class TeamSheetState extends State<TeamSheet> {
                                   Icons.arrow_forward_ios_outlined,
                                 ),
                                 iconSize: 14,
-                                iconEnabledColor: Colors.black,
-                                iconDisabledColor: Colors.grey,
+                                iconEnabledColor: AppColors.black,
+                                iconDisabledColor: AppColors.grey,
                               ),
                               buttonStyleData: ButtonStyleData(
                                 height: 50,
@@ -153,7 +153,7 @@ class TeamSheetState extends State<TeamSheet> {
                                       topRight: Radius.circular(0),
                                       bottomLeft: Radius.circular(0),
                                       bottomRight: Radius.circular(10)),
-                                  color: HexColor("#FFFFFF"),
+                                  color: AppColors.white,
                                 ),
                                 elevation: 0,
                               ),
@@ -166,7 +166,7 @@ class TeamSheetState extends State<TeamSheet> {
                                       topRight: Radius.circular(10),
                                       bottomLeft: Radius.circular(10),
                                       bottomRight: Radius.circular(10)),
-                                  color: HexColor("#FFFFFF"),
+                                  color: AppColors.white,
                                 ),
                                 elevation: 8,
                               ),
@@ -190,7 +190,7 @@ class TeamSheetState extends State<TeamSheet> {
                                           style: const TextStyle(
                                             fontSize: 14,
                                             fontWeight: FontWeight.bold,
-                                            color: Colors.black,
+                                            color: AppColors.black,
                                           ),
                                           overflow: TextOverflow.ellipsis,
                                         ),
@@ -209,8 +209,8 @@ class TeamSheetState extends State<TeamSheet> {
                                   Icons.arrow_forward_ios_outlined,
                                 ),
                                 iconSize: 14,
-                                iconEnabledColor: Colors.black,
-                                iconDisabledColor: Colors.grey,
+                                iconEnabledColor: AppColors.black,
+                                iconDisabledColor: AppColors.grey,
                               ),
                               buttonStyleData: ButtonStyleData(
                                 height: 50,
@@ -223,7 +223,7 @@ class TeamSheetState extends State<TeamSheet> {
                                       topRight: Radius.circular(0),
                                       bottomLeft: Radius.circular(0),
                                       bottomRight: Radius.circular(10)),
-                                  color: HexColor("#FFFFFF"),
+                                  color: AppColors.white,
                                 ),
                                 elevation: 0,
                               ),
@@ -236,7 +236,7 @@ class TeamSheetState extends State<TeamSheet> {
                                       topRight: Radius.circular(10),
                                       bottomLeft: Radius.circular(10),
                                       bottomRight: Radius.circular(10)),
-                                  color: HexColor("#FFFFFF"),
+                                  color: AppColors.white,
                                 ),
                                 elevation: 8,
                               ),
@@ -263,7 +263,7 @@ class TeamSheetState extends State<TeamSheet> {
                                   translate('team_sheet_screen.no_team_found'),
                                   textAlign: TextAlign.center,
                                   style: const TextStyle(
-                                    color: Colors.white70,
+                                    color: AppColors.white70,
                                     fontSize: 16,
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -292,7 +292,7 @@ class TeamSheetState extends State<TeamSheet> {
     return Card(
       shape: ButtonBorder(),
       elevation: 0,
-      color: Colors.white10,
+      color: AppColors.white10,
       child: InkWell(
         onTap: () {
           Get.to(EmployeeDetailScreen(),
@@ -307,8 +307,9 @@ class TeamSheetState extends State<TeamSheet> {
                 decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                        color:
-                            teamList.active == "1" ? Colors.green : Colors.grey,
+                        color: teamList.active == "1"
+                            ? AppColors.green
+                            : AppColors.grey,
                         width: 2)),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(30),
@@ -329,11 +330,11 @@ class TeamSheetState extends State<TeamSheet> {
                     children: [
                       Text(
                         teamList.name,
-                        style: TextStyle(color: Colors.white, fontSize: 18),
+                        style: TextStyle(color: AppColors.white, fontSize: 18),
                       ),
                       SizedBox(height: 5),
                       Text(teamList.post,
-                          style: TextStyle(color: Colors.white70)),
+                          style: TextStyle(color: AppColors.white70)),
                     ],
                   ),
                 ),
@@ -349,7 +350,7 @@ class TeamSheetState extends State<TeamSheet> {
                   },
                   icon: const Icon(
                     Icons.phone,
-                    color: Colors.white,
+                    color: AppColors.white,
                   )),
               IconButton(
                   onPressed: () async {
@@ -362,7 +363,7 @@ class TeamSheetState extends State<TeamSheet> {
                   },
                   icon: const Icon(
                     Icons.message,
-                    color: Colors.white,
+                    color: AppColors.white,
                   )),
             ],
           ),

@@ -13,7 +13,9 @@ import 'my_tasks_screen.dart';
 import 'daily_summaries.dart';
 import 'work_records_screen.dart';
 import 'work_record_editor.dart';
+import 'branch_mission_editor.dart';
 import 'work_labels.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class CreateRecordButton extends StatefulWidget {
   const CreateRecordButton({super.key, this.api});
@@ -52,6 +54,7 @@ class _CreateRecordButtonState extends State<CreateRecordButton> {
       'records' => MyDailyRecordsScreen(api: service),
       'assign' => AssignEmployeeTaskScreen(api: service),
       'work-records' => WorkRecordsScreen(api: service),
+      'branch-mission' => BranchMissionEditor(api: service),
       'activity' => WorkRecordEditor(api: service, kind: 'activity'),
       'work-incident' => WorkRecordEditor(api: service, kind: 'incident'),
       'work-note' => WorkRecordEditor(api: service, kind: 'note'),
@@ -66,6 +69,7 @@ class _CreateRecordButtonState extends State<CreateRecordButton> {
       final message = switch (choice) {
         'assign' => 'Task assigned.',
         'report' => 'Daily report submitted.',
+        'branch-mission' => 'Branch mission record saved.',
         _ => 'Record saved.',
       };
       ScaffoldMessenger.of(context)
@@ -88,7 +92,7 @@ class _CreateRecordButtonState extends State<CreateRecordButton> {
         tooltip: 'Create Record',
         backgroundColor: theme.primary,
         foregroundColor: theme.isRoyalDay
-            ? Colors.white
+            ? AppColors.white
             : recordContrastColor(theme.primary, theme.text),
         onPressed: _open,
         child: Ink(
@@ -219,7 +223,7 @@ class _QuickCreateSparklePainter extends CustomPainter {
       (Offset(.13, .35), 5.6, .13),
       (Offset(.88, .76), 4.8, .26),
     ];
-    final highlight = Color.lerp(color, Colors.white, .55)!;
+    final highlight = Color.lerp(color, AppColors.white, .55)!;
     final pulse = math.sin(progress * math.pi);
     if (pulse > .01) {
       final center = size.center(Offset.zero);
@@ -261,7 +265,7 @@ class _QuickCreateSparklePainter extends CustomPainter {
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1.5
           ..strokeJoin = StrokeJoin.round
-          ..color = const Color(0xff151725).withValues(alpha: .76),
+          ..color = AppColors.customFF151725.withValues(alpha: .76),
       );
       paint.color = highlight.withValues(alpha: .82 + .18 * intensity);
       canvas.drawPath(sparkle, paint);
@@ -320,6 +324,7 @@ class _QuickCreateState extends State<_QuickCreate> {
   }
 
   static const _workActions = [
+    ('branch-mission', Icons.alt_route_rounded, 'Branch Route'),
     ('activity', Icons.work_outline, 'Daily Activity'),
     ('work-incident', Icons.report_problem_outlined, 'Incident Report'),
     ('todo', Icons.task_alt_outlined, 'To-do / Task'),
@@ -327,6 +332,7 @@ class _QuickCreateState extends State<_QuickCreate> {
   ];
 
   static const _recordActions = [
+    ('branch-mission', Icons.alt_route_rounded, 'Branch Route'),
     ('note', Icons.sticky_note_2_outlined, 'New note'),
     ('todo', Icons.task_alt_outlined, 'New to-do'),
     ('incident', Icons.report_problem_outlined, 'Record incident'),

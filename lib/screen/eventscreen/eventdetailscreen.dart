@@ -5,6 +5,7 @@ import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class EventDetailScreen extends StatelessWidget {
   final Event event;
@@ -45,11 +46,13 @@ class EventDetailScreen extends StatelessWidget {
                   Text(
                     event.title,
                     style: TextStyle(
-                        color: Colors.white,
+                        color: AppColors.white,
                         fontSize: 24,
                         fontWeight: FontWeight.bold),
                   ),
-                  SizedBox(height: 8,),
+                  SizedBox(
+                    height: 8,
+                  ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -60,16 +63,18 @@ class EventDetailScreen extends StatelessWidget {
                           children: [
                             Text(
                               translate('common.event_date'),
-                              style: TextStyle(color: Colors.white70),
+                              style: TextStyle(color: AppColors.white70),
                             ),
                             Row(
                               children: [
                                 Text(
                                   event.startdate +
                                       (event.endDate.isEmpty ? "" : " - ") +
-                                      (event.endDate.isEmpty ? "" : event.endDate),
+                                      (event.endDate.isEmpty
+                                          ? ""
+                                          : event.endDate),
                                   style: TextStyle(
-                                      color: Colors.white,
+                                      color: AppColors.white,
                                       fontSize: 14,
                                       fontWeight: FontWeight.normal),
                                 ),
@@ -82,7 +87,7 @@ class EventDetailScreen extends StatelessWidget {
                         height: 30,
                         child: VerticalDivider(
                           width: 1,
-                          color: Colors.white54,
+                          color: AppColors.white54,
                         ),
                       ),
                       Expanded(
@@ -92,14 +97,14 @@ class EventDetailScreen extends StatelessWidget {
                           children: [
                             Text(
                               translate('common.event_date'),
-                              style: TextStyle(color: Colors.white70),
+                              style: TextStyle(color: AppColors.white70),
                             ),
                             Text(
                               event.startTime +
                                   (event.endTime.isEmpty ? "" : " - ") +
                                   (event.endTime.isEmpty ? "" : event.endTime),
                               style: TextStyle(
-                                  color: Colors.white,
+                                  color: AppColors.white,
                                   fontSize: 14,
                                   fontWeight: FontWeight.normal),
                             ),
@@ -108,7 +113,9 @@ class EventDetailScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                  SizedBox(height: 10,),
+                  SizedBox(
+                    height: 10,
+                  ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -119,14 +126,14 @@ class EventDetailScreen extends StatelessWidget {
                           children: [
                             Text(
                               translate('common.location'),
-                              style: TextStyle(color: Colors.white70),
+                              style: TextStyle(color: AppColors.white70),
                             ),
                             Row(
                               children: [
                                 Text(
                                   event.location,
                                   style: TextStyle(
-                                      color: Colors.white,
+                                      color: AppColors.white,
                                       fontSize: 14,
                                       fontWeight: FontWeight.normal),
                                 ),
@@ -139,7 +146,7 @@ class EventDetailScreen extends StatelessWidget {
                         height: 30,
                         child: VerticalDivider(
                           width: 1,
-                          color: Colors.white54,
+                          color: AppColors.white54,
                         ),
                       ),
                       Expanded(
@@ -149,13 +156,13 @@ class EventDetailScreen extends StatelessWidget {
                           children: [
                             Text(
                               translate('common.host'),
-                              style: TextStyle(color: Colors.white70),
+                              style: TextStyle(color: AppColors.white70),
                             ),
                             Text(
                               event.creator.name,
                               textAlign: TextAlign.end,
                               style: TextStyle(
-                                  color: Colors.white,
+                                  color: AppColors.white,
                                   fontSize: 14,
                                   fontWeight: FontWeight.normal),
                             ),
@@ -164,12 +171,14 @@ class EventDetailScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                  SizedBox(height: 10,),
+                  SizedBox(
+                    height: 10,
+                  ),
                   Card(
                     shape: ButtonBorder(),
                     elevation: 0,
                     margin: EdgeInsets.zero,
-                    color: Colors.white24,
+                    color: AppColors.white24,
                     child: Container(
                       width: double.infinity,
                       padding: EdgeInsets.all(8),
@@ -179,13 +188,14 @@ class EventDetailScreen extends StatelessWidget {
                           Text(
                             translate('common.event_description'),
                             style: TextStyle(
-                                color: Colors.white,
+                                color: AppColors.white,
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold),
                           ),
                           Text(
                             event.description,
-                            style: TextStyle(color: Colors.white, fontSize: 14),
+                            style:
+                                TextStyle(color: AppColors.white, fontSize: 14),
                           )
                         ],
                       ),

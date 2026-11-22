@@ -13,13 +13,13 @@ import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
-import 'package:hexcolor/hexcolor.dart';
 import 'package:html/parser.dart' as html_parser;
 import 'package:cnattendance/core/ky_security/ky_http.dart';
 import 'package:intl/intl.dart';
 import 'package:nepali_date_picker/nepali_date_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/foundation.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class GeneralScreen extends StatefulWidget {
   @override
@@ -60,7 +60,10 @@ class _GeneralScreenState extends State<GeneralScreen> {
           settings = payload['data'] as Map;
         }
       }
-    } catch (error) { if (kDebugMode) debugPrint('General: failed to load legacy update settings: $error'); }
+    } catch (error) {
+      if (kDebugMode)
+        debugPrint('General: failed to load legacy update settings: $error');
+    }
     if (mounted) setState(() => _legacyUpdateSettings = settings);
   }
 
@@ -76,7 +79,10 @@ class _GeneralScreenState extends State<GeneralScreen> {
   Future<void> _openDownload(Uri uri) async {
     try {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } catch (error) { if (kDebugMode) debugPrint('General: failed to launch external URL: $error'); }
+    } catch (error) {
+      if (kDebugMode)
+        debugPrint('General: failed to launch external URL: $error');
+    }
   }
 
   Future<void> _loadFullDescription(
@@ -195,7 +201,10 @@ class _GeneralScreenState extends State<GeneralScreen> {
         final outputFormat = DateFormat('MM-dd-yyyy');
         outputDate.value = outputFormat.format(tempDate);
         checkAd(tempDate);
-      } catch (error) { if (kDebugMode) debugPrint('General: failed to parse notice date: $error'); }
+      } catch (error) {
+        if (kDebugMode)
+          debugPrint('General: failed to parse notice date: $error');
+      }
     }
 
     return Scaffold(
@@ -206,7 +215,7 @@ class _GeneralScreenState extends State<GeneralScreen> {
           appBar: AppBar(
             backgroundColor: Colors.transparent,
             title: Text(translate('general_screen.notification_detail'),
-                style: TextStyle(color: Colors.white)),
+                style: TextStyle(color: AppColors.white)),
             elevation: 0,
           ),
           body: SafeArea(
@@ -231,7 +240,7 @@ class _GeneralScreenState extends State<GeneralScreen> {
                         if (isUpdate) ...[
                           Card(
                             elevation: 4,
-                            color: HexColor("#036eb7"),
+                            color: AppColors.customFF036EB7,
                             margin: EdgeInsets.only(bottom: 14),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
@@ -246,12 +255,12 @@ class _GeneralScreenState extends State<GeneralScreen> {
                                       Container(
                                         padding: EdgeInsets.all(8),
                                         decoration: BoxDecoration(
-                                          color: Colors.white24,
+                                          color: AppColors.white24,
                                           shape: BoxShape.circle,
                                         ),
                                         child: Icon(
                                           Icons.system_update_rounded,
-                                          color: Colors.white,
+                                          color: AppColors.white,
                                           size: 28,
                                         ),
                                       ),
@@ -264,7 +273,7 @@ class _GeneralScreenState extends State<GeneralScreen> {
                                             Text(
                                               translate('app_update.title'),
                                               style: TextStyle(
-                                                color: Colors.white,
+                                                color: AppColors.white,
                                                 fontSize: 16,
                                                 fontWeight: FontWeight.bold,
                                               ),
@@ -275,7 +284,7 @@ class _GeneralScreenState extends State<GeneralScreen> {
                                                   ? downloadUrl.host
                                                   : '…',
                                               style: TextStyle(
-                                                color: Colors.white70,
+                                                color: AppColors.white70,
                                                 fontSize: 13,
                                               ),
                                             ),
@@ -290,9 +299,9 @@ class _GeneralScreenState extends State<GeneralScreen> {
                                       Expanded(
                                         child: ElevatedButton.icon(
                                           style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.white,
+                                            backgroundColor: AppColors.white,
                                             foregroundColor:
-                                                HexColor("#036eb7"),
+                                                AppColors.customFF036EB7,
                                             shape: ButtonBorder(),
                                             padding: EdgeInsets.symmetric(
                                                 vertical: 12),
@@ -315,9 +324,9 @@ class _GeneralScreenState extends State<GeneralScreen> {
                                       SizedBox(width: 8),
                                       OutlinedButton(
                                         style: OutlinedButton.styleFrom(
-                                          side:
-                                              BorderSide(color: Colors.white70),
-                                          foregroundColor: Colors.white,
+                                          side: BorderSide(
+                                              color: AppColors.white70),
+                                          foregroundColor: AppColors.white,
                                           shape: ButtonBorder(),
                                           padding: EdgeInsets.symmetric(
                                               vertical: 12, horizontal: 12),
@@ -344,7 +353,7 @@ class _GeneralScreenState extends State<GeneralScreen> {
                                                 );
                                               },
                                         child: Icon(Icons.visibility_rounded,
-                                            size: 18, color: Colors.white),
+                                            size: 18, color: AppColors.white),
                                       ),
                                     ],
                                   ),
@@ -357,11 +366,11 @@ class _GeneralScreenState extends State<GeneralScreen> {
                           width: double.infinity,
                           padding: EdgeInsets.fromLTRB(18, 18, 18, 24),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: AppColors.white,
                             borderRadius: BorderRadius.circular(22),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.12),
+                                color: AppColors.black.withValues(alpha: 0.12),
                                 blurRadius: 24,
                                 offset: Offset(0, 12),
                               ),
@@ -376,12 +385,12 @@ class _GeneralScreenState extends State<GeneralScreen> {
                                     width: 36,
                                     height: 36,
                                     decoration: BoxDecoration(
-                                      color: Color(0xFFEAF2FF),
+                                      color: AppColors.customFFEAF2FF,
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Icon(
                                       Icons.article_outlined,
-                                      color: Color(0xFF036EB7),
+                                      color: AppColors.customFF036EB7,
                                       size: 20,
                                     ),
                                   ),
@@ -390,7 +399,7 @@ class _GeneralScreenState extends State<GeneralScreen> {
                                     child: Text(
                                       "Description",
                                       style: TextStyle(
-                                        color: Color(0xFF172033),
+                                        color: AppColors.customFF172033,
                                         fontSize: 17,
                                         fontWeight: FontWeight.w800,
                                       ),
@@ -402,7 +411,7 @@ class _GeneralScreenState extends State<GeneralScreen> {
                                       height: 18,
                                       child: CircularProgressIndicator(
                                         strokeWidth: 2,
-                                        color: Color(0xFF036EB7),
+                                        color: AppColors.customFF036EB7,
                                       ),
                                     ),
                                 ],
@@ -437,8 +446,8 @@ class _GeneralScreenState extends State<GeneralScreen> {
                                 width: double.infinity,
                                 child: ElevatedButton.icon(
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: Color(0xFF036EB7),
-                                    foregroundColor: Colors.white,
+                                    backgroundColor: AppColors.customFF036EB7,
+                                    foregroundColor: AppColors.white,
                                     elevation: 0,
                                     padding: EdgeInsets.symmetric(vertical: 14),
                                     shape: RoundedRectangleBorder(
@@ -489,7 +498,7 @@ class _GeneralScreenState extends State<GeneralScreen> {
   Map<String, Style> _descriptionHtmlStyle() {
     return {
       "body": Style(
-        color: Color(0xFF263247),
+        color: AppColors.customFF263247,
         fontSize: FontSize(15.5),
         fontWeight: FontWeight.w500,
         lineHeight: LineHeight(1.65),
@@ -497,16 +506,16 @@ class _GeneralScreenState extends State<GeneralScreen> {
         padding: HtmlPaddings.zero,
       ),
       "p": Style(
-        color: Color(0xFF263247),
+        color: AppColors.customFF263247,
         lineHeight: LineHeight(1.65),
         margin: Margins.only(bottom: 12),
       ),
       "li": Style(
-        color: Color(0xFF263247),
+        color: AppColors.customFF263247,
         lineHeight: LineHeight(1.6),
       ),
       "a": Style(
-        color: Color(0xFF036EB7),
+        color: AppColors.customFF036EB7,
         textDecoration: TextDecoration.underline,
       ),
     };
@@ -530,7 +539,7 @@ class _GeneralScreenState extends State<GeneralScreen> {
           builder: (context, scrollController) {
             return Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
               ),
               child: SafeArea(
@@ -542,7 +551,7 @@ class _GeneralScreenState extends State<GeneralScreen> {
                       width: 44,
                       height: 5,
                       decoration: BoxDecoration(
-                        color: Color(0xFFD8E0EC),
+                        color: AppColors.customFFD8E0EC,
                         borderRadius: BorderRadius.circular(100),
                       ),
                     ),
@@ -556,7 +565,7 @@ class _GeneralScreenState extends State<GeneralScreen> {
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                color: Color(0xFF172033),
+                                color: AppColors.customFF172033,
                                 fontSize: 18,
                                 fontWeight: FontWeight.w900,
                                 height: 1.2,
@@ -565,13 +574,13 @@ class _GeneralScreenState extends State<GeneralScreen> {
                           ),
                           IconButton(
                             icon: Icon(Icons.close_rounded),
-                            color: Color(0xFF52607A),
+                            color: AppColors.customFF52607A,
                             onPressed: () => Navigator.pop(context),
                           ),
                         ],
                       ),
                     ),
-                    Divider(height: 1, color: Color(0xFFE6ECF4)),
+                    Divider(height: 1, color: AppColors.customFFE6ECF4),
                     Expanded(
                       child: Padding(
                         padding: EdgeInsets.fromLTRB(20, 16, 20, 20),
@@ -587,8 +596,8 @@ class _GeneralScreenState extends State<GeneralScreen> {
                         width: double.infinity,
                         child: OutlinedButton.icon(
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: Color(0xFF036EB7),
-                            side: BorderSide(color: Color(0xFFB9D8F2)),
+                            foregroundColor: AppColors.customFF036EB7,
+                            side: BorderSide(color: AppColors.customFFB9D8F2),
                             padding: EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(14),
@@ -642,10 +651,10 @@ class _NotificationHeader extends StatelessWidget {
       width: double.infinity,
       padding: EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.14),
+        color: AppColors.white.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.18),
+          color: AppColors.white.withValues(alpha: 0.18),
         ),
       ),
       child: Column(
@@ -656,14 +665,14 @@ class _NotificationHeader extends StatelessWidget {
               Container(
                 padding: EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.18),
+                  color: AppColors.white.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
                   isUpdate
                       ? Icons.system_update_alt_rounded
                       : Icons.notifications_active_outlined,
-                  color: Colors.white,
+                  color: AppColors.white,
                   size: 22,
                 ),
               ),
@@ -674,7 +683,7 @@ class _NotificationHeader extends StatelessWidget {
                       ? Text(
                           date.value,
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.84),
+                            color: AppColors.white.withValues(alpha: 0.84),
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
                           ),
@@ -682,7 +691,7 @@ class _NotificationHeader extends StatelessWidget {
                       : Text(
                           translate('notification_screen.notifications'),
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.84),
+                            color: AppColors.white.withValues(alpha: 0.84),
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
                           ),
@@ -695,7 +704,7 @@ class _NotificationHeader extends StatelessWidget {
           Text(
             title.trim().isEmpty ? "Notification" : title,
             style: TextStyle(
-              color: Colors.white,
+              color: AppColors.white,
               fontSize: 23,
               fontWeight: FontWeight.w800,
               height: 1.25,

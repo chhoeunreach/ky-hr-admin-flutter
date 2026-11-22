@@ -11,7 +11,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_translate/flutter_translate.dart';
-import 'package:hexcolor/hexcolor.dart';
 import 'package:cnattendance/core/ky_security/ky_http.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
@@ -24,13 +23,14 @@ import 'package:cnattendance/services/ocr_service.dart';
 import 'package:cnattendance/services/sell_out_api_service.dart';
 import 'package:cnattendance/widget/premium_background.dart';
 import 'package:cnattendance/widget/customqrscanner.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
-const Color _sellOutNavy = Color(0xff011754);
-const Color _sellOutBlue = Color(0xff036eb7);
-const Color _sellOutSurface = Colors.white;
-const Color _sellOutText = Color(0xff172033);
-const Color _sellOutMuted = Color(0xff697386);
-const Color _sellOutBorder = Color(0xffdde6f2);
+const Color _sellOutNavy = AppColors.customFF011754;
+const Color _sellOutBlue = AppColors.customFF036EB7;
+const Color _sellOutSurface = AppColors.white;
+const Color _sellOutText = AppColors.customFF172033;
+const Color _sellOutMuted = AppColors.customFF697386;
+const Color _sellOutBorder = AppColors.customFFDDE6F2;
 const String _iCloudCustomerServiceType = 'iCloud Cus';
 
 String _sellOutTr(String key) => translate('sell_out_report.$key');
@@ -197,7 +197,7 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: Theme.of(context).colorScheme.copyWith(
-                  primary: HexColor('#036eb7'),
+                  primary: AppColors.customFF036EB7,
                 ),
           ),
           child: child!,
@@ -240,7 +240,7 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
   Widget _buildDateShortcuts({bool compact = false}) => Container(
         padding: const EdgeInsets.all(3),
         decoration: BoxDecoration(
-          color: const Color(0xffe8eff9),
+          color: AppColors.customFFE8EFF9,
           borderRadius: BorderRadius.circular(13),
           border: Border.all(color: salesBorder),
         ),
@@ -264,7 +264,7 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
                           EdgeInsets.symmetric(horizontal: compact ? 4 : 8),
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: selected ? Colors.white : Colors.transparent,
+                        color: selected ? AppColors.white : Colors.transparent,
                         borderRadius: BorderRadius.circular(9),
                         boxShadow: selected
                             ? [
@@ -298,7 +298,7 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
             height: 40,
             width: 46,
             decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.white,
                 borderRadius: BorderRadius.circular(11),
                 border: Border.all(color: salesBorder)),
             child: PopupMenuButton<String>(
@@ -314,7 +314,7 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
                     color:
                         _commissionMode == ReportCommissionMode.withConditions
                             ? salesBlue
-                            : const Color(0xff008c98)),
+                            : AppColors.customFF008C98),
                 const Icon(Icons.expand_more, size: 12, color: salesMuted),
               ]),
               onSelected: (value) {
@@ -495,17 +495,17 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
                             tooltip: MaterialLocalizations.of(context)
                                 .backButtonTooltip,
                             icon: const Icon(Icons.arrow_back,
-                                color: Colors.white)),
+                                color: AppColors.white)),
                         Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: .1),
+                                color: AppColors.white.withValues(alpha: .1),
                                 borderRadius: BorderRadius.circular(18)),
                             child: Icon(
                                 isSales
                                     ? Icons.shopping_cart_outlined
                                     : _serviceIcon,
-                                color: Colors.white,
+                                color: AppColors.white,
                                 size: 27)),
                         const SizedBox(width: 10),
                         Expanded(
@@ -517,7 +517,7 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
-                                      color: Colors.white,
+                                      color: AppColors.white,
                                       fontSize: isSales ? 24 : 20,
                                       fontWeight: FontWeight.w800)),
                               Text(
@@ -526,7 +526,8 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
                                       : _sellOutTrWith('service_subtitle',
                                           {'service': _serviceLabel}),
                                   style: const TextStyle(
-                                      color: Color(0xffdaeaff), fontSize: 11)),
+                                      color: AppColors.customFFDAEAFF,
+                                      fontSize: 11)),
                             ])),
                         const SizedBox(width: 6),
                         ConstrainedBox(
@@ -534,7 +535,7 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
                           child: TextButton.icon(
                               onPressed: _openCreate,
                               style: TextButton.styleFrom(
-                                  backgroundColor: Colors.white,
+                                  backgroundColor: AppColors.white,
                                   foregroundColor: salesBlue,
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 12, vertical: 10),
@@ -666,7 +667,7 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
                         onPressed: _pickDateRange,
                         onLongPress: _resetDateRangeToToday,
                         style: OutlinedButton.styleFrom(
-                            backgroundColor: Colors.white,
+                            backgroundColor: AppColors.white,
                             side: const BorderSide(color: salesBorder),
                             padding: EdgeInsets.symmetric(
                                 horizontal: compact ? 7 : 12),
@@ -805,7 +806,7 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline, color: Colors.red, size: 56),
+            const Icon(Icons.error_outline, color: AppColors.red, size: 56),
             const SizedBox(height: 12),
             Text(
               _isSales
@@ -813,7 +814,7 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
                   : _sellOutTrWith(
                       'unable_to_load_service', {'service': _serviceLabel}),
               style: TextStyle(
-                color: HexColor('#011754'),
+                color: AppColors.customFF011754,
                 fontWeight: FontWeight.w700,
                 fontSize: 16,
               ),
@@ -823,7 +824,7 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.black54, fontSize: 13),
+              style: const TextStyle(color: AppColors.black54, fontSize: 13),
             ),
             const SizedBox(height: 16),
             ElevatedButton.icon(
@@ -831,8 +832,8 @@ class _SellOutReportListScreenState extends State<SellOutReportScreen> {
               icon: const Icon(Icons.refresh),
               label: Text(_sellOutTr('retry')),
               style: ElevatedButton.styleFrom(
-                backgroundColor: HexColor('#036eb7'),
-                foregroundColor: Colors.white,
+                backgroundColor: AppColors.customFF036EB7,
+                foregroundColor: AppColors.white,
               ),
             ),
           ],
@@ -960,8 +961,8 @@ class _SellOutReportDetailScreenState extends State<SellOutReportDetailScreen> {
         backgroundColor: Colors.transparent,
         appBar: AppBar(
           title: Text(_sellOutTr('detail_title')),
-          backgroundColor: HexColor('#011754'),
-          foregroundColor: Colors.white,
+          backgroundColor: AppColors.customFF011754,
+          foregroundColor: AppColors.white,
           elevation: 0,
         ),
         body: FutureBuilder<SellOutReport>(
@@ -977,7 +978,7 @@ class _SellOutReportDetailScreenState extends State<SellOutReportDetailScreen> {
                   child: Text(
                     snapshot.error.toString(),
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.red),
+                    style: const TextStyle(color: AppColors.red),
                   ),
                 ),
               );
@@ -1023,7 +1024,7 @@ class _SellOutReportDetailScreenState extends State<SellOutReportDetailScreen> {
                                 ? _sellOutTr('product')
                                 : line.productName,
                             style: TextStyle(
-                              color: HexColor('#011754'),
+                              color: AppColors.customFF011754,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -1062,9 +1063,9 @@ class _SellOutReportDetailScreenState extends State<SellOutReportDetailScreen> {
                                       imageUrl: line.photoUrls[photoIndex],
                                       fit: BoxFit.cover,
                                       errorWidget: (_, __, ___) => Container(
-                                        color: Colors.grey.shade200,
+                                        color: AppColors.grey.shade200,
                                         child: const Icon(Icons.broken_image,
-                                            color: Colors.grey),
+                                            color: AppColors.grey),
                                       ),
                                     ),
                                   ),
@@ -1115,7 +1116,7 @@ class _SellOutReportDetailScreenState extends State<SellOutReportDetailScreen> {
             Text(
               title,
               style: TextStyle(
-                color: HexColor('#011754'),
+                color: AppColors.customFF011754,
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
               ),
@@ -1140,7 +1141,7 @@ class _SellOutReportDetailScreenState extends State<SellOutReportDetailScreen> {
             child: Text(
               label,
               style: const TextStyle(
-                color: Colors.black54,
+                color: AppColors.black54,
                 fontWeight: FontWeight.w600,
                 fontSize: 13,
               ),
@@ -1163,7 +1164,7 @@ class _SellOutReportDetailScreenState extends State<SellOutReportDetailScreen> {
           Text(
             label,
             style: const TextStyle(
-              color: Colors.black54,
+              color: AppColors.black54,
               fontWeight: FontWeight.w600,
               fontSize: 13,
             ),
@@ -1197,8 +1198,9 @@ class _SellOutReportDetailScreenState extends State<SellOutReportDetailScreen> {
                   imageUrl: photoUrls[index],
                   fit: BoxFit.cover,
                   errorWidget: (_, __, ___) => Container(
-                    color: Colors.grey.shade200,
-                    child: const Icon(Icons.broken_image, color: Colors.grey),
+                    color: AppColors.grey.shade200,
+                    child:
+                        const Icon(Icons.broken_image, color: AppColors.grey),
                   ),
                 ),
               ),
@@ -1284,10 +1286,10 @@ class _PhotoViewerScreenState extends State<_PhotoViewerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppColors.black,
       appBar: AppBar(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
+        backgroundColor: AppColors.black,
+        foregroundColor: AppColors.white,
         elevation: 0,
         title: Text('${_currentIndex + 1} / ${widget.photoUrls.length}'),
         actions: [
@@ -1298,7 +1300,7 @@ class _PhotoViewerScreenState extends State<_PhotoViewerScreen> {
                     height: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: Colors.white,
+                      color: AppColors.white,
                     ),
                   )
                 : const Icon(Icons.download_outlined),
@@ -1320,7 +1322,7 @@ class _PhotoViewerScreenState extends State<_PhotoViewerScreen> {
                 fit: BoxFit.contain,
                 errorWidget: (_, __, ___) => const Icon(
                   Icons.broken_image_outlined,
-                  color: Colors.white54,
+                  color: AppColors.white54,
                   size: 64,
                 ),
               ),
@@ -1791,7 +1793,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
         AndroidUiSettings(
           toolbarTitle: _sellOutTr('crop_photo'),
           toolbarColor: _sellOutBlue,
-          toolbarWidgetColor: Colors.white,
+          toolbarWidgetColor: AppColors.white,
           activeControlsWidgetColor: _sellOutBlue,
           initAspectRatio: CropAspectRatioPreset.original,
           lockAspectRatio: false,
@@ -2197,21 +2199,21 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.check_circle, color: Colors.green, size: 64),
+            const Icon(Icons.check_circle, color: AppColors.green, size: 64),
             const SizedBox(height: 16),
             Text(
               _sellOutTr('success'),
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
-                color: HexColor('#011754'),
+                color: AppColors.customFF011754,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 14, color: Colors.black54),
+              style: const TextStyle(fontSize: 14, color: AppColors.black54),
             ),
           ],
         ),
@@ -2224,7 +2226,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
             child: Text(
               _sellOutTr('ok'),
               style: TextStyle(
-                color: HexColor('#036eb7'),
+                color: AppColors.customFF036EB7,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -2242,21 +2244,21 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline, color: Colors.red, size: 64),
+            const Icon(Icons.error_outline, color: AppColors.red, size: 64),
             const SizedBox(height: 16),
             Text(
               title,
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
-                color: HexColor('#011754'),
+                color: AppColors.customFF011754,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 14, color: Colors.black54),
+              style: const TextStyle(fontSize: 14, color: AppColors.black54),
             ),
           ],
         ),
@@ -2266,7 +2268,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
             child: Text(
               _sellOutTr('close'),
               style: TextStyle(
-                color: HexColor('#036eb7'),
+                color: AppColors.customFF036EB7,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -2291,7 +2293,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                       : widget.serviceType)),
           centerTitle: true,
           backgroundColor: _sellOutNavy,
-          foregroundColor: Colors.white,
+          foregroundColor: AppColors.white,
           systemOverlayStyle: SystemUiOverlayStyle.light,
           elevation: 0,
         ),
@@ -2500,7 +2502,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
       height: 46,
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
       decoration: BoxDecoration(
-        color: const Color(0xfff7faff),
+        color: AppColors.customFFF7FAFF,
         border: Border.all(color: _sellOutBorder),
         borderRadius: BorderRadius.circular(8),
       ),
@@ -2579,7 +2581,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
         prefixIconConstraints:
             const BoxConstraints(minWidth: 38, minHeight: 38),
         filled: true,
-        fillColor: readOnly ? const Color(0xfff7faff) : Colors.white,
+        fillColor: readOnly ? AppColors.customFFF7FAFF : AppColors.white,
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: _sellOutBorder),
@@ -2704,11 +2706,12 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                 onTap: () => onRemove(index),
                 child: Container(
                   decoration: const BoxDecoration(
-                    color: Colors.black54,
+                    color: AppColors.black54,
                     shape: BoxShape.circle,
                   ),
                   padding: const EdgeInsets.all(4),
-                  child: const Icon(Icons.close, size: 16, color: Colors.white),
+                  child:
+                      const Icon(Icons.close, size: 16, color: AppColors.white),
                 ),
               ),
             ),
@@ -2748,7 +2751,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                   ),
                 ),
                 errorWidget: (context, url, error) => Container(
-                  color: const Color(0xfff7faff),
+                  color: AppColors.customFFF7FAFF,
                   child: const Icon(Icons.broken_image_outlined,
                       color: _sellOutMuted),
                 ),
@@ -2761,11 +2764,12 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                 onTap: () => onRemove(index),
                 child: Container(
                   decoration: const BoxDecoration(
-                    color: Colors.black54,
+                    color: AppColors.black54,
                     shape: BoxShape.circle,
                   ),
                   padding: const EdgeInsets.all(4),
-                  child: const Icon(Icons.close, size: 16, color: Colors.white),
+                  child:
+                      const Icon(Icons.close, size: 16, color: AppColors.white),
                 ),
               ),
             ),
@@ -2797,7 +2801,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(_sellOutTr('remove'),
-                style: const TextStyle(color: Colors.red)),
+                style: const TextStyle(color: AppColors.red)),
           ),
         ],
       ),
@@ -2880,7 +2884,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                                   height: 18,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    color: Colors.white,
+                                    color: AppColors.white,
                                   ),
                                 )
                               : const Icon(Icons.text_fields),
@@ -2891,7 +2895,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                           ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: _sellOutBlue,
-                            foregroundColor: Colors.white,
+                            foregroundColor: AppColors.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
@@ -3023,7 +3027,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
     return Card(
       key: ObjectKey(ctrls),
       margin: const EdgeInsets.only(bottom: 8),
-      color: Colors.white,
+      color: AppColors.white,
       surfaceTintColor: Colors.transparent,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
@@ -3086,7 +3090,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                   icon: const Icon(Icons.delete_outline, size: 18),
                   label: Text(_sellOutTr('remove')),
                   style: TextButton.styleFrom(
-                    foregroundColor: Colors.red,
+                    foregroundColor: AppColors.red,
                     padding:
                         const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
                     minimumSize: const Size(0, 34),
@@ -3219,8 +3223,8 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: const Color(0xfff7faff),
-        border: Border.all(color: const Color(0xffe5edf8)),
+        color: AppColors.customFFF7FAFF,
+        border: Border.all(color: AppColors.customFFE5EDF8),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -3315,7 +3319,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                     hintText: _sellOutTr('product_text_hint'),
                     alignLabelWithHint: true,
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: AppColors.white,
                     labelStyle:
                         const TextStyle(color: _sellOutMuted, fontSize: 12),
                     floatingLabelStyle: const TextStyle(
@@ -3356,7 +3360,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                             height: 18,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Colors.white,
+                              color: AppColors.white,
                             ),
                           )
                         : const Icon(Icons.text_fields),
@@ -3367,7 +3371,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _sellOutBlue,
-                      foregroundColor: Colors.white,
+                      foregroundColor: AppColors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -3412,7 +3416,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
         suffixIcon: suffixIcon,
         isDense: true,
         filled: true,
-        fillColor: Colors.white,
+        fillColor: AppColors.white,
         labelStyle: const TextStyle(color: _sellOutMuted, fontSize: 12),
         floatingLabelStyle: const TextStyle(
           color: _sellOutBlue,
@@ -3491,7 +3495,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                      color: AppColors.white,
                     ),
                   ),
                 ),
@@ -3501,7 +3505,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                     onPressed: _showCommissionRules,
                     icon: const Icon(
                       Icons.rule_rounded,
-                      color: Colors.white,
+                      color: AppColors.white,
                       size: 20,
                     ),
                   ),
@@ -3513,14 +3517,14 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
               children: [
                 Text(
                   _sellOutTr('total_qty'),
-                  style: TextStyle(fontSize: 12, color: Colors.white70),
+                  style: TextStyle(fontSize: 12, color: AppColors.white70),
                 ),
                 Text(
                   _report.totalQty.toString(),
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: Colors.white,
+                    color: AppColors.white,
                   ),
                 ),
               ],
@@ -3531,14 +3535,14 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
               children: [
                 Text(
                   _sellOutTr('total_amount'),
-                  style: TextStyle(fontSize: 12, color: Colors.white70),
+                  style: TextStyle(fontSize: 12, color: AppColors.white70),
                 ),
                 Text(
                   '\$${_report.totalAmount.toStringAsFixed(2)}',
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
-                    color: Colors.white,
+                    color: AppColors.white,
                   ),
                 ),
               ],
@@ -3550,14 +3554,14 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                 children: [
                   Text(
                     _sellOutTr('commission'),
-                    style: TextStyle(fontSize: 12, color: Colors.white70),
+                    style: TextStyle(fontSize: 12, color: AppColors.white70),
                   ),
                   Text(
                     '\$${_report.commission.toStringAsFixed(2)}',
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                      color: AppColors.white,
                     ),
                   ),
                 ],
@@ -3568,8 +3572,8 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                 style: TextStyle(
                   fontSize: 11,
                   color: _report.isCommissionEligible
-                      ? const Color(0xffb8f5d0)
-                      : Colors.white70,
+                      ? AppColors.customFFB8F5D0
+                      : AppColors.white70,
                 ),
               ),
             ],
@@ -3590,7 +3594,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                 height: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  color: Colors.white,
+                  color: AppColors.white,
                 ),
               )
             : const Icon(Icons.send),
@@ -3601,7 +3605,7 @@ class _SellOutReportCreateScreenState extends State<SellOutReportCreateScreen> {
                 : _sellOutTr('submit_report'))),
         style: ElevatedButton.styleFrom(
           backgroundColor: _sellOutBlue,
-          foregroundColor: Colors.white,
+          foregroundColor: AppColors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           padding: const EdgeInsets.symmetric(vertical: 12),
           textStyle: const TextStyle(

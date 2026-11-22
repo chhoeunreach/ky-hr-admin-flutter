@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:cnattendance/model/app_theme_option.dart';
 import 'package:cnattendance/theme/app_theme_data.dart';
 import 'package:cnattendance/theme/app_theme_mode.dart';
 import 'package:cnattendance/theme/enterprise_theme.dart';
@@ -9,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class ThemeSelector extends StatelessWidget {
   const ThemeSelector({Key? key}) : super(key: key);
@@ -49,7 +51,7 @@ class ThemeSelector extends StatelessWidget {
                     tooltip: 'Customize layout',
                     color: enterprise.accent,
                     icon: const Icon(Icons.tune_rounded, size: 18),
-                    onPressed: () => _openLayoutEditor(context),
+                    onPressed: () => _openLayoutEditor(context, provider.currentThemeOption),
                   ),
                   TextButton(
                     style: TextButton.styleFrom(
@@ -78,22 +80,22 @@ class ThemeSelector extends StatelessWidget {
                 height: 118,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
-                  itemCount: AppThemeMode.values.length,
+                  itemCount: provider.availableThemeOptions.length,
                   separatorBuilder: (_, __) => const SizedBox(width: 8),
                   itemBuilder: (context, index) {
-                    final mode = AppThemeMode.values[index];
+                    final option = provider.availableThemeOptions[index];
                     return SizedBox(
                       width: cardWidth,
                       child: _ThemePreviewCard(
-                        mode: mode,
-                        selected: provider.mode == mode,
+                        option: option,
+                        selected: provider.isSelected(option),
                         compact: true,
                       ),
                     );
                   },
                 ),
               ),
-              if (provider.mode == AppThemeMode.rosePink) ...[
+              if (provider.currentThemeId == AppThemeMode.rosePink.id) ...[
                 const SizedBox(height: 8),
                 _RoseEffectSettings(provider: provider, enterprise: enterprise),
               ],
@@ -177,7 +179,7 @@ class ThemeSelectorPage extends StatelessWidget {
           IconButton(
             tooltip: 'Customize layout',
             icon: const Icon(Icons.tune_rounded),
-            onPressed: () => _openLayoutEditor(context),
+            onPressed: () => _openLayoutEditor(context, provider.currentThemeOption),
           ),
           TextButton(
             onPressed: () async {
@@ -189,7 +191,7 @@ class ThemeSelectorPage extends StatelessWidget {
               'Reset',
               style: TextStyle(
                 color: Theme.of(context).appBarTheme.foregroundColor ??
-                    Colors.white,
+                    AppColors.white,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -198,7 +200,7 @@ class ThemeSelectorPage extends StatelessWidget {
       ),
       body: GridView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: AppThemeMode.values.length,
+        itemCount: provider.availableThemeOptions.length,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
           crossAxisSpacing: 12,
@@ -206,10 +208,10 @@ class ThemeSelectorPage extends StatelessWidget {
           childAspectRatio: 0.86,
         ),
         itemBuilder: (context, index) {
-          final mode = AppThemeMode.values[index];
+          final option = provider.availableThemeOptions[index];
           return _ThemePreviewCard(
-            mode: mode,
-            selected: provider.mode == mode,
+            option: option,
+            selected: provider.isSelected(option),
             compact: false,
           );
         },
@@ -219,9 +221,13 @@ class ThemeSelectorPage extends StatelessWidget {
 }
 
 Future<void> _showBackgroundOptions(
-    BuildContext context, AppThemeMode mode) async {
+    BuildContext context, AppThemeMode mode) =>
+    _showBackgroundOptionsForId(context, mode.id);
+
+Future<void> _showBackgroundOptionsForId(
+    BuildContext context, String themeId) async {
   final provider = context.read<ThemeProvider>();
-  final currentPath = provider.backgroundFor(mode);
+  final currentPath = provider.backgroundForId(themeId);
   final action = await showModalBottomSheet<String>(
     context: context,
     showDragHandle: true,
@@ -249,7 +255,7 @@ Future<void> _showBackgroundOptions(
 
   try {
     if (action == 'reset') {
-      await provider.setBackground(mode, null);
+      await provider.setBackgroundForId(themeId, null);
       if (currentPath != null) {
         final oldFile = File(currentPath);
         if (await oldFile.exists()) await oldFile.delete();
@@ -273,10 +279,10 @@ Future<void> _showBackgroundOptions(
     final extension = _backgroundImageExtension(image.path);
     final destination = File(
       '${backgroundDirectory.path}${Platform.pathSeparator}'
-      '${mode.id}_${DateTime.now().microsecondsSinceEpoch}$extension',
+      '${themeId}_${DateTime.now().microsecondsSinceEpoch}$extension',
     );
     await File(image.path).copy(destination.path);
-    await provider.setBackground(mode, destination.path);
+    await provider.setBackgroundForId(themeId, destination.path);
 
     if (currentPath != null && currentPath != destination.path) {
       final oldFile = File(currentPath);
@@ -299,36 +305,39 @@ String _backgroundImageExtension(String path) {
       : '.jpg';
 }
 
-void _openLayoutEditor(BuildContext context) {
+void _openLayoutEditor(BuildContext context, [AppThemeOption? option]) {
   Navigator.of(context).push(MaterialPageRoute(
-    builder: (_) => const ThemeLayoutEditor(),
+    builder: (_) => ThemeLayoutEditor(option: option),
   ));
 }
 
 class _ThemePreviewCard extends StatelessWidget {
-  final AppThemeMode mode;
+  final AppThemeOption option;
   final bool selected;
   final bool compact;
 
-  const _ThemePreviewCard({
-    required this.mode,
+  _ThemePreviewCard({
+    Key? key,
+    AppThemeOption? option,
+    AppThemeMode? mode,
     required this.selected,
     required this.compact,
-  });
+  })  : option = option ??
+            AppThemeOption.fromCoreMode(mode ?? AppThemeMode.royalBlueGold),
+        super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final info = AppThemeData.info(mode);
     final themeProvider = context.watch<ThemeProvider>();
-    final colors = themeProvider.colorsForMode(mode);
+    final colors = themeProvider.colorsForId(option.id);
     final onDark = colors.isDark;
-    final hasCustomBackground = themeProvider.backgroundFor(mode) != null;
+    final hasCustomBackground = themeProvider.backgroundForId(option.id) != null;
     return InkWell(
       borderRadius: BorderRadius.circular(22),
       onTap: () async {
-        await context.read<ThemeProvider>().setMode(mode);
+        await context.read<ThemeProvider>().setThemeById(option.id);
         if (!context.mounted) return;
-        _showThemeSnack(context, 'Theme updated to ${info.name}');
+        _showThemeSnack(context, 'Theme updated to ${option.name}');
       },
       child: AnimatedContainer(
         duration: AppThemeData.animationDuration,
@@ -344,8 +353,8 @@ class _ThemePreviewCard extends StatelessWidget {
             color: selected
                 ? colors.accentColor
                 : onDark
-                    ? Colors.white24
-                    : Colors.black.withValues(alpha: 0.10),
+                    ? AppColors.white24
+                    : AppColors.black.withValues(alpha: 0.10),
             width: selected ? 2 : 1,
           ),
           boxShadow: [
@@ -361,9 +370,31 @@ class _ThemePreviewCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(info.icon,
+                Icon(option.icon,
                     color: colors.textColor, size: compact ? 18 : 24),
                 const Spacer(),
+                if (!option.isSystem) ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                    margin: const EdgeInsets.only(right: 4),
+                    decoration: BoxDecoration(
+                      color: colors.accentColor.withValues(alpha: 0.25),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: colors.accentColor.withValues(alpha: 0.6),
+                        width: 0.8,
+                      ),
+                    ),
+                    child: Text(
+                      'Custom',
+                      style: TextStyle(
+                        color: colors.textColor,
+                        fontSize: compact ? 8 : 10,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
                 if (!compact)
                   IconButton(
                     tooltip: hasCustomBackground
@@ -373,7 +404,7 @@ class _ThemePreviewCard extends StatelessWidget {
                     padding: EdgeInsets.zero,
                     constraints:
                         const BoxConstraints.tightFor(width: 30, height: 30),
-                    onPressed: () => _showBackgroundOptions(context, mode),
+                    onPressed: () => _showBackgroundOptionsForId(context, option.id),
                     icon: Icon(
                       hasCustomBackground
                           ? Icons.wallpaper_rounded
@@ -395,7 +426,7 @@ class _ThemePreviewCard extends StatelessWidget {
             ),
             SizedBox(height: compact ? 7 : 10),
             Text(
-              info.name,
+              option.name,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
@@ -407,7 +438,7 @@ class _ThemePreviewCard extends StatelessWidget {
             if (!compact) ...[
               const SizedBox(height: 4),
               Text(
-                info.description,
+                option.description,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -451,8 +482,8 @@ class _MiniDashboardPreview extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
             color: colors.isDark
-                ? Colors.white24
-                : Colors.black.withValues(alpha: 0.10)),
+                ? AppColors.white24
+                : AppColors.black.withValues(alpha: 0.10)),
       ),
       child: Column(
         children: [
@@ -528,8 +559,9 @@ class _ColorDot extends StatelessWidget {
         color: color,
         shape: BoxShape.circle,
         border: Border.all(
-            color:
-                onDark ? Colors.white54 : Colors.black.withValues(alpha: 0.16)),
+            color: onDark
+                ? AppColors.white54
+                : AppColors.black.withValues(alpha: 0.16)),
       ),
     );
   }

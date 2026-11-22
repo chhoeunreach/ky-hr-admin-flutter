@@ -3,7 +3,7 @@ import 'package:cnattendance/provider/social_rewards_controller.dart';
 import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:hexcolor/hexcolor.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class SocialRewardFormScreen extends StatelessWidget {
   SocialRewardFormScreen({super.key, this.reward});
@@ -32,7 +32,7 @@ class SocialRewardFormScreen extends StatelessWidget {
             margin: const EdgeInsets.all(20),
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: HexColor('#036eb7'),
+                backgroundColor: AppColors.customFF036EB7,
                 shape: const RoundedRectangleBorder(
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(10),
@@ -120,21 +120,21 @@ class _LockedPointNotice extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white24,
+        color: AppColors.white24,
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(10),
           bottomRight: Radius.circular(10),
         ),
-        border: Border.all(color: Colors.white24),
+        border: Border.all(color: AppColors.white24),
       ),
       child: const Row(
         children: [
-          Icon(Icons.lock, color: Colors.white70, size: 18),
+          Icon(Icons.lock, color: AppColors.white70, size: 18),
           SizedBox(width: 10),
           Expanded(
             child: Text(
               'Reward points are locked at 1 point.',
-              style: TextStyle(color: Colors.white70, fontSize: 13),
+              style: TextStyle(color: AppColors.white70, fontSize: 13),
             ),
           ),
         ],
@@ -173,22 +173,22 @@ class _RewardTextField extends StatelessWidget {
       onTap: onTap,
       maxLines: maxLines,
       keyboardType: keyboardType,
-      style: const TextStyle(color: Colors.white),
+      style: const TextStyle(color: AppColors.white),
       validator: (value) {
         if (value == null || value.trim().isEmpty) {
           return 'Field is required';
         }
         return null;
       },
-      cursorColor: Colors.white,
+      cursorColor: AppColors.white,
       decoration: InputDecoration(
         hintText: hintText,
         suffixIcon: suffixIcon == null
             ? null
-            : Icon(suffixIcon, color: Colors.white70, size: 20),
-        hintStyle: const TextStyle(color: Colors.white70),
-        labelStyle: const TextStyle(color: Colors.white),
-        fillColor: enabled ? Colors.white24 : Colors.white10,
+            : Icon(suffixIcon, color: AppColors.white70, size: 20),
+        hintStyle: const TextStyle(color: AppColors.white70),
+        labelStyle: const TextStyle(color: AppColors.white),
+        fillColor: enabled ? AppColors.white24 : AppColors.white10,
         filled: true,
         disabledBorder: _border(),
         enabledBorder: _border(),

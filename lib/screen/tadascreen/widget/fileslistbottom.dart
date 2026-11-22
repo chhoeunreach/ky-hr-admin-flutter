@@ -1,5 +1,6 @@
 import 'package:cnattendance/model/attachment.dart';
 import 'package:flutter/material.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class FilesListBottom extends StatelessWidget {
   final List<Attachment> attachments;
@@ -8,8 +9,8 @@ class FilesListBottom extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final attachList = <Attachment>[];
-    for(var attach in attachments){
-      if(attach.type == "file"){
+    for (var attach in attachments) {
+      if (attach.type == "file") {
         attachList.add(attach);
       }
     }
@@ -24,7 +25,7 @@ class FilesListBottom extends StatelessWidget {
             final Attachment item = attachList[index];
             return Card(
                 elevation: 0,
-                color: Colors.white12,
+                color: AppColors.white12,
                 child: Padding(
                   padding: const EdgeInsets.all(20),
                   child: Row(
@@ -33,12 +34,12 @@ class FilesListBottom extends StatelessWidget {
                       Expanded(
                         child: Text(
                           item.url,
-                          style: TextStyle(color: Colors.white),
+                          style: TextStyle(color: AppColors.white),
                         ),
                       ),
                       Icon(
                         Icons.download,
-                        color: Colors.white,
+                        color: AppColors.white,
                       )
                     ],
                   ),

@@ -4,6 +4,7 @@ import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class SupportListScreen extends StatelessWidget {
   @override
@@ -25,15 +26,17 @@ class SupportListScreen extends StatelessWidget {
               child: Column(
                 children: [
                   Card(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.only(topLeft: Radius.circular(
-                        10),bottomRight: Radius.circular(10))),
-                    color: Colors.white12,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(10),
+                            bottomRight: Radius.circular(10))),
+                    color: AppColors.white12,
                     elevation: 0,
                     margin: EdgeInsets.symmetric(horizontal: 20),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8.0),
                       child: Obx(
-                            () => SingleChildScrollView(
+                        () => SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
                           child: Padding(
                             padding: const EdgeInsets.all(8.0),
@@ -47,7 +50,7 @@ class SupportListScreen extends StatelessWidget {
                                   child: Card(
                                     elevation: 0,
                                     color: model.selected.value == "All"
-                                        ? Colors.white24
+                                        ? AppColors.white24
                                         : Colors.transparent,
                                     child: Padding(
                                       padding: const EdgeInsets.symmetric(
@@ -55,7 +58,7 @@ class SupportListScreen extends StatelessWidget {
                                       child: Text(
                                         translate('support_list_screen.all'),
                                         style: TextStyle(
-                                            color: Colors.white,
+                                            color: AppColors.white,
                                             fontSize: 15,
                                             fontWeight: FontWeight.bold),
                                       ),
@@ -70,15 +73,16 @@ class SupportListScreen extends StatelessWidget {
                                   child: Card(
                                     elevation: 0,
                                     color: model.selected.value == "Pending"
-                                        ? Colors.white24
+                                        ? AppColors.white24
                                         : Colors.transparent,
                                     child: Padding(
                                       padding: const EdgeInsets.symmetric(
                                           vertical: 8.0, horizontal: 15),
                                       child: Text(
-                                        translate('support_list_screen.pending'),
+                                        translate(
+                                            'support_list_screen.pending'),
                                         style: TextStyle(
-                                            color: Colors.white,
+                                            color: AppColors.white,
                                             fontSize: 15,
                                             fontWeight: FontWeight.bold),
                                       ),
@@ -93,15 +97,16 @@ class SupportListScreen extends StatelessWidget {
                                   child: Card(
                                     elevation: 0,
                                     color: model.selected.value == "In Progress"
-                                        ? Colors.white24
+                                        ? AppColors.white24
                                         : Colors.transparent,
                                     child: Padding(
                                       padding: const EdgeInsets.symmetric(
                                           vertical: 8.0, horizontal: 15),
                                       child: Text(
-                                        translate('support_list_screen.in_progress'),
+                                        translate(
+                                            'support_list_screen.in_progress'),
                                         style: TextStyle(
-                                            color: Colors.white,
+                                            color: AppColors.white,
                                             fontSize: 15,
                                             fontWeight: FontWeight.bold),
                                       ),
@@ -116,7 +121,7 @@ class SupportListScreen extends StatelessWidget {
                                   child: Card(
                                     elevation: 0,
                                     color: model.selected.value == "Solved"
-                                        ? Colors.white24
+                                        ? AppColors.white24
                                         : Colors.transparent,
                                     child: Padding(
                                       padding: const EdgeInsets.symmetric(
@@ -124,7 +129,7 @@ class SupportListScreen extends StatelessWidget {
                                       child: Text(
                                         translate('support_list_screen.solved'),
                                         style: TextStyle(
-                                            color: Colors.white,
+                                            color: AppColors.white,
                                             fontSize: 15,
                                             fontWeight: FontWeight.bold),
                                       ),
@@ -153,7 +158,7 @@ class SupportListScreen extends StatelessWidget {
                           child: Card(
                             shape: ButtonBorder(),
                             elevation: 0,
-                            color: Colors.white12,
+                            color: AppColors.white12,
                             child: Padding(
                               padding: const EdgeInsets.symmetric(vertical: 5),
                               child: Row(
@@ -164,20 +169,23 @@ class SupportListScreen extends StatelessWidget {
                                     child: Card(
                                       shape: ButtonBorder(),
                                       elevation: 0,
-                                      color: Colors.blueAccent,
+                                      color: AppColors.blueAccent,
                                       child: Container(
                                         width: 60,
                                         height: 60,
                                         child: Column(
-                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
                                           children: [
                                             Text(
                                               support.day,
                                               style: TextStyle(
-                                                  color: Colors.white, fontSize: 25),
+                                                  color: AppColors.white,
+                                                  fontSize: 25),
                                             ),
                                             Text(support.month,
-                                                style: TextStyle(color: Colors.white)),
+                                                style: TextStyle(
+                                                    color: AppColors.white)),
                                           ],
                                         ),
                                       ),
@@ -187,34 +195,43 @@ class SupportListScreen extends StatelessWidget {
                                     child: Padding(
                                       padding: const EdgeInsets.all(8.0),
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceEvenly,
                                         children: [
                                           Text(
                                             softWrap: true,
                                             support.title,
                                             style: TextStyle(
-                                                color: Colors.white, fontSize: 18),
+                                                color: AppColors.white,
+                                                fontSize: 18),
                                           ),
                                           Row(
                                             children: [
                                               Expanded(
                                                 child: Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
                                                   children: [
                                                     Text(
-                                                      overflow: TextOverflow.fade,
+                                                      overflow:
+                                                          TextOverflow.fade,
                                                       softWrap: true,
                                                       "${translate('support_list_screen.issue_to')}",
                                                       style: TextStyle(
-                                                          color: Colors.grey, fontSize: 12),
+                                                          color: AppColors.grey,
+                                                          fontSize: 12),
                                                     ),
                                                     Text(
-                                                      overflow: TextOverflow.fade,
+                                                      overflow:
+                                                          TextOverflow.fade,
                                                       softWrap: true,
                                                       "${support.requested_department}",
                                                       style: TextStyle(
-                                                          color: Colors.white, fontSize: 12),
+                                                          color:
+                                                              AppColors.white,
+                                                          fontSize: 12),
                                                     ),
                                                   ],
                                                 ),
@@ -228,27 +245,40 @@ class SupportListScreen extends StatelessWidget {
                                               ),
                                               Expanded(
                                                 child: Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.end,
                                                   children: [
                                                     Text(
-                                                      overflow: TextOverflow.fade,
+                                                      overflow:
+                                                          TextOverflow.fade,
                                                       softWrap: true,
                                                       "Status",
                                                       style: TextStyle(
-                                                          fontWeight: FontWeight.bold,
-                                                          color: Colors.grey, fontSize: 12),
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          color: AppColors.grey,
+                                                          fontSize: 12),
                                                     ),
                                                     Text(
-                                                      overflow: TextOverflow.fade,
+                                                      overflow:
+                                                          TextOverflow.fade,
                                                       softWrap: true,
                                                       support.status,
                                                       style: TextStyle(
-                                                          fontWeight: FontWeight.bold,
-                                                          color: support.status == "Pending"
-                                                              ? Colors.deepOrange
-                                                              : support.status == "In Progress"
-                                                              ? Colors.orangeAccent
-                                                              : Colors.green, fontSize: 12),
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          color: support
+                                                                      .status ==
+                                                                  "Pending"
+                                                              ? AppColors
+                                                                  .deepOrange
+                                                              : support.status ==
+                                                                      "In Progress"
+                                                                  ? AppColors
+                                                                      .orangeAccent
+                                                                  : AppColors
+                                                                      .green,
+                                                          fontSize: 12),
                                                     ),
                                                   ],
                                                 ),

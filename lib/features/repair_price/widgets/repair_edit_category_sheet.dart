@@ -1,6 +1,7 @@
 import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:flutter/material.dart';
 import '../models/repair_category.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class RepairEditCategorySheet extends StatefulWidget {
   final RepairCategory? category;
@@ -113,7 +114,7 @@ class _RepairEditCategorySheetState extends State<RepairEditCategorySheet> {
               ? 'បានបន្ថែមប្រភេទសេវាថ្មីជោគជ័យ! / Category added!'
               : 'បានកែប្រែប្រភេទសេវាជោគជ័យ! / Category updated!',
         ),
-        backgroundColor: const Color(0xFF10B981),
+        backgroundColor: AppColors.successToken,
       ),
     );
   }
@@ -130,7 +131,7 @@ class _RepairEditCategorySheetState extends State<RepairEditCategorySheet> {
         title: Row(
           children: [
             const Icon(Icons.warning_amber_rounded,
-                color: Colors.redAccent, size: 24),
+                color: AppColors.redAccent, size: 24),
             const SizedBox(width: 8),
             Text(
               'លុបប្រភេទសេវា / Delete Category',
@@ -156,8 +157,8 @@ class _RepairEditCategorySheetState extends State<RepairEditCategorySheet> {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              foregroundColor: Colors.white,
+              backgroundColor: AppColors.redAccent,
+              foregroundColor: AppColors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -171,7 +172,7 @@ class _RepairEditCategorySheetState extends State<RepairEditCategorySheet> {
                   content: Text(
                     'បានលុបប្រភេទ "${widget.category!.name}" ជោគជ័យ!',
                   ),
-                  backgroundColor: Colors.redAccent,
+                  backgroundColor: AppColors.redAccent,
                 ),
               );
             },
@@ -303,7 +304,7 @@ class _RepairEditCategorySheetState extends State<RepairEditCategorySheet> {
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: enterprise.primary,
-                    foregroundColor: Colors.white,
+                    foregroundColor: AppColors.white,
                     padding: const EdgeInsets.symmetric(vertical: 13),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -330,8 +331,9 @@ class _RepairEditCategorySheetState extends State<RepairEditCategorySheet> {
                   width: double.infinity,
                   child: OutlinedButton.icon(
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.redAccent,
-                      side: const BorderSide(color: Colors.redAccent, width: 1),
+                      foregroundColor: AppColors.redAccent,
+                      side: const BorderSide(
+                          color: AppColors.redAccent, width: 1),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -388,8 +390,8 @@ class _RepairEditCategorySheetState extends State<RepairEditCategorySheet> {
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             filled: true,
-            fillColor:
-                Colors.white.withValues(alpha: enterprise.isDark ? 0.06 : 0.4),
+            fillColor: AppColors.white
+                .withValues(alpha: enterprise.isDark ? 0.06 : 0.4),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
               borderSide: BorderSide(color: enterprise.glassStroke),

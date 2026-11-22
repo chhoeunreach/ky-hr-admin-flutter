@@ -5,6 +5,7 @@ import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class TadaScreen extends StatelessWidget {
   @override
@@ -19,15 +20,15 @@ class TadaScreen extends StatelessWidget {
           backgroundColor: Colors.transparent,
           title: Text(
             translate('tada_list_screen.tada'),
-            style: TextStyle(color: Colors.white),
+            style: TextStyle(color: AppColors.white),
           ),
-          iconTheme: IconThemeData(color: Colors.white),
+          iconTheme: IconThemeData(color: AppColors.white),
         ),
         floatingActionButton: FloatingActionButton(
             onPressed: () {
               model.onTadaCreateClicked();
             },
-            backgroundColor: Colors.blue,
+            backgroundColor: AppColors.blue,
             child: Icon(Icons.add)),
         body: Obx(
           () => SafeArea(
@@ -50,19 +51,19 @@ class TadaScreen extends StatelessWidget {
                                 topRight: Radius.circular(0),
                                 bottomLeft: Radius.circular(0),
                                 bottomRight: Radius.circular(10))),
-                        tileColor: Colors.white12,
+                        tileColor: AppColors.white12,
                         onTap: () {
                           model.onTadaClicked(item.id.toString());
                         },
-                        textColor: Colors.white,
-                        iconColor: Colors.white,
+                        textColor: AppColors.white,
+                        iconColor: AppColors.white,
                         title: Text(
                           item.title,
                           style: TextStyle(fontSize: 18),
                         ),
                         subtitle: Text(
                           item.submittedDate,
-                          style: TextStyle(color: Colors.grey),
+                          style: TextStyle(color: AppColors.grey),
                         ),
                         trailing: GestureDetector(
                           onTap: () {
@@ -79,10 +80,10 @@ class TadaScreen extends StatelessWidget {
                         ),
                         leading: Card(
                             color: item.status == "Pending"
-                                ? Colors.orange
+                                ? AppColors.orange
                                 : item.status == "Rejected"
-                                    ? Colors.red
-                                    : Colors.green,
+                                    ? AppColors.red
+                                    : AppColors.green,
                             shape: CircleBorder(),
                             child: Padding(
                               padding: const EdgeInsets.all(15),
@@ -93,7 +94,7 @@ class TadaScreen extends StatelessWidget {
                                         ? "R"
                                         : "A",
                                 style: TextStyle(
-                                    color: Colors.white,
+                                    color: AppColors.white,
                                     fontWeight: FontWeight.bold,
                                     fontSize: 18),
                               ),

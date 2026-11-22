@@ -4,6 +4,7 @@ import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class ProjectListScreen extends StatelessWidget {
   @override
@@ -27,9 +28,11 @@ class ProjectListScreen extends StatelessWidget {
               child: Column(
                 children: [
                   Card(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.only(topLeft: Radius.circular(
-                        10),bottomRight: Radius.circular(10))),
-                    color: Colors.white12,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(10),
+                            bottomRight: Radius.circular(10))),
+                    color: AppColors.white12,
                     elevation: 0,
                     margin: EdgeInsets.symmetric(horizontal: 20),
                     child: Padding(
@@ -49,7 +52,7 @@ class ProjectListScreen extends StatelessWidget {
                                   child: Card(
                                     elevation: 0,
                                     color: model.selected.value == "All"
-                                        ? Colors.white24
+                                        ? AppColors.white24
                                         : Colors.transparent,
                                     child: Padding(
                                       padding: const EdgeInsets.symmetric(
@@ -57,7 +60,7 @@ class ProjectListScreen extends StatelessWidget {
                                       child: Text(
                                         translate('project_list_screen.all'),
                                         style: TextStyle(
-                                            color: Colors.white,
+                                            color: AppColors.white,
                                             fontSize: 15,
                                             fontWeight: FontWeight.bold),
                                       ),
@@ -72,15 +75,16 @@ class ProjectListScreen extends StatelessWidget {
                                   child: Card(
                                     elevation: 0,
                                     color: model.selected.value == "In Progress"
-                                        ? Colors.white24
+                                        ? AppColors.white24
                                         : Colors.transparent,
                                     child: Padding(
                                       padding: const EdgeInsets.symmetric(
                                           vertical: 8.0, horizontal: 15),
                                       child: Text(
-                                        translate('project_list_screen.in_progress'),
+                                        translate(
+                                            'project_list_screen.in_progress'),
                                         style: TextStyle(
-                                            color: Colors.white,
+                                            color: AppColors.white,
                                             fontSize: 15,
                                             fontWeight: FontWeight.bold),
                                       ),
@@ -95,15 +99,16 @@ class ProjectListScreen extends StatelessWidget {
                                   child: Card(
                                     elevation: 0,
                                     color: model.selected.value == "Completed"
-                                        ? Colors.white24
+                                        ? AppColors.white24
                                         : Colors.transparent,
                                     child: Padding(
                                       padding: const EdgeInsets.symmetric(
                                           vertical: 8.0, horizontal: 15),
                                       child: Text(
-                                        translate('project_list_screen.cancelled'),
+                                        translate(
+                                            'project_list_screen.cancelled'),
                                         style: TextStyle(
-                                            color: Colors.white,
+                                            color: AppColors.white,
                                             fontSize: 15,
                                             fontWeight: FontWeight.bold),
                                       ),
@@ -118,15 +123,16 @@ class ProjectListScreen extends StatelessWidget {
                                   child: Card(
                                     elevation: 0,
                                     color: model.selected.value == "On Hold"
-                                        ? Colors.white24
+                                        ? AppColors.white24
                                         : Colors.transparent,
                                     child: Padding(
                                       padding: const EdgeInsets.symmetric(
                                           vertical: 8.0, horizontal: 15),
                                       child: Text(
-                                        translate('project_list_screen.on_hold'),
+                                        translate(
+                                            'project_list_screen.on_hold'),
                                         style: TextStyle(
-                                            color: Colors.white,
+                                            color: AppColors.white,
                                             fontSize: 15,
                                             fontWeight: FontWeight.bold),
                                       ),
@@ -141,15 +147,16 @@ class ProjectListScreen extends StatelessWidget {
                                   child: Card(
                                     elevation: 0,
                                     color: model.selected.value == "Cancelled"
-                                        ? Colors.white24
+                                        ? AppColors.white24
                                         : Colors.transparent,
                                     child: Padding(
                                       padding: const EdgeInsets.symmetric(
                                           vertical: 8.0, horizontal: 15),
                                       child: Text(
-                                        translate('project_list_screen.cancelled'),
+                                        translate(
+                                            'project_list_screen.cancelled'),
                                         style: TextStyle(
-                                            color: Colors.white,
+                                            color: AppColors.white,
                                             fontSize: 15,
                                             fontWeight: FontWeight.bold),
                                       ),
@@ -164,15 +171,16 @@ class ProjectListScreen extends StatelessWidget {
                                   child: Card(
                                     elevation: 0,
                                     color: model.selected.value == "Not Started"
-                                        ? Colors.white24
+                                        ? AppColors.white24
                                         : Colors.transparent,
                                     child: Padding(
                                       padding: const EdgeInsets.symmetric(
                                           vertical: 8.0, horizontal: 15),
                                       child: Text(
-                                        translate('project_list_screen.not_started'),
+                                        translate(
+                                            'project_list_screen.not_started'),
                                         style: TextStyle(
-                                            color: Colors.white,
+                                            color: AppColors.white,
                                             fontSize: 15,
                                             fontWeight: FontWeight.bold),
                                       ),
@@ -189,7 +197,8 @@ class ProjectListScreen extends StatelessWidget {
                   SizedBox(
                     height: 5,
                   ),
-                  Expanded(child: Padding(
+                  Expanded(
+                      child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: ProjectList(),
                   )),

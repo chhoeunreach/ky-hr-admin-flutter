@@ -7,11 +7,10 @@ import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_translate/flutter_translate.dart';
-import 'package:hexcolor/hexcolor.dart';
 import 'package:provider/provider.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class PaySlipScreen extends StatefulWidget {
-
   @override
   State<StatefulWidget> createState() => PaySlipScreenState();
 }
@@ -71,11 +70,11 @@ class PaySlipScreenState extends State<PaySlipScreen> {
                     children: [
                       Text(
                         "Show All",
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(color: AppColors.white),
                       ),
                       Spacer(),
                       Switch(
-                        activeThumbColor: Colors.blueAccent,
+                        activeThumbColor: AppColors.blueAccent,
                         padding: EdgeInsets.zero,
                         value: showAll,
                         onChanged: (value) {
@@ -83,7 +82,7 @@ class PaySlipScreenState extends State<PaySlipScreen> {
                           setState(() {});
                           if (value) {
                             getAllValues();
-                          }else{
+                          } else {
                             clearPaySlip();
                           }
                         },
@@ -91,252 +90,280 @@ class PaySlipScreenState extends State<PaySlipScreen> {
                     ],
                   ),
                 ),
-                if(!showAll)
-                Card(
-                  shape: ButtonBorder(),
-                  margin: EdgeInsets.zero,
-                  color: HexColor("#20FFFFFF"),
-                  child: Padding(
-                    padding: const EdgeInsets.all(10.0),
-                    child: Column(
-                      children: [
-                        SizedBox(
-                          height: 5,
-                        ),
-                        Row(
-                          children: [
-                            Consumer(
-                              builder: (context, value, child) {
-                                return year.isEmpty
-                                    ? SizedBox.shrink()
-                                    : Expanded(
-                                        child: DropdownButtonHideUnderline(
-                                          child: DropdownButton2(
-                                            isExpanded: true,
-                                            items: (year)
-                                                .map((item) =>
-                                                    DropdownMenuItem<int>(
-                                                      value: item,
-                                                      child: Text(
-                                                        item.toString(),
-                                                        style: const TextStyle(
-                                                          fontSize: 14,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                          color: Colors.black,
+                if (!showAll)
+                  Card(
+                    shape: ButtonBorder(),
+                    margin: EdgeInsets.zero,
+                    color: AppColors.custom20FFFFFF,
+                    child: Padding(
+                      padding: const EdgeInsets.all(10.0),
+                      child: Column(
+                        children: [
+                          SizedBox(
+                            height: 5,
+                          ),
+                          Row(
+                            children: [
+                              Consumer(
+                                builder: (context, value, child) {
+                                  return year.isEmpty
+                                      ? SizedBox.shrink()
+                                      : Expanded(
+                                          child: DropdownButtonHideUnderline(
+                                            child: DropdownButton2(
+                                              isExpanded: true,
+                                              items: (year)
+                                                  .map((item) =>
+                                                      DropdownMenuItem<int>(
+                                                        value: item,
+                                                        child: Text(
+                                                          item.toString(),
+                                                          style:
+                                                              const TextStyle(
+                                                            fontSize: 14,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            color:
+                                                                AppColors.black,
+                                                          ),
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
                                                         ),
-                                                        overflow: TextOverflow
-                                                            .ellipsis,
-                                                      ),
-                                                    ))
-                                                .toList(),
-                                            value: selectedYear,
-                                            onChanged: (value) {
-                                              setState(() {
-                                                context
-                                                        .read<PaySlipProvider>()
-                                                        .selectedYear =
-                                                    value as int;
-                                              });
-                                            },
-                                            iconStyleData: IconStyleData(
-                                              icon: const Icon(
-                                                Icons
-                                                    .arrow_forward_ios_outlined,
+                                                      ))
+                                                  .toList(),
+                                              value: selectedYear,
+                                              onChanged: (value) {
+                                                setState(() {
+                                                  context
+                                                          .read<PaySlipProvider>()
+                                                          .selectedYear =
+                                                      value as int;
+                                                });
+                                              },
+                                              iconStyleData: IconStyleData(
+                                                icon: const Icon(
+                                                  Icons
+                                                      .arrow_forward_ios_outlined,
+                                                ),
+                                                iconSize: 14,
+                                                iconEnabledColor:
+                                                    AppColors.black,
+                                                iconDisabledColor:
+                                                    AppColors.grey,
                                               ),
-                                              iconSize: 14,
-                                              iconEnabledColor: Colors.black,
-                                              iconDisabledColor: Colors.grey,
-                                            ),
-                                            buttonStyleData: ButtonStyleData(
-                                              height: 50,
-                                              width: 160,
-                                              padding: const EdgeInsets.only(
-                                                  left: 14, right: 14),
-                                              decoration: BoxDecoration(
-                                                borderRadius: BorderRadius.only(
-                                                    topLeft:
-                                                        Radius.circular(10),
-                                                    topRight:
-                                                        Radius.circular(0),
-                                                    bottomLeft:
-                                                        Radius.circular(0),
-                                                    bottomRight:
-                                                        Radius.circular(10)),
-                                                color: HexColor("#FFFFFF"),
+                                              buttonStyleData: ButtonStyleData(
+                                                height: 50,
+                                                width: 160,
+                                                padding: const EdgeInsets.only(
+                                                    left: 14, right: 14),
+                                                decoration: BoxDecoration(
+                                                  borderRadius:
+                                                      BorderRadius.only(
+                                                          topLeft: Radius
+                                                              .circular(10),
+                                                          topRight:
+                                                              Radius.circular(
+                                                                  0),
+                                                          bottomLeft:
+                                                              Radius.circular(
+                                                                  0),
+                                                          bottomRight:
+                                                              Radius.circular(
+                                                                  10)),
+                                                  color: AppColors.white,
+                                                ),
+                                                elevation: 0,
                                               ),
-                                              elevation: 0,
-                                            ),
-                                            dropdownStyleData:
-                                                DropdownStyleData(
-                                              maxHeight: 200,
-                                              padding: null,
-                                              decoration: BoxDecoration(
-                                                borderRadius: BorderRadius.only(
-                                                    topLeft: Radius.circular(0),
-                                                    topRight:
-                                                        Radius.circular(10),
-                                                    bottomLeft:
-                                                        Radius.circular(10),
-                                                    bottomRight:
-                                                        Radius.circular(10)),
-                                                color: HexColor("#FFFFFF"),
+                                              dropdownStyleData:
+                                                  DropdownStyleData(
+                                                maxHeight: 200,
+                                                padding: null,
+                                                decoration: BoxDecoration(
+                                                  borderRadius:
+                                                      BorderRadius.only(
+                                                          topLeft: Radius
+                                                              .circular(0),
+                                                          topRight:
+                                                              Radius.circular(
+                                                                  10),
+                                                          bottomLeft:
+                                                              Radius.circular(
+                                                                  10),
+                                                          bottomRight:
+                                                              Radius.circular(
+                                                                  10)),
+                                                  color: AppColors.white,
+                                                ),
+                                                elevation: 8,
                                               ),
-                                              elevation: 8,
-                                            ),
-                                            menuItemStyleData:
-                                                MenuItemStyleData(
-                                              height: 40,
-                                              padding: const EdgeInsets.only(
-                                                  left: 14, right: 14),
+                                              menuItemStyleData:
+                                                  MenuItemStyleData(
+                                                height: 40,
+                                                padding: const EdgeInsets.only(
+                                                    left: 14, right: 14),
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                      );
-                              },
-                            ),
-                            SizedBox(
-                              width: 10,
-                            ),
-                            Consumer(
-                              builder: (context, value, child) {
-                                return month.isEmpty
-                                    ? SizedBox.shrink()
-                                    : Expanded(
-                                        child: DropdownButtonHideUnderline(
-                                          child: DropdownButton2(
-                                            isExpanded: true,
-                                            items: (month)
-                                                .map((item) =>
-                                                    DropdownMenuItem<Month>(
-                                                      value: item,
-                                                      child: Text(
-                                                        item.name,
-                                                        style: const TextStyle(
-                                                          fontSize: 14,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                          color: Colors.black,
-                                                        ),
-                                                        overflow: TextOverflow
-                                                            .ellipsis,
-                                                      ),
-                                                    ))
-                                                .toList(),
-                                            value: month[selectedMonth],
-                                            onChanged: (value) {
-                                              setState(() {
-                                                context
-                                                        .read<PaySlipProvider>()
-                                                        .selectedMonth =
-                                                    (value!).index;
-                                              });
-                                            },
-                                            iconStyleData: IconStyleData(
-                                              icon: const Icon(
-                                                Icons
-                                                    .arrow_forward_ios_outlined,
-                                              ),
-                                              iconSize: 14,
-                                              iconEnabledColor: Colors.black,
-                                              iconDisabledColor: Colors.grey,
-                                            ),
-                                            buttonStyleData: ButtonStyleData(
-                                              height: 50,
-                                              width: 160,
-                                              padding: const EdgeInsets.only(
-                                                  left: 14, right: 14),
-                                              decoration: BoxDecoration(
-                                                borderRadius: BorderRadius.only(
-                                                    topLeft:
-                                                        Radius.circular(10),
-                                                    topRight:
-                                                        Radius.circular(0),
-                                                    bottomLeft:
-                                                        Radius.circular(0),
-                                                    bottomRight:
-                                                        Radius.circular(10)),
-                                                color: HexColor("#FFFFFF"),
-                                              ),
-                                              elevation: 0,
-                                            ),
-                                            dropdownStyleData:
-                                                DropdownStyleData(
-                                              maxHeight: 200,
-                                              padding: null,
-                                              decoration: BoxDecoration(
-                                                borderRadius: BorderRadius.only(
-                                                    topLeft: Radius.circular(0),
-                                                    topRight:
-                                                        Radius.circular(10),
-                                                    bottomLeft:
-                                                        Radius.circular(10),
-                                                    bottomRight:
-                                                        Radius.circular(10)),
-                                                color: HexColor("#FFFFFF"),
-                                              ),
-                                              elevation: 8,
-                                            ),
-                                            menuItemStyleData:
-                                                MenuItemStyleData(
-                                              height: 40,
-                                              padding: const EdgeInsets.only(
-                                                  left: 14, right: 14),
-                                            ),
-                                          ),
-                                        ),
-                                      );
-                              },
-                            ),
-                          ],
-                        ),
-                        SizedBox(
-                          height: 10,
-                        ),
-                        TextButton(
-                            style: TextButton.styleFrom(
-                                backgroundColor: HexColor("#036eb7"),
-                                shape: ButtonBorder()),
-                            onPressed: () async {
-                              setState(() {
-                                EasyLoading.show(
-                                    status: "Loading",
-                                    maskType: EasyLoadingMaskType.black);
-                              });
-                              await context
-                                  .read<PaySlipProvider>()
-                                  .getPaySlipData(
-                                      selectedYear, selectedMonth + 1);
-                              setState(() {
-                                EasyLoading.dismiss(animation: true);
-                              });
-                            },
-                            child: Container(
-                              width: double.infinity,
-                              padding: EdgeInsets.all(2.0),
-                              child: Center(
-                                child: Text(
-                                  translate('payslip_screen.request_payslip'),
-                                  style: TextStyle(color: Colors.white),
-                                ),
+                                        );
+                                },
                               ),
-                            ))
-                      ],
+                              SizedBox(
+                                width: 10,
+                              ),
+                              Consumer(
+                                builder: (context, value, child) {
+                                  return month.isEmpty
+                                      ? SizedBox.shrink()
+                                      : Expanded(
+                                          child: DropdownButtonHideUnderline(
+                                            child: DropdownButton2(
+                                              isExpanded: true,
+                                              items: (month)
+                                                  .map((item) =>
+                                                      DropdownMenuItem<Month>(
+                                                        value: item,
+                                                        child: Text(
+                                                          item.name,
+                                                          style:
+                                                              const TextStyle(
+                                                            fontSize: 14,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            color:
+                                                                AppColors.black,
+                                                          ),
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                        ),
+                                                      ))
+                                                  .toList(),
+                                              value: month[selectedMonth],
+                                              onChanged: (value) {
+                                                setState(() {
+                                                  context
+                                                          .read<PaySlipProvider>()
+                                                          .selectedMonth =
+                                                      (value!).index;
+                                                });
+                                              },
+                                              iconStyleData: IconStyleData(
+                                                icon: const Icon(
+                                                  Icons
+                                                      .arrow_forward_ios_outlined,
+                                                ),
+                                                iconSize: 14,
+                                                iconEnabledColor:
+                                                    AppColors.black,
+                                                iconDisabledColor:
+                                                    AppColors.grey,
+                                              ),
+                                              buttonStyleData: ButtonStyleData(
+                                                height: 50,
+                                                width: 160,
+                                                padding: const EdgeInsets.only(
+                                                    left: 14, right: 14),
+                                                decoration: BoxDecoration(
+                                                  borderRadius:
+                                                      BorderRadius.only(
+                                                          topLeft: Radius
+                                                              .circular(10),
+                                                          topRight:
+                                                              Radius.circular(
+                                                                  0),
+                                                          bottomLeft:
+                                                              Radius.circular(
+                                                                  0),
+                                                          bottomRight:
+                                                              Radius.circular(
+                                                                  10)),
+                                                  color: AppColors.white,
+                                                ),
+                                                elevation: 0,
+                                              ),
+                                              dropdownStyleData:
+                                                  DropdownStyleData(
+                                                maxHeight: 200,
+                                                padding: null,
+                                                decoration: BoxDecoration(
+                                                  borderRadius:
+                                                      BorderRadius.only(
+                                                          topLeft: Radius
+                                                              .circular(0),
+                                                          topRight:
+                                                              Radius.circular(
+                                                                  10),
+                                                          bottomLeft:
+                                                              Radius.circular(
+                                                                  10),
+                                                          bottomRight:
+                                                              Radius.circular(
+                                                                  10)),
+                                                  color: AppColors.white,
+                                                ),
+                                                elevation: 8,
+                                              ),
+                                              menuItemStyleData:
+                                                  MenuItemStyleData(
+                                                height: 40,
+                                                padding: const EdgeInsets.only(
+                                                    left: 14, right: 14),
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                },
+                              ),
+                            ],
+                          ),
+                          SizedBox(
+                            height: 10,
+                          ),
+                          TextButton(
+                              style: TextButton.styleFrom(
+                                  backgroundColor: AppColors.customFF036EB7,
+                                  shape: ButtonBorder()),
+                              onPressed: () async {
+                                setState(() {
+                                  EasyLoading.show(
+                                      status: "Loading",
+                                      maskType: EasyLoadingMaskType.black);
+                                });
+                                await context
+                                    .read<PaySlipProvider>()
+                                    .getPaySlipData(
+                                        selectedYear, selectedMonth + 1);
+                                setState(() {
+                                  EasyLoading.dismiss(animation: true);
+                                });
+                              },
+                              child: Container(
+                                width: double.infinity,
+                                padding: EdgeInsets.all(2.0),
+                                child: Center(
+                                  child: Text(
+                                    translate('payslip_screen.request_payslip'),
+                                    style: TextStyle(color: AppColors.white),
+                                  ),
+                                ),
+                              ))
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                if(!showAll && context.watch<PaySlipProvider>().payslips.isNotEmpty)
-                SizedBox(
-                  height: 10,
-                ),
-                if(!showAll && context.watch<PaySlipProvider>().payslips.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.all(5.0),
-                  child: Text(
-                    translate('payslip_screen.result'),
-                    style: TextStyle(color: Colors.white),
+                if (!showAll &&
+                    context.watch<PaySlipProvider>().payslips.isNotEmpty)
+                  SizedBox(
+                    height: 10,
                   ),
-                ),
+                if (!showAll &&
+                    context.watch<PaySlipProvider>().payslips.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.all(5.0),
+                    child: Text(
+                      translate('payslip_screen.result'),
+                      style: TextStyle(color: AppColors.white),
+                    ),
+                  ),
                 ListView.builder(
                   primary: false,
                   shrinkWrap: true,
@@ -353,7 +380,7 @@ class PaySlipScreenState extends State<PaySlipScreen> {
                       child: Card(
                         shape: ButtonBorder(),
                         margin: EdgeInsets.symmetric(vertical: 10),
-                        color: Colors.white12,
+                        color: AppColors.white12,
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: Column(
@@ -368,18 +395,18 @@ class PaySlipScreenState extends State<PaySlipScreen> {
                                     Text(
                                       payslip.payslip_id,
                                       style: TextStyle(
-                                          color: Colors.white, fontSize: 18),
+                                          color: AppColors.white, fontSize: 18),
                                     ),
                                     Card(
                                         margin: EdgeInsets.zero,
-                                        color: Colors.green,
+                                        color: AppColors.green,
                                         child: Padding(
                                           padding: const EdgeInsets.symmetric(
                                               horizontal: 8.0, vertical: 2),
                                           child: Text(
                                             payslip.salary_cycle,
-                                            style:
-                                                TextStyle(color: Colors.white),
+                                            style: TextStyle(
+                                                color: AppColors.white),
                                           ),
                                         )),
                                   ],
@@ -395,20 +422,20 @@ class PaySlipScreenState extends State<PaySlipScreen> {
                                   children: [
                                     Text(
                                       payslip.duration,
-                                      style: TextStyle(color: Colors.white),
+                                      style: TextStyle(color: AppColors.white),
                                     ),
                                     Spacer(),
                                     Text(
                                       payslip.salary_from,
-                                      style: TextStyle(color: Colors.white),
+                                      style: TextStyle(color: AppColors.white),
                                     ),
                                     Text(
                                       " - ",
-                                      style: TextStyle(color: Colors.white),
+                                      style: TextStyle(color: AppColors.white),
                                     ),
                                     Text(
                                       payslip.salary_to,
-                                      style: TextStyle(color: Colors.white),
+                                      style: TextStyle(color: AppColors.white),
                                     ),
                                   ],
                                 ),
@@ -419,7 +446,7 @@ class PaySlipScreenState extends State<PaySlipScreen> {
                                 child: Divider(
                                   indent: 10,
                                   endIndent: 10,
-                                  color: Colors.white54,
+                                  color: AppColors.white54,
                                 ),
                               ),
                               Padding(
@@ -432,7 +459,7 @@ class PaySlipScreenState extends State<PaySlipScreen> {
                                     Text(
                                       translate('common.total'),
                                       style: TextStyle(
-                                          color: Colors.grey, fontSize: 18),
+                                          color: AppColors.grey, fontSize: 18),
                                     ),
                                     Text(
                                       context
@@ -441,7 +468,7 @@ class PaySlipScreenState extends State<PaySlipScreen> {
                                           " " +
                                           payslip.net_salary,
                                       style: TextStyle(
-                                          color: Colors.white,
+                                          color: AppColors.white,
                                           fontSize: 18,
                                           fontFamily: "",
                                           fontWeight: FontWeight.bold),

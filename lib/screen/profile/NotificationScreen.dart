@@ -4,6 +4,7 @@ import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class NotificationScreen extends StatefulWidget {
   @override
@@ -34,10 +35,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
           backgroundColor: Colors.transparent,
           appBar: AppBar(
             elevation: 0,
-            iconTheme: IconThemeData(color: Colors.white),
+            iconTheme: IconThemeData(color: AppColors.white),
             backgroundColor: Colors.transparent,
             title: Text(translate('notification_screen.notifications'),
-                style: TextStyle(color: Colors.white)),
+                style: TextStyle(color: AppColors.white)),
           ),
           body: RefreshIndicator(
               onRefresh: () {

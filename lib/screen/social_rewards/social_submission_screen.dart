@@ -9,6 +9,7 @@ import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class SocialSubmissionScreen extends StatefulWidget {
   final int employeeId;
@@ -255,11 +256,11 @@ class _SocialSubmissionScreenState extends State<SocialSubmissionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xff050615),
+      backgroundColor: AppColors.customFF050615,
       appBar: AppBar(
         elevation: 0,
         centerTitle: true,
-        backgroundColor: const Color(0xff367cf6),
+        backgroundColor: AppColors.customFF367CF6,
         title: const Text(
           'Daily Social Media Marketing Logs',
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
@@ -335,9 +336,9 @@ class _SocialSubmissionScreenState extends State<SocialSubmissionScreen> {
           onPressed: _isValidForm ? _executeSubmitAction : null,
           style: ElevatedButton.styleFrom(
             minimumSize: const Size.fromHeight(50),
-            backgroundColor: const Color(0xff367cf6),
-            disabledBackgroundColor: const Color(0xff262839),
-            disabledForegroundColor: Colors.white38,
+            backgroundColor: AppColors.customFF367CF6,
+            disabledBackgroundColor: AppColors.customFF262839,
+            disabledForegroundColor: AppColors.white38,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
@@ -360,7 +361,7 @@ class _SocialSubmissionScreenState extends State<SocialSubmissionScreen> {
           padding: EdgeInsets.symmetric(vertical: 24),
           child: Text(
             'No post logs yet',
-            style: TextStyle(color: Colors.white70),
+            style: TextStyle(color: AppColors.white70),
           ),
         ),
       );
@@ -372,7 +373,7 @@ class _SocialSubmissionScreenState extends State<SocialSubmissionScreen> {
         const Text(
           'Post Logs',
           style: TextStyle(
-            color: Colors.white,
+            color: AppColors.white,
             fontSize: 18,
             fontWeight: FontWeight.w800,
           ),
@@ -418,7 +419,7 @@ class SocialRewardDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xff050615),
+      backgroundColor: AppColors.customFF050615,
       appBar: AppBar(
         title: const Text('Post Detail'),
         actions: [
@@ -479,13 +480,13 @@ class _SocialPointsDashboard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xff246bfe),
-            Color(0xff111936),
+            AppColors.customFF246BFE,
+            AppColors.customFF111936,
           ],
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xff246bfe).withValues(alpha: 0.22),
+            color: AppColors.customFF246BFE.withValues(alpha: 0.22),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -500,17 +501,17 @@ class _SocialPointsDashboard extends StatelessWidget {
                 width: 42,
                 height: 42,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.16),
+                  color: AppColors.white.withValues(alpha: 0.16),
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: const Icon(Icons.campaign, color: Colors.white),
+                child: const Icon(Icons.campaign, color: AppColors.white),
               ),
               const SizedBox(width: 12),
               const Expanded(
                 child: Text(
                   'Social Reward Tracker',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppColors.white,
                     fontSize: 17,
                     fontWeight: FontWeight.w900,
                   ),
@@ -546,7 +547,7 @@ class _SocialPointsDashboard extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.12),
+              color: AppColors.white.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
@@ -554,7 +555,7 @@ class _SocialPointsDashboard extends StatelessWidget {
                   ? 'Today is locked. You can edit today only.'
                   : 'Submit one daily bundle with all three links and photos.',
               style: const TextStyle(
-                color: Colors.white,
+                color: AppColors.white,
                 fontSize: 12.5,
                 fontWeight: FontWeight.w700,
               ),
@@ -582,7 +583,7 @@ class _DashboardMetric extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(color: Colors.white60, fontSize: 12),
+          style: const TextStyle(color: AppColors.white60, fontSize: 12),
         ),
         const SizedBox(height: 6),
         Text(
@@ -590,7 +591,7 @@ class _DashboardMetric extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(
-            color: Colors.white,
+            color: AppColors.white,
             fontSize: 20,
             fontWeight: FontWeight.w800,
           ),
@@ -626,9 +627,9 @@ class _SocialPostInput extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xff121423),
+        color: AppColors.customFF121423,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: AppColors.white.withValues(alpha: 0.08)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -639,17 +640,17 @@ class _SocialPostInput extends StatelessWidget {
                 width: 34,
                 height: 34,
                 decoration: BoxDecoration(
-                  color: const Color(0xff367cf6).withValues(alpha: 0.15),
+                  color: AppColors.customFF367CF6.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(11),
                 ),
-                child: Icon(icon, color: const Color(0xff73a3ff), size: 19),
+                child: Icon(icon, color: AppColors.customFF73A3FF, size: 19),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   label,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: AppColors.white,
                     fontSize: 14.5,
                     fontWeight: FontWeight.w800,
                   ),
@@ -657,7 +658,7 @@ class _SocialPostInput extends StatelessWidget {
               ),
               Icon(
                 hasPhoto ? Icons.verified_rounded : Icons.image_outlined,
-                color: hasPhoto ? Colors.greenAccent : Colors.white38,
+                color: hasPhoto ? AppColors.greenAccent : AppColors.white38,
                 size: 20,
               ),
             ],
@@ -671,16 +672,16 @@ class _SocialPostInput extends StatelessWidget {
                   controller: controller,
                   onChanged: onChanged,
                   keyboardType: TextInputType.url,
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  style: const TextStyle(color: AppColors.white, fontSize: 14),
                   decoration: const InputDecoration(
                     isDense: true,
                     hintText: 'https://...',
-                    hintStyle: TextStyle(color: Colors.white38),
+                    hintStyle: TextStyle(color: AppColors.white38),
                     enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white24),
+                      borderSide: BorderSide(color: AppColors.white24),
                     ),
                     focusedBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.blueAccent),
+                      borderSide: BorderSide(color: AppColors.blueAccent),
                     ),
                     contentPadding: EdgeInsets.symmetric(vertical: 11),
                   ),
@@ -693,10 +694,10 @@ class _SocialPostInput extends StatelessWidget {
                 child: OutlinedButton.icon(
                   onPressed: onPickPhoto,
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xff73a3ff),
+                    foregroundColor: AppColors.customFF73A3FF,
                     padding: const EdgeInsets.symmetric(horizontal: 10),
                     side: BorderSide(
-                      color: const Color(0xff367cf6).withValues(alpha: 0.65),
+                      color: AppColors.customFF367CF6.withValues(alpha: 0.65),
                     ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
@@ -759,9 +760,10 @@ class _TodayCompleteCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xff102416),
+        color: AppColors.customFF102416,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.greenAccent.withValues(alpha: 0.20)),
+        border:
+            Border.all(color: AppColors.greenAccent.withValues(alpha: 0.20)),
       ),
       child: Row(
         children: [
@@ -769,17 +771,17 @@ class _TodayCompleteCard extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: Colors.greenAccent.withValues(alpha: 0.16),
+              color: AppColors.greenAccent.withValues(alpha: 0.16),
               borderRadius: BorderRadius.circular(14),
             ),
-            child: const Icon(Icons.check_circle, color: Colors.greenAccent),
+            child: const Icon(Icons.check_circle, color: AppColors.greenAccent),
           ),
           const SizedBox(width: 12),
           const Expanded(
             child: Text(
               "Today's tasks completed! Earned 1 Point (\$1)",
               style: TextStyle(
-                color: Colors.green,
+                color: AppColors.green,
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
@@ -788,9 +790,9 @@ class _TodayCompleteCard extends StatelessWidget {
           IconButton(
             onPressed: onEdit,
             style: IconButton.styleFrom(
-              backgroundColor: Colors.white.withValues(alpha: 0.10),
+              backgroundColor: AppColors.white.withValues(alpha: 0.10),
             ),
-            icon: const Icon(Icons.edit, color: Colors.white, size: 20),
+            icon: const Icon(Icons.edit, color: AppColors.white, size: 20),
           ),
         ],
       ),
@@ -814,9 +816,9 @@ class _SocialRewardListTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: const Color(0xff121423),
+        color: AppColors.customFF121423,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: AppColors.white.withValues(alpha: 0.08)),
       ),
       child: ListTile(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -825,7 +827,7 @@ class _SocialRewardListTile extends StatelessWidget {
           width: 42,
           height: 42,
           decoration: BoxDecoration(
-            color: (isToday ? Colors.green : const Color(0xff367cf6))
+            color: (isToday ? AppColors.green : AppColors.customFF367CF6)
                 .withValues(alpha: 0.18),
             borderRadius: BorderRadius.circular(14),
           ),
@@ -833,7 +835,8 @@ class _SocialRewardListTile extends StatelessWidget {
             child: Text(
               '+${reward.rewardPoints}',
               style: TextStyle(
-                color: isToday ? Colors.greenAccent : const Color(0xff73a3ff),
+                color:
+                    isToday ? AppColors.greenAccent : AppColors.customFF73A3FF,
                 fontWeight: FontWeight.w900,
               ),
             ),
@@ -842,15 +845,15 @@ class _SocialRewardListTile extends StatelessWidget {
         title: Text(
           reward.logDate,
           style: const TextStyle(
-            color: Colors.white,
+            color: AppColors.white,
             fontWeight: FontWeight.w800,
           ),
         ),
         subtitle: Text(
           isToday ? 'Today - tap to view or edit' : 'Tap to view detail',
-          style: const TextStyle(color: Colors.white60),
+          style: const TextStyle(color: AppColors.white60),
         ),
-        trailing: const Icon(Icons.chevron_right, color: Colors.white70),
+        trailing: const Icon(Icons.chevron_right, color: AppColors.white70),
       ),
     );
   }
@@ -867,19 +870,19 @@ class _DetailHeader extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xff1b2446), Color(0xff121423)],
+          colors: [AppColors.customFF1B2446, AppColors.customFF121423],
         ),
         borderRadius: BorderRadius.circular(18),
       ),
       child: Row(
         children: [
-          const Icon(Icons.workspace_premium, color: Colors.amber),
+          const Icon(Icons.workspace_premium, color: AppColors.amber),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               '${reward.logDate} - ${reward.rewardPoints} point',
               style: const TextStyle(
-                color: Colors.white,
+                color: AppColors.white,
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
               ),
@@ -907,9 +910,9 @@ class _DetailSocialRow extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: const Color(0xff121423),
+        color: AppColors.customFF121423,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: AppColors.white.withValues(alpha: 0.08)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -919,14 +922,14 @@ class _DetailSocialRow extends StatelessWidget {
             Text(
               title,
               style: const TextStyle(
-                color: Colors.white,
+                color: AppColors.white,
                 fontWeight: FontWeight.w800,
               ),
             ),
             const SizedBox(height: 8),
             SelectableText(
               url,
-              style: const TextStyle(color: Colors.white70),
+              style: const TextStyle(color: AppColors.white70),
             ),
             if (photoUrl.trim().isNotEmpty) ...[
               const SizedBox(height: 10),

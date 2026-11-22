@@ -1,7 +1,7 @@
 import 'package:cnattendance/widget/buttonborder.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
-import 'package:hexcolor/hexcolor.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class CustomAlertDialog extends StatelessWidget {
   final String title;
@@ -15,7 +15,7 @@ class CustomAlertDialog extends StatelessWidget {
         ? "សូមបើកបិទរ៉ោតទ័រឡើងវិញ ហើយព្យាយាមម្តងទៀត។"
         : title;
     return Container(
-      color: Colors.white,
+      color: AppColors.white,
       padding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -32,7 +32,7 @@ class CustomAlertDialog extends StatelessWidget {
           Text(
             textAlign: TextAlign.center,
             message,
-            style: TextStyle(fontSize: 15,color: Colors.black),
+            style: TextStyle(fontSize: 15, color: AppColors.black),
           ),
           SizedBox(
             height: 10,
@@ -42,7 +42,7 @@ class CustomAlertDialog extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton(
                   style: TextButton.styleFrom(
-                      backgroundColor: HexColor("#036eb7"),
+                      backgroundColor: AppColors.customFF036EB7,
                       shape: ButtonBorder()),
                   onPressed: () {
                     Navigator.pop(context, true);
@@ -50,7 +50,7 @@ class CustomAlertDialog extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 15),
                     child: Text(actionLabel!,
-                        style: TextStyle(color: Colors.white)),
+                        style: TextStyle(color: AppColors.white)),
                   )),
             ),
             SizedBox(
@@ -61,14 +61,15 @@ class CustomAlertDialog extends StatelessWidget {
             width: double.infinity,
             child: ElevatedButton(
                 style: TextButton.styleFrom(
-                    backgroundColor: HexColor("#036eb7"),
+                    backgroundColor: AppColors.customFF036EB7,
                     shape: ButtonBorder()),
                 onPressed: () {
                   Navigator.pop(context);
                 },
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 15),
-                  child: Text(translate('common.close'),style: TextStyle(color: Colors.white)),
+                  child: Text(translate('common.close'),
+                      style: TextStyle(color: AppColors.white)),
                 )),
           )
         ],

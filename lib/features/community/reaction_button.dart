@@ -5,6 +5,7 @@ import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'community_strings.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 const communityReactions = {
   'like': '👍',
@@ -19,10 +20,10 @@ String _label(String reaction) =>
     communityText('${reaction[0].toUpperCase()}${reaction.substring(1)}');
 
 Color _color(String? reaction, Color fallback) => switch (reaction) {
-      'like' => const Color(0xff1877f2),
-      'love' => const Color(0xfff33e58),
-      'haha' || 'wow' || 'sad' => const Color(0xffb77900),
-      'angry' => const Color(0xffe15a2b),
+      'like' => AppColors.customFF1877F2,
+      'love' => AppColors.customFFF33E58,
+      'haha' || 'wow' || 'sad' => AppColors.customFFB77900,
+      'angry' => AppColors.customFFE15A2B,
       _ => fallback,
     };
 
@@ -71,7 +72,7 @@ class CommunityReactionButton extends StatelessWidget {
               width: width,
               child: Material(
                 elevation: 12,
-                shadowColor: Colors.black26,
+                shadowColor: AppColors.black26,
                 borderRadius: BorderRadius.circular(40),
                 color: EnterpriseTheme.of(context).contentSurface,
                 child: Padding(
@@ -92,7 +93,8 @@ class CommunityReactionButton extends StatelessWidget {
                                           vertical: 5),
                                       decoration: BoxDecoration(
                                           color: entry.key == reaction
-                                              ? _color(entry.key, Colors.blue)
+                                              ? _color(
+                                                      entry.key, AppColors.blue)
                                                   .withValues(alpha: .12)
                                               : null,
                                           borderRadius:

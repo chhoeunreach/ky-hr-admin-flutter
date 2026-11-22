@@ -3,6 +3,7 @@ import 'package:cnattendance/theme/theme_colors.dart';
 import 'package:cnattendance/theme/royal_colors.dart';
 import 'package:cnattendance/theme/royal_blue_day_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class AppThemeData {
   static const Duration animationDuration = Duration(milliseconds: 300);
@@ -292,6 +293,7 @@ class AppThemeData {
         surface: colors.cardColor,
         onSurface: colors.textColor,
       ),
+      extensions: [AppColors.fromThemeColors(colors)],
       scaffoldBackgroundColor: colors.backgroundColor,
       canvasColor: colors.backgroundColor,
       cardColor: colors.cardColor,

@@ -2,10 +2,10 @@ import 'package:cnattendance/utils/app_update_payload.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
-import 'package:hexcolor/hexcolor.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'buttonborder.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class AppUpdateDialog extends StatelessWidget {
   final String currentVersion;
@@ -29,7 +29,10 @@ class AppUpdateDialog extends StatelessWidget {
     try {
       await launchUrl(appUpdateDownloadUri(downloadUrl),
           mode: LaunchMode.externalApplication);
-    } catch (error) { if (kDebugMode) debugPrint('App update: failed to open download URL: $error'); }
+    } catch (error) {
+      if (kDebugMode)
+        debugPrint('App update: failed to open download URL: $error');
+    }
   }
 
   @override
@@ -55,7 +58,7 @@ class AppUpdateDialog extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
         ),
         elevation: 12,
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.white,
         insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
@@ -66,14 +69,14 @@ class AppUpdateDialog extends StatelessWidget {
                 width: 72,
                 height: 72,
                 decoration: BoxDecoration(
-                  color: HexColor("#036eb7").withValues(alpha: 0.12),
+                  color: AppColors.customFF036EB7.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
                 child: Center(
                   child: Icon(
                     Icons.system_update_rounded,
                     size: 38,
-                    color: HexColor("#036eb7"),
+                    color: AppColors.customFF036EB7,
                   ),
                 ),
               ),
@@ -83,7 +86,7 @@ class AppUpdateDialog extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 19,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: AppColors.black87,
                 ),
               ),
               const SizedBox(height: 8),
@@ -96,7 +99,7 @@ class AppUpdateDialog extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
-                  color: Colors.grey.shade700,
+                  color: AppColors.grey.shade700,
                   height: 1.4,
                 ),
               ),
@@ -105,9 +108,9 @@ class AppUpdateDialog extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
+                  color: AppColors.grey.shade100,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade300),
+                  border: Border.all(color: AppColors.grey.shade300),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -120,7 +123,7 @@ class AppUpdateDialog extends StatelessWidget {
                               : 'កំណែបច្ចុប្បន្ន',
                           style: TextStyle(
                             fontSize: 11,
-                            color: Colors.grey.shade600,
+                            color: AppColors.grey.shade600,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -131,7 +134,7 @@ class AppUpdateDialog extends StatelessWidget {
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
-                            color: Colors.black87,
+                            color: AppColors.black87,
                           ),
                         ),
                       ],
@@ -139,7 +142,7 @@ class AppUpdateDialog extends StatelessWidget {
                     Icon(
                       Icons.arrow_forward_rounded,
                       size: 18,
-                      color: Colors.grey.shade500,
+                      color: AppColors.grey.shade500,
                     ),
                     Column(
                       children: [
@@ -147,7 +150,7 @@ class AppUpdateDialog extends StatelessWidget {
                           latestLabel.isNotEmpty ? latestLabel : 'កំណែចុងក្រោយ',
                           style: TextStyle(
                             fontSize: 11,
-                            color: HexColor("#036eb7"),
+                            color: AppColors.customFF036EB7,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -157,7 +160,7 @@ class AppUpdateDialog extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
-                            color: HexColor("#036eb7"),
+                            color: AppColors.customFF036EB7,
                           ),
                         ),
                       ],
@@ -172,7 +175,7 @@ class AppUpdateDialog extends StatelessWidget {
                   constraints: const BoxConstraints(maxHeight: 90),
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade50,
+                    color: AppColors.grey.shade50,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: SingleChildScrollView(
@@ -180,7 +183,7 @@ class AppUpdateDialog extends StatelessWidget {
                       releaseNotes!.trim(),
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.grey.shade800,
+                        color: AppColors.grey.shade800,
                         height: 1.3,
                       ),
                     ),
@@ -192,7 +195,7 @@ class AppUpdateDialog extends StatelessWidget {
                 width: double.infinity,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: HexColor("#036eb7"),
+                    backgroundColor: AppColors.customFF036EB7,
                     shape: ButtonBorder(),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     elevation: 2,
@@ -202,7 +205,7 @@ class AppUpdateDialog extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const Icon(Icons.download_rounded,
-                          color: Colors.white, size: 20),
+                          color: AppColors.white, size: 20),
                       const SizedBox(width: 8),
                       Text(
                         updateNowText.isNotEmpty
@@ -211,7 +214,7 @@ class AppUpdateDialog extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
-                          color: Colors.white,
+                          color: AppColors.white,
                         ),
                       ),
                     ],
@@ -228,7 +231,7 @@ class AppUpdateDialog extends StatelessWidget {
                       laterText.isNotEmpty ? laterText : 'ពេលក្រោយ',
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey.shade600,
+                        color: AppColors.grey.shade600,
                         fontWeight: FontWeight.w500,
                       ),
                     ),

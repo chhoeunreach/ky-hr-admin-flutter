@@ -11,6 +11,7 @@ import 'package:intl/intl.dart';
 import 'package:nepali_date_picker/nepali_date_picker.dart' as picker;
 import 'package:nepali_date_picker/nepali_date_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class IssueLeaveSheet extends StatefulWidget {
   @override
@@ -187,7 +188,7 @@ class IssueLeaveSheetState extends State<IssueLeaveSheet> {
                         ),
                         iconSize: 14,
                         iconEnabledColor: enterprise.mutedText,
-                        iconDisabledColor: Colors.grey,
+                        iconDisabledColor: AppColors.grey,
                       ),
                       buttonStyleData: ButtonStyleData(
                         height: 50,
@@ -196,8 +197,8 @@ class IssueLeaveSheetState extends State<IssueLeaveSheet> {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(10),
                           color: enterprise.isDark
-                              ? const Color(0xFF0F172A)
-                              : const Color(0xFFF8FAFC),
+                              ? AppColors.ink900
+                              : AppColors.customFFF8FAFC,
                           border: Border.all(color: enterprise.cardBorder),
                         ),
                         elevation: 0,
@@ -230,8 +231,8 @@ class IssueLeaveSheetState extends State<IssueLeaveSheet> {
                       Icon(Icons.calendar_month, color: enterprise.accent),
                   labelStyle: TextStyle(color: enterprise.text),
                   fillColor: enterprise.isDark
-                      ? const Color(0xFF0F172A)
-                      : const Color(0xFFF8FAFC),
+                      ? AppColors.ink900
+                      : AppColors.customFFF8FAFC,
                   filled: true,
                   enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -241,10 +242,10 @@ class IssueLeaveSheetState extends State<IssueLeaveSheet> {
                       borderSide: BorderSide(color: enterprise.accent)),
                   focusedErrorBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: Colors.red)),
+                      borderSide: const BorderSide(color: AppColors.red)),
                   errorBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: Colors.red)),
+                      borderSide: const BorderSide(color: AppColors.red)),
                 ),
                 readOnly: true,
                 //set it true, so that user will not able to edit text
@@ -298,8 +299,8 @@ class IssueLeaveSheetState extends State<IssueLeaveSheet> {
                       Icon(Icons.calendar_month, color: enterprise.accent),
                   labelStyle: TextStyle(color: enterprise.text),
                   fillColor: enterprise.isDark
-                      ? const Color(0xFF0F172A)
-                      : const Color(0xFFF8FAFC),
+                      ? AppColors.ink900
+                      : AppColors.customFFF8FAFC,
                   filled: true,
                   enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -309,10 +310,10 @@ class IssueLeaveSheetState extends State<IssueLeaveSheet> {
                       borderSide: BorderSide(color: enterprise.accent)),
                   focusedErrorBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: Colors.red)),
+                      borderSide: const BorderSide(color: AppColors.red)),
                   errorBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: Colors.red)),
+                      borderSide: const BorderSide(color: AppColors.red)),
                 ),
                 readOnly: true,
                 //set it true, so that user will not able to edit text
@@ -408,8 +409,8 @@ class IssueLeaveSheetState extends State<IssueLeaveSheet> {
                   prefixIcon: Icon(Icons.edit_note, color: enterprise.accent),
                   labelStyle: TextStyle(color: enterprise.text),
                   fillColor: enterprise.isDark
-                      ? const Color(0xFF0F172A)
-                      : const Color(0xFFF8FAFC),
+                      ? AppColors.ink900
+                      : AppColors.customFFF8FAFC,
                   filled: true,
                   enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -419,10 +420,10 @@ class IssueLeaveSheetState extends State<IssueLeaveSheet> {
                       borderSide: BorderSide(color: enterprise.accent)),
                   focusedErrorBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: Colors.red)),
+                      borderSide: const BorderSide(color: AppColors.red)),
                   errorBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: Colors.red)),
+                      borderSide: const BorderSide(color: AppColors.red)),
                 ),
               ),
               gaps(20),
@@ -443,7 +444,7 @@ class IssueLeaveSheetState extends State<IssueLeaveSheet> {
                       child: Text(
                         'Request Leave',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: AppColors.white,
                           fontWeight: FontWeight.bold,
                         ),
                       ),

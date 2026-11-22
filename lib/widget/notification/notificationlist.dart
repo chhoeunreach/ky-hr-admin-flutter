@@ -2,6 +2,7 @@ import 'package:cnattendance/provider/notificationcontroller.dart';
 import 'package:cnattendance/widget/notification/notificationcard.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class NotificationList extends StatelessWidget {
   @override
@@ -23,7 +24,7 @@ class NotificationList extends StatelessWidget {
               child: Text(
                 model.errorMessage.value,
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: AppColors.white),
               ),
             ),
           );
@@ -36,7 +37,7 @@ class NotificationList extends StatelessWidget {
               child: Text(
                 'No notifications found',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: AppColors.white),
               ),
             ),
           );

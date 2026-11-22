@@ -22,6 +22,7 @@ import 'package:nepali_date_picker/nepali_date_picker.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import 'royal_dashboard_widgets.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 typedef RoyalCalendarBuilder = Widget Function(
     BuildContext context, RoyalCalendarParts parts);
@@ -349,7 +350,7 @@ class _RoyalCalendarActivityState extends State<RoyalCalendarActivity> {
                   color:
                       day ? RoyalDayColors.primary : RoyalColors.textSecondary),
               todayTextStyle:
-                  const TextStyle(fontSize: 10, color: Colors.white),
+                  const TextStyle(fontSize: 10, color: AppColors.white),
               selectedTextStyle:
                   TextStyle(fontSize: 10, color: RoyalColors.navy),
               todayDecoration: BoxDecoration(
@@ -402,7 +403,7 @@ class _RoyalCalendarActivityState extends State<RoyalCalendarActivity> {
                                 shape: BoxShape.circle,
                                 color: [
                                   RoyalColors.success,
-                                  const Color(0xffd5b6ff),
+                                  AppColors.customFFD5B6FF,
                                   RoyalColors.gold
                                 ][item],
                               ),
@@ -445,15 +446,30 @@ class _RoyalCalendarActivityState extends State<RoyalCalendarActivity> {
 
   Widget _activityBadge(IconData icon, [Color? color]) {
     final gradient = switch (icon) {
-      Icons.logout => const [Color(0xFFE11D48), Color(0xFFFB7185)],
+      Icons.logout => const [
+          AppColors.customFFE11D48,
+          AppColors.customFFFB7185
+        ],
       Icons.login => const [Color(0xFF059669), Color(0xFF34D399)],
-      Icons.event_busy => const [Color(0xFF9333EA), Color(0xFFC084FC)],
-      Icons.schedule => const [Color(0xFFEA580C), Color(0xFFFBBF24)],
-      Icons.celebration => const [Color(0xFFEC4899), Color(0xFFF472B6)],
-      Icons.cake_outlined => const [Color(0xFF8B5CF6), Color(0xFFA78BFA)],
+      Icons.event_busy => const [
+          AppColors.customFF9333EA,
+          AppColors.customFFC084FC
+        ],
+      Icons.schedule => const [
+          AppColors.customFFEA580C,
+          AppColors.customFFFBBF24
+        ],
+      Icons.celebration => const [
+          AppColors.customFFEC4899,
+          AppColors.customFFF472B6
+        ],
+      Icons.cake_outlined => const [
+          AppColors.customFF8B5CF6,
+          AppColors.customFFA78BFA
+        ],
       _ => color != null
-          ? [color, Color.lerp(color, Colors.white, 0.28)!]
-          : const [Color(0xFF3B82F6), Color(0xFF60A5FA)],
+          ? [color, Color.lerp(color, AppColors.white, 0.28)!]
+          : const [AppColors.customFF3B82F6, AppColors.customFF60A5FA],
     };
     return Container(
       width: 26,
@@ -474,7 +490,7 @@ class _RoyalCalendarActivityState extends State<RoyalCalendarActivity> {
         ],
       ),
       child: Center(
-        child: Icon(icon, color: Colors.white, size: 14),
+        child: Icon(icon, color: AppColors.white, size: 14),
       ),
     );
   }

@@ -54,13 +54,14 @@ import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'package:in_app_notification/in_app_notification.dart';
 import 'package:flutter_translate/flutter_translate.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   ErrorWidget.builder = (details) {
     debugPrint('Widget build failed: ${details.exception}');
     return const Material(
-      color: Color(0xfff5f8fd),
+      color: AppColors.customFFF5F8FD,
       child: Center(
         child: Padding(
           padding: EdgeInsets.all(24),
@@ -68,18 +69,18 @@ Future<void> main() async {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(Icons.error_outline_rounded,
-                  color: Color(0xffc53030), size: 46),
+                  color: AppColors.customFFC53030, size: 46),
               SizedBox(height: 12),
               Text('Unable to display this screen',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                      color: Color(0xff253858),
+                      color: AppColors.customFF253858,
                       fontSize: 17,
                       fontWeight: FontWeight.w700)),
               SizedBox(height: 6),
               Text('Please go back and try again.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Color(0xff5f6f82))),
+                  style: TextStyle(color: AppColors.customFF5F6F82)),
             ],
           ),
         ),
@@ -181,10 +182,10 @@ void configLoading() {
     ..loadingStyle = EasyLoadingStyle.dark
     ..indicatorSize = 50.0
     ..radius = 0.0
-    ..progressColor = Colors.blue
-    ..backgroundColor = Colors.white
-    ..indicatorColor = Colors.blue
-    ..textColor = Colors.black
+    ..progressColor = AppColors.blue
+    ..backgroundColor = AppColors.white
+    ..indicatorColor = AppColors.blue
+    ..textColor = AppColors.black
     ..maskType = EasyLoadingMaskType.none
     ..userInteractions = false
     ..dismissOnTap = false;
@@ -348,7 +349,7 @@ class _StartupErrorApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.white,
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -358,7 +359,7 @@ class _StartupErrorApp extends StatelessWidget {
                 const Icon(
                   Icons.error_outline,
                   size: 56,
-                  color: Colors.redAccent,
+                  color: AppColors.redAccent,
                 ),
                 const SizedBox(height: 16),
                 const Text(
@@ -366,14 +367,14 @@ class _StartupErrorApp extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black87,
+                    color: AppColors.black87,
                   ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
                 Text(
                   error,
-                  style: const TextStyle(color: Colors.black54),
+                  style: const TextStyle(color: AppColors.black54),
                   textAlign: TextAlign.center,
                 ),
               ],

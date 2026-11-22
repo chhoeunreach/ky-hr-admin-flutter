@@ -3,6 +3,7 @@ import 'package:cnattendance/screen/profile/notice_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:html/parser.dart' as html_parser;
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class NoticeCard extends StatelessWidget {
   final app_notification.Notification notice;
@@ -18,7 +19,7 @@ class NoticeCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Material(
-        color: Colors.white.withValues(alpha: 0.11),
+        color: AppColors.white.withValues(alpha: 0.11),
         borderRadius: BorderRadius.circular(18),
         child: InkWell(
           borderRadius: BorderRadius.circular(18),
@@ -29,7 +30,8 @@ class NoticeCard extends StatelessWidget {
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+              border:
+                  Border.all(color: AppColors.white.withValues(alpha: 0.14)),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -38,7 +40,7 @@ class NoticeCard extends StatelessWidget {
                   width: 58,
                   height: 64,
                   decoration: BoxDecoration(
-                    color: Colors.blueAccent.withValues(alpha: 0.92),
+                    color: AppColors.blueAccent.withValues(alpha: 0.92),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Column(
@@ -47,7 +49,7 @@ class NoticeCard extends StatelessWidget {
                       Text(
                         notice.day,
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: AppColors.white,
                           fontSize: 22,
                           fontWeight: FontWeight.w900,
                         ),
@@ -58,7 +60,7 @@ class NoticeCard extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.88),
+                          color: AppColors.white.withValues(alpha: 0.88),
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
                         ),
@@ -80,7 +82,7 @@ class NoticeCard extends StatelessWidget {
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
-                                color: Colors.white,
+                                color: AppColors.white,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w800,
                                 height: 1.25,
@@ -90,7 +92,7 @@ class NoticeCard extends StatelessWidget {
                           const SizedBox(width: 8),
                           Icon(
                             Icons.chevron_right,
-                            color: Colors.white.withValues(alpha: 0.72),
+                            color: AppColors.white.withValues(alpha: 0.72),
                           ),
                         ],
                       ),
@@ -101,7 +103,7 @@ class NoticeCard extends StatelessWidget {
                           maxLines: 3,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.72),
+                            color: AppColors.white.withValues(alpha: 0.72),
                             fontSize: 13,
                             height: 1.35,
                           ),

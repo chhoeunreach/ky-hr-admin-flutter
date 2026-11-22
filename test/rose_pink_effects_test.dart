@@ -103,9 +103,11 @@ void main() {
     expect(tester.state(layer), same(state));
     expect(find.text('Menu dialog'), findsOneWidget);
 
+    // Effects are admin-controlled and theme-independent: leaving rose pink
+    // keeps the enabled layer mounted.
     await settings.setMode(AppThemeMode.dark);
     await tester.pumpAndSettle();
-    expect(layer, findsNothing);
+    expect(layer, findsOneWidget);
     expect(find.text('Menu dialog'), findsOneWidget);
   });
 

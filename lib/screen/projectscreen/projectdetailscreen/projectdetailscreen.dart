@@ -8,6 +8,7 @@ import 'package:cnattendance/screen/projectscreen/projectdetailscreen/widget/tea
 import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class ProjectDetailScreen extends StatelessWidget {
   @override
@@ -21,15 +22,20 @@ class ProjectDetailScreen extends StatelessWidget {
             backgroundColor: Colors.transparent,
             elevation: 0,
             actions: [
-              IconButton(onPressed: () {
-                Get.to(ProjectChatScreen(), arguments: {
-                  "projectId": model.project.value.id,
-                  "projectName": model.project.value.name,
-                  "projectSlug": model.project.value.slug,
-                  "leader": model.project.value.leaders,
-                  "member": model.project.value.members,
-                });
-              }, icon: Icon(Icons.messenger_outline,color: Colors.white,))
+              IconButton(
+                  onPressed: () {
+                    Get.to(ProjectChatScreen(), arguments: {
+                      "projectId": model.project.value.id,
+                      "projectName": model.project.value.name,
+                      "projectSlug": model.project.value.slug,
+                      "leader": model.project.value.leaders,
+                      "member": model.project.value.members,
+                    });
+                  },
+                  icon: Icon(
+                    Icons.messenger_outline,
+                    color: AppColors.white,
+                  ))
             ],
           ),
           body: SafeArea(

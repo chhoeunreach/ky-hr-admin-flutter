@@ -4,12 +4,13 @@ import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class TeamBottomSheet extends StatelessWidget {
   final List<Member> leaders;
   final List<Member> members;
 
-  TeamBottomSheet(this.leaders,this.members);
+  TeamBottomSheet(this.leaders, this.members);
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +32,7 @@ class TeamBottomSheet extends StatelessWidget {
                     Text(
                       translate('project_detail_screen.team_leads'),
                       style: TextStyle(
-                          color: Colors.white,
+                          color: AppColors.white,
                           fontSize: 16,
                           fontWeight: FontWeight.bold),
                     ),
@@ -41,7 +42,7 @@ class TeamBottomSheet extends StatelessWidget {
                         },
                         child: Icon(
                           Icons.close,
-                          color: Colors.white,
+                          color: AppColors.white,
                         )),
                   ],
                 ),
@@ -51,15 +52,14 @@ class TeamBottomSheet extends StatelessWidget {
                   primary: false,
                   padding: EdgeInsets.symmetric(vertical: 5, horizontal: 15),
                   itemCount: leaders.length,
-                  itemBuilder: (ctx, i) =>
-                      Padding(padding: EdgeInsets.all(5), child: teamCard(leaders[i]))),
-
+                  itemBuilder: (ctx, i) => Padding(
+                      padding: EdgeInsets.all(5), child: teamCard(leaders[i]))),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Text(
                   translate('project_detail_screen.team_members'),
                   style: TextStyle(
-                      color: Colors.white,
+                      color: AppColors.white,
                       fontSize: 16,
                       fontWeight: FontWeight.bold),
                 ),
@@ -69,8 +69,8 @@ class TeamBottomSheet extends StatelessWidget {
                   primary: false,
                   padding: EdgeInsets.symmetric(vertical: 5, horizontal: 15),
                   itemCount: members.length,
-                  itemBuilder: (ctx, i) =>
-                      Padding(padding: EdgeInsets.all(5), child: teamCard(members[i]))),
+                  itemBuilder: (ctx, i) => Padding(
+                      padding: EdgeInsets.all(5), child: teamCard(members[i]))),
             ],
           ),
         ),
@@ -82,7 +82,7 @@ class TeamBottomSheet extends StatelessWidget {
     return Card(
       shape: ButtonBorder(),
       elevation: 0,
-      color: Colors.white10,
+      color: AppColors.white10,
       child: Container(
         padding: EdgeInsets.all(10),
         child: Row(
@@ -105,11 +105,11 @@ class TeamBottomSheet extends StatelessWidget {
                   children: [
                     Text(
                       member.name,
-                      style: TextStyle(color: Colors.white, fontSize: 18),
+                      style: TextStyle(color: AppColors.white, fontSize: 18),
                     ),
                     SizedBox(height: 5),
                     Text(member.post,
-                        style: TextStyle(color: Colors.white70)),
+                        style: TextStyle(color: AppColors.white70)),
                   ],
                 ),
               ),

@@ -4,6 +4,7 @@ import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class AdminSocialRewardsScreen extends StatelessWidget {
   const AdminSocialRewardsScreen({super.key});
@@ -23,8 +24,8 @@ class AdminSocialRewardsScreen extends StatelessWidget {
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: model.onCreateClicked,
-          backgroundColor: Colors.blue,
-          child: const Icon(Icons.add, color: Colors.white),
+          backgroundColor: AppColors.blue,
+          child: const Icon(Icons.add, color: AppColors.white),
         ),
         body: Obx(
           () => SafeArea(
@@ -36,12 +37,12 @@ class AdminSocialRewardsScreen extends StatelessWidget {
                       children: [
                         const SizedBox(height: 120),
                         const Icon(Icons.verified_outlined,
-                            color: Colors.white70, size: 42),
+                            color: AppColors.white70, size: 42),
                         const SizedBox(height: 12),
                         Text(
                           translate('social_rewards.no_entries'),
                           textAlign: TextAlign.center,
-                          style: const TextStyle(color: Colors.white70),
+                          style: const TextStyle(color: AppColors.white70),
                         ),
                       ],
                     )
@@ -84,10 +85,10 @@ class _RewardTile extends StatelessWidget {
             bottomRight: Radius.circular(10),
           ),
         ),
-        tileColor: Colors.white12,
+        tileColor: AppColors.white12,
         onTap: onTap,
-        textColor: Colors.white,
-        iconColor: Colors.white,
+        textColor: AppColors.white,
+        iconColor: AppColors.white,
         title: Text(
           reward.displayEmployee,
           maxLines: 1,
@@ -98,17 +99,17 @@ class _RewardTile extends StatelessWidget {
           padding: const EdgeInsets.only(top: 4),
           child: Text(
             '${reward.logDate} - ${reward.rewardPoints} point',
-            style: const TextStyle(color: Colors.grey),
+            style: const TextStyle(color: AppColors.grey),
           ),
         ),
         leading: Card(
-          color: reward.isLocked ? Colors.green : Colors.orange,
+          color: reward.isLocked ? AppColors.green : AppColors.orange,
           shape: const CircleBorder(),
           child: Padding(
             padding: const EdgeInsets.all(13),
             child: Icon(
               reward.isLocked ? Icons.lock : Icons.lock_open,
-              color: Colors.white,
+              color: AppColors.white,
               size: 20,
             ),
           ),

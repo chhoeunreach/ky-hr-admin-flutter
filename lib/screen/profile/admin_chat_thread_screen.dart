@@ -8,14 +8,15 @@ import 'package:cnattendance/widget/chat/chat_voice_bubble.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class AdminChatThreadScreen extends StatelessWidget {
   const AdminChatThreadScreen({super.key});
 
-  static const Color _pageBackground = Color(0xff06142f);
-  static const Color _headerBackground = Color(0xff06142f);
-  static const Color _sentBubble = Color(0xff1689f9);
-  static const Color _receivedBubble = Color(0xff13264d);
+  static const Color _pageBackground = AppColors.customFF06142F;
+  static const Color _headerBackground = AppColors.customFF06142F;
+  static const Color _sentBubble = AppColors.customFF1689F9;
+  static const Color _receivedBubble = AppColors.customFF13264D;
 
   bool _hasValidNetworkImage(String url) {
     final uri = Uri.tryParse(url.trim());
@@ -30,11 +31,11 @@ class AdminChatThreadScreen extends StatelessWidget {
         width: size,
         height: size,
         decoration: const BoxDecoration(
-          color: Color(0xff1a2b52),
+          color: AppColors.customFF1A2B52,
           shape: BoxShape.circle,
         ),
         child: Icon(Icons.admin_panel_settings_rounded,
-            size: size * .55, color: Colors.white70),
+            size: size * .55, color: AppColors.white70),
       );
     }
 
@@ -48,11 +49,11 @@ class AdminChatThreadScreen extends StatelessWidget {
           width: size,
           height: size,
           decoration: const BoxDecoration(
-            color: Color(0xff1a2b52),
+            color: AppColors.customFF1A2B52,
             shape: BoxShape.circle,
           ),
           child: Icon(Icons.admin_panel_settings_rounded,
-              size: size * .55, color: Colors.white70),
+              size: size * .55, color: AppColors.white70),
         ),
       ),
     );
@@ -63,7 +64,7 @@ class AdminChatThreadScreen extends StatelessWidget {
       elevation: 0,
       scrolledUnderElevation: 0,
       backgroundColor: _headerBackground,
-      foregroundColor: Colors.white,
+      foregroundColor: AppColors.white,
       titleSpacing: 2,
       leadingWidth: 46,
       title: Obx(
@@ -81,7 +82,7 @@ class AdminChatThreadScreen extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AppColors.white,
                       fontSize: 17,
                       fontWeight: FontWeight.w800,
                     ),
@@ -89,7 +90,7 @@ class AdminChatThreadScreen extends StatelessWidget {
                   const Text(
                     'Admin support',
                     style: TextStyle(
-                      color: Colors.white70,
+                      color: AppColors.white70,
                       fontSize: 13,
                       height: 1.1,
                     ),
@@ -110,14 +111,14 @@ class AdminChatThreadScreen extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: const Color(0xff102246),
+            color: AppColors.customFF102246,
             borderRadius: BorderRadius.circular(16),
           ),
           child: Text(
             DateFormat("MMM d 'AT' h:mm a").format(dateTime).toUpperCase(),
             textAlign: TextAlign.center,
             style: const TextStyle(
-              color: Colors.white70,
+              color: AppColors.white70,
               fontSize: 11,
               fontWeight: FontWeight.w700,
             ),
@@ -166,7 +167,7 @@ class AdminChatThreadScreen extends StatelessWidget {
     return Text(
       message.message,
       style: const TextStyle(
-        color: Colors.white,
+        color: AppColors.white,
         fontSize: 16,
         height: 1.28,
         fontWeight: FontWeight.w500,
@@ -276,22 +277,22 @@ class AdminChatThreadScreen extends StatelessWidget {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Color(0xff06142f),
-                    Color(0xff071b3b),
-                    Color(0xff051026),
+                    AppColors.customFF06142F,
+                    AppColors.customFF071B3B,
+                    AppColors.customFF051026,
                   ],
                 ),
               ),
               child: Obx(() {
                 if (model.isLoading.value && model.messages.isEmpty) {
                   return const Center(
-                    child: CircularProgressIndicator(color: Colors.white),
+                    child: CircularProgressIndicator(color: AppColors.white),
                   );
                 }
 
                 return RefreshIndicator(
-                  color: Colors.white,
-                  backgroundColor: Colors.blueGrey,
+                  color: AppColors.white,
+                  backgroundColor: AppColors.blueGrey,
                   onRefresh: model.loadMessages,
                   child: ListView.builder(
                     controller: model.scrollController,

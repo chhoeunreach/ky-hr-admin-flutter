@@ -2,6 +2,7 @@ import 'package:cnattendance/utils/constant.dart';
 import 'package:flutter/material.dart';
 import 'package:cnattendance/core/ky_security/ky_http.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class ChatImageBubble extends StatelessWidget {
   final String imageUrl;
@@ -36,7 +37,7 @@ class ChatImageBubble extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x33000000),
+            color: AppColors.custom33000000,
             blurRadius: 18,
             offset: Offset(0, 8),
           ),
@@ -57,7 +58,7 @@ class ChatImageBubble extends StatelessWidget {
             return Container(
               width: maxWidth,
               height: imageHeight,
-              color: const Color(0xff14264c),
+              color: AppColors.customFF14264C,
               child: const Center(
                 child: SizedBox(
                   width: 22,
@@ -70,11 +71,11 @@ class ChatImageBubble extends StatelessWidget {
           errorBuilder: (_, __, ___) => Container(
             width: maxWidth,
             height: 120,
-            color: const Color(0xff14264c),
+            color: AppColors.customFF14264C,
             child: const Center(
               child: Icon(
                 Icons.broken_image_outlined,
-                color: Colors.white54,
+                color: AppColors.white54,
               ),
             ),
           ),
@@ -142,23 +143,23 @@ class _ImageUnavailableBubble extends StatelessWidget {
         width: width,
         height: height,
         decoration: BoxDecoration(
-          color: const Color(0xff14264c),
+          color: AppColors.customFF14264C,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0xff24406f)),
+          border: Border.all(color: AppColors.customFF24406F),
         ),
         child: const Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               Icons.broken_image_outlined,
-              color: Colors.white54,
+              color: AppColors.white54,
               size: 30,
             ),
             SizedBox(height: 8),
             Text(
               'Image unavailable',
               style: TextStyle(
-                color: Colors.white70,
+                color: AppColors.white70,
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
               ),
@@ -172,7 +173,8 @@ class _ImageUnavailableBubble extends StatelessWidget {
   Future<void> _openUrl() async {
     final uri = Uri.tryParse(url.trim());
     if (!_isSafeMediaUri(uri) || !await _isReachableImage(uri)) {
-      showToast('This media link is invalid on the server. Please re-upload it.');
+      showToast(
+          'This media link is invalid on the server. Please re-upload it.');
       return;
     }
     await launchUrl(uri!, mode: LaunchMode.externalApplication);
@@ -184,7 +186,8 @@ class _ImageUnavailableBubble extends StatelessWidget {
     }
 
     try {
-      final response = await KyHttp.head(uri).timeout(const Duration(seconds: 8));
+      final response =
+          await KyHttp.head(uri).timeout(const Duration(seconds: 8));
       final contentType =
           response.headers['content-type']?.toLowerCase().trim() ?? '';
       if (response.statusCode < 200 || response.statusCode >= 300) {

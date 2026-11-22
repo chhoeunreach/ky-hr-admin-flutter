@@ -20,6 +20,7 @@ import 'package:provider/provider.dart';
 
 import '../provider/dashboardprovider.dart';
 import 'customalertdialog.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class HeaderProfile extends StatefulWidget {
   const HeaderProfile({
@@ -180,8 +181,8 @@ class HeaderState extends State<HeaderProfile> {
     final labelColor = theme.isRoyalLuxuryDay
         ? KhmerLuxuryColors.darkText
         : ThemeData.estimateBrightnessForColor(labelSurface) == Brightness.dark
-            ? Colors.white
-            : const Color(0xFF211720);
+            ? AppColors.white
+            : AppColors.customFF211720;
     final features = context.watch<DashboardProvider>().features;
     final isEnabledLocation =
         context.watch<DashboardProvider>().isLocationEnabled;
@@ -205,13 +206,13 @@ class HeaderState extends State<HeaderProfile> {
               height: 36,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF0C2247).withValues(alpha: 0.78),
+                color: AppColors.customFF0C2247.withValues(alpha: 0.78),
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.18),
+                  color: AppColors.white.withValues(alpha: 0.18),
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.22),
+                    color: AppColors.black.withValues(alpha: 0.22),
                     blurRadius: 12,
                     offset: const Offset(0, 3),
                   ),
@@ -219,7 +220,7 @@ class HeaderState extends State<HeaderProfile> {
               ),
               child: const Icon(
                 Icons.menu_rounded,
-                color: Colors.white,
+                color: AppColors.white,
                 size: 20,
               ),
             ),
@@ -257,7 +258,10 @@ class HeaderState extends State<HeaderProfile> {
                               : [RoyalColors.lightGold, theme.accent])
                       : theme.isKhmerHeritage
                           ? [theme.text, theme.accent]
-                          : const [Color(0xFF0066FF), Color(0xFF5EB1FF)],
+                          : const [
+                              AppColors.customFF0066FF,
+                              AppColors.customFF5EB1FF
+                            ],
                 ),
               ),
               child: ClipOval(
@@ -298,9 +302,9 @@ class HeaderState extends State<HeaderProfile> {
                   width: 11,
                   height: 11,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF22C55E),
+                    color: AppColors.successToken,
                     shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
+                    border: Border.all(color: AppColors.white, width: 2),
                   ),
                 ),
               ),
@@ -365,7 +369,7 @@ class HeaderState extends State<HeaderProfile> {
                                   theme.isKhmerHeritage ||
                                   theme.layout.background != null
                               ? theme.accent.withValues(alpha: .18)
-                              : Colors.white.withValues(alpha: 0.22),
+                              : AppColors.white.withValues(alpha: 0.22),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
@@ -377,7 +381,8 @@ class HeaderState extends State<HeaderProfile> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: theme.isRoyalLuxuryDay ? Colors.white : labelColor,
+                    color:
+                        theme.isRoyalLuxuryDay ? AppColors.white : labelColor,
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
                   ),
@@ -399,7 +404,7 @@ class HeaderState extends State<HeaderProfile> {
               children: [
                 _HeaderIconButton(
                   icon: Icons.chat_bubble_rounded,
-                  color: Colors.white,
+                  color: AppColors.white,
                   onPressed: () => pushScreen(
                     context,
                     screen: const ChatListScreen(),
@@ -419,13 +424,13 @@ class HeaderState extends State<HeaderProfile> {
                         minHeight: 17,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFEF4444),
+                        color: AppColors.dangerToken,
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.white, width: 1.2),
+                        border: Border.all(color: AppColors.white, width: 1.2),
                         boxShadow: [
                           BoxShadow(
                             color:
-                                const Color(0xFFEF4444).withValues(alpha: 0.45),
+                                AppColors.dangerToken.withValues(alpha: 0.45),
                             blurRadius: 6,
                           ),
                         ],
@@ -434,7 +439,7 @@ class HeaderState extends State<HeaderProfile> {
                         chatUnread > 99 ? '99+' : chatUnread.toString(),
                         textAlign: TextAlign.center,
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: AppColors.white,
                           fontSize: 9.5,
                           fontWeight: FontWeight.w900,
                         ),
@@ -450,7 +455,7 @@ class HeaderState extends State<HeaderProfile> {
           message: royal ? translate('royal.send_location') : 'Send Location',
           child: _HeaderIconButton(
             icon: Icons.location_on_rounded,
-            color: Colors.white,
+            color: AppColors.white,
             onPressed: sendLocation,
           ),
         ),
@@ -458,7 +463,7 @@ class HeaderState extends State<HeaderProfile> {
         message: translate('server_status.title'),
         child: _HeaderIconButton(
           icon: Icons.grid_view_rounded,
-          color: Colors.white,
+          color: AppColors.white,
           onPressed: testServerConnection,
         ),
       ),
@@ -471,7 +476,7 @@ class HeaderState extends State<HeaderProfile> {
               children: [
                 _HeaderIconButton(
                   icon: Icons.notifications_rounded,
-                  color: Colors.white,
+                  color: AppColors.white,
                   onPressed: () {
                     pushScreen(context,
                         screen: NotificationScreen(),
@@ -491,13 +496,13 @@ class HeaderState extends State<HeaderProfile> {
                         minHeight: 17,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFEF4444),
+                        color: AppColors.dangerToken,
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.white, width: 1.2),
+                        border: Border.all(color: AppColors.white, width: 1.2),
                         boxShadow: [
                           BoxShadow(
                             color:
-                                const Color(0xFFEF4444).withValues(alpha: 0.45),
+                                AppColors.dangerToken.withValues(alpha: 0.45),
                             blurRadius: 6,
                           ),
                         ],
@@ -508,7 +513,7 @@ class HeaderState extends State<HeaderProfile> {
                             : notificationController.badgeCount.toString(),
                         textAlign: TextAlign.center,
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: AppColors.white,
                           fontSize: 9.5,
                           fontWeight: FontWeight.w900,
                         ),
@@ -601,17 +606,17 @@ class _HeaderIconButton extends StatelessWidget {
                 : null,
         color: theme.isKhmerHeritage
             ? null
-            : const Color(0xFF0C2247).withValues(alpha: 0.72),
+            : AppColors.customFF0C2247.withValues(alpha: 0.72),
         border: Border.all(
           color: theme.isRoyalLuxuryDay
               ? KhmerLuxuryColors.metallicGold
               : theme.isKhmerHeritage
                   ? theme.cardBorder
-                  : Colors.white.withValues(alpha: 0.20),
+                  : AppColors.white.withValues(alpha: 0.20),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.18),
+            color: AppColors.black.withValues(alpha: 0.18),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -621,7 +626,7 @@ class _HeaderIconButton extends StatelessWidget {
         padding: EdgeInsets.zero,
         icon: Icon(icon,
             color: theme.isRoyalDay
-                ? Colors.white
+                ? AppColors.white
                 : theme.isRoyalBlueGold
                     ? RoyalColors.lightGold
                     : theme.isKhmerHeritage

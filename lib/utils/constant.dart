@@ -5,6 +5,7 @@ import 'package:cnattendance/widget/customalertdialog.dart';
 import 'package:flutter/material.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:overlay_support/overlay_support.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class Constant {
   static const appUrl = BackendServerDefaults.primaryUrl;
@@ -15,6 +16,7 @@ class Constant {
   static const LOGOUT_URL = "$API_URL/logout";
   static const DASHBOARD_URL = "$API_URL/dashboard";
   static const MOBILE_FEATURES_URL = "$API_URL/mobile-features";
+  static const MOBILE_LAYOUT_URL = "$API_URL/mobile-layout";
   static const APP_VERSION_URL = "$API_URL/app-version";
 
   static const CHECK_IN_URL = "$API_URL/employees/check-in";
@@ -135,6 +137,8 @@ class Constant {
 
   static const ASSETS_URL = "$API_URL/assets/";
   static const ASSETS_RETURN_URL = "$API_URL/asset-return/";
+  static const ADMIN_ASSETS_URL = "$API_URL/admin/assets/";
+  static const ADMIN_ASSET_FORM_DATA_URL = "$API_URL/admin/assets/form-data";
 
   static const WARNING_LIST_URL = "$API_URL/warning";
   static const WARNING_RESPONSE_URL = "$API_URL/warning/store/";
@@ -176,11 +180,11 @@ void showToast(String message, {VoidCallback? onTap}) {
         child: Container(
           margin: const EdgeInsets.fromLTRB(14, 12, 14, 0),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.white,
             borderRadius: BorderRadius.circular(18),
             boxShadow: const [
               BoxShadow(
-                color: Color.fromRGBO(1, 23, 84, 0.12),
+                color: AppColors.emeraldShadowSoft,
                 blurRadius: 18,
                 offset: Offset(0, 8),
               ),
@@ -195,19 +199,19 @@ void showToast(String message, {VoidCallback? onTap}) {
                 width: 38,
                 height: 38,
                 decoration: const BoxDecoration(
-                  color: Color(0xffeaf1ff),
+                  color: AppColors.customFFEAF1FF,
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
                   Icons.notifications_active_rounded,
-                  color: Color(0xff011754),
+                  color: AppColors.customFF011754,
                   size: 20,
                 ),
               ),
               title: Text(
                 toastTitle,
                 style: const TextStyle(
-                  color: Color(0xff011754),
+                  color: AppColors.customFF011754,
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
                 ),
@@ -215,7 +219,7 @@ void showToast(String message, {VoidCallback? onTap}) {
               subtitle: Text(
                 toastBody,
                 style: const TextStyle(
-                  color: Color(0xff52607a),
+                  color: AppColors.customFF52607A,
                   fontSize: 12.5,
                   height: 1.3,
                 ),
@@ -330,6 +334,6 @@ bool getAppTheme() {
   return box.read('theme') ?? true;
 }
 
-const String appTheme = "#011754";
-const String appAlternateTheme = "#041033";
-const String radialBoxTheme = "#041033";
+const Color appTheme = AppColors.emerald800;
+const Color appAlternateTheme = AppColors.emerald800;
+const Color radialBoxTheme = AppColors.emerald800;

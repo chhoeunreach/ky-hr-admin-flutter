@@ -40,6 +40,8 @@ import 'package:cnattendance/theme/theme_provider.dart';
 import 'home_model_view.dart';
 import 'royal_dashboard_widgets.dart';
 import '../customqrscanner.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
+import 'package:cnattendance/core/theme/app_palette.dart';
 
 class CheckAttendance extends StatefulWidget {
   final PersistentTabController? controller;
@@ -873,15 +875,15 @@ class CheckAttendanceState extends State<CheckAttendance>
                     distanceMeters: distance,
                     inZone: isInZone,
                     mapBackground: enterprise.isDark
-                        ? const Color(0xFF142233)
-                        : const Color(0xFFEAF3F6),
+                        ? AppColors.customFF142233
+                        : AppColors.customFFEAF3F6,
                     branchColor: enterprise.primary,
                     currentColor: isInZone
-                        ? const Color(0xFF16A34A)
-                        : const Color(0xFFE11D48),
+                        ? AppColors.customFF16A34A
+                        : AppColors.customFFE11D48,
                     radiusColor: (isInZone
-                            ? const Color(0xFF16A34A)
-                            : const Color(0xFFE11D48))
+                            ? AppColors.customFF16A34A
+                            : AppColors.customFFE11D48)
                         .withValues(alpha: 0.28),
                     textColor: enterprise.text,
                     mutedTextColor: enterprise.mutedText,
@@ -956,7 +958,7 @@ class _MapZoomControls extends StatelessWidget {
         border: Border.all(color: enterprise.glassStroke),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
+            color: AppColors.black.withValues(alpha: 0.12),
             blurRadius: 8,
             offset: const Offset(0, 3),
           ),
@@ -1164,7 +1166,7 @@ class _AttendanceGoogleMapFrameState extends State<_AttendanceGoogleMapFrame>
       height: 100%;
       width: 100%;
       overflow: hidden;
-      background: #eef3f6;
+      background: ${AppPalette.cssRgb(AppPalette.customFFEEF3F6)};
     }
     iframe {
       border: 0;
@@ -1296,7 +1298,7 @@ class _AttendanceZoneMapPainter extends CustomPainter {
 
     if (current != null) {
       final routeShadowPaint = Paint()
-        ..color = Colors.white.withValues(alpha: 0.90)
+        ..color = AppColors.white.withValues(alpha: 0.90)
         ..strokeWidth = 5
         ..strokeCap = StrokeCap.round
         ..style = PaintingStyle.stroke;
@@ -1343,19 +1345,19 @@ class _AttendanceZoneMapPainter extends CustomPainter {
   void _drawMapBase(Canvas canvas, Size size) {
     canvas.drawRect(Offset.zero & size, Paint()..color = mapBackground);
 
-    final waterPaint = Paint()..color = const Color(0xFFBFDDF0);
-    final parkPaint = Paint()..color = const Color(0xFFCFE8CC);
-    final blockPaint = Paint()..color = Colors.white.withValues(alpha: 0.54);
+    final waterPaint = Paint()..color = AppColors.customFFBFDDF0;
+    final parkPaint = Paint()..color = AppColors.customFFCFE8CC;
+    final blockPaint = Paint()..color = AppColors.white.withValues(alpha: 0.54);
     final minorRoadPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.92)
+      ..color = AppColors.white.withValues(alpha: 0.92)
       ..strokeWidth = 2.2
       ..strokeCap = StrokeCap.round;
     final majorRoadPaint = Paint()
-      ..color = const Color(0xFFFFF1B8)
+      ..color = AppColors.customFFFFF1B8
       ..strokeWidth = 4.2
       ..strokeCap = StrokeCap.round;
     final majorRoadEdgePaint = Paint()
-      ..color = const Color(0xFFE4D59C)
+      ..color = AppColors.customFFE4D59C
       ..strokeWidth = 5.8
       ..strokeCap = StrokeCap.round;
 
@@ -1389,7 +1391,7 @@ class _AttendanceZoneMapPainter extends CustomPainter {
         ),
         const Radius.circular(10),
       ),
-      Paint()..color = const Color(0xFFCFE8CC).withValues(alpha: 0.78),
+      Paint()..color = AppColors.customFFCFE8CC.withValues(alpha: 0.78),
     );
 
     for (var i = 0; i < 4; i++) {
@@ -1486,7 +1488,7 @@ class _AttendanceZoneMapPainter extends CustomPainter {
 
   void _drawMarker(Canvas canvas, Offset point, Color color, IconData icon) {
     final shadowPaint = Paint()
-      ..color = Colors.black.withValues(alpha: 0.16)
+      ..color = AppColors.black.withValues(alpha: 0.16)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
     canvas.drawCircle(point + const Offset(0, 2), 12, shadowPaint);
 
@@ -1494,11 +1496,11 @@ class _AttendanceZoneMapPainter extends CustomPainter {
       point,
       10,
       Paint()
-        ..color = Colors.white
+        ..color = AppColors.white
         ..style = PaintingStyle.fill,
     );
     canvas.drawCircle(point, 7.5, Paint()..color = color);
-    canvas.drawCircle(point, 3.2, Paint()..color = Colors.white);
+    canvas.drawCircle(point, 3.2, Paint()..color = AppColors.white);
   }
 
   void _drawPillText(

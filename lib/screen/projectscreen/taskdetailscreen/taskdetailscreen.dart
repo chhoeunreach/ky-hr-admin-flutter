@@ -10,6 +10,7 @@ import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class TaskDetailScreen extends StatelessWidget {
   @override
@@ -24,21 +25,22 @@ class TaskDetailScreen extends StatelessWidget {
             elevation: 0,
             title: Obx(() => Text(
                   controller.taskDetail.value.projectName!,
-                  style: TextStyle(color: Colors.white, fontSize: 18),
+                  style: TextStyle(color: AppColors.white, fontSize: 18),
                 )),
           ),
           bottomNavigationBar: Obx(
-            () => controller.taskDetail.value.has_checklist == false && controller.taskDetail.value.status != "Completed"
+            () => controller.taskDetail.value.has_checklist == false &&
+                    controller.taskDetail.value.status != "Completed"
                 ? SafeArea(
-                  child: Padding(
+                    child: Padding(
                       padding: const EdgeInsets.all(20),
                       child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.only(
-                                  topLeft: Radius.circular(10),
-                                  bottomRight: Radius.circular(10))),
-                        ),
+                          style: ElevatedButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.only(
+                                    topLeft: Radius.circular(10),
+                                    bottomRight: Radius.circular(10))),
+                          ),
                           onPressed: () {
                             showModalBottomSheet(
                                 context: context,
@@ -49,10 +51,11 @@ class TaskDetailScreen extends StatelessWidget {
                           },
                           child: Padding(
                             padding: const EdgeInsets.all(18),
-                            child: Text(translate('task_detail_screen.mark_as_finish')),
+                            child: Text(
+                                translate('task_detail_screen.mark_as_finish')),
                           )),
                     ),
-                )
+                  )
                 : SizedBox.shrink(),
           ),
           body: Obx(
@@ -75,13 +78,21 @@ class TaskDetailScreen extends StatelessWidget {
                                 height: 20,
                               ),
                               DescriptionSection(),
-                              SizedBox(height: 20,),
+                              SizedBox(
+                                height: 20,
+                              ),
                               TeamSection(),
-                              SizedBox(height: 20,),
+                              SizedBox(
+                                height: 20,
+                              ),
                               AttachmentSection(),
-                              SizedBox(height: 20,),
+                              SizedBox(
+                                height: 20,
+                              ),
                               CommentSection(),
-                              SizedBox(height: 20,),
+                              SizedBox(
+                                height: 20,
+                              ),
                               CheckListSection()
                             ],
                           ),

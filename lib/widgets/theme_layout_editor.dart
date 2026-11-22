@@ -1,3 +1,4 @@
+import 'package:cnattendance/model/app_theme_option.dart';
 import 'package:cnattendance/provider/dashboardprovider.dart';
 import 'package:cnattendance/theme/app_theme_data.dart';
 import 'package:cnattendance/theme/app_theme_mode.dart';
@@ -5,25 +6,33 @@ import 'package:cnattendance/theme/theme_layout.dart';
 import 'package:cnattendance/theme/theme_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
+import 'package:cnattendance/core/theme/app_palette.dart';
 
 class ThemeLayoutEditor extends StatefulWidget {
-  const ThemeLayoutEditor({super.key});
+  final AppThemeOption? option;
+  const ThemeLayoutEditor({super.key, this.option});
 
   @override
   State<ThemeLayoutEditor> createState() => _ThemeLayoutEditorState();
 }
 
 class _ThemeLayoutEditorState extends State<ThemeLayoutEditor> {
-  late final AppThemeMode _mode;
+  late final AppThemeOption _themeOption;
+  late final String _themeId;
   late ThemeLayout _draft;
   bool _saving = false;
+
+  AppThemeMode get _effectiveCoreMode =>
+      _themeOption.coreMode ?? AppThemeMode.royalBlueGold;
 
   @override
   void initState() {
     super.initState();
     final provider = context.read<ThemeProvider>();
-    _mode = provider.mode;
-    _draft = provider.layout;
+    _themeOption = widget.option ?? provider.currentThemeOption;
+    _themeId = _themeOption.id;
+    _draft = provider.layoutForId(_themeId);
   }
 
   Future<void> _save() async {
@@ -31,7 +40,7 @@ class _ThemeLayoutEditorState extends State<ThemeLayoutEditor> {
     setState(() => _saving = true);
     var saved = false;
     try {
-      saved = await provider.saveLayout(_mode, _draft);
+      saved = await provider.saveLayoutForId(_themeId, _draft);
     } catch (_) {
       // Keep the draft open so a failed local write can be retried.
     }
@@ -48,16 +57,15 @@ class _ThemeLayoutEditorState extends State<ThemeLayoutEditor> {
 
   @override
   Widget build(BuildContext context) {
-    final info = AppThemeData.info(_mode);
-    final colors = _draft.colorsFor(info.colors);
+    final colors = _draft.colorsFor(_themeOption.colors);
     final features = context.watch<DashboardProvider?>()?.features ??
         const <String, String>{};
     final baseTheme = Theme.of(context);
     final ambientText = ThemeData.estimateBrightnessForColor(
                 baseTheme.scaffoldBackgroundColor) ==
             Brightness.dark
-        ? Colors.white
-        : const Color(0xFF211720);
+        ? AppColors.white
+        : AppColors.customFF211720;
     final ambientTheme = baseTheme.copyWith(
       textTheme: baseTheme.textTheme
           .apply(bodyColor: ambientText, displayColor: ambientText),
@@ -88,7 +96,7 @@ class _ThemeLayoutEditorState extends State<ThemeLayoutEditor> {
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                 child: Align(
                   alignment: Alignment.centerLeft,
-                  child: Text(info.name,
+                  child: Text(_themeOption.name,
                       style: ambientTheme.textTheme.titleMedium),
                 ),
               ),
@@ -101,38 +109,172 @@ class _ThemeLayoutEditorState extends State<ThemeLayoutEditor> {
                       for (final area in LayoutArea.values)
                         _itemList(area, features),
                       ListView(
+                        cacheExtent: 2000,
                         padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
                         children: [
                           Semantics(
                             label: 'Color preview',
                             child: Container(
-                              height: 70,
                               padding: const EdgeInsets.all(14),
                               decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                    colors: colors.gradientColors),
+                                color: colors.backgroundColor,
                                 borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: colors.accentColor),
+                                border: Border.all(
+                                    color: colors.accentColor.withValues(alpha: 0.5)),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: colors.primaryColor.withValues(alpha: 0.15),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
                               ),
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: Icon(Icons.dashboard_outlined,
-                                    color: colors.accentColor),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          _themeOption.name,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            color: colors.textColor,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 8, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: colors.accentColor,
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        child: Text(
+                                          'Accent',
+                                          style: TextStyle(
+                                            color: colors.isDark
+                                                ? AppColors.black
+                                                : AppColors.white,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: colors.cardColor,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Icon(Icons.dashboard_outlined,
+                                                size: 16,
+                                                color: colors.accentColor),
+                                            const SizedBox(width: 6),
+                                            Expanded(
+                                              child: Text(
+                                                'Card element',
+                                                overflow: TextOverflow.ellipsis,
+                                                style: TextStyle(
+                                                  color: colors.textColor,
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Wrap(
+                                          spacing: 6,
+                                          runSpacing: 4,
+                                          children: [
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: colors.primaryColor,
+                                                borderRadius:
+                                                    BorderRadius.circular(6),
+                                              ),
+                                              child: const Text(
+                                                'Primary',
+                                                style: TextStyle(
+                                                  color: AppColors.white,
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: colors.secondaryColor,
+                                                borderRadius:
+                                                    BorderRadius.circular(6),
+                                              ),
+                                              child: const Text(
+                                                'Secondary',
+                                                style: TextStyle(
+                                                  color: AppColors.white,
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
+                          const SizedBox(height: 12),
                           ListTile(
                             contentPadding: EdgeInsets.zero,
                             leading: CircleAvatar(
                                 backgroundColor: colors.backgroundColor),
                             title: const Text('Background color'),
+                            subtitle: Text(
+                              AppPalette.hexPrefix +
+                                  (colors.backgroundColor.toARGB32() & 0xFFFFFF)
+                                      .toRadixString(16)
+                                      .padLeft(6, '0')
+                                      .toUpperCase(),
+                              style: const TextStyle(fontSize: 12),
+                            ),
                             trailing: const Icon(Icons.edit_outlined),
                             onTap: () async {
                               final selected = await _pickColor(
                                   'Background color', colors.backgroundColor);
                               if (!mounted || selected == null) return;
                               setState(() => _draft = _draft.setColors(
-                                  background: selected, accent: _draft.accent));
+                                    primary: _draft.primary,
+                                    secondary: _draft.secondary,
+                                    accent: _draft.accent,
+                                    background: selected,
+                                    card: _draft.card,
+                                    text: _draft.text,
+                                  ));
                             },
                           ),
                           ListTile(
@@ -140,36 +282,215 @@ class _ThemeLayoutEditorState extends State<ThemeLayoutEditor> {
                             leading: CircleAvatar(
                                 backgroundColor: colors.accentColor),
                             title: const Text('Accent color'),
+                            subtitle: Text(
+                              AppPalette.hexPrefix +
+                                  (colors.accentColor.toARGB32() & 0xFFFFFF)
+                                      .toRadixString(16)
+                                      .padLeft(6, '0')
+                                      .toUpperCase(),
+                              style: const TextStyle(fontSize: 12),
+                            ),
                             trailing: const Icon(Icons.edit_outlined),
                             onTap: () async {
                               final selected = await _pickColor(
                                   'Accent color', colors.accentColor);
                               if (!mounted || selected == null) return;
                               setState(() => _draft = _draft.setColors(
-                                  background: _draft.background,
-                                  accent: selected));
+                                    primary: _draft.primary,
+                                    secondary: _draft.secondary,
+                                    accent: selected,
+                                    background: _draft.background,
+                                    card: _draft.card,
+                                    text: _draft.text,
+                                  ));
                             },
                           ),
-                          if (_draft.background != null ||
-                              _draft.accent != null)
-                            Align(
-                              alignment: Alignment.centerLeft,
-                              child: TextButton(
-                                onPressed: () => setState(() {
-                                  _draft = _draft.setColors(
-                                      background: null, accent: null);
-                                }),
-                                child: const Text('Use theme colors'),
-                              ),
-                            ),
-                          if (_mode != AppThemeMode.royalBlueGold &&
-                              _mode != AppThemeMode.royalBlueDay &&
-                              _mode != AppThemeMode.royalBlueGoldKhmerDay)
+                          if (_effectiveCoreMode != AppThemeMode.royalBlueGold &&
+                              _effectiveCoreMode != AppThemeMode.royalBlueDay &&
+                              _effectiveCoreMode != AppThemeMode.royalBlueGoldKhmerDay)
                             SwitchListTile(
                               contentPadding: EdgeInsets.zero,
                               title: const Text(
                                   'Separate banner, quote and clock'),
-                              value: _draft.separatesBanner(_mode),
+                              value: _draft.separatesBanner(_effectiveCoreMode),
+                              onChanged: (value) => setState(() {
+                                _draft = _draft.setSeparateBanner(value);
+                              }),
+                            ),
+                          SwitchListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: const Text('Show side menu button'),
+                            value: _draft.showMenuButton,
+                            onChanged: (value) => setState(() {
+                              _draft = _draft.setShowMenuButton(value);
+                            }),
+                          ),
+                          const SizedBox(height: 10),
+                          Text('Side menu position',
+                              style: ambientTheme.textTheme.titleMedium),
+                          const SizedBox(height: 8),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: SegmentedButton<bool>(
+                              segments: const [
+                                ButtonSegment(
+                                    value: false, label: Text('Left')),
+                                ButtonSegment(
+                                    value: true, label: Text('Right')),
+                              ],
+                              selected: {_draft.menuOnRight},
+                              onSelectionChanged: (values) => setState(() =>
+                                  _draft =
+                                      _draft.setMenuOnRight(values.single)),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text('Theme palette colors',
+                              style: ambientTheme.textTheme.titleMedium),
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: CircleAvatar(
+                                backgroundColor: colors.primaryColor),
+                            title: const Text('Primary color'),
+                            subtitle: Text(
+                              AppPalette.hexPrefix +
+                                  (colors.primaryColor.toARGB32() & 0xFFFFFF)
+                                      .toRadixString(16)
+                                      .padLeft(6, '0')
+                                      .toUpperCase(),
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                            trailing: const Icon(Icons.edit_outlined),
+                            onTap: () async {
+                              final selected = await _pickColor(
+                                  'Primary color', colors.primaryColor);
+                              if (!mounted || selected == null) return;
+                              setState(() => _draft = _draft.setColors(
+                                    primary: selected,
+                                    secondary: _draft.secondary,
+                                    accent: _draft.accent,
+                                    background: _draft.background,
+                                    card: _draft.card,
+                                    text: _draft.text,
+                                  ));
+                            },
+                          ),
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: CircleAvatar(
+                                backgroundColor: colors.secondaryColor),
+                            title: const Text('Secondary color'),
+                            subtitle: Text(
+                              AppPalette.hexPrefix +
+                                  (colors.secondaryColor.toARGB32() & 0xFFFFFF)
+                                      .toRadixString(16)
+                                      .padLeft(6, '0')
+                                      .toUpperCase(),
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                            trailing: const Icon(Icons.edit_outlined),
+                            onTap: () async {
+                              final selected = await _pickColor(
+                                  'Secondary color', colors.secondaryColor);
+                              if (!mounted || selected == null) return;
+                              setState(() => _draft = _draft.setColors(
+                                    primary: _draft.primary,
+                                    secondary: selected,
+                                    accent: _draft.accent,
+                                    background: _draft.background,
+                                    card: _draft.card,
+                                    text: _draft.text,
+                                  ));
+                            },
+                          ),
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: CircleAvatar(
+                                backgroundColor: colors.cardColor),
+                            title: const Text('Card color'),
+                            subtitle: Text(
+                              AppPalette.hexPrefix +
+                                  (colors.cardColor.toARGB32() & 0xFFFFFF)
+                                      .toRadixString(16)
+                                      .padLeft(6, '0')
+                                      .toUpperCase(),
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                            trailing: const Icon(Icons.edit_outlined),
+                            onTap: () async {
+                              final selected = await _pickColor(
+                                  'Card color', colors.cardColor);
+                              if (!mounted || selected == null) return;
+                              setState(() => _draft = _draft.setColors(
+                                    primary: _draft.primary,
+                                    secondary: _draft.secondary,
+                                    accent: _draft.accent,
+                                    background: _draft.background,
+                                    card: selected,
+                                    text: _draft.text,
+                                  ));
+                            },
+                          ),
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: CircleAvatar(
+                                backgroundColor: colors.textColor),
+                            title: const Text('Text color'),
+                            subtitle: Text(
+                              AppPalette.hexPrefix +
+                                  (colors.textColor.toARGB32() & 0xFFFFFF)
+                                      .toRadixString(16)
+                                      .padLeft(6, '0')
+                                      .toUpperCase(),
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                            trailing: const Icon(Icons.edit_outlined),
+                            onTap: () async {
+                              final selected = await _pickColor(
+                                  'Text color', colors.textColor);
+                              if (!mounted || selected == null) return;
+                              setState(() => _draft = _draft.setColors(
+                                    primary: _draft.primary,
+                                    secondary: _draft.secondary,
+                                    accent: _draft.accent,
+                                    background: _draft.background,
+                                    card: _draft.card,
+                                    text: selected,
+                                  ));
+                            },
+                          ),
+                          if (_draft.primary != null ||
+                              _draft.secondary != null ||
+                              _draft.accent != null ||
+                              _draft.background != null ||
+                              _draft.card != null ||
+                              _draft.text != null)
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: TextButton.icon(
+                                icon: const Icon(Icons.restart_alt_rounded,
+                                    size: 16),
+                                onPressed: () => setState(() {
+                                  _draft = _draft.setColors(
+                                    primary: null,
+                                    secondary: null,
+                                    accent: null,
+                                    background: null,
+                                    card: null,
+                                    text: null,
+                                  );
+                                }),
+                                label: const Text('Use theme defaults'),
+                              ),
+                            ),
+                          if (_effectiveCoreMode != AppThemeMode.royalBlueGold &&
+                              _effectiveCoreMode != AppThemeMode.royalBlueDay &&
+                              _effectiveCoreMode != AppThemeMode.royalBlueGoldKhmerDay)
+                            SwitchListTile(
+                              contentPadding: EdgeInsets.zero,
+                              title: const Text(
+                                  'Separate banner, quote and clock'),
+                              value: _draft.separatesBanner(_effectiveCoreMode),
                               onChanged: (value) => setState(() {
                                 _draft = _draft.setSeparateBanner(value);
                               }),
@@ -239,7 +560,7 @@ class _ThemeLayoutEditorState extends State<ThemeLayoutEditor> {
   }
 
   Widget _itemList(LayoutArea area, Map<String, String> features) {
-    final separateBanner = _draft.separatesBanner(_mode);
+    final separateBanner = _draft.separatesBanner(_effectiveCoreMode);
     final entries = _draft
         .items(area)
         .where((item) =>
@@ -317,25 +638,28 @@ class _LayoutColorDialog extends StatefulWidget {
 
 class _LayoutColorDialogState extends State<_LayoutColorDialog> {
   static const _swatches = [
-    Color(0xff750f2b),
-    Color(0xff0c2b61),
-    Color(0xff0b4b38),
-    Color(0xff332059),
-    Color(0xff26111b),
-    Color(0xfffff2dc),
-    Color(0xffe6b857),
-    Color(0xff61a7f5),
+    AppColors.customFF750F2B,
+    AppColors.customFF0C2B61,
+    AppColors.customFF0B4B38,
+    AppColors.customFF332059,
+    AppColors.customFF26111B,
+    AppColors.customFFFFF2DC,
+    AppColors.customFFE6B857,
+    AppColors.customFF61A7F5,
   ];
   late final _hex = TextEditingController(text: _format(widget.current));
   final _form = GlobalKey<FormState>();
 
   static String _format(Color color) =>
-      '#${(color.toARGB32() & 0xffffff).toRadixString(16).padLeft(6, '0').toUpperCase()}';
+      '${AppPalette.hexPrefix}${(color.toARGB32() & AppPalette.rgbMask).toRadixString(16).padLeft(6, '0').toUpperCase()}';
 
   Color? _parse(String? value) {
-    final digits = (value ?? '').trim().replaceFirst('#', '');
+    final input = (value ?? '').trim();
+    final digits = input.startsWith(AppPalette.hexPrefix)
+        ? input.substring(AppPalette.hexPrefix.length)
+        : input;
     if (!RegExp(r'^[0-9a-fA-F]{6}$').hasMatch(digits)) return null;
-    return Color(0xff000000 | int.parse(digits, radix: 16));
+    return AppPalette.parseOpaqueHex(digits);
   }
 
   @override
@@ -370,7 +694,8 @@ class _LayoutColorDialogState extends State<_LayoutColorDialog> {
             TextFormField(
               controller: _hex,
               decoration: const InputDecoration(
-                  labelText: 'Hex color', hintText: '#750F2B'),
+                  labelText: 'Hex color',
+                  hintText: '${AppPalette.hexPrefix}750F2B'),
               validator: (value) =>
                   _parse(value) == null ? 'Enter a six-digit hex color.' : null,
             ),

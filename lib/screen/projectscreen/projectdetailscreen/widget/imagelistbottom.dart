@@ -3,15 +3,16 @@ import 'package:cnattendance/screen/projectscreen/projectdetailscreen/projectdet
 import 'package:flutter/material.dart';
 import 'package:gallery_image_viewer/gallery_image_viewer.dart';
 import 'package:get/get.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
-class ItemListBottom extends StatelessWidget{
+class ItemListBottom extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ProjectDetailController model = Get.find();
     final attachments = <Attachment>[];
 
-    for(var attachment in model.project.value.attachment){
-      if(attachment.type == "image"){
+    for (var attachment in model.project.value.attachment) {
+      if (attachment.type == "image") {
         attachments.add(attachment);
       }
     }
@@ -26,13 +27,9 @@ class ItemListBottom extends StatelessWidget{
           final attachment = attachments[index];
           return GestureDetector(
               onTap: () {
-                final imageProvider = Image.network(
-                    attachment.url)
-                    .image;
+                final imageProvider = Image.network(attachment.url).image;
                 showImageViewer(context, imageProvider,
-                    swipeDismissible: true,
-                    onViewerDismissed: () {
-                    });
+                    swipeDismissible: true, onViewerDismissed: () {});
               },
               child: Stack(children: [
                 Image.network(
@@ -50,11 +47,14 @@ class ItemListBottom extends StatelessWidget{
                       },
                       child: Card(
                         elevation: 0,
-                        color: Colors.blueAccent,
+                        color: AppColors.blueAccent,
                         shape: CircleBorder(),
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
-                          child: Icon(Icons.download,color: Colors.white,),
+                          child: Icon(
+                            Icons.download,
+                            color: AppColors.white,
+                          ),
                         ),
                       ),
                     ))
@@ -63,5 +63,4 @@ class ItemListBottom extends StatelessWidget{
       ),
     );
   }
-
 }

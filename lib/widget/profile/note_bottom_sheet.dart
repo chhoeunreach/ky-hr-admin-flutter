@@ -9,16 +9,17 @@ import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_translate/flutter_translate.dart';
-import 'package:hexcolor/hexcolor.dart';
 import 'package:provider/provider.dart';
 import 'package:cnattendance/widget/buttonborder.dart';
 import 'package:flutter/foundation.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class NoteBottomSheet extends StatefulWidget {
   final String identifier;
   final String type;
   final File? attendanceSelfie;
   final bool returnNote;
+
   /// `checkIn` / `checkOut` from home Scan In / Scan Out; empty = auto.
   final String attendanceStatus;
 
@@ -138,7 +139,7 @@ class NoteBottomSheetState extends State<NoteBottomSheet> {
                 children: [
                   Text(
                     "${translate('home_screen.check_in')} / ${translate('home_screen.check_out')}",
-                    style: TextStyle(fontSize: 18, color: Colors.white),
+                    style: TextStyle(fontSize: 18, color: AppColors.white),
                   ),
                   IconButton(
                       onPressed: () {
@@ -147,7 +148,7 @@ class NoteBottomSheetState extends State<NoteBottomSheet> {
                       icon: const Icon(
                         Icons.close,
                         size: 20,
-                        color: Colors.white,
+                        color: AppColors.white,
                       )),
                 ],
               ),
@@ -164,15 +165,15 @@ class NoteBottomSheetState extends State<NoteBottomSheet> {
                       FocusManager.instance.primaryFocus?.unfocus();
                     }
                   },
-                  style: TextStyle(color: Colors.white),
+                  style: TextStyle(color: AppColors.white),
                   //editing controller of this TextField
-                  cursorColor: Colors.white,
+                  cursorColor: AppColors.white,
                   keyboardType: TextInputType.multiline,
                   decoration: InputDecoration(
                     hintText: translate('home_screen.note'),
-                    hintStyle: TextStyle(color: Colors.white),
-                    labelStyle: TextStyle(color: Colors.white),
-                    fillColor: Colors.white24,
+                    hintStyle: TextStyle(color: AppColors.white),
+                    labelStyle: TextStyle(color: AppColors.white),
+                    fillColor: AppColors.white24,
                     filled: true,
                     enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.only(
@@ -211,7 +212,7 @@ class NoteBottomSheetState extends State<NoteBottomSheet> {
                         padding: const EdgeInsets.only(right: 5),
                         child: TextButton(
                             style: TextButton.styleFrom(
-                                backgroundColor: HexColor("#036eb7"),
+                                backgroundColor: AppColors.customFF036EB7,
                                 shape: ButtonBorder()),
                             onPressed: () async {
                               if (widget.returnNote) {
@@ -234,7 +235,8 @@ class NoteBottomSheetState extends State<NoteBottomSheet> {
                                           'attendance_messages.verifying'),
                                       maskType: EasyLoadingMaskType.black);
                                 });
-                                final status = await provider.getCheckInStatus();
+                                final status =
+                                    await provider.getCheckInStatus();
                                 if (status) {
                                   final response =
                                       await provider.verifyAttendanceApi(
@@ -326,7 +328,7 @@ class NoteBottomSheetState extends State<NoteBottomSheet> {
                               padding: const EdgeInsets.symmetric(vertical: 10),
                               child: Text(
                                 translate('create_salary_screen.submit'),
-                                style: TextStyle(color: Colors.white),
+                                style: TextStyle(color: AppColors.white),
                               ),
                             )),
                       ),
@@ -336,7 +338,7 @@ class NoteBottomSheetState extends State<NoteBottomSheet> {
                         padding: const EdgeInsets.only(left: 5),
                         child: TextButton(
                             style: TextButton.styleFrom(
-                                backgroundColor: HexColor("#036eb7"),
+                                backgroundColor: AppColors.customFF036EB7,
                                 shape: ButtonBorder()),
                             onPressed: () {
                               Navigator.pop(context);
@@ -345,7 +347,7 @@ class NoteBottomSheetState extends State<NoteBottomSheet> {
                               padding: const EdgeInsets.symmetric(vertical: 10),
                               child: Text(
                                 translate('common.go_back'),
-                                style: TextStyle(color: Colors.white),
+                                style: TextStyle(color: AppColors.white),
                               ),
                             )),
                       ),

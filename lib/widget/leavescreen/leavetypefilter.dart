@@ -4,6 +4,7 @@ import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:provider/provider.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 //ignore: must_be_immutable
 class LeavetypeFilter extends StatefulWidget {
@@ -98,7 +99,7 @@ class LeavetypeFilterState extends State<LeavetypeFilter> {
               ),
               iconSize: 13,
               iconEnabledColor: enterprise.mutedText,
-              iconDisabledColor: Colors.grey,
+              iconDisabledColor: AppColors.grey,
             ),
             buttonStyleData: ButtonStyleData(
               height: 42,
@@ -107,8 +108,8 @@ class LeavetypeFilterState extends State<LeavetypeFilter> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(10),
                 color: enterprise.isDark
-                    ? const Color(0xFF0F172A)
-                    : const Color(0xFFF8FAFC),
+                    ? AppColors.ink900
+                    : AppColors.customFFF8FAFC,
                 border: Border.all(color: enterprise.cardBorder),
               ),
               elevation: 0,
@@ -118,8 +119,9 @@ class LeavetypeFilterState extends State<LeavetypeFilter> {
               padding: null,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(10),
-                color:
-                    enterprise.isDark ? const Color(0xFF1E293B) : Colors.white,
+                color: enterprise.isDark
+                    ? AppColors.customFF1E293B
+                    : AppColors.white,
                 border: Border.all(color: enterprise.cardBorder),
               ),
               elevation: 8,

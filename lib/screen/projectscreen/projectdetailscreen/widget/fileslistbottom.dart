@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../../model/attachment.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class FilesListBottom extends StatelessWidget {
   @override
@@ -26,7 +27,7 @@ class FilesListBottom extends StatelessWidget {
             final attachment = attachments[index];
             return Card(
                 elevation: 0,
-                color: Colors.white12,
+                color: AppColors.white12,
                 child: Padding(
                   padding: const EdgeInsets.all(20),
                   child: Row(
@@ -35,7 +36,7 @@ class FilesListBottom extends StatelessWidget {
                       Expanded(
                         child: Text(
                           attachment.url,
-                          style: TextStyle(color: Colors.white),
+                          style: TextStyle(color: AppColors.white),
                         ),
                       ),
                       GestureDetector(
@@ -44,7 +45,7 @@ class FilesListBottom extends StatelessWidget {
                         },
                         child: Icon(
                           Icons.download,
-                          color: Colors.white,
+                          color: AppColors.white,
                         ),
                       )
                     ],

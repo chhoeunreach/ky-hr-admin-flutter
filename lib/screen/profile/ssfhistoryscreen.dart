@@ -5,8 +5,8 @@ import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_translate/flutter_translate.dart';
-import 'package:hexcolor/hexcolor.dart';
 import 'package:provider/provider.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class SsfHistoryScreen extends StatefulWidget {
   @override
@@ -53,7 +53,7 @@ class SsfHistoryScreenState extends State<SsfHistoryScreen> {
                 Card(
                   shape: ButtonBorder(),
                   margin: EdgeInsets.zero,
-                  color: HexColor("#20FFFFFF"),
+                  color: AppColors.custom20FFFFFF,
                   child: Padding(
                     padding: const EdgeInsets.all(10.0),
                     child: Column(
@@ -83,7 +83,8 @@ class SsfHistoryScreenState extends State<SsfHistoryScreen> {
                                                             fontSize: 14,
                                                             fontWeight:
                                                                 FontWeight.bold,
-                                                            color: Colors.black,
+                                                            color:
+                                                                AppColors.black,
                                                           ),
                                                           overflow: TextOverflow
                                                               .ellipsis,
@@ -105,8 +106,10 @@ class SsfHistoryScreenState extends State<SsfHistoryScreen> {
                                                       .arrow_forward_ios_outlined,
                                                 ),
                                                 iconSize: 14,
-                                                iconEnabledColor: Colors.black,
-                                                iconDisabledColor: Colors.grey,
+                                                iconEnabledColor:
+                                                    AppColors.black,
+                                                iconDisabledColor:
+                                                    AppColors.grey,
                                               ),
                                               buttonStyleData: ButtonStyleData(
                                                 height: 50,
@@ -127,7 +130,7 @@ class SsfHistoryScreenState extends State<SsfHistoryScreen> {
                                                           bottomRight:
                                                               Radius.circular(
                                                                   10)),
-                                                  color: HexColor("#FFFFFF"),
+                                                  color: AppColors.white,
                                                 ),
                                                 elevation: 0,
                                               ),
@@ -149,7 +152,7 @@ class SsfHistoryScreenState extends State<SsfHistoryScreen> {
                                                           bottomRight:
                                                               Radius.circular(
                                                                   10)),
-                                                  color: HexColor("#FFFFFF"),
+                                                  color: AppColors.white,
                                                 ),
                                                 elevation: 8,
                                               ),
@@ -172,7 +175,7 @@ class SsfHistoryScreenState extends State<SsfHistoryScreen> {
                         ),
                         TextButton(
                             style: TextButton.styleFrom(
-                                backgroundColor: HexColor("#036eb7"),
+                                backgroundColor: AppColors.customFF036EB7,
                                 shape: ButtonBorder()),
                             onPressed: () async {
                               setState(() {
@@ -193,7 +196,8 @@ class SsfHistoryScreenState extends State<SsfHistoryScreen> {
                               child: Center(
                                 child: Text(
                                   translate('more_screen.request_ssf_history'),
-                                  style: const TextStyle(color: Colors.white),
+                                  style:
+                                      const TextStyle(color: AppColors.white),
                                 ),
                               ),
                             ))
@@ -210,7 +214,7 @@ class SsfHistoryScreenState extends State<SsfHistoryScreen> {
                     child: Text(
                       "History",
                       style: TextStyle(
-                          color: Colors.white,
+                          color: AppColors.white,
                           fontWeight: FontWeight.bold,
                           fontSize: 18),
                     ),
@@ -225,7 +229,7 @@ class SsfHistoryScreenState extends State<SsfHistoryScreen> {
                       return Card(
                         elevation: 0,
                         margin: EdgeInsets.symmetric(vertical: 8),
-                        color: Colors.white.withValues(alpha: 0.10),
+                        color: AppColors.white.withValues(alpha: 0.10),
                         shape: ButtonBorder(),
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
@@ -237,7 +241,7 @@ class SsfHistoryScreenState extends State<SsfHistoryScreen> {
                                   Text(
                                     item.month,
                                     style: TextStyle(
-                                        color: Colors.white,
+                                        color: AppColors.white,
                                         fontWeight: FontWeight.bold,
                                         fontSize: 18),
                                   ),
@@ -249,14 +253,14 @@ class SsfHistoryScreenState extends State<SsfHistoryScreen> {
                                                 item.salaryContribution)
                                             .toStringAsFixed(2),
                                     style: TextStyle(
-                                        color: Colors.white,
+                                        color: AppColors.white,
                                         fontWeight: FontWeight.bold,
                                         fontSize: 16),
                                   ),
                                 ],
                               ),
                               Divider(
-                                color: Colors.white38,
+                                color: AppColors.white38,
                               ),
                               Row(
                                 children: [
@@ -268,7 +272,7 @@ class SsfHistoryScreenState extends State<SsfHistoryScreen> {
                                         Text(
                                           "Salary Deduction",
                                           style: TextStyle(
-                                              color: Colors.white54,
+                                              color: AppColors.white54,
                                               fontWeight: FontWeight.normal,
                                               fontSize: 12),
                                         ),
@@ -278,7 +282,7 @@ class SsfHistoryScreenState extends State<SsfHistoryScreen> {
                                               item.salaryContribution
                                                   .toStringAsFixed(2),
                                           style: TextStyle(
-                                              color: Colors.white,
+                                              color: AppColors.white,
                                               fontWeight: FontWeight.bold,
                                               fontSize: 13),
                                         ),
@@ -289,7 +293,7 @@ class SsfHistoryScreenState extends State<SsfHistoryScreen> {
                                     height: 20,
                                     child: VerticalDivider(
                                       width: 1,
-                                      color: Colors.white54,
+                                      color: AppColors.white54,
                                     ),
                                   ),
                                   Expanded(
@@ -301,7 +305,7 @@ class SsfHistoryScreenState extends State<SsfHistoryScreen> {
                                           "Office Contribution",
                                           textAlign: TextAlign.right,
                                           style: TextStyle(
-                                              color: Colors.white54,
+                                              color: AppColors.white54,
                                               fontWeight: FontWeight.normal,
                                               fontSize: 12),
                                         ),
@@ -312,7 +316,7 @@ class SsfHistoryScreenState extends State<SsfHistoryScreen> {
                                                   .toStringAsFixed(2),
                                           textAlign: TextAlign.right,
                                           style: TextStyle(
-                                              color: Colors.white,
+                                              color: AppColors.white,
                                               fontWeight: FontWeight.bold,
                                               fontSize: 13),
                                         ),

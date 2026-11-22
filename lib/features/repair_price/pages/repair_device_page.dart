@@ -11,7 +11,9 @@ import '../widgets/repair_brand_filter.dart';
 import '../widgets/repair_device_card.dart';
 import '../widgets/repair_edit_device_sheet.dart';
 import '../widgets/repair_search_bar.dart';
+import '../widgets/repair_series_filter.dart';
 import 'repair_price_detail_page.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class RepairDevicePage extends StatelessWidget {
   const RepairDevicePage({
@@ -63,6 +65,7 @@ class _RepairDeviceView extends StatefulWidget {
 class _RepairDeviceViewState extends State<_RepairDeviceView> {
   final ScrollController _scrollController = ScrollController();
   bool _navigationVisible = true;
+  bool _filtersExpanded = true;
 
   @override
   void initState() {
@@ -155,7 +158,7 @@ class _RepairDeviceViewState extends State<_RepairDeviceView> {
                 ),
                 child: FloatingActionButton.extended(
                   backgroundColor: enterprise.primary,
-                  foregroundColor: Colors.white,
+                  foregroundColor: AppColors.white,
                   icon: const Icon(Icons.add_rounded, size: 20),
                   label: Text(
                     translate('repair_screen.add_device'),
@@ -181,29 +184,79 @@ class _RepairDeviceViewState extends State<_RepairDeviceView> {
                 children: [
                   // Search Box & Filters Header
                   Container(
-                    color: Colors.white
+                    color: AppColors.white
                         .withValues(alpha: enterprise.isDark ? 0.06 : 0.12),
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Search Bar
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 14),
-                          child: RepairSearchBar(
-                            hintText:
-                                translate('repair_screen.search_device_hint'),
-                            onChanged: provider.onDeviceSearchChanged,
-                            onClear: () => provider.onDeviceSearchChanged(''),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: RepairSearchBar(
+                                  hintText: translate(
+                                      'repair_screen.search_device_hint'),
+                                  initialValue: provider.deviceSearchQuery,
+                                  onChanged: provider.onDeviceSearchChanged,
+                                  onClear: () =>
+                                      provider.onDeviceSearchChanged(''),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              DecoratedBox(
+                                decoration: BoxDecoration(
+                                  color: _filtersExpanded
+                                      ? enterprise.primary
+                                          .withValues(alpha: 0.18)
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: _filtersExpanded
+                                        ? enterprise.accent
+                                        : enterprise.glassStroke,
+                                  ),
+                                ),
+                                child: IconButton(
+                                  tooltip: translate('filter'),
+                                  visualDensity: VisualDensity.compact,
+                                  onPressed: () => setState(() {
+                                    _filtersExpanded = !_filtersExpanded;
+                                  }),
+                                  icon: Badge(
+                                    isLabelVisible: provider.selectedBrandId !=
+                                            null ||
+                                        provider.selectedDeviceTypeId != null ||
+                                        provider.selectedSeriesId != null,
+                                    label: Text(
+                                      '${[
+                                        provider.selectedBrandId,
+                                        provider.selectedDeviceTypeId,
+                                        provider.selectedSeriesId
+                                      ].where((id) => id != null).length}',
+                                    ),
+                                    child: Icon(
+                                      Icons.tune_rounded,
+                                      color: _filtersExpanded
+                                          ? enterprise.accent
+                                          : enterprise.mutedText,
+                                      size: 19,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
 
-                        if (provider.brands.isNotEmpty ||
-                            provider.deviceTypes.isNotEmpty)
+                        if (_filtersExpanded &&
+                            (provider.brands.isNotEmpty ||
+                                provider.deviceTypes.isNotEmpty ||
+                                provider.series.isNotEmpty))
                           const SizedBox(height: 7),
 
-                        // Brand Filter Pills
-                        if (provider.brands.isNotEmpty)
+                        if (_filtersExpanded && provider.brands.isNotEmpty)
                           RepairBrandFilter(
                             brands: provider.brands,
                             selectedBrandId: provider.selectedBrandId,
@@ -213,9 +266,20 @@ class _RepairDeviceViewState extends State<_RepairDeviceView> {
                           ),
 
                         // Device Type Filter Pills
-                        if (provider.deviceTypes.isNotEmpty) ...[
+                        if (_filtersExpanded &&
+                            provider.deviceTypes.isNotEmpty) ...[
                           const SizedBox(height: 5),
                           _buildDeviceTypeFilter(context, provider),
+                        ],
+
+                        // Series Filter Pills
+                        if (_filtersExpanded && provider.series.isNotEmpty) ...[
+                          const SizedBox(height: 5),
+                          RepairSeriesFilter(
+                            series: provider.series,
+                            selectedSeriesId: provider.selectedSeriesId,
+                            onSeriesSelected: provider.selectSeries,
+                          ),
                         ],
                       ],
                     ),
@@ -224,7 +288,7 @@ class _RepairDeviceViewState extends State<_RepairDeviceView> {
                   // Main Content: List, Loading, Empty, or Error
                   Expanded(
                     child: RefreshIndicator(
-                      color: Colors.white,
+                      color: AppColors.white,
                       backgroundColor: enterprise.primary,
                       onRefresh: () => provider.initDevicePage(),
                       child: _buildDeviceBody(context, provider),
@@ -280,7 +344,7 @@ class _RepairDeviceViewState extends State<_RepairDeviceView> {
             ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
                 backgroundColor: RepairPriceConfig.primaryBlue,
-                foregroundColor: Colors.white,
+                foregroundColor: AppColors.white,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 shape: RoundedRectangleBorder(
@@ -335,7 +399,7 @@ class _RepairDeviceViewState extends State<_RepairDeviceView> {
                 decoration: BoxDecoration(
                   color: isSelected
                       ? enterprise.primary
-                      : Colors.white.withValues(alpha: 0.08),
+                      : AppColors.white.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
                     color:
@@ -349,7 +413,7 @@ class _RepairDeviceViewState extends State<_RepairDeviceView> {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                    color: isSelected ? Colors.white : enterprise.mutedText,
+                    color: isSelected ? AppColors.white : enterprise.mutedText,
                   ),
                 ),
               ),
@@ -367,7 +431,7 @@ class _RepairDeviceViewState extends State<_RepairDeviceView> {
       case RepairLoadingState.initial:
         return const Center(
           child: CircularProgressIndicator(
-            color: Colors.white,
+            color: AppColors.white,
             strokeWidth: 2.5,
           ),
         );
@@ -386,7 +450,7 @@ class _RepairDeviceViewState extends State<_RepairDeviceView> {
                       ? Icons.lock_outline_rounded
                       : Icons.wifi_off_rounded,
                   size: 48,
-                  color: Colors.redAccent,
+                  color: AppColors.redAccent,
                 ),
                 const SizedBox(height: 12),
                 Text(
@@ -402,7 +466,7 @@ class _RepairDeviceViewState extends State<_RepairDeviceView> {
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: enterprise.primary,
-                    foregroundColor: Colors.white,
+                    foregroundColor: AppColors.white,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10)),
                     padding: const EdgeInsets.symmetric(
@@ -461,8 +525,7 @@ class _RepairDeviceViewState extends State<_RepairDeviceView> {
             if (isTablet) {
               return GridView.builder(
                 controller: _scrollController,
-                padding:
-                    EdgeInsets.fromLTRB(14, 8, 14, bottomPadding),
+                padding: EdgeInsets.fromLTRB(14, 8, 14, bottomPadding),
                 physics: const AlwaysScrollableScrollPhysics(
                     parent: BouncingScrollPhysics()),
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -562,7 +625,7 @@ class _RepairDeviceViewState extends State<_RepairDeviceView> {
         title: Row(
           children: [
             const Icon(Icons.warning_amber_rounded,
-                color: Colors.redAccent, size: 24),
+                color: AppColors.redAccent, size: 24),
             const SizedBox(width: 8),
             Text(
               translate('repair_screen.delete_device'),
@@ -588,8 +651,8 @@ class _RepairDeviceViewState extends State<_RepairDeviceView> {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              foregroundColor: Colors.white,
+              backgroundColor: AppColors.redAccent,
+              foregroundColor: AppColors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -603,7 +666,8 @@ class _RepairDeviceViewState extends State<_RepairDeviceView> {
                   content: Text(translate(deleted
                       ? 'repair_screen.device_deleted'
                       : 'repair_screen.device_delete_failed')),
-                  backgroundColor: deleted ? Colors.green : Colors.redAccent,
+                  backgroundColor:
+                      deleted ? AppColors.green : AppColors.redAccent,
                 ),
               );
             },

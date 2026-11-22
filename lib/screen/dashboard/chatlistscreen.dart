@@ -22,6 +22,7 @@ import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class ChatListScreen extends StatelessWidget {
   const ChatListScreen({super.key});
@@ -408,8 +409,8 @@ class _ChatListState extends State<ChatList> {
         backgroundColor: Colors.transparent,
         body: SafeArea(
           child: RefreshIndicator(
-            color: Colors.white,
-            backgroundColor: Colors.blueGrey,
+            color: AppColors.white,
+            backgroundColor: AppColors.blueGrey,
             onRefresh: () async {
               await _loadTeam();
               await _loadGroups();
@@ -504,7 +505,7 @@ class _ChatListState extends State<ChatList> {
           child: Padding(
             padding: EdgeInsets.only(top: 60),
             child: Center(
-              child: CircularProgressIndicator(color: Colors.white),
+              child: CircularProgressIndicator(color: AppColors.white),
             ),
           ),
         ),
@@ -518,7 +519,7 @@ class _ChatListState extends State<ChatList> {
             child: Center(
               child: Text(
                 translate('chat_list_screen.no_groups'),
-                style: const TextStyle(color: Colors.white70),
+                style: const TextStyle(color: AppColors.white70),
               ),
             ),
           ),
@@ -552,7 +553,7 @@ class _ChatListState extends State<ChatList> {
           child: Padding(
             padding: EdgeInsets.only(top: 60),
             child: Center(
-              child: CircularProgressIndicator(color: Colors.white),
+              child: CircularProgressIndicator(color: AppColors.white),
             ),
           ),
         ),
@@ -567,7 +568,7 @@ class _ChatListState extends State<ChatList> {
             child: Center(
               child: Text(
                 translate('chat_list_screen.no_chats'),
-                style: const TextStyle(color: Colors.white70),
+                style: const TextStyle(color: AppColors.white70),
               ),
             ),
           ),
@@ -691,7 +692,8 @@ class _ActiveStories extends StatelessWidget {
                     contact.name.split(' ').first,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Colors.white, fontSize: 11),
+                    style:
+                        const TextStyle(color: AppColors.white, fontSize: 11),
                   ),
                 ],
               ),
@@ -780,7 +782,7 @@ class _FilterChip extends StatelessWidget {
         child: Text(
           label,
           style: TextStyle(
-            color: selected ? Colors.white : enterprise.text,
+            color: selected ? AppColors.white : enterprise.text,
             fontSize: 12,
             fontWeight: FontWeight.w700,
           ),
@@ -872,11 +874,11 @@ class _UnreadCountBadge extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 6.5, vertical: 2),
         constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
         decoration: BoxDecoration(
-          color: const Color(0xFFEF4444),
+          color: AppColors.dangerToken,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFFEF4444).withValues(alpha: 0.4),
+              color: AppColors.dangerToken.withValues(alpha: 0.4),
               blurRadius: 6,
             ),
           ],
@@ -886,7 +888,7 @@ class _UnreadCountBadge extends StatelessWidget {
           count > 99 ? '99+' : count.toString(),
           textAlign: TextAlign.center,
           style: const TextStyle(
-            color: Colors.white,
+            color: AppColors.white,
             fontSize: 11,
             fontWeight: FontWeight.w900,
           ),
@@ -931,18 +933,18 @@ class _Avatar extends StatelessWidget {
                   errorWidget: (_, __, ___) => Container(
                     width: size,
                     height: size,
-                    color: Colors.white12,
+                    color: AppColors.white12,
                     child: Icon(Icons.person,
-                        color: Colors.white, size: size * .48),
+                        color: AppColors.white, size: size * .48),
                   ),
                 )
               : Container(
                   width: size,
                   height: size,
-                  color: Colors.white12,
+                  color: AppColors.white12,
                   child: Icon(
                     Icons.person,
-                    color: Colors.white,
+                    color: AppColors.white,
                     size: size * .48,
                   ),
                 ),
@@ -955,9 +957,9 @@ class _Avatar extends StatelessWidget {
               width: 11,
               height: 11,
               decoration: BoxDecoration(
-                color: contact.isOnline ? Colors.green : Colors.grey,
+                color: contact.isOnline ? AppColors.green : AppColors.grey,
                 shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 1.6),
+                border: Border.all(color: AppColors.white, width: 1.6),
               ),
             ),
           ),
@@ -978,7 +980,7 @@ class _SectionHeader extends StatelessWidget {
       child: Text(
         label,
         style: const TextStyle(
-          color: Colors.white54,
+          color: AppColors.white54,
           fontSize: 11,
           fontWeight: FontWeight.w700,
           letterSpacing: 0.8,
@@ -1097,10 +1099,10 @@ class _GroupAvatarPlaceholder extends StatelessWidget {
       width: 46,
       height: 46,
       decoration: const BoxDecoration(
-        color: Colors.white12,
+        color: AppColors.white12,
         shape: BoxShape.circle,
       ),
-      child: const Icon(Icons.group, color: Colors.white54, size: 24),
+      child: const Icon(Icons.group, color: AppColors.white54, size: 24),
     );
   }
 }

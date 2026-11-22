@@ -111,7 +111,10 @@ class _WorkRecordsScreenState extends State<WorkRecordsScreen> {
             return ListTile(
               leading: Icon(recordFlag(record['pinned'])
                   ? Icons.push_pin_outlined
-                  : Icons.description_outlined),
+                  : (record['title'].toString().contains('➔') ||
+                          record['title'].toString().contains('សាខា')
+                      ? Icons.alt_route_rounded
+                      : Icons.description_outlined)),
               trailing: const Icon(Icons.chevron_right),
               title: Text(record['title'].toString()),
               subtitle: Text([

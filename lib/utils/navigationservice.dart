@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:hexcolor/hexcolor.dart';
 import 'package:in_app_notification/in_app_notification.dart';
 import 'package:flutter/foundation.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class NavigationService {
   static GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -19,15 +19,15 @@ class NavigationService {
                   borderRadius: BorderRadius.circular(25)),
               leading: Container(
                   height: double.infinity, child: Icon(Icons.notifications)),
-              iconColor: HexColor("#011754"),
-              textColor: HexColor("#011754"),
+              iconColor: AppColors.customFF011754,
+              textColor: AppColors.customFF011754,
               minVerticalPadding: 10,
               minLeadingWidth: 0,
-              tileColor: Colors.white,
+              tileColor: AppColors.white,
               title: Text(title),
               subtitle: Text(
                 desc,
-                style: TextStyle(color: Colors.grey),
+                style: TextStyle(color: AppColors.grey),
               ),
             ),
           ),

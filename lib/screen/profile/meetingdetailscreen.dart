@@ -6,6 +6,7 @@ import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class MeetingDetailScreen extends StatelessWidget {
   static const routeName = '/meetingdetailscreen';
@@ -48,9 +49,11 @@ class MeetingDetailScreen extends StatelessWidget {
                       ),
                 Text(
                   item.title,
-                  style: TextStyle(color: Colors.white, fontSize: 20),
+                  style: TextStyle(color: AppColors.white, fontSize: 20),
                 ),
-                SizedBox(height: 15,),
+                SizedBox(
+                  height: 15,
+                ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -61,11 +64,11 @@ class MeetingDetailScreen extends StatelessWidget {
                         children: [
                           Text(
                             translate('meeting_list_screen.venue'),
-                            style: TextStyle(color: Colors.white70),
+                            style: TextStyle(color: AppColors.white70),
                           ),
                           Text(item.venue,
                               style: TextStyle(
-                                  color: Colors.white,
+                                  color: AppColors.white,
                                   fontWeight: FontWeight.normal,
                                   fontSize: 12)),
                         ],
@@ -75,7 +78,7 @@ class MeetingDetailScreen extends StatelessWidget {
                       height: 30,
                       child: VerticalDivider(
                         width: 1,
-                        color: Colors.white54,
+                        color: AppColors.white54,
                       ),
                     ),
                     Expanded(
@@ -85,11 +88,11 @@ class MeetingDetailScreen extends StatelessWidget {
                         children: [
                           Text(
                             "Date",
-                            style: TextStyle(color: Colors.white70),
+                            style: TextStyle(color: AppColors.white70),
                           ),
                           Text(item.meetingDate,
                               style: TextStyle(
-                                  color: Colors.white,
+                                  color: AppColors.white,
                                   fontWeight: FontWeight.normal,
                                   fontSize: 12)),
                         ],
@@ -99,7 +102,7 @@ class MeetingDetailScreen extends StatelessWidget {
                       height: 30,
                       child: VerticalDivider(
                         width: 1,
-                        color: Colors.white54,
+                        color: AppColors.white54,
                       ),
                     ),
                     Expanded(
@@ -109,11 +112,11 @@ class MeetingDetailScreen extends StatelessWidget {
                         children: [
                           Text(
                             "Time",
-                            style: TextStyle(color: Colors.white70),
+                            style: TextStyle(color: AppColors.white70),
                           ),
                           Text(item.meetingStartTime,
                               style: TextStyle(
-                                  color: Colors.white,
+                                  color: AppColors.white,
                                   fontWeight: FontWeight.normal,
                                   fontSize: 12)),
                         ],
@@ -121,11 +124,14 @@ class MeetingDetailScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                if (item.createdBy.isNotEmpty) SizedBox(height: 15,),
+                if (item.createdBy.isNotEmpty)
+                  SizedBox(
+                    height: 15,
+                  ),
                 if (item.createdBy.isNotEmpty)
                   Card(
                     elevation: 0,
-                    color: Colors.white24,
+                    color: AppColors.white24,
                     margin: EdgeInsets.zero,
                     shape: ButtonBorder(),
                     child: Padding(
@@ -135,13 +141,16 @@ class MeetingDetailScreen extends StatelessWidget {
                         children: [
                           Text(
                             'Host',
-                            style: TextStyle(color: Colors.white, fontSize: 16,fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                                color: AppColors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold),
                           ),
                           Spacer(),
                           Text(
                             '${item.createdBy}',
                             style: TextStyle(
-                                color: Colors.white,
+                                color: AppColors.white,
                                 fontSize: 15,
                                 fontWeight: FontWeight.normal),
                           ),
@@ -149,10 +158,12 @@ class MeetingDetailScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-                SizedBox(height: 15,),
+                SizedBox(
+                  height: 15,
+                ),
                 Card(
                   elevation: 0,
-                  color: Colors.white24,
+                  color: AppColors.white24,
                   margin: EdgeInsets.zero,
                   shape: ButtonBorder(),
                   child: Container(
@@ -164,7 +175,7 @@ class MeetingDetailScreen extends StatelessWidget {
                         Text(
                           "Description",
                           style: TextStyle(
-                              color: Colors.white,
+                              color: AppColors.white,
                               fontSize: 16,
                               fontWeight: FontWeight.bold),
                         ),
@@ -173,16 +184,19 @@ class MeetingDetailScreen extends StatelessWidget {
                         ),
                         Text(
                           item.agenda,
-                          style: TextStyle(color: Colors.white, fontSize: 14),
+                          style:
+                              TextStyle(color: AppColors.white, fontSize: 14),
                         )
                       ],
                     ),
                   ),
                 ),
-                SizedBox(height: 15,),
+                SizedBox(
+                  height: 15,
+                ),
                 Card(
                   elevation: 0,
-                  color: Colors.white24,
+                  color: AppColors.white24,
                   margin: EdgeInsets.zero,
                   shape: ButtonBorder(),
                   child: Container(
@@ -194,7 +208,7 @@ class MeetingDetailScreen extends StatelessWidget {
                         Text(
                           translate('meeting_detail_screen.participants'),
                           style: TextStyle(
-                              color: Colors.white,
+                              color: AppColors.white,
                               fontSize: 16,
                               fontWeight: FontWeight.bold),
                         ),
@@ -211,7 +225,8 @@ class MeetingDetailScreen extends StatelessWidget {
                                 },
                                 child: ListTile(
                                   visualDensity: VisualDensity.compact,
-                                  contentPadding: EdgeInsets.symmetric(horizontal: 0),
+                                  contentPadding:
+                                      EdgeInsets.symmetric(horizontal: 0),
                                   minVerticalPadding: 0,
                                   minTileHeight: 35,
                                   title: Text(
@@ -228,11 +243,11 @@ class MeetingDetailScreen extends StatelessWidget {
                                     // Display index
                                     style: TextStyle(
                                       fontSize: 14,
-                                      color: Colors.white,
+                                      color: AppColors.white,
                                       fontWeight: FontWeight.normal,
                                     ),
                                   ),
-                                  textColor: Colors.white,
+                                  textColor: AppColors.white,
                                 ),
                               );
                             },
@@ -241,7 +256,7 @@ class MeetingDetailScreen extends StatelessWidget {
                                 height: 1,
                                 indent: 2,
                                 endIndent: 2,
-                                color: Colors.white12,
+                                color: AppColors.white12,
                               );
                             },
                             itemCount: item.participator.length)

@@ -6,7 +6,7 @@ import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
-import 'package:hexcolor/hexcolor.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class WarningBottomSheet extends StatefulWidget {
   final Warning warning;
@@ -52,7 +52,7 @@ class WarningBottomSheetState extends State<WarningBottomSheet> {
               widget.warning.subject,
               style: TextStyle(
                   fontSize: 18,
-                  color: Colors.white,
+                  color: AppColors.white,
                   fontWeight: FontWeight.bold),
             ),
             Padding(
@@ -61,7 +61,7 @@ class WarningBottomSheetState extends State<WarningBottomSheet> {
                 width: double.infinity,
                 child: Text(
                   widget.warning.message,
-                  style: TextStyle(fontSize: 15, color: Colors.white),
+                  style: TextStyle(fontSize: 15, color: AppColors.white),
                 ),
               ),
             ),
@@ -81,15 +81,15 @@ class WarningBottomSheetState extends State<WarningBottomSheet> {
                     FocusManager.instance.primaryFocus?.unfocus();
                   }
                 },
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: AppColors.white),
                 //editing controller of this TextField
-                cursorColor: Colors.white,
+                cursorColor: AppColors.white,
                 keyboardType: TextInputType.multiline,
                 decoration: InputDecoration(
                   hintText: 'Write a response..',
-                  hintStyle: TextStyle(color: Colors.white70),
-                  labelStyle: TextStyle(color: Colors.white),
-                  fillColor: Colors.white24,
+                  hintStyle: TextStyle(color: AppColors.white70),
+                  labelStyle: TextStyle(color: AppColors.white),
+                  fillColor: AppColors.white24,
                   filled: true,
                   enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.only(
@@ -122,22 +122,22 @@ class WarningBottomSheetState extends State<WarningBottomSheet> {
                 height: 10,
               ),
             if (widget.warning.response.isNotEmpty)
-            Card(
-              elevation: 0,
-              color: Colors.white24,
-              shape: ButtonBorder(),
-              margin: EdgeInsets.zero,
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Container(
-                  width: double.infinity,
-                  child: Text(
-                    widget.warning.response,
-                    style: TextStyle(fontSize: 15, color: Colors.white),
+              Card(
+                elevation: 0,
+                color: AppColors.white24,
+                shape: ButtonBorder(),
+                margin: EdgeInsets.zero,
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Container(
+                    width: double.infinity,
+                    child: Text(
+                      widget.warning.response,
+                      style: TextStyle(fontSize: 15, color: AppColors.white),
+                    ),
                   ),
                 ),
               ),
-            ),
             if (widget.warning.response.isEmpty)
               Container(
                 width: MediaQuery.of(context).size.width,
@@ -145,8 +145,8 @@ class WarningBottomSheetState extends State<WarningBottomSheet> {
                 child: TextButton(
                     style: TextButton.styleFrom(
                       backgroundColor: widget.warning.response.isNotEmpty
-                          ? HexColor("#036eb7").withValues(alpha: .5)
-                          : HexColor("#036eb7"),
+                          ? AppColors.customFF036EB7.withValues(alpha: .5)
+                          : AppColors.customFF036EB7,
                       padding: EdgeInsets.zero,
                       shape: ButtonBorder(),
                     ),
@@ -161,7 +161,7 @@ class WarningBottomSheetState extends State<WarningBottomSheet> {
                         widget.warning.response.isEmpty
                             ? 'Response'
                             : "Already Responsed",
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(color: AppColors.white),
                       ),
                     )),
               ),

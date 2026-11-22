@@ -1,6 +1,7 @@
 import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/widget/cancel_leave_bottom_sheet.dart';
 import 'package:flutter/material.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class LeaveDetailRow extends StatelessWidget {
   final int id;
@@ -40,8 +41,8 @@ class LeaveDetailRow extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: enterprise.isDark
-              ? const Color(0xFF0F172A).withValues(alpha: 0.60)
-              : const Color(0xFFF1F5F9),
+              ? AppColors.ink900.withValues(alpha: 0.60)
+              : AppColors.customFFF1F5F9,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: enterprise.cardBorder),
         ),
@@ -115,7 +116,7 @@ class LeaveDetailRow extends StatelessWidget {
                         child: Text(
                           status,
                           style: const TextStyle(
-                              color: Colors.white,
+                              color: AppColors.white,
                               fontSize: 11,
                               fontWeight: FontWeight.w700),
                         ),
@@ -134,15 +135,15 @@ class LeaveDetailRow extends StatelessWidget {
   Color getStatus() {
     switch (status) {
       case "Approved":
-        return Colors.green;
+        return AppColors.green;
       case "Rejected":
-        return Colors.redAccent;
+        return AppColors.redAccent;
       case "Pending":
-        return Colors.orange;
+        return AppColors.orange;
       case "Cancelled":
-        return Colors.red;
+        return AppColors.red;
       default:
-        return Colors.orange;
+        return AppColors.orange;
     }
   }
 }

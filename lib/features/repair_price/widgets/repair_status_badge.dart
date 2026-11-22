@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../config/repair_price_config.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class RepairStatusBadge extends StatelessWidget {
   final String status;
@@ -36,7 +37,7 @@ class RepairStatusBadge extends StatelessWidget {
         icon = Icons.cancel_outlined;
         break;
       default:
-        bg = Colors.grey.withValues(alpha: 0.1);
+        bg = AppColors.grey.withValues(alpha: 0.1);
         text = RepairPriceConfig.secondaryText;
         label = status;
         icon = Icons.info_outline_rounded;

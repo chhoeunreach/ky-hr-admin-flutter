@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:cnattendance/theme/app_theme_mode.dart';
 import 'package:cnattendance/theme/theme_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
+import 'package:cnattendance/core/theme/app_palette.dart';
 
 enum LayoutArea {
   home('Home sections'),
@@ -73,8 +75,12 @@ class ThemeLayout {
   const ThemeLayout.defaults()
       : _order = const {},
         _visibility = const {},
-        background = null,
+        primary = null,
+        secondary = null,
         accent = null,
+        background = null,
+        card = null,
+        text = null,
         menuOnRight = false,
         _splitBanner = null,
         showMenuButton = true;
@@ -82,8 +88,12 @@ class ThemeLayout {
   ThemeLayout._({
     required Map<LayoutArea, List<LayoutItem>> order,
     required Map<LayoutItem, bool> visibility,
-    required this.background,
+    required this.primary,
+    required this.secondary,
     required this.accent,
+    required this.background,
+    required this.card,
+    required this.text,
     required this.menuOnRight,
     required this.showMenuButton,
     required bool? splitBanner,
@@ -93,8 +103,12 @@ class ThemeLayout {
 
   final Map<LayoutArea, List<LayoutItem>> _order;
   final Map<LayoutItem, bool> _visibility;
-  final Color? background;
+  final Color? primary;
+  final Color? secondary;
   final Color? accent;
+  final Color? background;
+  final Color? card;
+  final Color? text;
   final bool menuOnRight;
   final bool showMenuButton;
   final bool? _splitBanner;
@@ -141,12 +155,23 @@ class ThemeLayout {
 
   ThemeLayout setSeparateBanner(bool value) => _copy(splitBanner: value);
 
-  ThemeLayout setColors({required Color? background, required Color? accent}) =>
+  ThemeLayout setColors({
+    Color? primary,
+    Color? secondary,
+    Color? accent,
+    Color? background,
+    Color? card,
+    Color? text,
+  }) =>
       ThemeLayout._(
         order: _order,
         visibility: _visibility,
-        background: background,
+        primary: primary,
+        secondary: secondary,
         accent: accent,
+        background: background,
+        card: card,
+        text: text,
         menuOnRight: menuOnRight,
         showMenuButton: showMenuButton,
         splitBanner: _splitBanner,
@@ -155,6 +180,12 @@ class ThemeLayout {
   ThemeLayout _copy({
     Map<LayoutArea, List<LayoutItem>>? order,
     Map<LayoutItem, bool>? visibility,
+    Color? primary,
+    Color? secondary,
+    Color? accent,
+    Color? background,
+    Color? card,
+    Color? text,
     bool? menuOnRight,
     bool? showMenuButton,
     bool? splitBanner,
@@ -162,39 +193,59 @@ class ThemeLayout {
       ThemeLayout._(
         order: order ?? _order,
         visibility: visibility ?? _visibility,
-        background: background,
-        accent: accent,
+        primary: primary ?? this.primary,
+        secondary: secondary ?? this.secondary,
+        accent: accent ?? this.accent,
+        background: background ?? this.background,
+        card: card ?? this.card,
+        text: text ?? this.text,
         menuOnRight: menuOnRight ?? this.menuOnRight,
         showMenuButton: showMenuButton ?? this.showMenuButton,
         splitBanner: splitBanner ?? _splitBanner,
       );
 
   ThemeColors colorsFor(ThemeColors base) {
-    if (background == null && accent == null) return base;
+    if (primary == null &&
+        secondary == null &&
+        accent == null &&
+        background == null &&
+        card == null &&
+        text == null) {
+      return base;
+    }
     final surface = background;
     final dark = surface == null
         ? base.isDark
         : ThemeData.estimateBrightnessForColor(surface) == Brightness.dark;
+    final effBackground = background ?? base.backgroundColor;
+    final effAccent = accent ?? base.accentColor;
+    final effPrimary = primary ?? (accent ?? base.primaryColor);
+    final effSecondary = secondary ?? (surface ?? base.secondaryColor);
+    final effCard = card ??
+        (surface == null
+            ? base.cardColor
+            : Color.lerp(surface, dark ? AppColors.white : AppColors.black, .09)!);
+    final effText = text ??
+        (surface == null
+            ? base.textColor
+            : dark
+                ? AppColors.white
+                : AppColors.customFF211720);
+
     return ThemeColors(
-      primaryColor: accent ?? base.primaryColor,
-      secondaryColor: surface ?? base.secondaryColor,
-      accentColor: accent ?? base.accentColor,
-      backgroundColor: surface ?? base.backgroundColor,
-      cardColor: surface == null
-          ? base.cardColor
-          : Color.lerp(surface, dark ? Colors.white : Colors.black, .09)!,
-      textColor: surface == null
-          ? base.textColor
-          : dark
-              ? Colors.white
-              : const Color(0xff211720),
+      primaryColor: effPrimary,
+      secondaryColor: effSecondary,
+      accentColor: effAccent,
+      backgroundColor: effBackground,
+      cardColor: effCard,
+      textColor: effText,
       isDark: dark,
-      gradientColors: surface == null
+      gradientColors: surface == null && primary == null && secondary == null
           ? base.gradientColors
           : [
-              Color.lerp(surface, accent ?? base.accentColor, .18)!,
-              surface,
-              Color.lerp(surface, base.backgroundColor, .38)!,
+              Color.lerp(effBackground, effAccent, .18)!,
+              effBackground,
+              Color.lerp(effBackground, base.backgroundColor, .38)!,
             ],
     );
   }
@@ -204,8 +255,12 @@ class ThemeLayout {
             MapEntry(area.name, entries.map((item) => item.name).toList())),
         'visibility':
             _visibility.map((item, visible) => MapEntry(item.name, visible)),
-        'background': background?.toARGB32(),
+        'primary': primary?.toARGB32(),
+        'secondary': secondary?.toARGB32(),
         'accent': accent?.toARGB32(),
+        'background': background?.toARGB32(),
+        'card': card?.toARGB32(),
+        'text': text?.toARGB32(),
         'menuOnRight': menuOnRight,
         'showMenuButton': showMenuButton,
         'splitBanner': _splitBanner,
@@ -222,10 +277,9 @@ class ThemeLayout {
     if (data is! Map) return const ThemeLayout.defaults();
     final order = data['order'];
     final visibility = data['visibility'];
-    Color? color(Object? value) =>
-        value is int && value >= 0xff000000 && value <= 0xffffffff
-            ? Color(value)
-            : null;
+    Color? color(Object? value) => value is int && AppPalette.isArgbValue(value)
+        ? AppPalette.fromArgb(value)
+        : null;
     final itemNames = {for (final item in LayoutItem.values) item.name: item};
     return ThemeLayout._(
       order: {
@@ -244,8 +298,12 @@ class ThemeLayout {
           for (final item in LayoutItem.values)
             if (visibility[item.name] case final bool visible) item: visible,
       },
-      background: color(data['background']),
+      primary: color(data['primary']),
+      secondary: color(data['secondary']),
       accent: color(data['accent']),
+      background: color(data['background']),
+      card: color(data['card']),
+      text: color(data['text']),
       menuOnRight: data['menuOnRight'] == true,
       showMenuButton: data['showMenuButton'] != false,
       splitBanner:

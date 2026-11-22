@@ -11,10 +11,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:focus_detector/focus_detector.dart';
 import 'package:get/get.dart';
-import 'package:hexcolor/hexcolor.dart';
 import 'package:image_stack/image_stack.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:percent_indicator/linear_percent_indicator.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class ProjectScreen extends StatelessWidget {
   final model = Get.put(ProjectDashboardController());
@@ -101,15 +101,15 @@ class ProjectScreen extends StatelessWidget {
                 ),
                 circularStrokeCap: CircularStrokeCap.round,
                 backgroundColor: enterprise.isDark
-                    ? Colors.white12
-                    : const Color(0xFFE2E8F0),
+                    ? AppColors.white12
+                    : AppColors.customFFE2E8F0,
                 progressColor: (model.overview['progress']! / 100) <= .25
-                    ? HexColor("#C1E1C1")
+                    ? AppColors.customFFC1E1C1
                     : (model.overview['progress']! / 100) <= .50
-                        ? HexColor("#C9CC3F")
+                        ? AppColors.customFFC9CC3F
                         : (model.overview['progress']! / 100) <= .75
-                            ? HexColor("#93C572")
-                            : HexColor("#3cb116"),
+                            ? AppColors.customFF93C572
+                            : AppColors.customFF3CB116,
               ),
             ),
             SizedBox(
@@ -315,15 +315,15 @@ class ProjectScreen extends StatelessWidget {
                                   lineHeight: 5,
                                   barRadius: Radius.circular(20),
                                   backgroundColor: enterprise.isDark
-                                      ? Colors.white12
-                                      : const Color(0xFFE2E8F0),
+                                      ? AppColors.white12
+                                      : AppColors.customFFE2E8F0,
                                   progressColor: item.progress <= 25
-                                      ? HexColor("#C1E1C1")
+                                      ? AppColors.customFFC1E1C1
                                       : item.progress <= 50
-                                          ? HexColor("#C9CC3F")
+                                          ? AppColors.customFFC9CC3F
                                           : item.progress <= 75
-                                              ? HexColor("#93C572")
-                                              : HexColor("#3cb116"),
+                                              ? AppColors.customFF93C572
+                                              : AppColors.customFF3CB116,
                                 ),
                               ],
                             ),
@@ -334,8 +334,7 @@ class ProjectScreen extends StatelessWidget {
                                   totalCount: memberImages.length,
                                   imageRadius: 25,
                                   imageCount: 4,
-                                  imageBorderColor:
-                                      enterprise.cardBackground,
+                                  imageBorderColor: enterprise.cardBackground,
                                   imageBorderWidth: 1,
                                 ),
                                 Spacer(),
@@ -544,15 +543,15 @@ class ProjectScreen extends StatelessWidget {
                                       lineHeight: 5,
                                       barRadius: Radius.circular(20),
                                       backgroundColor: enterprise.isDark
-                                          ? Colors.white12
-                                          : const Color(0xFFE2E8F0),
+                                          ? AppColors.white12
+                                          : AppColors.customFFE2E8F0,
                                       progressColor: item.progress! <= 25
-                                          ? HexColor("#C1E1C1")
+                                          ? AppColors.customFFC1E1C1
                                           : item.progress! <= 50
-                                              ? HexColor("#C9CC3F")
+                                              ? AppColors.customFFC9CC3F
                                               : item.progress! <= 75
-                                                  ? HexColor("#93C572")
-                                                  : HexColor("#3cb116"),
+                                                  ? AppColors.customFF93C572
+                                                  : AppColors.customFF3CB116,
                                     ),
                                   if (item.progress == 0 &&
                                       item.hasProgress == false)
@@ -571,8 +570,7 @@ class ProjectScreen extends StatelessWidget {
                                     totalCount: members.length,
                                     imageRadius: 25,
                                     imageCount: 4,
-                                    imageBorderColor:
-                                        enterprise.cardBackground,
+                                    imageBorderColor: enterprise.cardBackground,
                                     imageBorderWidth: 1,
                                   ),
                                   Spacer(),

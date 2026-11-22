@@ -1,11 +1,13 @@
 import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class RepairSearchBar extends StatefulWidget {
   final String hintText;
   final ValueChanged<String> onChanged;
   final VoidCallback? onClear;
   final TextEditingController? controller;
+  final String? initialValue;
 
   const RepairSearchBar({
     super.key,
@@ -13,6 +15,7 @@ class RepairSearchBar extends StatefulWidget {
     required this.onChanged,
     this.onClear,
     this.controller,
+    this.initialValue,
   });
 
   @override
@@ -26,9 +29,21 @@ class _RepairSearchBarState extends State<RepairSearchBar> {
   @override
   void initState() {
     super.initState();
-    _controller = widget.controller ?? TextEditingController();
+    _controller = widget.controller ??
+        TextEditingController(text: widget.initialValue ?? '');
     _showClear = _controller.text.isNotEmpty;
     _controller.addListener(_handleTextChange);
+  }
+
+  @override
+  void didUpdateWidget(covariant RepairSearchBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.controller == null &&
+        widget.initialValue != null &&
+        widget.initialValue != _controller.text) {
+      _controller.text = widget.initialValue!;
+      _showClear = _controller.text.isNotEmpty;
+    }
   }
 
   void _handleTextChange() {
@@ -54,7 +69,8 @@ class _RepairSearchBarState extends State<RepairSearchBar> {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: enterprise.isDark ? 0.08 : 0.18),
+        color:
+            AppColors.white.withValues(alpha: enterprise.isDark ? 0.08 : 0.18),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: enterprise.glassStroke, width: 0.9),
       ),

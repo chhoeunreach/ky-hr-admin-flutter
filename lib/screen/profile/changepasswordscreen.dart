@@ -7,7 +7,7 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
-import 'package:hexcolor/hexcolor.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class ChangePasswordScreen extends StatelessWidget {
   @override
@@ -118,7 +118,7 @@ class ChangePasswordState extends State<ChangePassword> {
             padding: const EdgeInsets.all(20),
             child: TextButton(
                 style: TextButton.styleFrom(
-                    backgroundColor: HexColor("#036eb7"),
+                    backgroundColor: AppColors.customFF036EB7,
                     shape: ButtonBorder(),
                     fixedSize: Size(double.maxFinite, 55)),
                 onPressed: () {
@@ -126,7 +126,7 @@ class ChangePasswordState extends State<ChangePassword> {
                 },
                 child: Text(
                   translate('change_password_screen.change_password'),
-                  style: TextStyle(color: Colors.white),
+                  style: TextStyle(color: AppColors.white),
                 )),
           ),
         ),
@@ -140,20 +140,20 @@ class ChangePasswordState extends State<ChangePassword> {
                   obscureText: _obscureText,
                   controller: _oldPasswordController,
                   keyboardType: TextInputType.visiblePassword,
-                  style: TextStyle(color: Colors.white),
+                  style: TextStyle(color: AppColors.white),
                   validator: (value) {
                     if (!validateField(value!)) {
                       return "Empty Field";
                     }
                     return null;
                   },
-                  cursorColor: Colors.white,
+                  cursorColor: AppColors.white,
                   decoration: InputDecoration(
                     hintText: translate('change_password_screen.old_password'),
-                    hintStyle: TextStyle(color: Colors.white70),
-                    prefixIcon: Icon(Icons.lock, color: Colors.white),
-                    labelStyle: TextStyle(color: Colors.white),
-                    fillColor: Colors.white24,
+                    hintStyle: TextStyle(color: AppColors.white70),
+                    prefixIcon: Icon(Icons.lock, color: AppColors.white),
+                    labelStyle: TextStyle(color: AppColors.white),
+                    fillColor: AppColors.white24,
                     filled: true,
                     enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.only(
@@ -186,7 +186,7 @@ class ChangePasswordState extends State<ChangePassword> {
                             ? FontAwesomeIcons.eye
                             : FontAwesomeIcons.eyeSlash,
                         size: 15.0,
-                        color: Colors.white,
+                        color: AppColors.white,
                       ),
                     ),
                   ),
@@ -198,7 +198,7 @@ class ChangePasswordState extends State<ChangePassword> {
                   obscureText: _obscureText,
                   controller: _newPasswordController,
                   keyboardType: TextInputType.visiblePassword,
-                  style: TextStyle(color: Colors.white),
+                  style: TextStyle(color: AppColors.white),
                   validator: (value) {
                     if (!validateField(value!)) {
                       return "Empty Field";
@@ -210,13 +210,13 @@ class ChangePasswordState extends State<ChangePassword> {
                     }
                     return null;
                   },
-                  cursorColor: Colors.white,
+                  cursorColor: AppColors.white,
                   decoration: InputDecoration(
                     hintText: translate('change_password_screen.new_password'),
-                    hintStyle: TextStyle(color: Colors.white70),
-                    prefixIcon: Icon(Icons.lock, color: Colors.white),
-                    labelStyle: TextStyle(color: Colors.white),
-                    fillColor: Colors.white24,
+                    hintStyle: TextStyle(color: AppColors.white70),
+                    prefixIcon: Icon(Icons.lock, color: AppColors.white),
+                    labelStyle: TextStyle(color: AppColors.white),
+                    fillColor: AppColors.white24,
                     filled: true,
                     enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.only(
@@ -249,7 +249,7 @@ class ChangePasswordState extends State<ChangePassword> {
                             ? FontAwesomeIcons.eye
                             : FontAwesomeIcons.eyeSlash,
                         size: 15.0,
-                        color: Colors.white,
+                        color: AppColors.white,
                       ),
                     ),
                   ),
@@ -261,7 +261,7 @@ class ChangePasswordState extends State<ChangePassword> {
                   obscureText: _obscureText,
                   controller: _confirmPasswordController,
                   keyboardType: TextInputType.visiblePassword,
-                  style: TextStyle(color: Colors.white),
+                  style: TextStyle(color: AppColors.white),
                   validator: (value) {
                     if (!validateField(value!)) {
                       return "Empty Field";
@@ -274,14 +274,14 @@ class ChangePasswordState extends State<ChangePassword> {
 
                     return null;
                   },
-                  cursorColor: Colors.white,
+                  cursorColor: AppColors.white,
                   decoration: InputDecoration(
                     hintText:
                         translate('change_password_screen.confirm_password'),
-                    hintStyle: TextStyle(color: Colors.white70),
-                    prefixIcon: Icon(Icons.lock, color: Colors.white),
-                    labelStyle: TextStyle(color: Colors.white),
-                    fillColor: Colors.white24,
+                    hintStyle: TextStyle(color: AppColors.white70),
+                    prefixIcon: Icon(Icons.lock, color: AppColors.white),
+                    labelStyle: TextStyle(color: AppColors.white),
+                    fillColor: AppColors.white24,
                     filled: true,
                     enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.only(
@@ -314,7 +314,7 @@ class ChangePasswordState extends State<ChangePassword> {
                             ? FontAwesomeIcons.eye
                             : FontAwesomeIcons.eyeSlash,
                         size: 15.0,
-                        color: Colors.white,
+                        color: AppColors.white,
                       ),
                     ),
                   ),

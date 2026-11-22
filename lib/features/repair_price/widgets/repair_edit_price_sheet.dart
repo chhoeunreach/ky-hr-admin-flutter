@@ -4,6 +4,7 @@ import '../config/repair_price_config.dart';
 import '../models/repair_service.dart';
 import '../services/repair_price_api_service.dart';
 import '../utils/repair_price_helper.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class RepairEditPriceSheet extends StatefulWidget {
   final RepairService service;
@@ -362,7 +363,7 @@ class _RepairEditPriceSheetState extends State<RepairEditPriceSheet> {
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: RepairPriceConfig.primaryBlue,
-                    foregroundColor: Colors.white,
+                    foregroundColor: AppColors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),
@@ -373,7 +374,7 @@ class _RepairEditPriceSheetState extends State<RepairEditPriceSheet> {
                           height: 18,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: Colors.white,
+                            color: AppColors.white,
                           ),
                         )
                       : const Icon(Icons.check_rounded, size: 20),

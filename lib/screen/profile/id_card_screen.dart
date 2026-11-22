@@ -10,6 +10,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class IdCardScreen extends StatefulWidget {
   static const String routeName = '/my-id-card';
@@ -150,9 +151,9 @@ class _IdCardScreenState extends State<IdCardScreen> {
 class _KyCard extends StatelessWidget {
   const _KyCard({required this.card});
 
-  static const Color navy = Color(0xff071326);
-  static const Color gold = Color(0xffd6aa27);
-  static const Color muted = Color(0xff758094);
+  static const Color navy = AppColors.customFF071326;
+  static const Color gold = AppColors.customFFD6AA27;
+  static const Color muted = AppColors.customFF758094;
 
   final IdCardProfile card;
 
@@ -182,11 +183,11 @@ class _KyCard extends StatelessWidget {
 
           return Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.white,
               borderRadius: BorderRadius.circular(sx(28)),
               boxShadow: const [
                 BoxShadow(
-                  color: Color(0x33000000),
+                  color: AppColors.custom33000000,
                   blurRadius: 24,
                   offset: Offset(0, 12),
                 ),
@@ -283,7 +284,7 @@ class _KyCard extends StatelessWidget {
                     child: _QrTile(
                       label: 'TELEGRAM QR',
                       url: card.telegramQrUrl,
-                      borderColor: const Color(0xff17a7e7),
+                      borderColor: AppColors.customFF17A7E7,
                       showSendMark: true,
                     ),
                   ),
@@ -320,7 +321,7 @@ class _BranchLogoBadge extends StatelessWidget {
       padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: Colors.white,
+        color: AppColors.white,
         border: Border.all(color: _KyCard.gold, width: 4),
       ),
       child: ClipOval(
@@ -366,12 +367,13 @@ class _SideBrandBlock extends StatelessWidget {
           ),
         ),
         SizedBox(height: 5),
-        SizedBox(width: 82, child: Divider(height: 1, color: Colors.white70)),
+        SizedBox(
+            width: 82, child: Divider(height: 1, color: AppColors.white70)),
         SizedBox(height: 7),
         Text(
           'PHONE SHOP',
           style: TextStyle(
-            color: Colors.white,
+            color: AppColors.white,
             fontSize: 10,
             fontWeight: FontWeight.w900,
             letterSpacing: 1.5,
@@ -391,12 +393,12 @@ class _Portrait extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xfff4f1ec),
+        color: AppColors.customFFF4F1EC,
         borderRadius: BorderRadius.circular(26),
         border: Border.all(color: _KyCard.gold, width: 4),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x3b000000),
+            color: AppColors.custom3B000000,
             blurRadius: 22,
             offset: Offset(0, 12),
           ),
@@ -409,7 +411,7 @@ class _Portrait extends StatelessWidget {
               imageUrl: photoUrl,
               fit: BoxFit.cover,
               placeholder: (context, url) => const ColoredBox(
-                color: Color(0xfff4f1ec),
+                color: AppColors.customFFF4F1EC,
                 child: Center(child: CircularProgressIndicator()),
               ),
               errorWidget: (context, url, error) =>
@@ -590,7 +592,7 @@ class _QrTile extends StatelessWidget {
               height: 102,
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.white,
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: borderColor, width: 3),
               ),
@@ -612,12 +614,12 @@ class _QrTile extends StatelessWidget {
                   width: 23,
                   height: 23,
                   decoration: const BoxDecoration(
-                    color: Color(0xff17a7e7),
+                    color: AppColors.customFF17A7E7,
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
                     Icons.north_east_rounded,
-                    color: Colors.white,
+                    color: AppColors.white,
                     size: 15,
                   ),
                 ),
@@ -658,7 +660,7 @@ class _EmployeeCode extends StatelessWidget {
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
       style: const TextStyle(
-        color: Colors.white,
+        color: AppColors.white,
         fontSize: 15,
         fontWeight: FontWeight.w900,
         letterSpacing: 0.6,
@@ -730,7 +732,7 @@ class _DotGrid extends StatelessWidget {
             width: dotSize,
             height: dotSize,
             decoration: const BoxDecoration(
-              color: Color(0xffeef3f7),
+              color: AppColors.customFFEEF3F7,
               shape: BoxShape.circle,
             ),
           ),
@@ -751,7 +753,7 @@ class _CardBackgroundPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 4;
     final creamPaint = Paint()
-      ..color = const Color(0xfff5e8b7).withValues(alpha: 0.78)
+      ..color = AppColors.customFFF5E8B7.withValues(alpha: 0.78)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2;
 

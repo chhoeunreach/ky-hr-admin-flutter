@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
 import 'package:toggle_switch/toggle_switch.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class ToggleHoliday extends StatelessWidget {
   @override
@@ -15,15 +16,15 @@ class ToggleHoliday extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             color: enterprise.isDark
-                ? const Color(0xFF0F172A).withValues(alpha: 0.6)
-                : const Color(0xFFF1F5F9).withValues(alpha: 0.8),
+                ? AppColors.ink900.withValues(alpha: 0.6)
+                : AppColors.customFFF1F5F9.withValues(alpha: 0.8),
             borderRadius: BorderRadius.circular(25),
             border: Border.all(color: enterprise.cardBorder),
           ),
           padding: const EdgeInsets.all(3),
           child: ToggleSwitch(
             activeBgColor: [enterprise.accent],
-            activeFgColor: Colors.white,
+            activeFgColor: AppColors.white,
             inactiveFgColor: enterprise.text,
             inactiveBgColor: Colors.transparent,
             minWidth: 100,

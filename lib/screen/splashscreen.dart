@@ -13,6 +13,7 @@ import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_translate/flutter_translate.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class SplashScreen extends StatefulWidget {
   @override
@@ -215,11 +216,11 @@ class SplashState extends State<SplashScreen> with WidgetsBindingObserver {
             if (_checkingClock) ...[
               const SizedBox(height: 18),
               CircularProgressIndicator(
-                  color: onLight ? enterprise.primary : Colors.white),
+                  color: onLight ? enterprise.primary : AppColors.white),
               const SizedBox(height: 10),
               Text(translate('device_clock.checking'),
                   style: TextStyle(
-                      color: onLight ? enterprise.text : Colors.white)),
+                      color: onLight ? enterprise.text : AppColors.white)),
             ],
           ],
         ),

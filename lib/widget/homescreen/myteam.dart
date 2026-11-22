@@ -8,6 +8,7 @@ import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class MyTeam extends StatelessWidget {
   @override
@@ -26,7 +27,10 @@ class MyTeam extends StatelessWidget {
               children: [
                 Text(
                   translate('home_screen.my_team'),
-                  style: TextStyle(color: enterprise.text, fontSize: 16, fontWeight: FontWeight.w900),
+                  style: TextStyle(
+                      color: enterprise.text,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900),
                 ),
                 Spacer(),
                 GestureDetector(
@@ -39,7 +43,10 @@ class MyTeam extends StatelessWidget {
                   },
                   child: Text(
                     translate('home_screen.view_all'),
-                    style: TextStyle(color: enterprise.accent, fontSize: 12, fontWeight: FontWeight.w700),
+                    style: TextStyle(
+                        color: enterprise.accent,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700),
                   ),
                 ),
               ],
@@ -85,14 +92,14 @@ Widget teamCard(Employee teamList, EnterpriseTheme enterprise) {
               shape: CircleBorder(),
               elevation: 0,
               color: teamList.onlineStatus == "1"
-                  ? Colors.green
+                  ? AppColors.green
                   : Colors.transparent,
               child: Container(
                 margin: const EdgeInsets.all(2.0),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(24),
                   child: Container(
-                    color: Colors.white,
+                    color: AppColors.white,
                     child: CachedNetworkImage(
                       imageUrl: teamList.avatar,
                       width: 48,
@@ -110,7 +117,10 @@ Widget teamCard(Employee teamList, EnterpriseTheme enterprise) {
               teamList.name,
               maxLines: 1,
               textAlign: TextAlign.center,
-              style: TextStyle(color: enterprise.text, fontSize: 11, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                  color: enterprise.text,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600),
             )
           ],
         ),

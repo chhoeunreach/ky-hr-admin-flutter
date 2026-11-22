@@ -10,6 +10,7 @@ import 'package:cnattendance/screen/profile/group_chat_screen.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class NewMessageScreen extends StatefulWidget {
   const NewMessageScreen({super.key});
@@ -188,9 +189,9 @@ class _NewMessageScreenState extends State<NewMessageScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.white,
         elevation: 0,
         leadingWidth: 92,
         leading: TextButton(
@@ -201,7 +202,7 @@ class _NewMessageScreenState extends State<NewMessageScreen> {
         title: const Text(
           'New message',
           style: TextStyle(
-            color: Colors.black,
+            color: AppColors.black,
             fontSize: 18,
             fontWeight: FontWeight.w800,
           ),
@@ -260,7 +261,7 @@ class _NewMessageScreenState extends State<NewMessageScreen> {
                             child: Center(
                               child: Text(
                                 'No recipients found',
-                                style: TextStyle(color: Colors.black54),
+                                style: TextStyle(color: AppColors.black54),
                               ),
                             ),
                           ),
@@ -284,7 +285,7 @@ class _NewMessageScreenState extends State<NewMessageScreen> {
                             height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Colors.white,
+                              color: AppColors.white,
                             ),
                           )
                         : Text(_selectedContacts.length > 1
@@ -316,7 +317,7 @@ class _RecipientSearchBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xfff7f7f8),
+      color: AppColors.customFFF7F7F8,
       padding: const EdgeInsets.fromLTRB(22, 12, 18, 12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -325,7 +326,7 @@ class _RecipientSearchBar extends StatelessWidget {
             padding: EdgeInsets.only(top: 9),
             child: Text(
               'To:',
-              style: TextStyle(color: Colors.black54, fontSize: 16),
+              style: TextStyle(color: AppColors.black54, fontSize: 16),
             ),
           ),
           const SizedBox(width: 10),
@@ -354,7 +355,7 @@ class _RecipientSearchBar extends StatelessWidget {
                       hintText: 'Search',
                     ),
                     style: const TextStyle(
-                      color: Colors.black,
+                      color: AppColors.black,
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                     ),
@@ -381,7 +382,7 @@ class _SectionLabel extends StatelessWidget {
       child: Text(
         label,
         style: const TextStyle(
-          color: Colors.black54,
+          color: AppColors.black54,
           fontWeight: FontWeight.w700,
         ),
       ),
@@ -424,7 +425,7 @@ class _ContactRecipientTile extends StatelessWidget {
         overflow: TextOverflow.ellipsis,
       ),
       trailing: selected
-          ? const Icon(Icons.check_circle, color: Color(0xff0a84ff))
+          ? const Icon(Icons.check_circle, color: AppColors.customFF0A84FF)
           : null,
     );
   }
@@ -481,8 +482,8 @@ class _RecipientAvatar extends StatelessWidget {
     if (!_hasNetworkImage) {
       return CircleAvatar(
         radius: 28,
-        backgroundColor: const Color(0xffe8eaef),
-        child: Icon(fallbackIcon, color: Colors.black45),
+        backgroundColor: AppColors.customFFE8EAEF,
+        child: Icon(fallbackIcon, color: AppColors.black45),
       );
     }
 
@@ -494,8 +495,8 @@ class _RecipientAvatar extends StatelessWidget {
         fit: BoxFit.cover,
         errorWidget: (_, __, ___) => CircleAvatar(
           radius: 28,
-          backgroundColor: const Color(0xffe8eaef),
-          child: Icon(fallbackIcon, color: Colors.black45),
+          backgroundColor: AppColors.customFFE8EAEF,
+          child: Icon(fallbackIcon, color: AppColors.black45),
         ),
       ),
     );

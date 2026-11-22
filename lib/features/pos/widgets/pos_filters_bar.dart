@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../providers/pos_reporting_provider.dart';
 import 'pos_components.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class PosFiltersBar extends StatefulWidget {
   const PosFiltersBar(
@@ -30,7 +31,7 @@ class _PosFiltersBarState extends State<PosFiltersBar> {
         key: ValueKey('$keyName-$value'),
         initialValue: options.containsKey(value) ? value : options.keys.first,
         isExpanded: true,
-        dropdownColor: Colors.white,
+        dropdownColor: AppColors.white,
         borderRadius: BorderRadius.circular(12),
         menuMaxHeight: 320,
         icon: const Icon(Icons.keyboard_arrow_down_rounded,
@@ -42,7 +43,7 @@ class _PosFiltersBarState extends State<PosFiltersBar> {
         decoration: InputDecoration(
             labelText: label,
             filled: true,
-            fillColor: Colors.white,
+            fillColor: AppColors.white,
             focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
                 borderSide: const BorderSide(color: posBlue, width: 1.4)),
@@ -167,8 +168,9 @@ class _PosFiltersBarState extends State<PosFiltersBar> {
                           color: f.range == entry.value ? posBlue : posBorder),
                       labelStyle: TextStyle(
                           fontSize: 11,
-                          color:
-                              f.range == entry.value ? Colors.white : posBlue),
+                          color: f.range == entry.value
+                              ? AppColors.white
+                              : posBlue),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8)),
                       onSelected: (_) => m.period(entry.key)))

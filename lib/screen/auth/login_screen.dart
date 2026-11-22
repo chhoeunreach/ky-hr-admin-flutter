@@ -16,6 +16,7 @@ import 'package:flutter_translate/flutter_translate.dart';
 import 'package:flutter_web_browser/flutter_web_browser.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 // import 'package:qr_bar_code_scanner_dialog/qr_bar_code_scanner_dialog.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -225,7 +226,7 @@ class loginScreenState extends State<LoginScreen> {
                   padding: const EdgeInsets.all(8.0),
                   child: Icon(
                     Icons.language,
-                    color: Colors.white,
+                    color: AppColors.white,
                     size: 30,
                   ),
                 ),
@@ -257,7 +258,7 @@ class loginScreenState extends State<LoginScreen> {
                                   child: Text(
                                     translate("welcome_screen.skip"),
                                     style: TextStyle(
-                                        fontSize: 16, color: Colors.white),
+                                        fontSize: 16, color: AppColors.white),
                                   ),
                                 ),
                               ),*/
@@ -274,7 +275,7 @@ class loginScreenState extends State<LoginScreen> {
                                       height: 150,
                                       child: Image.asset(
                                           'assets/icons/logo_bnw.png',
-                                          color: Colors.white),
+                                          color: AppColors.white),
                                     ),
                                   ),
                                   Container(
@@ -299,7 +300,7 @@ class loginScreenState extends State<LoginScreen> {
                                                   translate(
                                                       "welcome_screen.verify_button"),
                                                   style: TextStyle(
-                                                      color: Colors.white),
+                                                      color: AppColors.white),
                                                 ),
                                               )),
                                         ),
@@ -313,15 +314,15 @@ class loginScreenState extends State<LoginScreen> {
                                               style: IconButton.styleFrom(
                                                 shape: ButtonBorder(),
                                                 backgroundColor:
-                                                    HexColor("#036eb7")
-                                                        .withOpacity(.7),
+                                                    AppColors.customFF036EB7
+                                                        .withValues(alpha: .7),
                                               ),
                                               icon: Padding(
                                                 padding:
                                                     const EdgeInsets.all(6.0),
                                                 child: Icon(
                                                   Icons.qr_code,
-                                                  color: Colors.white,
+                                                  color: AppColors.white,
                                                   size: 32,
                                                 ),
                                               ))*/
@@ -348,14 +349,14 @@ class loginScreenState extends State<LoginScreen> {
                                 width: 120,
                                 height: 120,
                                 child: Image.asset('assets/icons/logo_bnw.png',
-                                    color: Colors.white),
+                                    color: AppColors.white),
                               ),
                             ),
                             gaps(20),
                             Text(
                               translate("login_screen.login"),
-                              style:
-                                  TextStyle(color: Colors.white, fontSize: 20),
+                              style: TextStyle(
+                                  color: AppColors.white, fontSize: 20),
                             ),
                             gaps(20),
                             textHeading(translate("login_screen.username")),
@@ -363,7 +364,7 @@ class loginScreenState extends State<LoginScreen> {
                             TextFormField(
                               keyboardType: TextInputType.emailAddress,
                               keyboardAppearance: Brightness.dark,
-                              style: TextStyle(color: Colors.white),
+                              style: TextStyle(color: AppColors.white),
                               validator: (value) {
                                 if (!validateField(value!)) {
                                   return "Empty Field";
@@ -372,12 +373,12 @@ class loginScreenState extends State<LoginScreen> {
                                 return null;
                               },
                               controller: _usernameController,
-                              cursorColor: Colors.white,
+                              cursorColor: AppColors.white,
                               decoration: InputDecoration(
                                 prefixIcon:
-                                    Icon(Icons.person, color: Colors.white),
-                                labelStyle: TextStyle(color: Colors.white),
-                                fillColor: Colors.white24,
+                                    Icon(Icons.person, color: AppColors.white),
+                                labelStyle: TextStyle(color: AppColors.white),
+                                fillColor: AppColors.white24,
                                 filled: true,
                                 enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.only(
@@ -411,7 +412,7 @@ class loginScreenState extends State<LoginScreen> {
                             TextFormField(
                               obscureText: _obscureText,
                               keyboardAppearance: Brightness.dark,
-                              style: TextStyle(color: Colors.white),
+                              style: TextStyle(color: AppColors.white),
                               validator: (value) {
                                 if (!validateField(value!)) {
                                   return "Empty Field";
@@ -420,12 +421,12 @@ class loginScreenState extends State<LoginScreen> {
                                 return null;
                               },
                               controller: _passwordController,
-                              cursorColor: Colors.white,
+                              cursorColor: AppColors.white,
                               decoration: InputDecoration(
                                 prefixIcon:
-                                    Icon(Icons.lock, color: Colors.white),
-                                labelStyle: TextStyle(color: Colors.white),
-                                fillColor: Colors.white24,
+                                    Icon(Icons.lock, color: AppColors.white),
+                                labelStyle: TextStyle(color: AppColors.white),
+                                fillColor: AppColors.white24,
                                 filled: true,
                                 enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.only(
@@ -458,7 +459,7 @@ class loginScreenState extends State<LoginScreen> {
                                         ? FontAwesomeIcons.eye
                                         : FontAwesomeIcons.eyeSlash,
                                     size: 15.0,
-                                    color: Colors.white,
+                                    color: AppColors.white,
                                   ),
                                 ),
                               ),
@@ -473,7 +474,7 @@ class loginScreenState extends State<LoginScreen> {
                                 },
                                 child: Text(
                                     textAlign: TextAlign.left,
-                                    style: TextStyle(color: Colors.white),
+                                    style: TextStyle(color: AppColors.white),
                                     translate("login_screen.forget_password")),
                               ),
                             ),
@@ -491,7 +492,7 @@ class loginScreenState extends State<LoginScreen> {
                                   },
                                   child: Text(
                                       textAlign: TextAlign.left,
-                                      style: TextStyle(color: Colors.white),
+                                      style: TextStyle(color: AppColors.white),
                                       translate("login_screen.go_back")),
                                 ),
                               ),
@@ -534,7 +535,7 @@ class loginScreenState extends State<LoginScreen> {
   Widget textHeading(String value) {
     return Text(
         textAlign: TextAlign.left,
-        style: const TextStyle(color: Colors.white),
+        style: const TextStyle(color: AppColors.white),
         value);
   }
 
@@ -555,7 +556,7 @@ class loginScreenState extends State<LoginScreen> {
             padding: EdgeInsets.all(20.0),
             child: Text(
               'Login',
-              style: TextStyle(color: Colors.white),
+              style: TextStyle(color: AppColors.white),
             ),
           )),
     );

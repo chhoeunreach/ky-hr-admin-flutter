@@ -6,7 +6,7 @@ import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
-import 'package:hexcolor/hexcolor.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class AssetBottomSheet extends StatefulWidget {
   final AssetData asset;
@@ -55,7 +55,7 @@ class AssetBottomSheetState extends State<AssetBottomSheet> {
                 widget.asset.asset,
                 style: TextStyle(
                     fontSize: 18,
-                    color: Colors.white,
+                    color: AppColors.white,
                     fontWeight: FontWeight.bold),
               ),
             ),
@@ -69,11 +69,11 @@ class AssetBottomSheetState extends State<AssetBottomSheet> {
                 children: [
                   Text(
                     "Is Working",
-                    style: TextStyle(color: Colors.white, fontSize: 15),
+                    style: TextStyle(color: AppColors.white, fontSize: 15),
                   ),
                   Spacer(),
                   Switch(
-                    activeThumbColor: Colors.blue,
+                    activeThumbColor: AppColors.blue,
                     value: isWorking,
                     onChanged: (value) {
                       setState(() {
@@ -99,15 +99,15 @@ class AssetBottomSheetState extends State<AssetBottomSheet> {
                     FocusManager.instance.primaryFocus?.unfocus();
                   }
                 },
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: AppColors.white),
                 //editing controller of this TextField
-                cursorColor: Colors.white,
+                cursorColor: AppColors.white,
                 keyboardType: TextInputType.multiline,
                 decoration: InputDecoration(
                   hintText: 'Write a response..',
-                  hintStyle: TextStyle(color: Colors.white70),
-                  labelStyle: TextStyle(color: Colors.white),
-                  fillColor: Colors.white24,
+                  hintStyle: TextStyle(color: AppColors.white70),
+                  labelStyle: TextStyle(color: AppColors.white),
+                  fillColor: AppColors.white24,
                   filled: true,
                   enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.only(
@@ -142,7 +142,7 @@ class AssetBottomSheetState extends State<AssetBottomSheet> {
             if (widget.asset.notes != null)
               Card(
                 elevation: 0,
-                color: Colors.white24,
+                color: AppColors.white24,
                 shape: ButtonBorder(),
                 margin: EdgeInsets.zero,
                 child: Padding(
@@ -151,7 +151,7 @@ class AssetBottomSheetState extends State<AssetBottomSheet> {
                     width: double.infinity,
                     child: Text(
                       widget.asset.notes ?? "",
-                      style: TextStyle(fontSize: 15, color: Colors.white),
+                      style: TextStyle(fontSize: 15, color: AppColors.white),
                     ),
                   ),
                 ),
@@ -163,15 +163,15 @@ class AssetBottomSheetState extends State<AssetBottomSheet> {
                 child: TextButton(
                     style: TextButton.styleFrom(
                       backgroundColor: widget.asset.notes != null
-                          ? HexColor("#036eb7").withValues(alpha: .5)
-                          : HexColor("#036eb7"),
+                          ? AppColors.customFF036EB7.withValues(alpha: .5)
+                          : AppColors.customFF036EB7,
                       padding: EdgeInsets.zero,
                       shape: ButtonBorder(),
                     ),
                     onPressed: widget.asset.notes != null
                         ? null
                         : () {
-                            sendResponse(model,isWorking);
+                            sendResponse(model, isWorking);
                           },
                     child: Padding(
                       padding: const EdgeInsets.all(20.0),
@@ -179,7 +179,7 @@ class AssetBottomSheetState extends State<AssetBottomSheet> {
                         widget.asset.notes == null
                             ? 'Response'
                             : "Already Responsed",
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(color: AppColors.white),
                       ),
                     )),
               ),
@@ -189,7 +189,7 @@ class AssetBottomSheetState extends State<AssetBottomSheet> {
     );
   }
 
-  Future<void> sendResponse(AssetController model,bool isWorking) async {
+  Future<void> sendResponse(AssetController model, bool isWorking) async {
     if (reason.text.isEmpty) {
       showToast("Response can't be empty");
       return;
@@ -197,7 +197,7 @@ class AssetBottomSheetState extends State<AssetBottomSheet> {
     try {
       showLoader();
       final (status, message) =
-          await model.sendResponse(widget.asset.id, reason.text,isWorking);
+          await model.sendResponse(widget.asset.id, reason.text, isWorking);
       dismissLoader();
       model.getAssets();
       showToast(message);

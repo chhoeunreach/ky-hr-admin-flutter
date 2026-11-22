@@ -42,9 +42,10 @@ import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:visibility_detector/visibility_detector.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 Color _premiumTone(Color color, double amount) =>
-    Color.lerp(color, Colors.black, amount)!;
+    Color.lerp(color, AppColors.black, amount)!;
 
 class HomeModelView extends StatefulWidget {
   const HomeModelView({
@@ -594,8 +595,8 @@ class _HomeModelViewState extends State<HomeModelView>
           final backgroundBrightness =
               ThemeData.estimateBrightnessForColor(background);
           final onBackground = backgroundBrightness == Brightness.dark
-              ? Colors.white
-              : const Color(0xFF211720);
+              ? AppColors.white
+              : AppColors.customFF211720;
           final scanColor =
               ThemeData.estimateBrightnessForColor(enterprise.accent) !=
                       backgroundBrightness
@@ -1135,9 +1136,9 @@ class _HomeModelViewState extends State<HomeModelView>
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          Color(0xee061a40),
-                          Color(0x99061a40),
-                          Color(0x00061a40)
+                          AppColors.customEE061A40,
+                          AppColors.custom99061A40,
+                          AppColors.custom00061A40
                         ],
                         stops: [0, .45, .88],
                       ),
@@ -1199,7 +1200,7 @@ class _HomeModelViewState extends State<HomeModelView>
                                     maxLines: dayArtwork ? 2 : 3,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
-                                        color: Colors.white,
+                                        color: AppColors.white,
                                         fontSize: dayArtwork ? 15 : 18,
                                         fontWeight: FontWeight.w900)),
                                 if (slide.subtitle.isNotEmpty ||
@@ -1211,7 +1212,8 @@ class _HomeModelViewState extends State<HomeModelView>
                                       maxLines: dayArtwork ? 2 : 3,
                                       overflow: TextOverflow.ellipsis,
                                       style: const TextStyle(
-                                          color: Colors.white, fontSize: 11)),
+                                          color: AppColors.white,
+                                          fontSize: 11)),
                                 if (slide.hasLink &&
                                     slide.actionLabel.isNotEmpty)
                                   Text(slide.actionLabel,
@@ -1271,7 +1273,7 @@ class _HomeModelViewState extends State<HomeModelView>
                 width: i == index ? 14 : 5,
                 height: 5,
                 decoration: BoxDecoration(
-                  color: i == index ? accent : Colors.white70,
+                  color: i == index ? accent : AppColors.white70,
                   borderRadius: BorderRadius.circular(5),
                 ),
               ),
@@ -1362,7 +1364,7 @@ class _HomeModelViewState extends State<HomeModelView>
           child: IgnorePointer(
             child: ColoredBox(
               key: const ValueKey('home-banner-darkening-overlay'),
-              color: const Color(0xff0a192f).withValues(alpha: overlayOpacity),
+              color: AppColors.customFF0A192F.withValues(alpha: overlayOpacity),
             ),
           ),
         );
@@ -1376,7 +1378,7 @@ class _HomeModelViewState extends State<HomeModelView>
                     padding:
                         const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                     decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.22),
+                      color: AppColors.black.withValues(alpha: 0.22),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Row(
@@ -1392,8 +1394,8 @@ class _HomeModelViewState extends State<HomeModelView>
                             color: selected
                                 ? (enterprise.isKhmerHeritage
                                     ? enterprise.accent
-                                    : Colors.white)
-                                : Colors.white.withValues(alpha: 0.45),
+                                    : AppColors.white)
+                                : AppColors.white.withValues(alpha: 0.45),
                             borderRadius: BorderRadius.circular(4),
                           ),
                         );
@@ -1589,12 +1591,12 @@ class _HomeModelViewState extends State<HomeModelView>
                                             padding: const EdgeInsets.symmetric(
                                                 horizontal: 7, vertical: 2),
                                             decoration: BoxDecoration(
-                                              color: Colors.white
+                                              color: AppColors.white
                                                   .withValues(alpha: 0.24),
                                               borderRadius:
                                                   BorderRadius.circular(10),
                                               border: Border.all(
-                                                color: Colors.white
+                                                color: AppColors.white
                                                     .withValues(alpha: 0.35),
                                                 width: 0.8,
                                               ),
@@ -1604,7 +1606,7 @@ class _HomeModelViewState extends State<HomeModelView>
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
                                               style: const TextStyle(
-                                                color: Colors.white,
+                                                color: AppColors.white,
                                                 fontSize: 9.5,
                                                 fontWeight: FontWeight.w800,
                                                 letterSpacing: 0.2,
@@ -1615,7 +1617,7 @@ class _HomeModelViewState extends State<HomeModelView>
                                         Text(
                                           config.greetingKhmer,
                                           style: const TextStyle(
-                                            color: Colors.white,
+                                            color: AppColors.white,
                                             fontSize: 16,
                                             fontWeight: FontWeight.w900,
                                             letterSpacing: 0.2,
@@ -1624,7 +1626,7 @@ class _HomeModelViewState extends State<HomeModelView>
                                         Text(
                                           greeting,
                                           style: TextStyle(
-                                            color: Colors.white
+                                            color: AppColors.white
                                                 .withValues(alpha: 0.88),
                                             fontSize: 11.5,
                                             fontWeight: FontWeight.w600,
@@ -1644,7 +1646,7 @@ class _HomeModelViewState extends State<HomeModelView>
                                               Text(
                                                 DateFormat('HH:mm').format(now),
                                                 style: const TextStyle(
-                                                  color: Colors.white,
+                                                  color: AppColors.white,
                                                   fontSize: 32,
                                                   fontWeight: FontWeight.w900,
                                                   letterSpacing: -0.5,
@@ -1654,7 +1656,7 @@ class _HomeModelViewState extends State<HomeModelView>
                                               Text(
                                                 ':${DateFormat('ss').format(now)}',
                                                 style: TextStyle(
-                                                  color: Colors.white
+                                                  color: AppColors.white
                                                       .withValues(alpha: 0.90),
                                                   fontSize: 17,
                                                   fontWeight: FontWeight.w800,
@@ -1670,7 +1672,7 @@ class _HomeModelViewState extends State<HomeModelView>
                                           children: [
                                             const Icon(
                                               Icons.calendar_today_rounded,
-                                              color: Colors.white70,
+                                              color: AppColors.white70,
                                               size: 11,
                                             ),
                                             const SizedBox(width: 4),
@@ -1681,7 +1683,7 @@ class _HomeModelViewState extends State<HomeModelView>
                                                 maxLines: 1,
                                                 overflow: TextOverflow.ellipsis,
                                                 style: TextStyle(
-                                                  color: Colors.white
+                                                  color: AppColors.white
                                                       .withValues(alpha: 0.92),
                                                   fontSize: 10,
                                                   fontWeight: FontWeight.w600,
@@ -1768,7 +1770,7 @@ class _HomeModelViewState extends State<HomeModelView>
     return DefaultTextStyle(
       style: TextStyle(
         color: enterprise.text,
-        shadows: const [Shadow(color: Colors.black87, blurRadius: 10)],
+        shadows: const [Shadow(color: AppColors.black87, blurRadius: 10)],
       ),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
@@ -1815,13 +1817,13 @@ class _HomeModelViewState extends State<HomeModelView>
     final fontStyle = style?.fontStyle ?? FontStyle.normal;
     final textAlign =
         style?.textAlign ?? (heritage ? TextAlign.center : TextAlign.right);
-    final baseColor = style?.color ?? const Color(0xFFFFF7ED);
+    final baseColor = style?.color ?? AppColors.customFFFFF7ED;
     final opacity = (style?.opacity ?? 1.0).clamp(0.05, 1.0);
 
     final shadows = <Shadow>[
       if (style == null || style.shadowBlur > 0)
         Shadow(
-          color: style?.shadowColor ?? Colors.black.withValues(alpha: .7),
+          color: style?.shadowColor ?? AppColors.black.withValues(alpha: .7),
           blurRadius: style?.shadowBlur ?? 5,
           offset: Offset(style?.shadowX ?? 0, style?.shadowY ?? 2),
         ),
@@ -1912,7 +1914,7 @@ class _HomeModelViewState extends State<HomeModelView>
                       style.gradientEnabled &&
                       style.gradientStart != null
                   ? style.gradientStart!
-                  : const Color(0xFFFFD54F),
+                  : AppColors.customFFFFD54F,
               fontSize: 22,
               fontWeight: FontWeight.w900,
               height: 1,
@@ -1971,16 +1973,19 @@ class _HomeModelViewState extends State<HomeModelView>
           : const SizedBox.shrink(),
     );
     final gradients = switch (wallpaper) {
-      'gradient:royal' => const [Color(0xff0b192c), Color(0xff1e3e62)],
+      'gradient:royal' => const [
+          AppColors.customFF0B192C,
+          AppColors.customFF1E3E62
+        ],
       'gradient:sunset' => const [
-          Color(0xff1e1b4b),
-          Color(0xff831843),
-          Color(0xfff59e0b)
+          AppColors.customFF1E1B4B,
+          AppColors.customFF831843,
+          AppColors.customFFF59E0B
         ],
       'gradient:emerald' => const [
-          Color(0xff064e3b),
-          Color(0xff047857),
-          Color(0xff10b981)
+          AppColors.emerald900,
+          AppColors.emerald700,
+          AppColors.successToken
         ],
       _ => null,
     };
@@ -2075,14 +2080,14 @@ class _HomeModelViewState extends State<HomeModelView>
         children: [
           Icon(
             Icons.menu_book_rounded,
-            color: Colors.white,
+            color: AppColors.white,
             size: 14,
           ),
           SizedBox(width: 5),
           Text(
             'Stories',
             style: TextStyle(
-              color: Colors.white,
+              color: AppColors.white,
               fontSize: 11.5,
               fontWeight: FontWeight.w800,
             ),
@@ -2358,7 +2363,7 @@ class _HomeModelViewState extends State<HomeModelView>
           child: OutlinedButton(
             style: OutlinedButton.styleFrom(
               foregroundColor: active
-                  ? Colors.white
+                  ? AppColors.white
                   : luxuryDay
                       ? KhmerLuxuryColors.royalBlue
                       : RoyalDayColors.primary,
@@ -2367,7 +2372,7 @@ class _HomeModelViewState extends State<HomeModelView>
                       ? luxuryDay
                           ? KhmerLuxuryColors.metallicGold
                           : RoyalDayColors.gold
-                      : Colors.white),
+                      : AppColors.white),
               padding: const EdgeInsets.symmetric(horizontal: 12),
               minimumSize: const Size(0, 34),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -2452,10 +2457,10 @@ class _HomeModelViewState extends State<HomeModelView>
     final qrCircleColor = isCheckedIn ? enterprise.accent : enterprise.primary;
     final qrFaceColors = enterprise.mode == AppThemeMode.light
         ? [
-            Color.lerp(enterprise.primary, Colors.white, 0.38)!,
+            Color.lerp(enterprise.primary, AppColors.white, 0.38)!,
             Color.lerp(enterprise.primary, enterprise.accent, 0.22)!,
             enterprise.primary,
-            Color.lerp(enterprise.primary, const Color(0xFF0054D7), 0.12)!,
+            Color.lerp(enterprise.primary, AppColors.customFF0054D7, 0.12)!,
           ]
         : [
             _premiumTone(enterprise.accent, 0.38),
@@ -2464,7 +2469,7 @@ class _HomeModelViewState extends State<HomeModelView>
             _premiumTone(enterprise.secondary, 0.42),
           ];
     final qrIconColor =
-        _readableColor(qrFaceColors.last, Colors.white, Colors.black);
+        _readableColor(qrFaceColors.last, AppColors.white, AppColors.black);
 
     return RepaintBoundary(
       child: Center(
@@ -2587,8 +2592,8 @@ class _HomeModelViewState extends State<HomeModelView>
                               borderRadius: BorderRadius.circular(999),
                               gradient: LinearGradient(
                                 colors: [
-                                  Colors.white.withValues(alpha: 0.45),
-                                  Colors.white.withValues(alpha: 0.0),
+                                  AppColors.white.withValues(alpha: 0.45),
+                                  AppColors.white.withValues(alpha: 0.0),
                                 ],
                               ),
                             ),
@@ -2659,7 +2664,7 @@ class _HomeModelViewState extends State<HomeModelView>
     final statusColor = isRefreshingZone
         ? enterprise.secondary
         : hasDistance
-            ? (isInZone ? Colors.green.shade600 : Colors.redAccent)
+            ? (isInZone ? AppColors.green.shade600 : AppColors.redAccent)
             : enterprise.secondary;
     final title = !hasBranchLocation
         ? translate('attendance_messages.branch_location_missing')
@@ -2704,14 +2709,17 @@ class _HomeModelViewState extends State<HomeModelView>
                       borderRadius: BorderRadius.circular(8),
                       gradient: LinearGradient(
                         colors: isInZone
-                            ? const [Color(0xFF059669), Color(0xFF34D399)]
-                            : const [Color(0xFFE11D48), Color(0xFFFB7185)],
+                            ? const [AppColors.infoToken, AppColors.emerald400]
+                            : const [
+                                AppColors.customFFE11D48,
+                                AppColors.customFFFB7185
+                              ],
                       ),
                       boxShadow: [
                         BoxShadow(
                           color: (isInZone
-                                  ? const Color(0xFF059669)
-                                  : const Color(0xFFE11D48))
+                                  ? AppColors.infoToken
+                                  : AppColors.customFFE11D48)
                               .withValues(alpha: 0.38),
                           blurRadius: 6,
                           offset: const Offset(0, 2),
@@ -2723,7 +2731,7 @@ class _HomeModelViewState extends State<HomeModelView>
                         isInZone
                             ? Icons.location_on_rounded
                             : Icons.location_off_rounded,
-                        color: Colors.white,
+                        color: AppColors.white,
                         size: 16,
                       ),
                     ),
@@ -2821,7 +2829,7 @@ class _HomeModelViewState extends State<HomeModelView>
     final safePercent = percent.clamp(0.0, 1.0);
     final isCheckedIn =
         attendanceList['check-in'] != "-" && attendanceList['check-out'] == "-";
-    final color = isCheckedIn ? const Color(0xFF10B981) : enterprise.accent;
+    final color = isCheckedIn ? AppColors.successToken : enterprise.accent;
     final day = enterprise.isRoyalDay;
     if (day &&
         (widget.dashboardLoading || widget.dashboardError) &&
@@ -2842,7 +2850,7 @@ class _HomeModelViewState extends State<HomeModelView>
           padding: EdgeInsets.zero,
           percent: safePercent,
           barRadius: const Radius.circular(20),
-          backgroundColor: Colors.white.withValues(alpha: .28),
+          backgroundColor: AppColors.white.withValues(alpha: .28),
           progressColor: color,
         ),
       );
@@ -2862,7 +2870,7 @@ class _HomeModelViewState extends State<HomeModelView>
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(
+            color: AppColors.black.withValues(
               alpha: enterprise.isDark ? 0.16 : 0.04,
             ),
             blurRadius: 10,

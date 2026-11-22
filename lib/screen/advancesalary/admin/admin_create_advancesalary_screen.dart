@@ -3,7 +3,7 @@ import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
-import 'package:hexcolor/hexcolor.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class AdminCreateAdvanceSalaryScreen extends StatelessWidget {
   @override
@@ -22,7 +22,7 @@ class AdminCreateAdvanceSalaryScreen extends StatelessWidget {
             margin: const EdgeInsets.all(20),
             child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                    backgroundColor: HexColor("#036eb7"),
+                    backgroundColor: AppColors.customFF036EB7,
                     shape: const RoundedRectangleBorder(
                         borderRadius: BorderRadius.only(
                             topLeft: Radius.circular(10),
@@ -49,19 +49,19 @@ class AdminCreateAdvanceSalaryScreen extends StatelessWidget {
                   TextFormField(
                     controller: model.expensesController,
                     keyboardType: TextInputType.number,
-                    style: const TextStyle(color: Colors.white),
+                    style: const TextStyle(color: AppColors.white),
                     validator: (value) {
                       if (value!.isEmpty) {
                         return "Field is required";
                       }
                       return null;
                     },
-                    cursorColor: Colors.white,
+                    cursorColor: AppColors.white,
                     decoration: const InputDecoration(
                       hintText: "Expected amount",
-                      hintStyle: TextStyle(color: Colors.white70),
-                      labelStyle: TextStyle(color: Colors.white),
-                      fillColor: Colors.white24,
+                      hintStyle: TextStyle(color: AppColors.white70),
+                      labelStyle: TextStyle(color: AppColors.white),
+                      fillColor: AppColors.white24,
                       filled: true,
                       enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.only(
@@ -94,19 +94,19 @@ class AdminCreateAdvanceSalaryScreen extends StatelessWidget {
                     controller: model.descriptionController,
                     maxLines: 5,
                     keyboardType: TextInputType.name,
-                    style: const TextStyle(color: Colors.white),
+                    style: const TextStyle(color: AppColors.white),
                     validator: (value) {
                       if (value!.isEmpty) {
                         return "Field is required";
                       }
                       return null;
                     },
-                    cursorColor: Colors.white,
+                    cursorColor: AppColors.white,
                     decoration: const InputDecoration(
                       hintText: "Reason",
-                      hintStyle: TextStyle(color: Colors.white70),
-                      labelStyle: TextStyle(color: Colors.white),
-                      fillColor: Colors.white24,
+                      hintStyle: TextStyle(color: AppColors.white70),
+                      labelStyle: TextStyle(color: AppColors.white),
+                      fillColor: AppColors.white24,
                       filled: true,
                       enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.only(

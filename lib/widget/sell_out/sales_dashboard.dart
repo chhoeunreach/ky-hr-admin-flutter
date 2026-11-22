@@ -3,11 +3,12 @@ import 'package:cnattendance/models/report_commission_calculation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:cnattendance/models/sell_out_report.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
-const salesBlue = Color(0xff0063dc);
-const salesInk = Color(0xff10182e);
-const salesMuted = Color(0xff496080);
-const salesBorder = Color(0xffdce6f5);
+const salesBlue = AppColors.customFF0063DC;
+const salesInk = AppColors.customFF10182E;
+const salesMuted = AppColors.customFF496080;
+const salesBorder = AppColors.customFFDCE6F5;
 
 /// Presentation for the sales overview; records and actions come from the screen.
 class SalesDashboard extends StatefulWidget {
@@ -84,27 +85,27 @@ class _SalesDashboardState extends State<SalesDashboard> {
         tr('qty'),
         '${reports.fold<int>(0, (sum, r) => sum + r.totalQty)}',
         Icons.inventory_2_outlined,
-        const Color(0xff07952e)
+        AppColors.customFF07952E
       ),
       if (calculation.policy.visible)
         (
           tr('qualified'),
           '${reports.where((r) => calculation.isEligible(r)).length}',
           Icons.verified_outlined,
-          const Color(0xffe79700)
+          AppColors.customFFE79700
         ),
       if (calculation.policy.visible)
         (
           tr('failed'),
           '${reports.where((r) => r.isCommissionable && !calculation.isEligible(r)).length}',
           Icons.warning_amber_rounded,
-          const Color(0xffdc253b)
+          AppColors.customFFDC253B
         ),
       (
         widget.amountLabel ?? tr('sales_amount'),
         money(reports.fold<double>(0, (sum, r) => sum + r.totalAmount)),
         Icons.paid_outlined,
-        const Color(0xff7536de)
+        AppColors.customFF7536DE
       ),
       if (calculation.policy.visible)
         (
@@ -112,7 +113,7 @@ class _SalesDashboardState extends State<SalesDashboard> {
           money(reports.fold<double>(
               0, (sum, r) => sum + calculation.commission(r))),
           Icons.percent_rounded,
-          const Color(0xff00a6b2)
+          AppColors.customFF00A6B2
         ),
     ];
     return Column(
@@ -292,7 +293,7 @@ class _SalesDashboardState extends State<SalesDashboard> {
         width: double.infinity,
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: .94),
+          color: AppColors.white.withValues(alpha: .94),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: salesBorder),
         ),
@@ -356,12 +357,12 @@ class _SalesDashboardState extends State<SalesDashboard> {
           height: 40,
           padding: EdgeInsets.symmetric(horizontal: compact ? 6 : 10),
           decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.white,
               borderRadius: BorderRadius.circular(10),
               border: Border.all(color: salesBorder)),
           child: DropdownButton<int>(
             key: const ValueKey('sales-page-size'),
-            dropdownColor: Colors.white,
+            dropdownColor: AppColors.white,
             elevation: 6,
             isExpanded: true,
             isDense: true,
@@ -439,7 +440,8 @@ class _SalesDashboardState extends State<SalesDashboard> {
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           backgroundColor:
                               selected ? salesBlue : Colors.transparent,
-                          foregroundColor: selected ? Colors.white : salesMuted,
+                          foregroundColor:
+                              selected ? AppColors.white : salesMuted,
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(9)),
                           textStyle: const TextStyle(
@@ -492,7 +494,7 @@ class _SalesDashboardState extends State<SalesDashboard> {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 10, vertical: 12),
                               decoration: BoxDecoration(
-                                  color: const Color(0xffeaf1fb),
+                                  color: AppColors.customFFEAF1FB,
                                   borderRadius: BorderRadius.circular(10)),
                               child: Row(children: [
                                 _cell(tr('invoice'), 3, header: true),
@@ -545,8 +547,8 @@ class _SalesDashboardState extends State<SalesDashboard> {
     final statusColor = !report.isCommissionable
         ? salesMuted
         : eligible
-            ? const Color(0xff07952e)
-            : const Color(0xffd92232);
+            ? AppColors.customFF07952E
+            : AppColors.customFFD92232;
     final date = DateTime.tryParse(report.createdAt)?.toLocal();
     return Material(
         color: Colors.transparent,
@@ -564,7 +566,7 @@ class _SalesDashboardState extends State<SalesDashboard> {
                       Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                              color: const Color(0xffedf4ff),
+                              color: AppColors.customFFEDF4FF,
                               borderRadius: BorderRadius.circular(9)),
                           child: Icon(widget.serviceIcon,
                               color: salesBlue, size: 18)),
@@ -617,7 +619,7 @@ class _SalesDashboardState extends State<SalesDashboard> {
                               label: tr('commission'),
                               child: Row(children: [
                                 const Icon(Icons.percent_rounded,
-                                    size: 10, color: Color(0xff00a6b2)),
+                                    size: 10, color: AppColors.customFF00A6B2),
                                 const SizedBox(width: 2),
                                 Flexible(
                                     child: Text(
@@ -626,7 +628,7 @@ class _SalesDashboardState extends State<SalesDashboard> {
                                             'invoice-commission-${report.invoiceNo}'),
                                         overflow: TextOverflow.ellipsis,
                                         style: const TextStyle(
-                                            color: Color(0xff008c98),
+                                            color: AppColors.customFF008C98,
                                             fontSize: 10,
                                             fontWeight: FontWeight.w700))),
                               ])),

@@ -4,8 +4,9 @@ import 'package:cnattendance/widget/buttonborder.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
-class AttachmentSection extends StatelessWidget{
+class AttachmentSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ProjectDetailController model = Get.find();
@@ -17,14 +18,15 @@ class AttachmentSection extends StatelessWidget{
             isScrollControlled: true,
             ignoreSafeArea: true);
       },
-      child: Obx(() => Card(
-        elevation: 0,
-        color: Colors.white24,
-        margin: EdgeInsets.zero,
-        shape: ButtonBorder(),
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Column(
+      child: Obx(
+        () => Card(
+          elevation: 0,
+          color: AppColors.white24,
+          margin: EdgeInsets.zero,
+          shape: ButtonBorder(),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
@@ -34,7 +36,7 @@ class AttachmentSection extends StatelessWidget{
                     Text(
                       translate('project_detail_screen.attachments'),
                       style: TextStyle(
-                          color: Colors.white,
+                          color: AppColors.white,
                           fontSize: 16,
                           fontWeight: FontWeight.bold),
                     ),
@@ -42,8 +44,8 @@ class AttachmentSection extends StatelessWidget{
                       translate('project_detail_screen.show_media'),
                       style: TextStyle(
                           decoration: TextDecoration.underline,
-                          decorationColor: Colors.white,
-                          color: Colors.white,
+                          decorationColor: AppColors.white,
+                          color: AppColors.white,
                           fontSize: 12,
                           fontWeight: FontWeight.normal),
                     ),
@@ -56,13 +58,13 @@ class AttachmentSection extends StatelessWidget{
                   children: [
                     Card(
                       margin: EdgeInsets.zero,
-                      color: Colors.blue,
+                      color: AppColors.blue,
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: Text(
                           "${translate('project_detail_screen.file_images')} ( ${model.project.value.attachment.length} )",
                           style: TextStyle(
-                              color: Colors.white70,
+                              color: AppColors.white70,
                               fontSize: 15,
                               fontWeight: FontWeight.bold),
                         ),
@@ -72,10 +74,9 @@ class AttachmentSection extends StatelessWidget{
                 ),
               ],
             ),
+          ),
         ),
-      ),
       ),
     );
   }
-
 }

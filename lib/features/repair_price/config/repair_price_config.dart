@@ -1,17 +1,17 @@
-import 'package:flutter/material.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class RepairPriceConfig {
   static const apiPrefix = '/api/repair-price';
   static const requestTimeout = Duration(seconds: 15);
   static const pageSize = 20;
 
-  static const primaryBlue = Color(0xFF1677FF);
-  static const background = Color(0xFFF7F9FC);
-  static const card = Color(0xFFFFFFFF);
-  static const mainText = Color(0xFF111827);
-  static const secondaryText = Color(0xFF6B7280);
-  static const border = Color(0xFFE5E7EB);
-  static const success = Color(0xFF16A34A);
-  static const warning = Color(0xFFF59E0B);
-  static const error = Color(0xFFEF4444);
+  static const primaryBlue = AppColors.customFF1677FF;
+  static const background = AppColors.customFFF7F9FC;
+  static const card = AppColors.white;
+  static const mainText = AppColors.customFF111827;
+  static const secondaryText = AppColors.customFF6B7280;
+  static const border = AppColors.customFFE5E7EB;
+  static const success = AppColors.customFF16A34A;
+  static const warning = AppColors.customFFF59E0B;
+  static const error = AppColors.dangerToken;
 }

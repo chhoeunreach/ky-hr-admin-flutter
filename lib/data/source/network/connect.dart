@@ -53,4 +53,18 @@ class Connect {
     return KyHttp.postWithClient(_client, uri,
         headers: headers, body: encodedBody);
   }
+
+  Future<http.Response> deleteResponse(
+      String url, Map<String, String> headers) async {
+    final preferences = Preferences();
+    final storage = GetStorage();
+    final String language = storage.read("language") ?? "en";
+
+    headers.addEntries({
+      "language": language,
+    }.entries);
+
+    final uri = Uri.parse(await preferences.getAppUrl() + url);
+    return KyHttp.deleteWithClient(_client, uri, headers: headers);
+  }
 }

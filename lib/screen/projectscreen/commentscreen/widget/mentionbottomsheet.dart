@@ -6,6 +6,7 @@ import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class MentionBottomSheet extends StatelessWidget {
   final List<Member> members;
@@ -16,8 +17,8 @@ class MentionBottomSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final filteredList = <Member>[];
-    for(var member in members){
-      if(!model.mentionList.contains(member)){
+    for (var member in members) {
+      if (!model.mentionList.contains(member)) {
         filteredList.add(member);
       }
     }
@@ -35,7 +36,7 @@ class MentionBottomSheet extends StatelessWidget {
                 child: Text(
                   translate('comment_list_screen.team'),
                   style: TextStyle(
-                      color: Colors.white,
+                      color: AppColors.white,
                       fontSize: 24,
                       fontWeight: FontWeight.bold),
                 ),
@@ -45,11 +46,14 @@ class MentionBottomSheet extends StatelessWidget {
                   primary: false,
                   padding: EdgeInsets.symmetric(vertical: 5, horizontal: 15),
                   itemCount: filteredList.length,
-                  itemBuilder: (ctx, i) =>
-                      Padding(padding: EdgeInsets.all(5), child: InkWell(onTap: () {
-                        model.mentionList.add(filteredList[i]);
-                        Get.back();
-                      },child: teamCard(filteredList[i])))),
+                  itemBuilder: (ctx, i) => Padding(
+                      padding: EdgeInsets.all(5),
+                      child: InkWell(
+                          onTap: () {
+                            model.mentionList.add(filteredList[i]);
+                            Get.back();
+                          },
+                          child: teamCard(filteredList[i])))),
             ],
           ),
         ),
@@ -61,7 +65,7 @@ class MentionBottomSheet extends StatelessWidget {
     return Card(
       shape: ButtonBorder(),
       elevation: 0,
-      color: Colors.white10,
+      color: AppColors.white10,
       child: Container(
         padding: EdgeInsets.all(10),
         child: Row(
@@ -69,7 +73,7 @@ class MentionBottomSheet extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(25),
               child: CachedNetworkImage(
-                imageUrl:member.image,
+                imageUrl: member.image,
                 width: 50,
                 height: 50,
                 fit: BoxFit.cover,
@@ -84,11 +88,11 @@ class MentionBottomSheet extends StatelessWidget {
                   children: [
                     Text(
                       member.name,
-                      style: TextStyle(color: Colors.white, fontSize: 18),
+                      style: TextStyle(color: AppColors.white, fontSize: 18),
                     ),
                     SizedBox(height: 5),
                     Text(member.post,
-                        style: TextStyle(color: Colors.white70)),
+                        style: TextStyle(color: AppColors.white70)),
                   ],
                 ),
               ),

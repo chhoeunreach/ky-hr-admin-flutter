@@ -169,8 +169,7 @@ class RepairPriceProvider extends ChangeNotifier {
       _series = results[2] as List<RepairDeviceSeries>;
       _devices = results[3] as List<RepairDevice>;
 
-      _hasMoreDevices = _deviceSearchQuery.trim().isEmpty &&
-          _devices.length >= RepairPriceConfig.pageSize;
+      _hasMoreDevices = _devices.length >= RepairPriceConfig.pageSize;
       _deviceLoadingState = _devices.isEmpty
           ? RepairLoadingState.empty
           : RepairLoadingState.loaded;
@@ -185,30 +184,56 @@ class RepairPriceProvider extends ChangeNotifier {
 
   Future<List<RepairDevice>> _fetchDevicesForCurrentQuery() async {
     final query = _deviceSearchQuery.trim();
-    if (query.isEmpty) {
-      return _repository.fetchDevices(
+    List<RepairDevice> results = [];
+
+    try {
+      results = await _repository.fetchDevices(
+        search: query.isEmpty ? null : query,
         brandId: _selectedBrandId,
         deviceTypeId: _selectedDeviceTypeId,
         seriesId: _selectedSeriesId,
         page: 1,
         perPage: RepairPriceConfig.pageSize,
       );
+    } catch (e) {
+      if (query.isEmpty) rethrow;
     }
-    return (await _repository.searchDevices(query)).where((device) {
-      return (_selectedBrandId == null ||
-              device.brand?.id == _selectedBrandId) &&
-          (_selectedDeviceTypeId == null ||
-              device.deviceType?.id == _selectedDeviceTypeId) &&
-          (_selectedSeriesId == null || device.series?.id == _selectedSeriesId);
+
+    if (query.isNotEmpty && results.isEmpty) {
+      try {
+        final searched = await _repository.searchDevices(query);
+        results = searched;
+      } catch (_) {}
+    }
+
+    final q = query.toLowerCase();
+    return results.where((device) {
+      final matchesBrand =
+          _selectedBrandId == null || device.brand?.id == _selectedBrandId;
+      final matchesType = _selectedDeviceTypeId == null ||
+          device.deviceType?.id == _selectedDeviceTypeId;
+      final matchesSeries =
+          _selectedSeriesId == null || device.series?.id == _selectedSeriesId;
+      final matchesQuery = q.isEmpty ||
+          device.name.toLowerCase().contains(q) ||
+          device.modelNumber.toLowerCase().contains(q) ||
+          (device.brand?.name.toLowerCase().contains(q) ?? false) ||
+          (device.series?.name.toLowerCase().contains(q) ?? false);
+
+      return matchesBrand && matchesType && matchesSeries && matchesQuery;
     }).toList();
   }
 
   void onDeviceSearchChanged(String query) {
     _deviceSearchQuery = query;
     _searchDebounceTimer?.cancel();
-    _searchDebounceTimer = Timer(const Duration(milliseconds: 300), () {
+    if (query.trim().isEmpty) {
       loadDevices();
-    });
+    } else {
+      _searchDebounceTimer = Timer(const Duration(milliseconds: 300), () {
+        loadDevices();
+      });
+    }
   }
 
   void selectBrand(int? brandId) {
@@ -267,14 +292,12 @@ class RepairPriceProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final query = _deviceSearchQuery.trim();
       final devices = await _fetchDevicesForCurrentQuery();
       // Search and filter changes can overlap while requests are in flight.
       // Only let the latest request update the visible list.
       if (_disposed || request != _deviceRequest) return;
       _devices = devices;
-      _hasMoreDevices =
-          query.isEmpty && _devices.length >= RepairPriceConfig.pageSize;
+      _hasMoreDevices = _devices.length >= RepairPriceConfig.pageSize;
       _deviceLoadingState = _devices.isEmpty
           ? RepairLoadingState.empty
           : RepairLoadingState.loaded;
@@ -299,8 +322,9 @@ class RepairPriceProvider extends ChangeNotifier {
 
     try {
       final nextPage = _devicePage + 1;
+      final query = _deviceSearchQuery.trim();
       final newDevices = await _repository.fetchDevices(
-        search: _deviceSearchQuery,
+        search: query.isEmpty ? null : query,
         brandId: _selectedBrandId,
         deviceTypeId: _selectedDeviceTypeId,
         seriesId: _selectedSeriesId,
@@ -308,11 +332,28 @@ class RepairPriceProvider extends ChangeNotifier {
         perPage: RepairPriceConfig.pageSize,
       );
 
-      if (newDevices.isEmpty) {
+      final q = query.toLowerCase();
+      final filteredNewDevices = newDevices.where((device) {
+        final matchesBrand =
+            _selectedBrandId == null || device.brand?.id == _selectedBrandId;
+        final matchesType = _selectedDeviceTypeId == null ||
+            device.deviceType?.id == _selectedDeviceTypeId;
+        final matchesSeries =
+            _selectedSeriesId == null || device.series?.id == _selectedSeriesId;
+        final matchesQuery = q.isEmpty ||
+            device.name.toLowerCase().contains(q) ||
+            device.modelNumber.toLowerCase().contains(q) ||
+            (device.brand?.name.toLowerCase().contains(q) ?? false) ||
+            (device.series?.name.toLowerCase().contains(q) ?? false);
+
+        return matchesBrand && matchesType && matchesSeries && matchesQuery;
+      }).toList();
+
+      if (filteredNewDevices.isEmpty) {
         _hasMoreDevices = false;
       } else {
         _devicePage = nextPage;
-        _devices.addAll(newDevices);
+        _devices.addAll(filteredNewDevices);
         _hasMoreDevices = newDevices.length >= RepairPriceConfig.pageSize;
       }
     } catch (_) {
@@ -625,11 +666,12 @@ class RepairPriceProvider extends ChangeNotifier {
     }
 
     try {
+      final query = _serviceSearchQuery.trim();
       final results = await Future.wait([
         _repository.fetchCategories(),
         _repository.fetchDeviceServices(
           device.id,
-          search: _serviceSearchQuery,
+          search: query.isEmpty ? null : query,
           categoryId: _selectedCategoryId,
         ),
       ]);
@@ -640,7 +682,23 @@ class RepairPriceProvider extends ChangeNotifier {
         notifyListeners();
         return;
       }
-      _services = results[1] as List<RepairService>;
+      final rawServices = results[1] as List<RepairService>;
+
+      final q = query.toLowerCase();
+      var filtered = rawServices;
+      if (q.isNotEmpty) {
+        filtered = filtered.where((s) {
+          final nameMatch = s.name.toLowerCase().contains(q);
+          final descMatch = s.description.toLowerCase().contains(q);
+          final catMatch = s.categoryName.toLowerCase().contains(q);
+          return nameMatch || descMatch || catMatch;
+        }).toList();
+      }
+      if (_selectedCategoryId != null) {
+        filtered =
+            filtered.where((s) => s.categoryId == _selectedCategoryId).toList();
+      }
+      _services = filtered;
 
       if (_services.isNotEmpty && _selectedService == null) {
         _selectedService = _services.first;
@@ -661,9 +719,13 @@ class RepairPriceProvider extends ChangeNotifier {
   void onServiceSearchChanged(String query) {
     _serviceSearchQuery = query;
     _searchDebounceTimer?.cancel();
-    _searchDebounceTimer = Timer(const Duration(milliseconds: 300), () {
+    if (query.trim().isEmpty) {
       loadServices();
-    });
+    } else {
+      _searchDebounceTimer = Timer(const Duration(milliseconds: 300), () {
+        loadServices();
+      });
+    }
   }
 
   void selectCategory(int? categoryId) {
@@ -690,14 +752,31 @@ class RepairPriceProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
+      final query = _serviceSearchQuery.trim();
       final services = await _repository.fetchDeviceServices(
         device.id,
-        search: _serviceSearchQuery,
+        search: query.isEmpty ? null : query,
         categoryId: _selectedCategoryId,
       );
 
       if (_disposed || request != _serviceRequest) return;
-      _services = services;
+
+      final q = query.toLowerCase();
+      var filtered = services;
+      if (q.isNotEmpty) {
+        filtered = filtered.where((s) {
+          final nameMatch = s.name.toLowerCase().contains(q);
+          final descMatch = s.description.toLowerCase().contains(q);
+          final catMatch = s.categoryName.toLowerCase().contains(q);
+          return nameMatch || descMatch || catMatch;
+        }).toList();
+      }
+      if (_selectedCategoryId != null) {
+        filtered =
+            filtered.where((s) => s.categoryId == _selectedCategoryId).toList();
+      }
+
+      _services = filtered;
       final selectedKey = _selectedService?.priceKey;
       final index =
           _services.indexWhere((service) => service.priceKey == selectedKey);

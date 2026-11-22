@@ -5,9 +5,9 @@ import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
-import 'package:hexcolor/hexcolor.dart';
 import 'package:image_stack/image_stack.dart';
 import 'package:percent_indicator/linear_percent_indicator.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class TaskListScreen extends StatelessWidget {
   @override
@@ -35,7 +35,7 @@ class TaskListScreen extends StatelessWidget {
                         borderRadius: BorderRadius.only(
                             topLeft: Radius.circular(10),
                             bottomRight: Radius.circular(10))),
-                    color: Colors.white12,
+                    color: AppColors.white12,
                     elevation: 0,
                     margin: EdgeInsets.symmetric(horizontal: 20),
                     child: Padding(
@@ -55,7 +55,7 @@ class TaskListScreen extends StatelessWidget {
                                   child: Card(
                                     elevation: 0,
                                     color: model.selected.value == "All"
-                                        ? Colors.white24
+                                        ? AppColors.white24
                                         : Colors.transparent,
                                     child: Padding(
                                       padding: const EdgeInsets.symmetric(
@@ -63,7 +63,7 @@ class TaskListScreen extends StatelessWidget {
                                       child: Text(
                                         translate('task_list_screen.all'),
                                         style: TextStyle(
-                                            color: Colors.white,
+                                            color: AppColors.white,
                                             fontSize: 15,
                                             fontWeight: FontWeight.bold),
                                       ),
@@ -78,7 +78,7 @@ class TaskListScreen extends StatelessWidget {
                                   child: Card(
                                     elevation: 0,
                                     color: model.selected.value == "In Progress"
-                                        ? Colors.white24
+                                        ? AppColors.white24
                                         : Colors.transparent,
                                     child: Padding(
                                       padding: const EdgeInsets.symmetric(
@@ -87,7 +87,7 @@ class TaskListScreen extends StatelessWidget {
                                         translate(
                                             'task_list_screen.in_progress'),
                                         style: TextStyle(
-                                            color: Colors.white,
+                                            color: AppColors.white,
                                             fontSize: 15,
                                             fontWeight: FontWeight.bold),
                                       ),
@@ -102,7 +102,7 @@ class TaskListScreen extends StatelessWidget {
                                   child: Card(
                                     elevation: 0,
                                     color: model.selected.value == "Completed"
-                                        ? Colors.white24
+                                        ? AppColors.white24
                                         : Colors.transparent,
                                     child: Padding(
                                       padding: const EdgeInsets.symmetric(
@@ -110,7 +110,7 @@ class TaskListScreen extends StatelessWidget {
                                       child: Text(
                                         translate('task_list_screen.completed'),
                                         style: TextStyle(
-                                            color: Colors.white,
+                                            color: AppColors.white,
                                             fontSize: 15,
                                             fontWeight: FontWeight.bold),
                                       ),
@@ -125,7 +125,7 @@ class TaskListScreen extends StatelessWidget {
                                   child: Card(
                                     elevation: 0,
                                     color: model.selected.value == "On Hold"
-                                        ? Colors.white24
+                                        ? AppColors.white24
                                         : Colors.transparent,
                                     child: Padding(
                                       padding: const EdgeInsets.symmetric(
@@ -133,7 +133,7 @@ class TaskListScreen extends StatelessWidget {
                                       child: Text(
                                         translate('task_list_screen.on_hold'),
                                         style: TextStyle(
-                                            color: Colors.white,
+                                            color: AppColors.white,
                                             fontSize: 15,
                                             fontWeight: FontWeight.bold),
                                       ),
@@ -148,7 +148,7 @@ class TaskListScreen extends StatelessWidget {
                                   child: Card(
                                     elevation: 0,
                                     color: model.selected.value == "Cancelled"
-                                        ? Colors.white24
+                                        ? AppColors.white24
                                         : Colors.transparent,
                                     child: Padding(
                                       padding: const EdgeInsets.symmetric(
@@ -156,7 +156,7 @@ class TaskListScreen extends StatelessWidget {
                                       child: Text(
                                         translate('task_list_screen.cancelled'),
                                         style: TextStyle(
-                                            color: Colors.white,
+                                            color: AppColors.white,
                                             fontSize: 15,
                                             fontWeight: FontWeight.bold),
                                       ),
@@ -171,7 +171,7 @@ class TaskListScreen extends StatelessWidget {
                                   child: Card(
                                     elevation: 0,
                                     color: model.selected.value == "Not Started"
-                                        ? Colors.white24
+                                        ? AppColors.white24
                                         : Colors.transparent,
                                     child: Padding(
                                       padding: const EdgeInsets.symmetric(
@@ -180,7 +180,7 @@ class TaskListScreen extends StatelessWidget {
                                         translate(
                                             'task_list_screen.not_started'),
                                         style: TextStyle(
-                                            color: Colors.white,
+                                            color: AppColors.white,
                                             fontSize: 15,
                                             fontWeight: FontWeight.bold),
                                       ),
@@ -232,7 +232,7 @@ class TaskListScreen extends StatelessWidget {
                                               topLeft: Radius.circular(10),
                                               bottomRight:
                                                   Radius.circular(10))),
-                                      color: Colors.white12,
+                                      color: AppColors.white12,
                                       elevation: 0,
                                       child: Padding(
                                         padding: const EdgeInsets.symmetric(
@@ -251,7 +251,7 @@ class TaskListScreen extends StatelessWidget {
                                                     maxLines: 2,
                                                     style: TextStyle(
                                                         height: 1.5,
-                                                        color: Colors.white,
+                                                        color: AppColors.white,
                                                         fontWeight:
                                                             FontWeight.bold,
                                                         fontSize: 20)),
@@ -260,7 +260,7 @@ class TaskListScreen extends StatelessWidget {
                                                     Icon(
                                                       Icons.work,
                                                       size: 10,
-                                                      color: Colors.white54,
+                                                      color: AppColors.white54,
                                                     ),
                                                     SizedBox(
                                                       width: 5,
@@ -305,8 +305,8 @@ class TaskListScreen extends StatelessWidget {
                                                         Text(
                                                           item.date ?? "",
                                                           style: TextStyle(
-                                                              color:
-                                                                  Colors.white,
+                                                              color: AppColors
+                                                                  .white,
                                                               fontSize: 15),
                                                         ),
                                                       ],
@@ -326,8 +326,8 @@ class TaskListScreen extends StatelessWidget {
                                                         Text(
                                                           item.endDate ?? "",
                                                           style: TextStyle(
-                                                              color:
-                                                                  Colors.white,
+                                                              color: AppColors
+                                                                  .white,
                                                               fontSize: 15),
                                                         ),
                                                       ],
@@ -347,8 +347,8 @@ class TaskListScreen extends StatelessWidget {
                                                         Text(
                                                           item.priority ?? "",
                                                           style: TextStyle(
-                                                              color:
-                                                                  Colors.white,
+                                                              color: AppColors
+                                                                  .white,
                                                               fontSize: 15),
                                                         ),
                                                       ],
@@ -367,25 +367,26 @@ class TaskListScreen extends StatelessWidget {
                                                     barRadius:
                                                         Radius.circular(20),
                                                     backgroundColor:
-                                                        Colors.white12,
+                                                        AppColors.white12,
                                                     progressColor: item
                                                                 .progress! <=
                                                             25
-                                                        ? HexColor("#C1E1C1")
+                                                        ? AppColors
+                                                            .customFFC1E1C1
                                                         : item.progress! <= 50
-                                                            ? HexColor(
-                                                                "#C9CC3F")
+                                                            ? AppColors
+                                                                .customFFC9CC3F
                                                             : item.progress! <=
                                                                     75
-                                                                ? HexColor(
-                                                                    "#93C572")
-                                                                : HexColor(
-                                                                    "#3cb116"),
+                                                                ? AppColors
+                                                                    .customFF93C572
+                                                                : AppColors
+                                                                    .customFF3CB116,
                                                   ),
                                                 if (item.progress == 0 &&
                                                     item.hasProgress == false)
                                                   Divider(
-                                                    color: Colors.white24,
+                                                    color: AppColors.white24,
                                                   ),
                                                 SizedBox(
                                                   height: 10,
@@ -401,14 +402,14 @@ class TaskListScreen extends StatelessWidget {
                                                   imageRadius: 25,
                                                   imageCount: 4,
                                                   imageBorderColor:
-                                                      Colors.white,
+                                                      AppColors.white,
                                                   imageBorderWidth: 1,
                                                 ),
                                                 Spacer(),
                                                 Text(
                                                   item.status,
                                                   style: TextStyle(
-                                                      color: Colors.white,
+                                                      color: AppColors.white,
                                                       fontSize: 15),
                                                 ),
                                               ],

@@ -17,6 +17,7 @@ import '../widgets/pos_components.dart';
 import '../widgets/pos_filters_bar.dart';
 import '../widgets/pos_sales_chart.dart';
 import '../widgets/pos_transactions.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class PosWorkspaceScreen extends StatelessWidget {
   static const routeName = posDashboardRoute;
@@ -240,21 +241,21 @@ class _PosWorkspaceBodyState extends State<_PosWorkspaceBody> {
         posTr(allTypes ? 'quantity_sold' : 'quantity'),
         '${r.metric(allTypes ? 'quantity' : 'module_quantity').toInt()}',
         Icons.inventory_2_outlined,
-        const Color(0xff16885f)
+        AppColors.customFF16885F
       ),
       if (r.commissionPolicy.visible)
         (
           posTr('qualified'),
           '${r.metric(allTypes ? 'qualified' : 'module_qualified').toInt()}',
           Icons.verified_outlined,
-          const Color(0xffd38115)
+          AppColors.customFFD38115
         ),
       if (r.commissionPolicy.visible)
         (
           posTr('failed'),
           '${r.metric(allTypes ? 'failed' : 'module_failed').toInt()}',
           Icons.warning_amber_rounded,
-          const Color(0xffcf4353)
+          AppColors.customFFCF4353
         ),
       (
         posTr(model.filters.type == 'buy_in'
@@ -265,14 +266,14 @@ class _PosWorkspaceBodyState extends State<_PosWorkspaceBody> {
         posMoney(
             r.metric(allTypes ? 'sales_amount' : 'module_amount'), r.currency),
         Icons.payments_outlined,
-        const Color(0xff7952cc)
+        AppColors.customFF7952CC
       ),
       if (r.commissionPolicy.visible)
         (
           posTr('report_commission'),
           posMoney(r.metric('commission'), r.currency),
           Icons.percent_rounded,
-          const Color(0xff0596a1)
+          AppColors.customFF0596A1
         ),
     ];
     return LayoutBuilder(builder: (context, constraints) {
@@ -448,7 +449,8 @@ class _PosWorkspaceBodyState extends State<_PosWorkspaceBody> {
                                             style: const TextStyle(
                                                 fontSize: 12,
                                                 fontWeight: FontWeight.w700,
-                                                color: Color(0xff16885f)))))),
+                                                color: AppColors
+                                                    .customFF16885F))))),
                         ])),
                   )),
           const Divider(),
@@ -480,7 +482,7 @@ class _PosWorkspaceBodyState extends State<_PosWorkspaceBody> {
           backgroundColor: posBackground,
           appBar: AppBar(
             backgroundColor: posBlue,
-            foregroundColor: Colors.white,
+            foregroundColor: AppColors.white,
             elevation: 0,
             title:
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -492,8 +494,8 @@ class _PosWorkspaceBodyState extends State<_PosWorkspaceBody> {
               Text(model.report?.businessName ?? 'KNEAYERNG',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style:
-                      const TextStyle(fontSize: 11, color: Color(0xffd8e9ff))),
+                  style: const TextStyle(
+                      fontSize: 11, color: AppColors.customFFD8E9FF)),
             ]),
             actions: [
               if (model.report?.canCreate ?? false)
@@ -543,7 +545,7 @@ class _PosWorkspaceBodyState extends State<_PosWorkspaceBody> {
                       PosPanel(
                           child: Column(children: [
                         const Icon(Icons.error_outline,
-                            color: Color(0xffcf4353), size: 30),
+                            color: AppColors.customFFCF4353, size: 30),
                         const SizedBox(height: 10),
                         Text(posTr(model.errorKey!),
                             textAlign: TextAlign.center,

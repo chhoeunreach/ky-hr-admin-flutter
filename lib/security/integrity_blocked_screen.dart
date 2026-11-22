@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 /// Full-screen lock shown when the APK fails integrity verification.
 /// No routes, no providers, no services — the app is intentionally dead.
@@ -10,7 +11,7 @@ class IntegrityBlockedScreen extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
-        backgroundColor: const Color(0xfff5f8fd),
+        backgroundColor: AppColors.customFFF5F8FD,
         body: SafeArea(
           child: Center(
             child: Padding(
@@ -21,13 +22,13 @@ class IntegrityBlockedScreen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: const Color(0xffc53030).withValues(alpha: 0.1),
+                      color: AppColors.customFFC53030.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
                       Icons.security_rounded,
                       size: 56,
-                      color: Color(0xffc53030),
+                      color: AppColors.customFFC53030,
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -37,7 +38,7 @@ class IntegrityBlockedScreen extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xff253858),
+                      color: AppColors.customFF253858,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -48,7 +49,7 @@ class IntegrityBlockedScreen extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 15,
                       height: 1.45,
-                      color: Color(0xff5f6f82),
+                      color: AppColors.customFF5F6F82,
                     ),
                   ),
                   const SizedBox(height: 28),
@@ -57,7 +58,7 @@ class IntegrityBlockedScreen extends StatelessWidget {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 13,
-                      color: Color(0xff93a1b3),
+                      color: AppColors.customFF93A1B3,
                     ),
                   ),
                 ],

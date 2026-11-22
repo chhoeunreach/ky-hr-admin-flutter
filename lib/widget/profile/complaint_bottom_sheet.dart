@@ -6,7 +6,7 @@ import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
-import 'package:hexcolor/hexcolor.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class ComplaintBottomSheet extends StatefulWidget {
   final Complaint complaint;
@@ -52,7 +52,7 @@ class ComplaintBottomSheetState extends State<ComplaintBottomSheet> {
               widget.complaint.subject,
               style: TextStyle(
                   fontSize: 18,
-                  color: Colors.white,
+                  color: AppColors.white,
                   fontWeight: FontWeight.bold),
             ),
             Container(
@@ -60,7 +60,7 @@ class ComplaintBottomSheetState extends State<ComplaintBottomSheet> {
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: Text(
                 widget.complaint.message,
-                style: TextStyle(fontSize: 15, color: Colors.white),
+                style: TextStyle(fontSize: 15, color: AppColors.white),
               ),
             ),
             if (widget.complaint.response.isEmpty)
@@ -79,15 +79,15 @@ class ComplaintBottomSheetState extends State<ComplaintBottomSheet> {
                     FocusManager.instance.primaryFocus?.unfocus();
                   }
                 },
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: AppColors.white),
                 //editing controller of this TextField
-                cursorColor: Colors.white,
+                cursorColor: AppColors.white,
                 keyboardType: TextInputType.multiline,
                 decoration: InputDecoration(
                   hintText: 'Write a response..',
-                  hintStyle: TextStyle(color: Colors.white70),
-                  labelStyle: TextStyle(color: Colors.white),
-                  fillColor: Colors.white24,
+                  hintStyle: TextStyle(color: AppColors.white70),
+                  labelStyle: TextStyle(color: AppColors.white),
+                  fillColor: AppColors.white24,
                   filled: true,
                   enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.only(
@@ -119,51 +119,51 @@ class ComplaintBottomSheetState extends State<ComplaintBottomSheet> {
               SizedBox(
                 height: 10,
               ),
-            if(widget.complaint.response.isEmpty)
-            Container(
-              width: MediaQuery.of(context).size.width,
-              margin: EdgeInsets.symmetric(vertical: 10),
-              child: TextButton(
-                  style: TextButton.styleFrom(
-                    backgroundColor: widget.complaint.response.isNotEmpty
-                        ? HexColor("#036eb7").withValues(alpha: .5)
-                        : HexColor("#036eb7"),
-                    padding: EdgeInsets.zero,
-                    shape: ButtonBorder(),
-                  ),
-                  onPressed: widget.complaint.response.isNotEmpty
-                      ? null
-                      : () {
-                          sendResponse(model);
-                        },
-                  child: Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Text(
-                      widget.complaint.response.isEmpty
-                          ? 'Response'
-                          : "Already Responsed",
-                      style: TextStyle(color: Colors.white),
+            if (widget.complaint.response.isEmpty)
+              Container(
+                width: MediaQuery.of(context).size.width,
+                margin: EdgeInsets.symmetric(vertical: 10),
+                child: TextButton(
+                    style: TextButton.styleFrom(
+                      backgroundColor: widget.complaint.response.isNotEmpty
+                          ? AppColors.customFF036EB7.withValues(alpha: .5)
+                          : AppColors.customFF036EB7,
+                      padding: EdgeInsets.zero,
+                      shape: ButtonBorder(),
                     ),
-                  )),
-            ),
+                    onPressed: widget.complaint.response.isNotEmpty
+                        ? null
+                        : () {
+                            sendResponse(model);
+                          },
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Text(
+                        widget.complaint.response.isEmpty
+                            ? 'Response'
+                            : "Already Responsed",
+                        style: TextStyle(color: AppColors.white),
+                      ),
+                    )),
+              ),
             if (widget.complaint.response.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 5.0),
-              child: Card(
-                elevation: 0,
-                margin: EdgeInsets.zero,
-                color: Colors.white24,
-                shape: ButtonBorder(),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text(
-                    widget.complaint.response,
-                    style: TextStyle(fontSize: 15, color: Colors.white),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 5.0),
+                child: Card(
+                  elevation: 0,
+                  margin: EdgeInsets.zero,
+                  color: AppColors.white24,
+                  shape: ButtonBorder(),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(
+                      widget.complaint.response,
+                      style: TextStyle(fontSize: 15, color: AppColors.white),
+                    ),
                   ),
                 ),
               ),
-            ),
           ],
         ),
       ),

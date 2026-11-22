@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
 import 'package:toggle_switch/toggle_switch.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class CalendarToggle extends StatelessWidget {
   @override
@@ -11,9 +12,9 @@ class CalendarToggle extends StatelessWidget {
     return Obx(
       () => Center(
         child: ToggleSwitch(
-          activeBgColor: [Colors.white12],
-          activeFgColor: Colors.white,
-          inactiveFgColor: Colors.white,
+          activeBgColor: [AppColors.white12],
+          activeFgColor: AppColors.white,
+          inactiveFgColor: AppColors.white,
           inactiveBgColor: Colors.transparent,
           minWidth: 100,
           minHeight: 45,

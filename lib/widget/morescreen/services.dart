@@ -17,6 +17,7 @@ import 'package:flutter_web_browser/flutter_web_browser.dart';
 import 'package:nfc_manager/nfc_manager.dart';
 import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
 import 'package:provider/provider.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class Services extends StatefulWidget {
   final String name;
@@ -174,7 +175,7 @@ class ServicesState extends State<Services> {
                     colors: [enterprise.primary, enterprise.accent],
                   ),
                   border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.24),
+                    color: AppColors.white.withValues(alpha: 0.24),
                   ),
                   boxShadow: [
                     BoxShadow(
@@ -184,7 +185,7 @@ class ServicesState extends State<Services> {
                     ),
                   ],
                 ),
-                child: Icon(widget.icon, color: Colors.white, size: 18),
+                child: Icon(widget.icon, color: AppColors.white, size: 18),
               ),
               const SizedBox(width: 9),
               Expanded(
@@ -218,8 +219,8 @@ class ServicesState extends State<Services> {
       ),
       safariVCOptions: const SafariViewControllerOptions(
         barCollapsingEnabled: true,
-        preferredBarTintColor: Colors.black,
-        preferredControlTintColor: Colors.grey,
+        preferredBarTintColor: AppColors.black,
+        preferredControlTintColor: AppColors.grey,
         dismissButtonStyle: SafariViewControllerDismissButtonStyle.close,
         modalPresentationCapturesStatusBarAppearance: true,
       ),

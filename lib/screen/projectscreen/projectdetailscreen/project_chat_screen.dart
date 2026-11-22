@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class ProjectChatScreen extends StatelessWidget {
   @override
@@ -18,10 +19,10 @@ class ProjectChatScreen extends StatelessWidget {
           backgroundColor: Colors.transparent,
           titleSpacing: 0,
           title: Obx(() => Row(
-            children: [
-              Text(model.host.value),
-            ],
-          )),
+                children: [
+                  Text(model.host.value),
+                ],
+              )),
         ),
         body: SafeArea(
           child: Column(
@@ -63,7 +64,9 @@ class ProjectChatScreen extends StatelessWidget {
                                     : Text(
                                         DateFormat("MMM dd yyyy")
                                             .format(message.dateTime),
-                                        style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold),
+                                        style: TextStyle(
+                                            color: AppColors.white,
+                                            fontWeight: FontWeight.bold),
                                       ),
                                 Card(
                                   elevation: 0,
@@ -78,33 +81,39 @@ class ProjectChatScreen extends StatelessWidget {
                                       children: [
                                         message.sender != model.sender
                                             ? Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 15.0),
-                                          child: Text(
-                                            "@"+message.sender,
-                                            style: TextStyle(
-                                                color: Colors.white, fontSize: 12,fontWeight: FontWeight.bold),
-                                          ),
-                                        ):SizedBox.shrink(),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 15.0),
+                                                child: Text(
+                                                  "@" + message.sender,
+                                                  style: TextStyle(
+                                                      color: AppColors.white,
+                                                      fontSize: 12,
+                                                      fontWeight:
+                                                          FontWeight.bold),
+                                                ),
+                                              )
+                                            : SizedBox.shrink(),
                                         Row(
                                           children: [
                                             message.sender == model.sender
                                                 ? SizedBox(
-                                              width: 20,
-                                            )
+                                                    width: 20,
+                                                  )
                                                 : SizedBox.shrink(),
                                             message.sender == model.sender
                                                 ? Spacer()
                                                 : SizedBox.shrink(),
                                             Card(
                                               elevation: 0,
-                                              color: Colors.white10,
+                                              color: AppColors.white10,
                                               child: Padding(
-                                                padding: const EdgeInsets.all(15.0),
+                                                padding:
+                                                    const EdgeInsets.all(15.0),
                                                 child: Text(
                                                   message.message,
                                                   style: TextStyle(
-                                                      color: Colors.white,
+                                                      color: AppColors.white,
                                                       fontSize: 15),
                                                 ),
                                               ),
@@ -123,7 +132,8 @@ class ProjectChatScreen extends StatelessWidget {
                                             DateFormat("hh:mm a")
                                                 .format(message.dateTime),
                                             style: TextStyle(
-                                                color: Colors.white, fontSize: 12),
+                                                color: AppColors.white,
+                                                fontSize: 12),
                                           ),
                                         ),
                                       ],
@@ -143,7 +153,9 @@ class ProjectChatScreen extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 8.0),
                 child: Column(
                   children: [
-                    Divider(color: Colors.white10,),
+                    Divider(
+                      color: AppColors.white10,
+                    ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -152,20 +164,24 @@ class ProjectChatScreen extends StatelessWidget {
                           autofocus: false,
                           maxLines: 1,
                           keyboardType: TextInputType.multiline,
-                          style: TextStyle(color: Colors.white, fontSize: 15),
+                          style:
+                              TextStyle(color: AppColors.white, fontSize: 15),
                           validator: (value) {
                             return null;
                           },
                           controller: model.chatController,
-                          cursorColor: Colors.white,
+                          cursorColor: AppColors.white,
                           decoration: InputDecoration(
-                              hintText: translate('group_chat_screen.send_message'),
-                              hintStyle: TextStyle(color: Colors.grey, fontSize: 15),
+                              hintText:
+                                  translate('group_chat_screen.send_message'),
+                              hintStyle: TextStyle(
+                                  color: AppColors.grey, fontSize: 15),
                               border: OutlineInputBorder(
                                   borderSide: BorderSide.none,
                                   borderRadius: BorderRadius.circular(10.0)),
-                              contentPadding: EdgeInsets.symmetric(horizontal: 10),
-                              labelStyle: TextStyle(color: Colors.white),
+                              contentPadding:
+                                  EdgeInsets.symmetric(horizontal: 10),
+                              labelStyle: TextStyle(color: AppColors.white),
                               filled: true,
                               fillColor: Colors.transparent),
                         )),
@@ -177,7 +193,7 @@ class ProjectChatScreen extends StatelessWidget {
                           },
                           child: Icon(
                             Icons.send,
-                            color: Colors.white,
+                            color: AppColors.white,
                           ),
                         )
                       ],

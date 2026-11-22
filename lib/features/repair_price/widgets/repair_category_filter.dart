@@ -2,6 +2,7 @@ import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import '../models/repair_category.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class RepairCategoryFilter extends StatelessWidget {
   final List<RepairCategory> categories;
@@ -106,7 +107,7 @@ class RepairCategoryFilter extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: isSelected
                       ? enterprise.primary
-                      : Colors.white
+                      : AppColors.white
                           .withValues(alpha: enterprise.isDark ? 0.08 : 0.40),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
@@ -134,7 +135,8 @@ class RepairCategoryFilter extends StatelessWidget {
                         fontSize: 12,
                         fontWeight:
                             isSelected ? FontWeight.w700 : FontWeight.w500,
-                        color: isSelected ? Colors.white : enterprise.mutedText,
+                        color:
+                            isSelected ? AppColors.white : enterprise.mutedText,
                       ),
                     ),
                     if (!isAll &&
@@ -147,7 +149,7 @@ class RepairCategoryFilter extends StatelessWidget {
                         child: Icon(
                           Icons.edit_rounded,
                           size: 13,
-                          color: Colors.white.withValues(alpha: 0.8),
+                          color: AppColors.white.withValues(alpha: 0.8),
                         ),
                       ),
                     ],

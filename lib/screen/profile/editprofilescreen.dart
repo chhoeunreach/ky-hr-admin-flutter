@@ -11,9 +11,9 @@ import 'package:nepali_date_picker/nepali_date_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:toggle_switch/toggle_switch.dart';
 import 'package:cnattendance/provider/profileprovider.dart';
-import 'package:hexcolor/hexcolor.dart';
 import 'package:nepali_date_picker/nepali_date_picker.dart' as picker;
 import 'package:flutter/foundation.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class EditProfileScreen extends StatefulWidget {
   static const String routeName = '/editprofile';
@@ -184,7 +184,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
               padding: const EdgeInsets.all(20),
               child: TextButton(
                   style: TextButton.styleFrom(
-                      backgroundColor: HexColor("#036eb7"),
+                      backgroundColor: AppColors.customFF036EB7,
                       shape: ButtonBorder(),
                       fixedSize: Size(double.maxFinite, 55)),
                   onPressed: () {
@@ -192,7 +192,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
                   },
                   child: Text(
                     translate('edit_profile_screen.update'),
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(color: AppColors.white),
                   )),
             ),
           ),
@@ -243,11 +243,11 @@ class EditProfileScreenState extends State<EditProfileScreen> {
                               alignment: Alignment.bottomCenter,
                               child: Container(
                                 width: double.infinity,
-                                color: Colors.black12,
+                                color: AppColors.black12,
                                 padding: const EdgeInsets.all(20),
                                 child: const Text('Change',
                                     style: TextStyle(
-                                      color: Colors.white,
+                                      color: AppColors.white,
                                     ),
                                     textAlign: TextAlign.center),
                               ))),
@@ -258,7 +258,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
                     TextFormField(
                       controller: _nameController,
                       keyboardType: TextInputType.name,
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(color: AppColors.white),
                       validator: (value) {
                         if (!validateField(value!)) {
                           return "Empty Field";
@@ -266,13 +266,13 @@ class EditProfileScreenState extends State<EditProfileScreen> {
 
                         return null;
                       },
-                      cursorColor: Colors.white,
+                      cursorColor: AppColors.white,
                       decoration: InputDecoration(
                         hintText: translate('edit_profile_screen.fullname'),
-                        hintStyle: TextStyle(color: Colors.white70),
-                        prefixIcon: Icon(Icons.person, color: Colors.white),
-                        labelStyle: TextStyle(color: Colors.white),
-                        fillColor: Colors.white24,
+                        hintStyle: TextStyle(color: AppColors.white70),
+                        prefixIcon: Icon(Icons.person, color: AppColors.white),
+                        labelStyle: TextStyle(color: AppColors.white),
+                        fillColor: AppColors.white24,
                         filled: true,
                         enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.only(
@@ -306,7 +306,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
                     TextFormField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(color: AppColors.white),
                       validator: (value) {
                         if (!validateField(value!)) {
                           return "Empty Field";
@@ -314,13 +314,13 @@ class EditProfileScreenState extends State<EditProfileScreen> {
 
                         return null;
                       },
-                      cursorColor: Colors.white,
+                      cursorColor: AppColors.white,
                       decoration: InputDecoration(
                         hintText: translate('edit_profile_screen.email'),
-                        hintStyle: TextStyle(color: Colors.white70),
-                        prefixIcon: Icon(Icons.email, color: Colors.white),
-                        labelStyle: TextStyle(color: Colors.white),
-                        fillColor: Colors.white24,
+                        hintStyle: TextStyle(color: AppColors.white70),
+                        prefixIcon: Icon(Icons.email, color: AppColors.white),
+                        labelStyle: TextStyle(color: AppColors.white),
+                        fillColor: AppColors.white24,
                         filled: true,
                         enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.only(
@@ -354,7 +354,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
                     TextFormField(
                       controller: _addressController,
                       keyboardType: TextInputType.streetAddress,
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(color: AppColors.white),
                       validator: (value) {
                         if (!validateField(value!)) {
                           return "Empty Field";
@@ -362,14 +362,14 @@ class EditProfileScreenState extends State<EditProfileScreen> {
 
                         return null;
                       },
-                      cursorColor: Colors.white,
+                      cursorColor: AppColors.white,
                       decoration: InputDecoration(
                         hintText: translate('edit_profile_screen.address'),
-                        hintStyle: TextStyle(color: Colors.white70),
+                        hintStyle: TextStyle(color: AppColors.white70),
                         prefixIcon:
-                            Icon(Icons.location_on, color: Colors.white),
-                        labelStyle: TextStyle(color: Colors.white),
-                        fillColor: Colors.white24,
+                            Icon(Icons.location_on, color: AppColors.white),
+                        labelStyle: TextStyle(color: AppColors.white),
+                        fillColor: AppColors.white24,
                         filled: true,
                         enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.only(
@@ -403,7 +403,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
                     TextFormField(
                       controller: _phoneController,
                       keyboardType: TextInputType.phone,
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(color: AppColors.white),
                       validator: (value) {
                         if (!validateField(value!)) {
                           return "Empty Field";
@@ -411,14 +411,14 @@ class EditProfileScreenState extends State<EditProfileScreen> {
 
                         return null;
                       },
-                      cursorColor: Colors.white,
+                      cursorColor: AppColors.white,
                       decoration: InputDecoration(
                         hintText: translate('edit_profile_screen.phone_number'),
-                        hintStyle: TextStyle(color: Colors.white70),
+                        hintStyle: TextStyle(color: AppColors.white70),
                         prefixIcon:
-                            Icon(Icons.phone_android, color: Colors.white),
-                        labelStyle: TextStyle(color: Colors.white),
-                        fillColor: Colors.white24,
+                            Icon(Icons.phone_android, color: AppColors.white),
+                        labelStyle: TextStyle(color: AppColors.white),
+                        fillColor: AppColors.white24,
                         filled: true,
                         enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.only(
@@ -459,15 +459,15 @@ class EditProfileScreenState extends State<EditProfileScreen> {
                         return null;
                       },
                       keyboardType: TextInputType.datetime,
-                      style: TextStyle(color: Colors.white),
-                      cursorColor: Colors.white,
+                      style: TextStyle(color: AppColors.white),
+                      cursorColor: AppColors.white,
                       decoration: InputDecoration(
                         hintText: translate('edit_profile_screen.dob'),
-                        hintStyle: TextStyle(color: Colors.white70),
+                        hintStyle: TextStyle(color: AppColors.white70),
                         prefixIcon: Icon(Icons.calendar_month_sharp,
-                            color: Colors.white),
-                        labelStyle: TextStyle(color: Colors.white),
-                        fillColor: Colors.white24,
+                            color: AppColors.white),
+                        labelStyle: TextStyle(color: AppColors.white),
+                        fillColor: AppColors.white24,
                         filled: true,
                         enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.only(
@@ -542,18 +542,19 @@ class EditProfileScreenState extends State<EditProfileScreen> {
                         children: [
                           Text(
                             translate('edit_profile_screen.gender'),
-                            style: TextStyle(fontSize: 15, color: Colors.white),
+                            style:
+                                TextStyle(fontSize: 15, color: AppColors.white),
                           ),
                           SizedBox(
                             height: 10,
                           ),
                           ToggleSwitch(
                             borderWidth: 1,
-                            borderColor: [Colors.white12],
-                            dividerColor: Colors.white12,
-                            activeBgColor: const [Colors.white12],
-                            activeFgColor: Colors.white,
-                            inactiveFgColor: Colors.white,
+                            borderColor: [AppColors.white12],
+                            dividerColor: AppColors.white12,
+                            activeBgColor: const [AppColors.white12],
+                            activeFgColor: AppColors.white,
+                            inactiveFgColor: AppColors.white,
                             inactiveBgColor: Colors.transparent,
                             minWidth: 100,
                             minHeight: 45,

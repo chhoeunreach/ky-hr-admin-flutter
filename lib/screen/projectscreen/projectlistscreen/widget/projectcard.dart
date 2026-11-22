@@ -2,9 +2,9 @@ import 'package:cnattendance/model/project.dart';
 import 'package:cnattendance/screen/projectscreen/projectlistscreen/projectlistscrreencontroller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:hexcolor/hexcolor.dart';
 import 'package:image_stack/image_stack.dart';
 import 'package:percent_indicator/linear_percent_indicator.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class ProjectCard extends StatelessWidget {
   final Project item;
@@ -25,7 +25,7 @@ class ProjectCard extends StatelessWidget {
           borderRadius: BorderRadius.only(
               topLeft: Radius.circular(10), bottomRight: Radius.circular(10))),
       elevation: 0,
-      color: Colors.white10,
+      color: AppColors.white10,
       margin: const EdgeInsets.symmetric(vertical: 10),
       child: InkWell(
         borderRadius: BorderRadius.only(
@@ -46,7 +46,7 @@ class ProjectCard extends StatelessWidget {
                       Icon(
                         Icons.work,
                         size: 20,
-                        color: Colors.white,
+                        color: AppColors.white,
                       ),
                       SizedBox(
                         width: 5,
@@ -56,68 +56,60 @@ class ProjectCard extends StatelessWidget {
                             maxLines: 2,
                             style: TextStyle(
                                 height: 1.5,
-                                color: Colors.white,
+                                color: AppColors.white,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 18)),
                       ),
                     ],
                   ),
-                  SizedBox(height: 5,),
+                  SizedBox(
+                    height: 5,
+                  ),
                   Row(
-                    mainAxisAlignment:
-                    MainAxisAlignment.spaceBetween,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Column(
-                        crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             "Date",
                             style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 12),
+                                color: AppColors.white70, fontSize: 12),
                           ),
                           Text(
                             item.date,
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 15),
+                            style:
+                                TextStyle(color: AppColors.white, fontSize: 15),
                           ),
                         ],
                       ),
                       Column(
-                        crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             "Status",
                             style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 12),
+                                color: AppColors.white70, fontSize: 12),
                           ),
                           Text(
                             item.status,
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 15),
+                            style:
+                                TextStyle(color: AppColors.white, fontSize: 15),
                           ),
                         ],
                       ),
                       Column(
-                        crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             "Priority",
                             style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 12),
+                                color: AppColors.white70, fontSize: 12),
                           ),
                           Text(
                             item.priority,
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 15),
+                            style:
+                                TextStyle(color: AppColors.white, fontSize: 15),
                           ),
                         ],
                       ),
@@ -131,14 +123,14 @@ class ProjectCard extends StatelessWidget {
                     percent: item.progress / 100,
                     lineHeight: 5,
                     barRadius: Radius.circular(20),
-                    backgroundColor: Colors.white12,
+                    backgroundColor: AppColors.white12,
                     progressColor: item.progress <= 25
-                        ? HexColor("#C1E1C1")
+                        ? AppColors.customFFC1E1C1
                         : item.progress <= 50
-                        ? HexColor("#C9CC3F")
-                        : item.progress <= 75
-                        ? HexColor("#93C572")
-                        : HexColor("#3cb116"),
+                            ? AppColors.customFFC9CC3F
+                            : item.progress <= 75
+                                ? AppColors.customFF93C572
+                                : AppColors.customFF3CB116,
                   ),
                   SizedBox(
                     height: 10,
@@ -152,21 +144,21 @@ class ProjectCard extends StatelessWidget {
                     totalCount: members.length,
                     imageRadius: 25,
                     imageCount: 4,
-                    imageBorderColor: Colors.white,
+                    imageBorderColor: AppColors.white,
                     imageBorderWidth: 1,
                   ),
                   Spacer(),
                   Icon(
                     Icons.flag,
                     size: 15,
-                    color: Colors.white,
+                    color: AppColors.white,
                   ),
                   SizedBox(
                     width: 5,
                   ),
                   Text(item.noOfTask.toString(),
                       style: TextStyle(
-                          color: Colors.white,
+                          color: AppColors.white,
                           fontWeight: FontWeight.normal,
                           fontSize: 12)),
                 ],

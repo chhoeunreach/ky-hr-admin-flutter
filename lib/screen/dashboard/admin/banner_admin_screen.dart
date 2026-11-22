@@ -7,6 +7,7 @@ import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 /// Admin panel screen for the home hero banner slideshow.
 ///
@@ -90,8 +91,8 @@ class _BannerAdminScreenState extends State<BannerAdminScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child:
-                const Text('Reset', style: TextStyle(color: Color(0xFFDC2626))),
+            child: const Text('Reset',
+                style: TextStyle(color: AppColors.customFFDC2626)),
           ),
         ],
       ),
@@ -194,10 +195,10 @@ class _BannerAdminScreenState extends State<BannerAdminScreen> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF59E0B).withValues(alpha: 0.22),
+                      color: AppColors.customFFF59E0B.withValues(alpha: 0.22),
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
-                        color: const Color(0xFFF59E0B),
+                        color: AppColors.customFFF59E0B,
                         width: 0.8,
                       ),
                     ),
@@ -206,7 +207,7 @@ class _BannerAdminScreenState extends State<BannerAdminScreen> {
                       style: TextStyle(
                         fontSize: 10.5,
                         fontWeight: FontWeight.w800,
-                        color: Color(0xFFF59E0B),
+                        color: AppColors.customFFF59E0B,
                       ),
                     ),
                   ),
@@ -240,9 +241,7 @@ class _BannerAdminScreenState extends State<BannerAdminScreen> {
             : Container(
                 padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
                 decoration: BoxDecoration(
-                  color: enterprise.isDark
-                      ? const Color(0xFF0F172A)
-                      : Colors.white,
+                  color: enterprise.isDark ? AppColors.ink900 : AppColors.white,
                   border: Border(
                     top: BorderSide(color: enterprise.cardBorder),
                   ),
@@ -273,7 +272,7 @@ class _BannerAdminScreenState extends State<BannerAdminScreen> {
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: enterprise.accent,
-                          foregroundColor: Colors.white,
+                          foregroundColor: AppColors.white,
                           padding: const EdgeInsets.symmetric(vertical: 13),
                           elevation: 2,
                           shape: RoundedRectangleBorder(
@@ -313,7 +312,7 @@ class _BannerAdminScreenState extends State<BannerAdminScreen> {
         border: Border.all(color: enterprise.cardBorder),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
+            color: AppColors.black.withValues(alpha: 0.06),
             blurRadius: 12,
             offset: const Offset(0, 5),
           ),
@@ -356,9 +355,9 @@ class _BannerAdminScreenState extends State<BannerAdminScreen> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    Color(0xFF071B45),
-                    Color(0xFF0E3A8C),
-                    Color(0xFF1A5ED4),
+                    AppColors.customFF071B45,
+                    AppColors.customFF0E3A8C,
+                    AppColors.customFF1A5ED4,
                   ],
                   stops: [0.0, 0.55, 1.0],
                 ),
@@ -394,9 +393,9 @@ class _BannerAdminScreenState extends State<BannerAdminScreen> {
                         begin: Alignment.centerLeft,
                         end: Alignment.centerRight,
                         colors: [
-                          const Color(0xFF002255).withValues(alpha: 0.88),
-                          const Color(0xFF003D99).withValues(alpha: 0.55),
-                          Colors.black.withValues(alpha: 0.35),
+                          AppColors.customFF002255.withValues(alpha: 0.88),
+                          AppColors.customFF003D99.withValues(alpha: 0.55),
+                          AppColors.black.withValues(alpha: 0.35),
                         ],
                         stops: const [0.0, 0.55, 1.0],
                       ),
@@ -413,10 +412,10 @@ class _BannerAdminScreenState extends State<BannerAdminScreen> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 7, vertical: 2),
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.24),
+                              color: AppColors.white.withValues(alpha: 0.24),
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.35),
+                                color: AppColors.white.withValues(alpha: 0.35),
                                 width: 0.8,
                               ),
                             ),
@@ -425,7 +424,7 @@ class _BannerAdminScreenState extends State<BannerAdminScreen> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
-                                color: Colors.white,
+                                color: AppColors.white,
                                 fontSize: 9.5,
                                 fontWeight: FontWeight.w800,
                               ),
@@ -435,7 +434,7 @@ class _BannerAdminScreenState extends State<BannerAdminScreen> {
                         const Text(
                           'សូមស្វាគមន៍!',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: AppColors.white,
                             fontSize: 15,
                             fontWeight: FontWeight.w900,
                           ),
@@ -443,7 +442,7 @@ class _BannerAdminScreenState extends State<BannerAdminScreen> {
                         const Text(
                           'Good Morning!',
                           style: TextStyle(
-                            color: Colors.white70,
+                            color: AppColors.white70,
                             fontSize: 10.5,
                             fontWeight: FontWeight.w600,
                           ),
@@ -467,8 +466,8 @@ class _BannerAdminScreenState extends State<BannerAdminScreen> {
                               height: 5,
                               decoration: BoxDecoration(
                                 color: index == 0
-                                    ? Colors.white
-                                    : Colors.white.withValues(alpha: 0.45),
+                                    ? AppColors.white
+                                    : AppColors.white.withValues(alpha: 0.45),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                             ),
@@ -603,8 +602,8 @@ class _BannerAdminScreenState extends State<BannerAdminScreen> {
                 backgroundColor: selected
                     ? enterprise.accent.withValues(alpha: 0.16)
                     : (enterprise.isDark
-                        ? const Color(0xFF0F172A)
-                        : const Color(0xFFF1F5F9)),
+                        ? AppColors.ink900
+                        : AppColors.customFFF1F5F9),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                   side: BorderSide(
@@ -632,7 +631,8 @@ class _BannerAdminScreenState extends State<BannerAdminScreen> {
             initialValue: _config.transition,
             isExpanded: true,
             items: [
-              for (final option in BannerSlideshowConfig.transitionLabels.entries)
+              for (final option
+                  in BannerSlideshowConfig.transitionLabels.entries)
                 DropdownMenuItem(value: option.key, child: Text(option.value)),
             ],
             onChanged: (value) {
@@ -758,8 +758,8 @@ class _BannerAdminScreenState extends State<BannerAdminScreen> {
               padding: const EdgeInsets.symmetric(vertical: 22),
               decoration: BoxDecoration(
                 color: enterprise.isDark
-                    ? const Color(0xFF0F172A)
-                    : const Color(0xFFF8FAFC),
+                    ? AppColors.ink900
+                    : AppColors.customFFF8FAFC,
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: enterprise.cardBorder),
               ),
@@ -825,9 +825,8 @@ class _BannerAdminScreenState extends State<BannerAdminScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         decoration: BoxDecoration(
-          color: enterprise.isDark
-              ? const Color(0xFF0F172A)
-              : const Color(0xFFF8FAFC),
+          color:
+              enterprise.isDark ? AppColors.ink900 : AppColors.customFFF8FAFC,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: enterprise.cardBorder),
         ),
@@ -899,7 +898,7 @@ class _BannerAdminScreenState extends State<BannerAdminScreen> {
               visualDensity: VisualDensity.compact,
               onPressed: () => _removeSlide(index),
               icon: const Icon(Icons.delete_outline_rounded,
-                  size: 17, color: Color(0xFFDC2626)),
+                  size: 17, color: AppColors.customFFDC2626),
             ),
           ],
         ),
@@ -912,21 +911,22 @@ class _BannerAdminScreenState extends State<BannerAdminScreen> {
       return Image.asset(
         HomeBannerConfig.defaultAngkorWatAsset,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => Container(color: const Color(0xFF0E3A8C)),
+        errorBuilder: (_, __, ___) =>
+            Container(color: AppColors.customFF0E3A8C),
       );
     }
     if (slide.isNetworkImage) {
       return CachedNetworkImage(
         imageUrl: slide.imageUrl.trim(),
         fit: BoxFit.cover,
-        placeholder: (_, __) => Container(color: const Color(0xFF0E3A8C)),
-        errorWidget: (_, __, ___) => Container(color: const Color(0xFF0E3A8C)),
+        placeholder: (_, __) => Container(color: AppColors.customFF0E3A8C),
+        errorWidget: (_, __, ___) => Container(color: AppColors.customFF0E3A8C),
       );
     }
     return Image.asset(
       slide.imageUrl.trim(),
       fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) => Container(color: const Color(0xFF0E3A8C)),
+      errorBuilder: (_, __, ___) => Container(color: AppColors.customFF0E3A8C),
     );
   }
 
@@ -995,7 +995,7 @@ class _SlideEditDialogState extends State<_SlideEditDialog> {
   Widget build(BuildContext context) {
     final enterprise = EnterpriseTheme.of(context);
     final inputFill =
-        enterprise.isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC);
+        enterprise.isDark ? AppColors.ink900 : AppColors.customFFF8FAFC;
 
     OutlineInputBorder border(Color color) => OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -1004,7 +1004,7 @@ class _SlideEditDialogState extends State<_SlideEditDialog> {
 
     return Dialog(
       backgroundColor:
-          enterprise.isDark ? const Color(0xFF1E293B) : Colors.white,
+          enterprise.isDark ? AppColors.customFF1E293B : AppColors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(18),
@@ -1084,8 +1084,8 @@ class _SlideEditDialogState extends State<_SlideEditDialog> {
                     ),
                   ),
                   backgroundColor: enterprise.isDark
-                      ? const Color(0xFF0F172A)
-                      : const Color(0xFFF1F5F9),
+                      ? AppColors.ink900
+                      : AppColors.customFFF1F5F9,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                     side: BorderSide(color: enterprise.cardBorder),
@@ -1134,7 +1134,7 @@ class _SlideEditDialogState extends State<_SlideEditDialog> {
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: enterprise.accent,
-                    foregroundColor: Colors.white,
+                    foregroundColor: AppColors.white,
                     padding: const EdgeInsets.symmetric(
                         horizontal: 18, vertical: 12),
                     shape: RoundedRectangleBorder(

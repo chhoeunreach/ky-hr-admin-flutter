@@ -5,6 +5,7 @@ import 'package:cnattendance/features/community/social_feed_screen.dart';
 import 'package:cnattendance/features/pos/pages/pos_workspace_screen.dart';
 import 'package:cnattendance/provider/dashboardprovider.dart';
 import 'package:cnattendance/provider/prefprovider.dart';
+import 'package:cnattendance/screen/dashboard/morescreen.dart';
 import 'package:cnattendance/screen/links/link_list_screen.dart';
 import 'package:cnattendance/screen/loanmanagement/loancalculatescreen.dart';
 import 'package:cnattendance/screen/profile/front_side_preview_page.dart';
@@ -19,6 +20,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 Color sidebarForeground(EnterpriseTheme enterprise) {
   final colors = enterprise.colors.gradientColors;
@@ -27,10 +29,10 @@ Color sidebarForeground(EnterpriseTheme enterprise) {
         (total, color) => total + color.computeLuminance(),
       ) /
       colors.length;
-  return luminance > 0.46 ? const Color(0xFF172033) : Colors.white;
+  return luminance > 0.46 ? AppColors.customFF172033 : AppColors.white;
 }
 
-Color sidebarTone(Color color) => Color.lerp(color, Colors.black, 0.42)!;
+Color sidebarTone(Color color) => Color.lerp(color, AppColors.black, 0.42)!;
 
 class DashboardDrawer extends StatelessWidget {
   const DashboardDrawer({super.key});
@@ -168,6 +170,32 @@ class DashboardDrawer extends StatelessWidget {
                   Get.to(() => const LinkListScreen());
                 },
               ),
+              if (dashboardProvider.mobileLayoutConfigured) ...[
+                _drawerDivider(enterprise),
+                _drawerSectionLabel(enterprise, 'Role functions'),
+                for (final entry in dashboardProvider.mobileLayout.entries)
+                  if (entry.value.contains('sidebar') &&
+                      dashboardProvider.features[entry.key] == '1' &&
+                      !const {
+                        'sell-staff-report',
+                        'social-feed',
+                        'loan',
+                        'social-rewards',
+                        'id-card',
+                        'links',
+                      }.contains(entry.key))
+                    _drawerMenuItem(
+                      context,
+                      enterprise,
+                      icon: Icons.apps_outlined,
+                      label: _roleMenuLabel(entry.key),
+                      permissionKey: entry.key,
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        Get.to(() => MoreScreen());
+                      },
+                    ),
+              ],
             ],
           ),
         ),
@@ -204,9 +232,12 @@ class DashboardDrawer extends StatelessWidget {
     required VoidCallback onTap,
     String? permissionKey,
   }) {
-    if (permissionKey != null &&
-        context.watch<DashboardProvider>().features[permissionKey] != '1') {
-      return const SizedBox.shrink();
+    if (permissionKey != null) {
+      final dashboard = context.watch<DashboardProvider>();
+      if (dashboard.features[permissionKey] != '1' ||
+          !dashboard.isMobileMenuAt(permissionKey, 'sidebar')) {
+        return const SizedBox.shrink();
+      }
     }
     final foreground = sidebarForeground(enterprise);
     return Padding(
@@ -338,7 +369,7 @@ class DashboardDrawer extends StatelessWidget {
                 height: 48,
                 padding: const EdgeInsets.all(3),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.white,
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: ClipRRect(
@@ -348,7 +379,7 @@ class DashboardDrawer extends StatelessWidget {
                     fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) => const Icon(
                       Icons.qr_code_2_rounded,
-                      color: Colors.black87,
+                      color: AppColors.black87,
                       size: 34,
                     ),
                   ),
@@ -359,12 +390,12 @@ class DashboardDrawer extends StatelessWidget {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.white,
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: const Icon(
                   Icons.qr_code_2_rounded,
-                  color: Colors.black87,
+                  color: AppColors.black87,
                   size: 38,
                 ),
               ),
@@ -378,7 +409,7 @@ class DashboardDrawer extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: Colors.white,
+                      color: AppColors.white,
                       fontSize: 13,
                       fontWeight: FontWeight.w900,
                     ),
@@ -389,7 +420,7 @@ class DashboardDrawer extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.82),
+                      color: AppColors.white.withValues(alpha: 0.82),
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                     ),
@@ -400,7 +431,7 @@ class DashboardDrawer extends StatelessWidget {
                         ? 'No QR uploaded'
                         : '${paymentQrCodes.length} code(s) View',
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.92),
+                      color: AppColors.white.withValues(alpha: 0.92),
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
                     ),
@@ -550,7 +581,7 @@ class DashboardDrawer extends StatelessWidget {
             child: Container(
               width: 230,
               height: 230,
-              color: Colors.white,
+              color: AppColors.white,
               padding: const EdgeInsets.all(8),
               child: _paymentQrImage(paymentQrCode.qrCodeUrl, size: 72),
             ),
@@ -647,7 +678,7 @@ class DashboardDrawer extends StatelessWidget {
       context: context,
       builder: (dialogContext) {
         return Dialog.fullscreen(
-          backgroundColor: Colors.black,
+          backgroundColor: AppColors.black,
           child: SafeArea(
             child: Column(
               children: [
@@ -657,7 +688,7 @@ class DashboardDrawer extends StatelessWidget {
                     children: [
                       IconButton(
                         tooltip: 'Close',
-                        icon: const Icon(Icons.close, color: Colors.white),
+                        icon: const Icon(Icons.close, color: AppColors.white),
                         onPressed: () => Navigator.of(dialogContext).pop(),
                       ),
                       Expanded(
@@ -666,7 +697,7 @@ class DashboardDrawer extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            color: Colors.white,
+                            color: AppColors.white,
                             fontSize: 16,
                             fontWeight: FontWeight.w900,
                           ),
@@ -676,7 +707,7 @@ class DashboardDrawer extends StatelessWidget {
                         tooltip: 'Download',
                         icon: const Icon(
                           Icons.download_rounded,
-                          color: Colors.white,
+                          color: AppColors.white,
                         ),
                         onPressed: () {
                           _downloadPaymentQr(context, paymentQrCode);
@@ -687,7 +718,7 @@ class DashboardDrawer extends StatelessWidget {
                           tooltip: 'Open link',
                           icon: const Icon(
                             Icons.open_in_new_rounded,
-                            color: Colors.white,
+                            color: AppColors.white,
                           ),
                           onPressed: () {
                             _openPaymentLink(context, paymentQrCode.link);
@@ -702,7 +733,7 @@ class DashboardDrawer extends StatelessWidget {
                       minScale: 0.8,
                       maxScale: 5,
                       child: Container(
-                        color: Colors.white,
+                        color: AppColors.white,
                         padding: const EdgeInsets.all(14),
                         child:
                             _paymentQrImage(paymentQrCode.qrCodeUrl, size: 92),
@@ -800,7 +831,7 @@ class DashboardDrawer extends StatelessWidget {
     if (uri == null) {
       return Icon(
         Icons.broken_image_outlined,
-        color: Colors.black54,
+        color: AppColors.black54,
         size: size,
       );
     }
@@ -810,7 +841,7 @@ class DashboardDrawer extends StatelessWidget {
       fit: BoxFit.contain,
       errorBuilder: (_, __, ___) => Icon(
         Icons.broken_image_outlined,
-        color: Colors.black54,
+        color: AppColors.black54,
         size: size,
       ),
     );
@@ -832,3 +863,8 @@ class DashboardDrawer extends StatelessWidget {
     return cleaned.isEmpty ? 'branch' : cleaned;
   }
 }
+
+String _roleMenuLabel(String menu) => menu
+    .split('-')
+    .map((word) => word.isEmpty ? word : '${word[0].toUpperCase()}${word.substring(1)}')
+    .join(' ');

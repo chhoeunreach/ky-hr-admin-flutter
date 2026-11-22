@@ -2,6 +2,7 @@ import 'package:cnattendance/utils/constant.dart';
 import 'package:flutter/material.dart';
 import 'package:cnattendance/core/ky_security/ky_http.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class ChatFileBubble extends StatelessWidget {
   final String fileUrl;
@@ -33,13 +34,13 @@ class ChatFileBubble extends StatelessWidget {
               height: 40,
               decoration: BoxDecoration(
                 color: isIncoming
-                    ? const Color(0xff1684f8)
-                    : const Color(0x26000000),
+                    ? AppColors.customFF1684F8
+                    : AppColors.custom26000000,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(
                 Icons.insert_drive_file_rounded,
-                color: Colors.white,
+                color: AppColors.white,
                 size: 22,
               ),
             ),
@@ -54,7 +55,7 @@ class ChatFileBubble extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AppColors.white,
                       fontSize: 14,
                       fontWeight: FontWeight.w800,
                     ),
@@ -63,7 +64,7 @@ class ChatFileBubble extends StatelessWidget {
                   const Text(
                     'Tap to open',
                     style: TextStyle(
-                      color: Colors.white70,
+                      color: AppColors.white70,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
@@ -92,7 +93,8 @@ class ChatFileBubble extends StatelessWidget {
     }
 
     try {
-      final response = await KyHttp.head(uri).timeout(const Duration(seconds: 8));
+      final response =
+          await KyHttp.head(uri).timeout(const Duration(seconds: 8));
       final contentType =
           response.headers['content-type']?.toLowerCase().trim() ?? '';
       if (response.statusCode < 200 || response.statusCode >= 300) {

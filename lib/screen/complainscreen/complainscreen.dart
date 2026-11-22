@@ -5,6 +5,7 @@ import 'package:cnattendance/widget/profile/complaint_bottom_sheet.dart';
 import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class ComplainScreen extends StatelessWidget {
   @override
@@ -23,10 +24,10 @@ class ComplainScreen extends StatelessWidget {
             onPressed: () {
               Get.to(CreateComplainScreen());
             },
-            backgroundColor: Colors.blue,
+            backgroundColor: AppColors.blue,
             child: Icon(
               Icons.add,
-              color: Colors.white,
+              color: AppColors.white,
             )),
         body: Obx(
           () => RefreshIndicator(
@@ -62,8 +63,8 @@ class ComplainScreen extends StatelessWidget {
                       child: Card(
                         shape: ButtonBorder(),
                         color: complaint.response.isEmpty
-                            ? Colors.red.withValues(alpha: .5)
-                            : Colors.white24,
+                            ? AppColors.red.withValues(alpha: .5)
+                            : AppColors.white24,
                         elevation: 0,
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
@@ -76,14 +77,14 @@ class ComplainScreen extends StatelessWidget {
                                     Text(
                                       complaint.complaintDate,
                                       style: TextStyle(
-                                          color: Colors.white70,
+                                          color: AppColors.white70,
                                           fontSize: 12,
                                           fontWeight: FontWeight.normal),
                                     ),
                                     Text(
                                       complaint.subject,
                                       style: TextStyle(
-                                          color: Colors.white,
+                                          color: AppColors.white,
                                           fontSize: 18,
                                           fontWeight: FontWeight.bold),
                                     ),
@@ -94,7 +95,7 @@ class ComplainScreen extends StatelessWidget {
                                 complaint.response.isNotEmpty
                                     ? Icons.reply
                                     : Icons.feedback_rounded,
-                                color: Colors.white,
+                                color: AppColors.white,
                               )
                             ],
                           ),

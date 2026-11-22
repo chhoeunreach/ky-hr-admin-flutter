@@ -8,6 +8,7 @@ import 'package:focus_detector/focus_detector.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 import 'package:toggle_switch/toggle_switch.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class TrainingScreen extends StatelessWidget {
   @override
@@ -32,8 +33,8 @@ class TrainingScreen extends StatelessWidget {
           ),
           body: RefreshIndicator(
             triggerMode: RefreshIndicatorTriggerMode.onEdge,
-            color: Colors.white,
-            backgroundColor: Colors.blueGrey,
+            color: AppColors.white,
+            backgroundColor: AppColors.blueGrey,
             edgeOffset: 50,
             onRefresh: () {
               return model
@@ -49,9 +50,9 @@ class TrainingScreen extends StatelessWidget {
                     Center(
                       child: Obx(
                         () => ToggleSwitch(
-                          activeBgColor: [Colors.white12],
-                          activeFgColor: Colors.white,
-                          inactiveFgColor: Colors.white,
+                          activeBgColor: [AppColors.white12],
+                          activeFgColor: AppColors.white,
+                          inactiveFgColor: AppColors.white,
                           inactiveBgColor: Colors.transparent,
                           minWidth: 100,
                           minHeight: 45,
@@ -104,10 +105,10 @@ class TrainingScreen extends StatelessWidget {
                     borderRadius: BorderRadius.only(
                         topLeft: Radius.circular(10),
                         bottomRight: Radius.circular(10))),
-                color: Colors.white12,
+                color: AppColors.white12,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 15, vertical: 15),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -123,21 +124,21 @@ class TrainingScreen extends StatelessWidget {
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
                                       height: 1.0,
-                                      color: Colors.white,
+                                      color: AppColors.white,
                                       fontWeight: FontWeight.bold,
                                       fontSize: 18)),
-                              SizedBox(height: 5,),
+                              SizedBox(
+                                height: 5,
+                              ),
                               Text(
-                                (training.trainer
-                                    .where(
-                                      (element) =>
-                                  element.user_id.toString() ==
-                                      userId,
-                                )
-                                ).isEmpty
+                                (training.trainer.where(
+                                  (element) =>
+                                      element.user_id.toString() == userId,
+                                )).isEmpty
                                     ? "Participant"
                                     : "Trainer",
-                                style: TextStyle(color: Colors.white,fontSize: 12),
+                                style: TextStyle(
+                                    color: AppColors.white, fontSize: 12),
                               ),
                             ],
                           ),
@@ -152,32 +153,32 @@ class TrainingScreen extends StatelessWidget {
                                 children: [
                                   Text(
                                     "Start-End Date",
-                                    style: TextStyle(color: Colors.white70),
+                                    style: TextStyle(color: AppColors.white70),
                                   ),
                                   Row(
                                     children: [
                                       Text(training.startDate,
                                           style: TextStyle(
-                                              color: Colors.white,
+                                              color: AppColors.white,
                                               fontWeight: FontWeight.normal,
                                               fontSize: 12)),
                                       SizedBox(
                                         width: 5,
                                       ),
-                                      if(training.endDate.isNotEmpty)
+                                      if (training.endDate.isNotEmpty)
                                         Text(" - ",
                                             style: TextStyle(
-                                                color: Colors.white,
+                                                color: AppColors.white,
                                                 fontWeight: FontWeight.normal,
                                                 fontSize: 12)),
-                                      if(training.endDate.isNotEmpty)
+                                      if (training.endDate.isNotEmpty)
                                         SizedBox(
                                           width: 5,
                                         ),
-                                      if(training.endDate.isNotEmpty)
+                                      if (training.endDate.isNotEmpty)
                                         Text(training.endDate,
                                             style: TextStyle(
-                                                color: Colors.white,
+                                                color: AppColors.white,
                                                 fontWeight: FontWeight.normal,
                                                 fontSize: 12)),
                                     ],
@@ -188,7 +189,7 @@ class TrainingScreen extends StatelessWidget {
                                 height: 30,
                                 child: VerticalDivider(
                                   width: 1,
-                                  color: Colors.white54,
+                                  color: AppColors.white54,
                                 ),
                               ),
                               Column(
@@ -196,19 +197,19 @@ class TrainingScreen extends StatelessWidget {
                                 children: [
                                   Text(
                                     "Start-End Time",
-                                    style: TextStyle(color: Colors.white70),
+                                    style: TextStyle(color: AppColors.white70),
                                   ),
                                   Row(
                                     children: [
                                       Text(training.startTime,
                                           style: TextStyle(
-                                              color: Colors.white,
+                                              color: AppColors.white,
                                               fontWeight: FontWeight.normal,
                                               fontSize: 12)),
                                       if (training.endTime.isNotEmpty)
                                         Text(" - ",
                                             style: TextStyle(
-                                                color: Colors.white,
+                                                color: AppColors.white,
                                                 fontWeight: FontWeight.normal,
                                                 fontSize: 12)),
                                       if (training.endTime.isNotEmpty)
@@ -218,7 +219,7 @@ class TrainingScreen extends StatelessWidget {
                                       if (training.endTime.isNotEmpty)
                                         Text(training.endTime,
                                             style: TextStyle(
-                                                color: Colors.white,
+                                                color: AppColors.white,
                                                 fontWeight: FontWeight.normal,
                                                 fontSize: 12)),
                                     ],
@@ -227,7 +228,6 @@ class TrainingScreen extends StatelessWidget {
                               ),
                             ],
                           )
-
                         ],
                       ),
                     ],

@@ -4,6 +4,7 @@ import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:provider/provider.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class WeeklyReportChart extends StatefulWidget {
   @override
@@ -101,7 +102,7 @@ class WeeklyReportChartState extends State<WeeklyReportChart> {
                                 return BarTooltipItem(
                                   'Worked: ${rod.toY.toStringAsFixed(2)} Hr',
                                   const TextStyle(
-                                    color: Colors.white,
+                                    color: AppColors.white,
                                     fontWeight: FontWeight.w700,
                                   ),
                                 );
@@ -300,7 +301,7 @@ class WeeklyReportChartState extends State<WeeklyReportChart> {
         Container(
           width: width,
           height: 10,
-          color: Colors.white.withValues(alpha: 0.4),
+          color: AppColors.white.withValues(alpha: 0.4),
         ),
       ],
     );

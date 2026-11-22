@@ -2,6 +2,7 @@ import 'package:cnattendance/widget/buttonborder.dart';
 import 'package:expandable/expandable.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class RulesCardView extends StatelessWidget {
   final String title;
@@ -14,13 +15,13 @@ class RulesCardView extends StatelessWidget {
     return Card(
       shape: ButtonBorder(),
       elevation: 0,
-      color: Colors.white12,
+      color: AppColors.white12,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10,vertical: 15),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 15),
         child: ExpandableTheme(
           data: const ExpandableThemeData(
             iconPadding: EdgeInsets.all(0),
-            iconColor: Colors.white,
+            iconColor: AppColors.white,
             tapHeaderToExpand: true,
             animationDuration: Duration(milliseconds: 500),
           ),
@@ -30,23 +31,26 @@ class RulesCardView extends StatelessWidget {
                 style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white),
+                    color: AppColors.white),
               ),
               collapsed: Html(
                 shrinkWrap: true,
                 style: {
-                  "body": Style(color: Colors.white, fontSize: FontSize.medium,maxLines: 1)
+                  "body": Style(
+                      color: AppColors.white,
+                      fontSize: FontSize.medium,
+                      maxLines: 1)
                 },
                 data: description,
               ),
               expanded: Html(
                 shrinkWrap: true,
                 style: {
-                  "body": Style(color: Colors.white, fontSize: FontSize.medium)
+                  "body":
+                      Style(color: AppColors.white, fontSize: FontSize.medium)
                 },
                 data: description,
-              )
-          ),
+              )),
         ),
       ),
     );

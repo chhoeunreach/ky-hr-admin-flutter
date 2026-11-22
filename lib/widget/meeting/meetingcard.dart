@@ -3,6 +3,7 @@ import 'package:cnattendance/screen/profile/meetingdetailscreen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class MeetingCard extends StatelessWidget {
   final int id;
@@ -12,16 +13,17 @@ class MeetingCard extends StatelessWidget {
   final String time;
   final List<Participator> participator;
 
-  MeetingCard(this.id, this.title, this.venue, this.date, this.participator,this.time);
+  MeetingCard(
+      this.id, this.title, this.venue, this.date, this.participator, this.time);
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        Get.to(MeetingDetailScreen(),arguments: {"id":id});
+        Get.to(MeetingDetailScreen(), arguments: {"id": id});
       },
       child: Card(
-        color: Colors.white12,
+        color: AppColors.white12,
         elevation: 0,
         child: Stack(
           alignment: Alignment.center,
@@ -38,14 +40,13 @@ class MeetingCard extends StatelessWidget {
                     Text(
                       title,
                       style: const TextStyle(
-                          color: Colors.white,
+                          color: AppColors.white,
                           fontSize: 20,
                           fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(
                       height: 10,
                     ),
-
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -56,11 +57,11 @@ class MeetingCard extends StatelessWidget {
                             children: [
                               Text(
                                 translate('meeting_list_screen.venue'),
-                                style: TextStyle(color: Colors.white70),
+                                style: TextStyle(color: AppColors.white70),
                               ),
                               Text(venue,
                                   style: TextStyle(
-                                      color: Colors.white,
+                                      color: AppColors.white,
                                       fontWeight: FontWeight.normal,
                                       fontSize: 12)),
                             ],
@@ -70,7 +71,7 @@ class MeetingCard extends StatelessWidget {
                           height: 30,
                           child: VerticalDivider(
                             width: 1,
-                            color: Colors.white54,
+                            color: AppColors.white54,
                           ),
                         ),
                         Expanded(
@@ -79,11 +80,11 @@ class MeetingCard extends StatelessWidget {
                             children: [
                               Text(
                                 "Date",
-                                style: TextStyle(color: Colors.white70),
+                                style: TextStyle(color: AppColors.white70),
                               ),
                               Text(date,
                                   style: TextStyle(
-                                      color: Colors.white,
+                                      color: AppColors.white,
                                       fontWeight: FontWeight.normal,
                                       fontSize: 12)),
                             ],
@@ -93,7 +94,7 @@ class MeetingCard extends StatelessWidget {
                           height: 30,
                           child: VerticalDivider(
                             width: 1,
-                            color: Colors.white54,
+                            color: AppColors.white54,
                           ),
                         ),
                         Expanded(
@@ -103,11 +104,11 @@ class MeetingCard extends StatelessWidget {
                             children: [
                               Text(
                                 "Time",
-                                style: TextStyle(color: Colors.white70),
+                                style: TextStyle(color: AppColors.white70),
                               ),
                               Text(time,
                                   style: TextStyle(
-                                      color: Colors.white,
+                                      color: AppColors.white,
                                       fontWeight: FontWeight.normal,
                                       fontSize: 12)),
                             ],

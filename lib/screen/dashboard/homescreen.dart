@@ -350,7 +350,8 @@ class HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final showAttendance = context.select<DashboardProvider, bool>(
-        (provider) => provider.features['attendance'] == '1');
+        (provider) => provider.features['attendance'] == '1' &&
+            provider.isMobileMenuAt('attendance', 'home_quick'));
     final enterprise = EnterpriseTheme.of(context);
     final profileVisible = enterprise.layout.shows(LayoutItem.profile);
     final showMenuInset = enterprise.layout.showMenuButton &&
@@ -375,7 +376,7 @@ class HomeScreenState extends State<HomeScreen> {
         Positioned.fill(
           child: PremiumBackground(
             imageBackground: enterprise.mode == AppThemeMode.light
-                ? 'assets/images/home_bg.jpg'
+                ? 'assets/images/home_bg_bright.svg'
                 : null,
             child: const SizedBox.expand(),
           ),
@@ -425,7 +426,8 @@ class HomeScreenState extends State<HomeScreen> {
                                 children: [
                                   for (final item in enterprise.layout
                                       .visible(LayoutArea.home))
-                                    if (sections[item] case final Widget section)
+                                    if (sections[item]
+                                        case final Widget section)
                                       KeyedSubtree(
                                         key: ValueKey(item),
                                         child: section,

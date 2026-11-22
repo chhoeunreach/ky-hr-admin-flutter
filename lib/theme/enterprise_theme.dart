@@ -7,6 +7,7 @@ import 'package:cnattendance/theme/theme_provider.dart';
 import 'package:cnattendance/theme/theme_layout.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class EnterpriseTheme {
   final AppThemeMode mode;
@@ -57,31 +58,31 @@ class EnterpriseTheme {
 
   Color get contentSurface =>
       mode == AppThemeMode.light && layout.background == null
-          ? Colors.white
+          ? AppColors.white
           : Color.alphaBlend(surface, colors.backgroundColor);
 
   Color get cardBackground => isKhmerHeritage || layout.background != null
       ? surface
       : mode == AppThemeMode.rosePink
-          ? const Color(0xFF9D124D).withValues(alpha: 0.96)
+          ? AppColors.customFF9D124D.withValues(alpha: 0.96)
           : isDark
-              ? const Color(0xFF1E293B).withValues(alpha: 0.90)
-              : Colors.white;
+              ? AppColors.customFF1E293B.withValues(alpha: 0.90)
+              : AppColors.white;
   Color get cardBorder => isKhmerHeritage || layout.background != null
       ? accent.withValues(alpha: .5)
       : mode == AppThemeMode.rosePink
-          ? const Color(0xFFFF80AB).withValues(alpha: 0.52)
+          ? AppColors.customFFFF80AB.withValues(alpha: 0.52)
           : isDark
-              ? const Color(0xFF334155)
-              : const Color(0xFFE2E8F0);
+              ? AppColors.customFF334155
+              : AppColors.customFFE2E8F0;
 
   Color get mutedText => text.withValues(alpha: isDark ? 0.74 : 0.68);
-  Color get glassFill => Colors.white.withValues(
+  Color get glassFill => AppColors.white.withValues(
         alpha: mode == AppThemeMode.rosePink ? 0.14 : (isDark ? 0.12 : 0.58),
       );
   Color get glassStroke => isKhmerHeritage
       ? cardBorder
-      : Colors.white.withValues(
+      : AppColors.white.withValues(
           alpha: mode == AppThemeMode.rosePink ? 0.34 : (isDark ? 0.18 : 0.74),
         );
   Color get glow => accent.withValues(alpha: isDark ? 0.34 : 0.28);
@@ -101,7 +102,7 @@ class EnterpriseTheme {
         colors: isKhmerHeritage
             ? [surface, secondary]
             : [
-                Colors.white.withValues(alpha: isDark ? 0.17 : 0.76),
+                AppColors.white.withValues(alpha: isDark ? 0.17 : 0.76),
                 primary.withValues(alpha: isDark ? 0.14 : 0.10),
                 secondary.withValues(alpha: isDark ? 0.16 : 0.08),
               ],
@@ -135,7 +136,7 @@ class EnterpriseTheme {
           offset: const Offset(0, 14),
         ),
         BoxShadow(
-          color: Colors.black.withValues(alpha: isDark ? 0.24 : 0.10),
+          color: AppColors.black.withValues(alpha: isDark ? 0.24 : 0.10),
           blurRadius: 22,
           offset: const Offset(0, 12),
         ),
@@ -171,17 +172,17 @@ class EnterpriseGlass extends StatelessWidget {
         child: Container(
           padding: padding,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.white,
             borderRadius: BorderRadius.circular(radius),
-            border: Border.all(color: const Color(0xFFB8DEFF)),
+            border: Border.all(color: AppColors.customFFB8DEFF),
             boxShadow: const [
               BoxShadow(
-                color: Color(0x1A1683E6),
+                color: AppColors.custom1A1683E6,
                 blurRadius: 18,
                 offset: Offset(0, 7),
               ),
               BoxShadow(
-                color: Color(0x55FFFFFF),
+                color: AppColors.custom55FFFFFF,
                 blurRadius: 4,
                 offset: Offset(0, 1),
               ),

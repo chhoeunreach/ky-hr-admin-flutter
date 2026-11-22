@@ -8,6 +8,7 @@ import 'package:cnattendance/widget/homescreen/monthly_attendance_details.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:provider/provider.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class HomeAttendanceHighlights extends StatelessWidget {
   const HomeAttendanceHighlights({super.key, required this.summary});
@@ -61,7 +62,7 @@ class HomeAttendanceHighlights extends StatelessWidget {
                             child: _lateBonusMetric(
                               enterprise: enterprise,
                               icon: Icons.access_time_filled_rounded,
-                              color: const Color(0xFFEF4444),
+                              color: AppColors.dangerToken,
                               label: translate('home_attendance.total_late'),
                               value:
                                   '${summary?.totalLateCount ?? summary?.lateCount ?? '—'}',
@@ -73,7 +74,7 @@ class HomeAttendanceHighlights extends StatelessWidget {
                             child: _lateBonusMetric(
                               enterprise: enterprise,
                               icon: Icons.remove_circle_outline_rounded,
-                              color: const Color(0xFFF59E0B),
+                              color: AppColors.customFFF59E0B,
                               label: translate('home_attendance.reduc'),
                               value: summary == null
                                   ? '—'
@@ -91,7 +92,7 @@ class HomeAttendanceHighlights extends StatelessWidget {
                           children: [
                             const Icon(
                               Icons.verified_rounded,
-                              color: Color(0xFF10B981),
+                              color: AppColors.successToken,
                               size: 17,
                             ),
                             const SizedBox(width: 5),
@@ -174,7 +175,7 @@ class HomeAttendanceHighlights extends StatelessWidget {
                         children: [
                           const Icon(
                             Icons.emoji_events_rounded,
-                            color: Color(0xFFF59E0B),
+                            color: AppColors.customFFF59E0B,
                             size: 16,
                           ),
                           const SizedBox(width: 5),
@@ -397,7 +398,7 @@ class HomeAttendanceHighlights extends StatelessWidget {
   }) {
     final progress = summary?.progress ?? 0.0;
     final percentage = (progress * 100).round();
-    const color = Color(0xFF10B981);
+    const color = AppColors.successToken;
     return Material(
       color: color.withValues(alpha: enterprise.isDark ? 0.15 : 0.08),
       borderRadius: BorderRadius.circular(10),
@@ -488,7 +489,7 @@ class HomeAttendanceHighlights extends StatelessWidget {
       height: 19,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 1.5),
+        border: Border.all(color: AppColors.white, width: 1.5),
       ),
       child: ClipOval(
         child: CachedNetworkImage(
@@ -496,11 +497,12 @@ class HomeAttendanceHighlights extends StatelessWidget {
           width: 19,
           height: 19,
           fit: BoxFit.cover,
-          placeholder: (_, __) => const ColoredBox(color: Color(0xFFE2E8F0)),
+          placeholder: (_, __) =>
+              const ColoredBox(color: AppColors.customFFE2E8F0),
           errorWidget: (_, __, ___) => const ColoredBox(
-            color: Color(0xFFE2E8F0),
-            child:
-                Icon(Icons.person_rounded, size: 14, color: Color(0xFF64748B)),
+            color: AppColors.customFFE2E8F0,
+            child: Icon(Icons.person_rounded,
+                size: 14, color: AppColors.customFF64748B),
           ),
         ),
       ),

@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cnattendance/widget/buttonborder.dart';
 import 'package:flutter/material.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class LeaveListCardView extends StatelessWidget {
   final String id;
@@ -9,12 +10,12 @@ class LeaveListCardView extends StatelessWidget {
   final String post;
   final String leaveDays;
 
-  LeaveListCardView(this.id,this.name, this.avatar, this.post, this.leaveDays);
+  LeaveListCardView(this.id, this.name, this.avatar, this.post, this.leaveDays);
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      color: Colors.white12,
+      color: AppColors.white12,
       elevation: 0,
       shape: ButtonBorder(),
       child: Container(
@@ -40,14 +41,14 @@ class LeaveListCardView extends StatelessWidget {
               children: [
                 Text(
                   name,
-                  style: TextStyle(fontSize: 18, color: Colors.white),
+                  style: TextStyle(fontSize: 18, color: AppColors.white),
                 ),
                 SizedBox(
                   height: 5,
                 ),
                 Text(
                   post,
-                  style: TextStyle(fontSize: 15, color: Colors.white70),
+                  style: TextStyle(fontSize: 15, color: AppColors.white70),
                 ),
               ],
             ),
@@ -61,21 +62,21 @@ class LeaveListCardView extends StatelessWidget {
                     child: Container(
                         width: 60,
                         height: 60,
-                        color: Colors.green,
+                        color: AppColors.green,
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
                               leaveDays,
                               style: TextStyle(
-                                  color: Colors.white,
+                                  color: AppColors.white,
                                   fontSize: 22,
                                   fontWeight: FontWeight.bold),
                             ),
                             Text(
                               'Days',
                               style: TextStyle(
-                                  color: Colors.white,
+                                  color: AppColors.white,
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold),
                             ),
@@ -90,7 +91,7 @@ class LeaveListCardView extends StatelessWidget {
                     child: Card(
                       shape: CircleBorder(),
                       elevation: 0,
-                      color: Colors.white,
+                      color: AppColors.white,
                       margin: EdgeInsets.zero,
                       child: Padding(
                         padding: const EdgeInsets.all(3.0),

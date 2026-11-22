@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:io';
 import 'dart:ui';
 
+import 'package:cnattendance/model/app_appearance_config.dart';
 import 'package:cnattendance/theme/app_theme_mode.dart';
 import 'package:cnattendance/theme/royal_colors.dart';
 import 'package:cnattendance/theme/royal_blue_day_theme.dart';
@@ -10,6 +11,7 @@ import 'package:cnattendance/theme/theme_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class PremiumBackground extends StatefulWidget {
   final Widget child;
@@ -38,6 +40,10 @@ class _PremiumBackgroundState extends State<PremiumBackground> {
   // 60fps forever, which was driving sustained high GPU/CPU usage and heat.
   static const double _staticProgress = 0.5;
 
+  /// Set when the admin-delivered background fails to load so the screen
+  /// falls back to the normal themed layers instead of a blank backdrop.
+  bool _serverBackgroundFailed = false;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -53,33 +59,82 @@ class _PremiumBackgroundState extends State<PremiumBackground> {
     }
   }
 
-  Widget _imageBackground(ImageProvider image) => Stack(
+  Widget _imageBackground(Widget image) => Stack(
         children: [
           Positioned.fill(
-            child: IgnorePointer(
-              child: Image(
-                image: image,
-                alignment: Alignment.center,
-                fit: BoxFit.cover,
-                excludeFromSemantics: true,
-                gaplessPlayback: true,
-              ),
-            ),
+            child: IgnorePointer(child: image),
           ),
           widget.child,
         ],
       );
 
+  Widget _serverBackground(AppAppearanceConfig appearance) {
+    final url = appearance.backgroundUrl!;
+    final image = appearance.isSvgBackground
+        ? SvgPicture.network(
+            url,
+            alignment: Alignment.center,
+            fit: BoxFit.cover,
+            excludeFromSemantics: true,
+          )
+        : Image.network(
+            url,
+            alignment: Alignment.center,
+            fit: BoxFit.cover,
+            excludeFromSemantics: true,
+            gaplessPlayback: true,
+            errorBuilder: (context, error, stackTrace) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted && !_serverBackgroundFailed) {
+                  setState(() => _serverBackgroundFailed = true);
+                }
+              });
+              return const SizedBox.shrink();
+            },
+          );
+    return _imageBackground(image);
+  }
+
   @override
   Widget build(BuildContext context) {
     final enterprise = EnterpriseTheme.of(context);
+    final appearance = context.watch<ThemeProvider?>()?.serverAppearance;
+    if (!widget.brandBackdrop &&
+        appearance != null &&
+        appearance.hasCustomBackground &&
+        !_serverBackgroundFailed) {
+      return _serverBackground(appearance);
+    }
     final customBackground =
         context.watch<ThemeProvider?>()?.backgroundFor(enterprise.mode);
     if (!widget.brandBackdrop && customBackground != null) {
-      return _imageBackground(FileImage(File(customBackground)));
+      return _imageBackground(
+        Image.file(
+          File(customBackground),
+          alignment: Alignment.center,
+          fit: BoxFit.cover,
+          excludeFromSemantics: true,
+          gaplessPlayback: true,
+        ),
+      );
     }
     if (!widget.brandBackdrop && widget.imageBackground != null) {
-      return _imageBackground(AssetImage(widget.imageBackground!));
+      final asset = widget.imageBackground!;
+      final image = asset.toLowerCase().endsWith('.svg')
+          ? SvgPicture.asset(
+              asset,
+              alignment: Alignment.center,
+              fit: BoxFit.cover,
+              excludeFromSemantics: true,
+            )
+          : Image.asset(
+              asset,
+              alignment: Alignment.center,
+              fit: BoxFit.cover,
+              excludeFromSemantics: true,
+              gaplessPlayback: true,
+            );
+      return _imageBackground(image);
     }
 
     if (enterprise.isRoyalDay && !widget.brandBackdrop) {
@@ -393,7 +448,7 @@ class _ThemeDetailPainter extends CustomPainter {
       ..color = recipe.detailColor.withValues(alpha: 0.36);
     final fill = Paint()
       ..style = PaintingStyle.fill
-      ..color = Colors.white.withValues(alpha: 0.055);
+      ..color = AppColors.white.withValues(alpha: 0.055);
     for (final rect in [
       Rect.fromLTWH(size.width * 0.60, size.height * 0.10, 92, 72),
       Rect.fromLTWH(size.width * 0.73, size.height * 0.42, 74, 110),
@@ -632,18 +687,18 @@ class _PremiumBackgroundRecipe {
 
   static final _PremiumBackgroundRecipe branded = _recipe(
     colors: const [
-      Color(0xff04122e),
-      Color(0xff0b2f6b),
-      Color(0xff1e5bb8),
-      Color(0xffa8c8f0),
+      AppColors.customFF04122E,
+      AppColors.customFF0B2F6B,
+      AppColors.customFF1E5BB8,
+      AppColors.customFFA8C8F0,
     ],
-    mapTint: const Color(0xff5eb1ff),
+    mapTint: AppColors.customFF5EB1FF,
     mapOpacity: 0.12,
-    glow: const Color(0xff0066ff),
-    accent: const Color(0xff5eb1ff),
-    wave: const Color(0xff3d8bff),
+    glow: AppColors.customFF0066FF,
+    accent: AppColors.customFF5EB1FF,
+    wave: AppColors.customFF3D8BFF,
     detail: _BackgroundDetailStyle.bubbles,
-    detailColor: const Color(0xff7dd3ff),
+    detailColor: AppColors.customFF7DD3FF,
     light: true,
   );
 
@@ -652,196 +707,196 @@ class _PremiumBackgroundRecipe {
       case AppThemeMode.light:
         return _recipe(
           colors: const [
-            Color(0xffeef4fc),
-            Color(0xffdbe8fa),
-            Color(0xffc6d9f5),
-            Color(0xffaecbf0),
+            AppColors.customFFEEF4FC,
+            AppColors.customFFDBE8FA,
+            AppColors.customFFC6D9F5,
+            AppColors.customFFAECBF0,
           ],
-          mapTint: const Color(0xff2f6fed),
+          mapTint: AppColors.customFF2F6FED,
           mapOpacity: 0.10,
-          glow: const Color(0xff8ab4ff),
-          accent: const Color(0xff0284c7),
-          wave: const Color(0xffffffff),
+          glow: AppColors.customFF8AB4FF,
+          accent: AppColors.customFF0284C7,
+          wave: AppColors.white,
           detail: _BackgroundDetailStyle.bubbles,
-          detailColor: const Color(0xffeaf3ff),
+          detailColor: AppColors.customFFEAF3FF,
           light: true,
         );
       case AppThemeMode.dark:
         return _recipe(
           colors: const [
-            Color(0xff020617),
-            Color(0xff06143a),
-            Color(0xff020b25),
-            Color(0xff01030a),
+            AppColors.customFF020617,
+            AppColors.customFF06143A,
+            AppColors.customFF020B25,
+            AppColors.customFF01030A,
           ],
-          mapTint: const Color(0xff1d4ed8),
+          mapTint: AppColors.customFF1D4ED8,
           mapOpacity: 0.12,
-          glow: const Color(0xff2563eb),
-          accent: const Color(0xff60a5fa),
-          wave: const Color(0xff2563eb),
+          glow: AppColors.customFF2563EB,
+          accent: AppColors.customFF60A5FA,
+          wave: AppColors.customFF2563EB,
           detail: _BackgroundDetailStyle.bubbles,
-          detailColor: const Color(0xff3b82f6),
+          detailColor: AppColors.customFF3B82F6,
         );
       case AppThemeMode.kyEnterprise:
         return _recipe(
           colors: const [
-            Color(0xff03122f),
-            Color(0xff062b66),
-            Color(0xff031a43),
-            Color(0xff010814),
+            AppColors.customFF03122F,
+            AppColors.customFF062B66,
+            AppColors.customFF031A43,
+            AppColors.customFF010814,
           ],
-          mapTint: const Color(0xff0ea5ff),
+          mapTint: AppColors.customFF0EA5FF,
           mapOpacity: 0.12,
-          glow: const Color(0xff0369ff),
-          accent: const Color(0xfffbbf24),
-          wave: const Color(0xfff59e0b),
+          glow: AppColors.customFF0369FF,
+          accent: AppColors.customFFFBBF24,
+          wave: AppColors.customFFF59E0B,
           detail: _BackgroundDetailStyle.goldLines,
-          detailColor: const Color(0xfffbbf24),
+          detailColor: AppColors.customFFFBBF24,
         );
       case AppThemeMode.neoGlass:
         return _recipe(
           colors: const [
-            Color(0xff160a3a),
-            Color(0xff3b168f),
-            Color(0xff11146c),
-            Color(0xff09051f),
+            AppColors.customFF160A3A,
+            AppColors.customFF3B168F,
+            AppColors.customFF11146C,
+            AppColors.customFF09051F,
           ],
-          mapTint: const Color(0xffa78bfa),
+          mapTint: AppColors.customFFA78BFA,
           mapOpacity: 0.11,
-          glow: const Color(0xff7c3aed),
-          accent: const Color(0xff38bdf8),
-          wave: const Color(0xffa855f7),
+          glow: AppColors.customFF7C3AED,
+          accent: AppColors.customFF38BDF8,
+          wave: AppColors.customFFA855F7,
           detail: _BackgroundDetailStyle.glassPanels,
-          detailColor: const Color(0xffc4b5fd),
+          detailColor: AppColors.customFFC4B5FD,
         );
       case AppThemeMode.premiumGradient:
         return _recipe(
           colors: const [
-            Color(0xff021a24),
-            Color(0xff0e7490),
-            Color(0xff1d4ed8),
-            Color(0xff010e14),
+            AppColors.customFF021A24,
+            AppColors.customFF0E7490,
+            AppColors.customFF1D4ED8,
+            AppColors.customFF010E14,
           ],
-          mapTint: const Color(0xff00f5d4),
+          mapTint: AppColors.customFF00F5D4,
           mapOpacity: 0.16,
-          glow: const Color(0xff06b6d4),
-          accent: const Color(0xff00f5d4),
-          wave: const Color(0xff06b6d4),
+          glow: AppColors.customFF06B6D4,
+          accent: AppColors.customFF00F5D4,
+          wave: AppColors.customFF06B6D4,
           detail: _BackgroundDetailStyle.bubbles,
-          detailColor: const Color(0xff67e8f9),
+          detailColor: AppColors.customFF67E8F9,
         );
       case AppThemeMode.amoled:
         return _recipe(
           colors: const [
-            Color(0xff000000),
-            Color(0xff031407),
-            Color(0xff000000),
-            Color(0xff000000),
+            AppColors.black,
+            AppColors.customFF031407,
+            AppColors.black,
+            AppColors.black,
           ],
-          mapTint: const Color(0xff22c55e),
+          mapTint: AppColors.successToken,
           mapOpacity: 0.12,
-          glow: const Color(0xff16a34a),
-          accent: const Color(0xff4ade80),
-          wave: const Color(0xff22c55e),
+          glow: AppColors.customFF16A34A,
+          accent: AppColors.customFF4ADE80,
+          wave: AppColors.successToken,
           detail: _BackgroundDetailStyle.hex,
-          detailColor: const Color(0xff22c55e),
+          detailColor: AppColors.successToken,
         );
       case AppThemeMode.sunset:
         return _recipe(
           colors: const [
-            Color(0xfffff7ed),
-            Color(0xffffd29f),
-            Color(0xffff8a1c),
-            Color(0xfffff1d6),
+            AppColors.customFFFFF7ED,
+            AppColors.customFFFFD29F,
+            AppColors.customFFFF8A1C,
+            AppColors.customFFFFF1D6,
           ],
-          mapTint: const Color(0xfff97316),
+          mapTint: AppColors.customFFF97316,
           mapOpacity: 0.11,
-          glow: const Color(0xffffedd5),
-          accent: const Color(0xfffb923c),
-          wave: const Color(0xffffffff),
+          glow: AppColors.customFFFFEDD5,
+          accent: AppColors.customFFFB923C,
+          wave: AppColors.white,
           detail: _BackgroundDetailStyle.bubbles,
-          detailColor: const Color(0xfffffbeb),
+          detailColor: AppColors.customFFFFFBEB,
           light: true,
         );
       case AppThemeMode.oceanBlue:
         return _recipe(
           colors: const [
-            Color(0xff021526),
-            Color(0xff075985),
-            Color(0xff0369a1),
-            Color(0xff020617),
+            AppColors.customFF021526,
+            AppColors.customFF075985,
+            AppColors.customFF0369A1,
+            AppColors.customFF020617,
           ],
-          mapTint: const Color(0xff38bdf8),
+          mapTint: AppColors.customFF38BDF8,
           mapOpacity: 0.12,
-          glow: const Color(0xff0284c7),
-          accent: const Color(0xff22d3ee),
-          wave: const Color(0xff38bdf8),
+          glow: AppColors.customFF0284C7,
+          accent: AppColors.customFF22D3EE,
+          wave: AppColors.customFF38BDF8,
           detail: _BackgroundDetailStyle.bubbles,
-          detailColor: const Color(0xff7dd3fc),
+          detailColor: AppColors.customFF7DD3FC,
         );
       case AppThemeMode.forestGreen:
         return _recipe(
           colors: const [
-            Color(0xff02140a),
-            Color(0xff064e3b),
-            Color(0xff052e16),
-            Color(0xff010704),
+            AppColors.customFF02140A,
+            AppColors.emerald900,
+            AppColors.customFF052E16,
+            AppColors.customFF010704,
           ],
-          mapTint: const Color(0xff22c55e),
+          mapTint: AppColors.successToken,
           mapOpacity: 0.12,
-          glow: const Color(0xff16a34a),
-          accent: const Color(0xff4ade80),
-          wave: const Color(0xff22c55e),
+          glow: AppColors.customFF16A34A,
+          accent: AppColors.customFF4ADE80,
+          wave: AppColors.successToken,
           detail: _BackgroundDetailStyle.leaves,
-          detailColor: const Color(0xff4ade80),
+          detailColor: AppColors.customFF4ADE80,
         );
       case AppThemeMode.royalPurple:
         return _recipe(
           colors: const [
-            Color(0xff180733),
-            Color(0xff4c1d95),
-            Color(0xff2e1065),
-            Color(0xff090018),
+            AppColors.customFF180733,
+            AppColors.customFF4C1D95,
+            AppColors.customFF2E1065,
+            AppColors.customFF090018,
           ],
-          mapTint: const Color(0xffc084fc),
+          mapTint: AppColors.customFFC084FC,
           mapOpacity: 0.12,
-          glow: const Color(0xff9333ea),
-          accent: const Color(0xffd946ef),
-          wave: const Color(0xffc084fc),
+          glow: AppColors.customFF9333EA,
+          accent: AppColors.customFFD946EF,
+          wave: AppColors.customFFC084FC,
           detail: _BackgroundDetailStyle.bubbles,
-          detailColor: const Color(0xffd8b4fe),
+          detailColor: AppColors.customFFD8B4FE,
         );
       case AppThemeMode.copperBrown:
         return _recipe(
           colors: const [
-            Color(0xff170703),
-            Color(0xff431407),
-            Color(0xff7c2d12),
-            Color(0xff090302),
+            AppColors.customFF170703,
+            AppColors.customFF431407,
+            AppColors.customFF7C2D12,
+            AppColors.customFF090302,
           ],
-          mapTint: const Color(0xfff97316),
+          mapTint: AppColors.customFFF97316,
           mapOpacity: 0.11,
-          glow: const Color(0xffc2410c),
-          accent: const Color(0xfffdba74),
-          wave: const Color(0xfffb923c),
+          glow: AppColors.customFFC2410C,
+          accent: AppColors.customFFFDBA74,
+          wave: AppColors.customFFFB923C,
           detail: _BackgroundDetailStyle.hex,
-          detailColor: const Color(0xfff97316),
+          detailColor: AppColors.customFFF97316,
         );
       case AppThemeMode.rosePink:
         return _recipe(
           colors: const [
-            Color(0xff880e4f),
-            Color(0xffc2185b),
-            Color(0xffe91e63),
-            Color(0xffad1457),
+            AppColors.customFF880E4F,
+            AppColors.customFFC2185B,
+            AppColors.materialPink,
+            AppColors.customFFAD1457,
           ],
-          mapTint: const Color(0xfff8bbd0),
+          mapTint: AppColors.customFFF8BBD0,
           mapOpacity: 0.12,
-          glow: const Color(0xffe91e63),
-          accent: const Color(0xffff80ab),
-          wave: const Color(0xfff8bbd0),
+          glow: AppColors.materialPink,
+          accent: AppColors.customFFFF80AB,
+          wave: AppColors.customFFF8BBD0,
           detail: _BackgroundDetailStyle.flowers,
-          detailColor: const Color(0xffff80ab),
+          detailColor: AppColors.customFFFF80AB,
         );
       case AppThemeMode.royalBlueDay:
       case AppThemeMode.royalBlueGoldKhmerDay:
@@ -859,18 +914,18 @@ class _PremiumBackgroundRecipe {
       case AppThemeMode.khmerHeritage:
         return _recipe(
           colors: const [
-            Color(0xff611b35),
-            Color(0xff390f24),
-            Color(0xff2c0a1a),
-            Color(0xff210814),
+            AppColors.customFF611B35,
+            AppColors.customFF390F24,
+            AppColors.customFF2C0A1A,
+            AppColors.customFF210814,
           ],
-          mapTint: const Color(0xffe3b877),
+          mapTint: AppColors.customFFE3B877,
           mapOpacity: 0,
-          glow: const Color(0xff862b48),
-          accent: const Color(0xffedc478),
-          wave: const Color(0xff943f58),
+          glow: AppColors.customFF862B48,
+          accent: AppColors.customFFEDC478,
+          wave: AppColors.customFF943F58,
           detail: _BackgroundDetailStyle.flowers,
-          detailColor: const Color(0xffe3b877),
+          detailColor: AppColors.customFFE3B877,
         );
     }
   }
@@ -902,8 +957,8 @@ class _PremiumBackgroundRecipe {
       detailColor: detailColor,
       skylineColor: accent.withValues(alpha: light ? 0.08 : 0.10),
       skylineAccentColor: detailColor,
-      blurTop: Colors.white.withValues(alpha: light ? 0.10 : 0.02),
-      blurBottom: Colors.black.withValues(alpha: light ? 0.05 : 0.24),
+      blurTop: AppColors.white.withValues(alpha: light ? 0.10 : 0.02),
+      blurBottom: AppColors.black.withValues(alpha: light ? 0.05 : 0.24),
     );
   }
 }

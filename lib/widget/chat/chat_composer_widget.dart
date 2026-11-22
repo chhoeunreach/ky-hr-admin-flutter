@@ -2,6 +2,7 @@ import 'package:cnattendance/provider/chatcontroller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class ChatComposerWidget extends StatelessWidget {
   final ChatController model;
@@ -15,7 +16,7 @@ class ChatComposerWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(
       () => Container(
-        color: const Color(0xff06142f),
+        color: AppColors.customFF06142F,
         padding: const EdgeInsets.fromLTRB(10, 8, 10, 12),
         child: SafeArea(
           top: false,
@@ -66,13 +67,13 @@ class _MessageControls extends StatelessWidget {
               maxLines: 4,
               minLines: 1,
               keyboardType: TextInputType.multiline,
-              style: const TextStyle(color: Colors.white, fontSize: 16),
+              style: const TextStyle(color: AppColors.white, fontSize: 16),
               controller: model.chatController,
-              cursorColor: const Color(0xff0084ff),
+              cursorColor: AppColors.customFF0084FF,
               decoration: InputDecoration(
                 hintText: translate('chat_screen.send_message'),
                 hintStyle: const TextStyle(
-                  color: Colors.white54,
+                  color: AppColors.white54,
                   fontSize: 16,
                 ),
                 border: OutlineInputBorder(
@@ -84,7 +85,7 @@ class _MessageControls extends StatelessWidget {
                   vertical: 10,
                 ),
                 filled: true,
-                fillColor: const Color(0xff14264c),
+                fillColor: AppColors.customFF14264C,
               ),
             ),
           ),
@@ -117,8 +118,8 @@ class _RecordingControls extends StatelessWidget {
         children: [
           _ComposerIconButton(
             icon: Icons.close_rounded,
-            color: const Color(0xffef4444),
-            backgroundColor: const Color(0xff2d1830),
+            color: AppColors.dangerToken,
+            backgroundColor: AppColors.customFF2D1830,
             onPressed:
                 model.isUploading.value ? null : model.cancelVoiceRecording,
           ),
@@ -128,22 +129,22 @@ class _RecordingControls extends StatelessWidget {
               height: 46,
               padding: const EdgeInsets.symmetric(horizontal: 14),
               decoration: BoxDecoration(
-                color: const Color(0xff14264c),
+                color: AppColors.customFF14264C,
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: const Color(0xff24406f)),
+                border: Border.all(color: AppColors.customFF24406F),
               ),
               child: Row(
                 children: [
                   Icon(
                     model.isRecording.value ? Icons.mic : Icons.check_circle,
-                    color: const Color(0xffef4444),
+                    color: AppColors.dangerToken,
                     size: 20,
                   ),
                   const SizedBox(width: 8),
                   Text(
                     _formatDuration(model.recordingSeconds.value),
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AppColors.white,
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                     ),
@@ -159,7 +160,7 @@ class _RecordingControls extends StatelessWidget {
                           : model.stopVoiceRecording,
                       icon: const Icon(
                         Icons.stop_circle,
-                        color: Color(0xffef4444),
+                        color: AppColors.dangerToken,
                       ),
                     ),
                 ],
@@ -193,8 +194,8 @@ class _ComposerIconButton extends StatelessWidget {
   const _ComposerIconButton({
     required this.icon,
     required this.onPressed,
-    this.color = const Color(0xff48a7ff),
-    this.backgroundColor = const Color(0xff102246),
+    this.color = AppColors.customFF48A7FF,
+    this.backgroundColor = AppColors.customFF102246,
   });
 
   @override
@@ -206,12 +207,12 @@ class _ComposerIconButton extends StatelessWidget {
         width: 36,
         height: 36,
         decoration: BoxDecoration(
-          color: onPressed == null ? const Color(0xff0c1c3a) : backgroundColor,
+          color: onPressed == null ? AppColors.customFF0C1C3A : backgroundColor,
           shape: BoxShape.circle,
         ),
         child: Icon(
           icon,
-          color: onPressed == null ? Colors.white30 : color,
+          color: onPressed == null ? AppColors.white30 : color,
           size: 22,
         ),
       ),
@@ -238,12 +239,12 @@ class _SendButton extends StatelessWidget {
         height: 42,
         decoration: BoxDecoration(
           color: onPressed == null && !isLoading
-              ? const Color(0xff234067)
-              : const Color(0xff1684f8),
+              ? AppColors.customFF234067
+              : AppColors.customFF1684F8,
           shape: BoxShape.circle,
           boxShadow: const [
             BoxShadow(
-              color: Color(0x551684f8),
+              color: AppColors.custom551684F8,
               blurRadius: 16,
               offset: Offset(0, 6),
             ),
@@ -256,10 +257,11 @@ class _SendButton extends StatelessWidget {
                   height: 18,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Colors.white,
+                    color: AppColors.white,
                   ),
                 )
-              : const Icon(Icons.send_rounded, color: Colors.white, size: 21),
+              : const Icon(Icons.send_rounded,
+                  color: AppColors.white, size: 21),
         ),
       ),
     );

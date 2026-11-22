@@ -12,15 +12,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class ChatScreen extends StatelessWidget {
   const ChatScreen({super.key});
 
-  static const Color _pageBackground = Color(0xff06142f);
-  static const Color _headerBackground = Color(0xff06142f);
-  static const Color _sentBubble = Color(0xff1689f9);
-  static const Color _receivedBubble = Color(0xff13264d);
-  static const Color _accentPurple = Color(0xffa66bff);
+  static const Color _pageBackground = AppColors.customFF06142F;
+  static const Color _headerBackground = AppColors.customFF06142F;
+  static const Color _sentBubble = AppColors.customFF1689F9;
+  static const Color _receivedBubble = AppColors.customFF13264D;
+  static const Color _accentPurple = AppColors.customFFA66BFF;
 
   bool _hasValidNetworkImage(String url) {
     final uri = Uri.tryParse(url.trim());
@@ -35,13 +36,13 @@ class ChatScreen extends StatelessWidget {
         width: size,
         height: size,
         decoration: const BoxDecoration(
-          color: Color(0xff1a2b52),
+          color: AppColors.customFF1A2B52,
           shape: BoxShape.circle,
         ),
         child: Icon(
           Icons.person,
           size: size * .55,
-          color: Colors.white70,
+          color: AppColors.white70,
         ),
       );
     }
@@ -56,13 +57,13 @@ class ChatScreen extends StatelessWidget {
           width: size,
           height: size,
           decoration: const BoxDecoration(
-            color: Color(0xff1a2b52),
+            color: AppColors.customFF1A2B52,
             shape: BoxShape.circle,
           ),
           child: Icon(
             Icons.person,
             size: size * .55,
-            color: Colors.white70,
+            color: AppColors.white70,
           ),
         ),
       ),
@@ -75,7 +76,7 @@ class ChatScreen extends StatelessWidget {
       scrolledUnderElevation: 0,
       backgroundColor: _headerBackground,
       shadowColor: Colors.transparent,
-      foregroundColor: Colors.white,
+      foregroundColor: AppColors.white,
       titleSpacing: 2,
       leadingWidth: 46,
       title: Obx(
@@ -95,9 +96,9 @@ class ChatScreen extends StatelessWidget {
                       width: 11,
                       height: 11,
                       decoration: BoxDecoration(
-                        color: const Color(0xff31c65b),
+                        color: AppColors.customFF31C65B,
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2),
+                        border: Border.all(color: AppColors.white, width: 2),
                       ),
                     ),
                   ),
@@ -114,7 +115,7 @@ class ChatScreen extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: AppColors.white,
                         fontSize: 17,
                         fontWeight: FontWeight.w800,
                       ),
@@ -122,7 +123,7 @@ class ChatScreen extends StatelessWidget {
                     Text(
                       translate('chat_screen.active_now'),
                       style: const TextStyle(
-                        color: Colors.white70,
+                        color: AppColors.white70,
                         fontSize: 13,
                         height: 1.1,
                       ),
@@ -171,11 +172,11 @@ class ChatScreen extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: const Color(0xff102246),
+            color: AppColors.customFF102246,
             borderRadius: BorderRadius.circular(16),
             boxShadow: const [
               BoxShadow(
-                color: Color(0x33000000),
+                color: AppColors.custom33000000,
                 blurRadius: 12,
                 offset: Offset(0, 4),
               ),
@@ -185,7 +186,7 @@ class ChatScreen extends StatelessWidget {
             DateFormat("MMM d 'AT' h:mm a").format(dateTime).toUpperCase(),
             textAlign: TextAlign.center,
             style: const TextStyle(
-              color: Colors.white70,
+              color: AppColors.white70,
               fontSize: 11,
               fontWeight: FontWeight.w700,
             ),
@@ -257,7 +258,7 @@ class ChatScreen extends StatelessWidget {
                 ? null
                 : const [
                     BoxShadow(
-                      color: Color(0x33000000),
+                      color: AppColors.custom33000000,
                       blurRadius: 18,
                       offset: Offset(0, 8),
                     ),
@@ -282,7 +283,7 @@ class ChatScreen extends StatelessWidget {
       return const Text(
         'Message deleted',
         style: TextStyle(
-          color: Colors.white54,
+          color: AppColors.white54,
           fontSize: 15,
           fontStyle: FontStyle.italic,
         ),
@@ -329,7 +330,7 @@ class ChatScreen extends StatelessWidget {
         Text(
           message.message,
           style: const TextStyle(
-            color: Colors.white,
+            color: AppColors.white,
             fontSize: 16,
             height: 1.28,
             fontWeight: FontWeight.w500,
@@ -340,7 +341,7 @@ class ChatScreen extends StatelessWidget {
             padding: EdgeInsets.only(top: 3),
             child: Text(
               'Edited',
-              style: TextStyle(color: Colors.white54, fontSize: 11),
+              style: TextStyle(color: AppColors.white54, fontSize: 11),
             ),
           ),
       ],
@@ -467,13 +468,14 @@ class ChatScreen extends StatelessWidget {
           Expanded(
             child: Obx(
               () => DecoratedBox(
-                decoration: _chatBackgroundDecoration(model.backgroundPath.value),
+                decoration:
+                    _chatBackgroundDecoration(model.backgroundPath.value),
                 child: ListView.builder(
-                    controller: model.scrollController,
-                    padding: const EdgeInsets.only(top: 10, bottom: 12),
-                    itemCount: model.chatList.length,
-                    itemBuilder: (context, index) =>
-                        _buildMessageRow(context, model, index),
+                  controller: model.scrollController,
+                  padding: const EdgeInsets.only(top: 10, bottom: 12),
+                  itemCount: model.chatList.length,
+                  itemBuilder: (context, index) =>
+                      _buildMessageRow(context, model, index),
                 ),
               ),
             ),
@@ -492,7 +494,7 @@ BoxDecoration _chatBackgroundDecoration(String path) {
         image: FileImage(File(path)),
         fit: BoxFit.cover,
         colorFilter: const ColorFilter.mode(
-          Color(0xaa06142f),
+          AppColors.customAA06142F,
           BlendMode.darken,
         ),
       ),
@@ -503,9 +505,9 @@ BoxDecoration _chatBackgroundDecoration(String path) {
       begin: Alignment.topCenter,
       end: Alignment.bottomCenter,
       colors: [
-        Color(0xff06142f),
-        Color(0xff071b3b),
-        Color(0xff051026),
+        AppColors.customFF06142F,
+        AppColors.customFF071B3B,
+        AppColors.customFF051026,
       ],
     ),
   );
@@ -521,7 +523,7 @@ class _ChatActionSheet extends StatelessWidget {
     return SafeArea(
       child: Container(
         decoration: const BoxDecoration(
-          color: Color(0xff0d1f41),
+          color: AppColors.customFF0D1F41,
           borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
         ),
         padding: const EdgeInsets.fromLTRB(14, 12, 14, 16),
@@ -546,7 +548,7 @@ class _ChatActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isDestructive ? const Color(0xffff6b6b) : Colors.white;
+    final color = isDestructive ? AppColors.customFFFF6B6B : AppColors.white;
     return ListTile(
       leading: Icon(icon, color: color),
       title: Text(label, style: TextStyle(color: color)),
@@ -576,7 +578,7 @@ class _HeaderActionButton extends StatelessWidget {
         width: 34,
         height: 34,
         decoration: BoxDecoration(
-          color: const Color(0xff20183e),
+          color: AppColors.customFF20183E,
           borderRadius: BorderRadius.circular(17),
         ),
         child: Icon(icon, color: iconColor, size: 22),

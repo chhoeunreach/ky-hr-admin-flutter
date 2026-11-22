@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:focus_detector/focus_detector.dart';
 import 'package:get/get.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class AwardsScreen extends StatelessWidget {
   final model = Get.put(AwardListController());
@@ -27,8 +28,8 @@ class AwardsScreen extends StatelessWidget {
           ),
           body: RefreshIndicator(
             triggerMode: RefreshIndicatorTriggerMode.onEdge,
-            color: Colors.white,
-            backgroundColor: Colors.blueGrey,
+            color: AppColors.white,
+            backgroundColor: AppColors.blueGrey,
             edgeOffset: 50,
             onRefresh: () {
               return model.getAwards();
@@ -45,7 +46,7 @@ class AwardsScreen extends StatelessWidget {
                     Card(
                       shape: ButtonBorder(),
                       elevation: 0,
-                      color: Colors.white12,
+                      color: AppColors.white12,
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: Row(
@@ -63,14 +64,14 @@ class AwardsScreen extends StatelessWidget {
                                   translate('award_screen.total_awards'),
                                   style: TextStyle(
                                       fontSize: 24,
-                                      color: Colors.white,
+                                      color: AppColors.white,
                                       fontWeight: FontWeight.normal),
                                 ),
                                 Row(
                                   children: [
                                     Icon(
                                       Icons.workspace_premium,
-                                      color: Colors.orangeAccent,
+                                      color: AppColors.orangeAccent,
                                       size: 35,
                                     ),
                                     Obx(
@@ -78,7 +79,7 @@ class AwardsScreen extends StatelessWidget {
                                         model.totalAwards.value.toString(),
                                         style: TextStyle(
                                             fontSize: 38,
-                                            color: Colors.white,
+                                            color: AppColors.white,
                                             fontWeight: FontWeight.bold),
                                       ),
                                     ),
@@ -103,7 +104,7 @@ class AwardsScreen extends StatelessWidget {
                               child: Text(
                                 translate('award_screen.recent_achievement'),
                                 style: TextStyle(
-                                    color: Colors.white,
+                                    color: AppColors.white,
                                     fontSize: 20,
                                     fontWeight: FontWeight.bold),
                               ),
@@ -118,7 +119,7 @@ class AwardsScreen extends StatelessWidget {
                                 child: Card(
                                   shape: ButtonBorder(),
                                   elevation: 0,
-                                  color: Colors.green.withOpacity(.50),
+                                  color: AppColors.green.withValues(alpha: .50),
                                   child: Container(
                                     width:
                                         MediaQuery.of(context).size.width - 30,
@@ -134,7 +135,7 @@ class AwardsScreen extends StatelessWidget {
                                                 CrossAxisAlignment.start,
                                             children: [
                                               Card(
-                                                color: Colors.deepOrange,
+                                                color: AppColors.deepOrange,
                                                 margin: EdgeInsets.zero,
                                                 child: Padding(
                                                   padding: const EdgeInsets
@@ -144,7 +145,7 @@ class AwardsScreen extends StatelessWidget {
                                                   child: Text(
                                                     "${translate('award_screen.rewcode')} : ${model.recentAward.value.reward_code}",
                                                     style: TextStyle(
-                                                        color: Colors.white,
+                                                        color: AppColors.white,
                                                         fontSize: 12,
                                                         fontWeight:
                                                             FontWeight.normal),
@@ -156,7 +157,7 @@ class AwardsScreen extends StatelessWidget {
                                                     .award_name,
                                                 maxLines: 2,
                                                 style: TextStyle(
-                                                    color: Colors.white,
+                                                    color: AppColors.white,
                                                     fontSize: 20,
                                                     fontWeight:
                                                         FontWeight.bold),
@@ -165,7 +166,7 @@ class AwardsScreen extends StatelessWidget {
                                                 model.recentAward.value
                                                     .awarded_date,
                                                 style: TextStyle(
-                                                    color: Colors.white,
+                                                    color: AppColors.white,
                                                     fontSize: 12,
                                                     fontWeight:
                                                         FontWeight.bold),
@@ -175,7 +176,7 @@ class AwardsScreen extends StatelessWidget {
                                           Spacer(),
                                           Icon(
                                             Icons.workspace_premium_outlined,
-                                            color: Colors.white24,
+                                            color: AppColors.white24,
                                             size: 80,
                                           )
                                         ],
@@ -204,7 +205,7 @@ class AwardsScreen extends StatelessWidget {
                               child: Text(
                                 translate('award_screen.all_achievement'),
                                 style: TextStyle(
-                                    color: Colors.white,
+                                    color: AppColors.white,
                                     fontSize: 20,
                                     fontWeight: FontWeight.bold),
                               ),
@@ -227,9 +228,9 @@ class AwardsScreen extends StatelessWidget {
                                           shape: ButtonBorder(),
                                           elevation: 0,
                                           color: index == 0
-                                              ? Colors.green
+                                              ? AppColors.green
                                                   .withValues(alpha: .5)
-                                              : Colors.white
+                                              : AppColors.white
                                                   .withValues(alpha: .15),
                                           child: Stack(
                                             children: [
@@ -240,8 +241,8 @@ class AwardsScreen extends StatelessWidget {
                                                 child: Icon(
                                                   Icons
                                                       .workspace_premium_outlined,
-                                                  color: Colors.white
-                                                      .withOpacity(.05),
+                                                  color: AppColors.white
+                                                      .withValues(alpha: .05),
                                                   size: 60,
                                                 ),
                                               ),
@@ -264,14 +265,16 @@ class AwardsScreen extends StatelessWidget {
                                                           award.award_name,
                                                           maxLines: 1,
                                                           style: TextStyle(
-                                                              color: Colors
+                                                              color: AppColors
                                                                   .white,
                                                               fontSize: 18,
                                                               fontWeight:
                                                                   FontWeight
                                                                       .bold),
                                                         ),
-                                                        SizedBox(height: 5,),
+                                                        SizedBox(
+                                                          height: 5,
+                                                        ),
                                                         Container(
                                                           width: MediaQuery.of(
                                                                       context)
@@ -297,8 +300,7 @@ class AwardsScreen extends StatelessWidget {
                                                                           fontSize:
                                                                               12,
                                                                           fontWeight:
-                                                                              FontWeight
-                                                                                  .normal),
+                                                                              FontWeight.normal),
                                                                     ),
                                                                     Text(
                                                                       "${award.awarded_by}",
@@ -306,19 +308,22 @@ class AwardsScreen extends StatelessWidget {
                                                                           color: Colors
                                                                               .white,
                                                                           fontSize:
-                                                                          15,
+                                                                              15,
                                                                           fontWeight:
-                                                                          FontWeight
-                                                                              .bold),
+                                                                              FontWeight.bold),
                                                                     ),
                                                                   ],
                                                                 ),
                                                               ),
                                                               Padding(
-                                                                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                                                                padding: const EdgeInsets
+                                                                    .symmetric(
+                                                                    horizontal:
+                                                                        8.0),
                                                                 child: SizedBox(
                                                                   height: 25,
-                                                                  child: VerticalDivider(
+                                                                  child:
+                                                                      VerticalDivider(
                                                                     width: 1,
                                                                   ),
                                                                 ),
@@ -326,8 +331,8 @@ class AwardsScreen extends StatelessWidget {
                                                               Expanded(
                                                                 child: Column(
                                                                   crossAxisAlignment:
-                                                                  CrossAxisAlignment
-                                                                      .end,
+                                                                      CrossAxisAlignment
+                                                                          .end,
                                                                   children: [
                                                                     Text(
                                                                       "Awarded Date",
@@ -335,10 +340,9 @@ class AwardsScreen extends StatelessWidget {
                                                                           color: Colors
                                                                               .white,
                                                                           fontSize:
-                                                                          12,
+                                                                              12,
                                                                           fontWeight:
-                                                                          FontWeight
-                                                                              .normal),
+                                                                              FontWeight.normal),
                                                                     ),
                                                                     Text(
                                                                       "${award.awarded_date}",
@@ -346,10 +350,9 @@ class AwardsScreen extends StatelessWidget {
                                                                           color: Colors
                                                                               .white,
                                                                           fontSize:
-                                                                          15,
+                                                                              15,
                                                                           fontWeight:
-                                                                          FontWeight
-                                                                              .bold),
+                                                                              FontWeight.bold),
                                                                     ),
                                                                   ],
                                                                 ),

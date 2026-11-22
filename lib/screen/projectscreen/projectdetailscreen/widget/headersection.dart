@@ -2,6 +2,7 @@ import 'package:cnattendance/screen/projectscreen/projectdetailscreen/projectdet
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class HeaderSection extends StatelessWidget {
   @override
@@ -17,7 +18,7 @@ class HeaderSection extends StatelessWidget {
             child: Text(
               model.project.value.name,
               style: TextStyle(
-                  color: Colors.white,
+                  color: AppColors.white,
                   fontSize: 21,
                   fontWeight: FontWeight.bold),
             ),
@@ -33,7 +34,7 @@ class HeaderSection extends StatelessWidget {
                   "${translate('project_detail_screen.due_date')}:  ",
                   style: TextStyle(
                       fontSize: 12,
-                      color: Colors.white54,
+                      color: AppColors.white54,
                       fontWeight: FontWeight.bold),
                 ),
                 Obx(
@@ -41,13 +42,16 @@ class HeaderSection extends StatelessWidget {
                     model.project.value.date,
                     style: TextStyle(
                         fontSize: 15,
-                        color: Colors.white,
+                        color: AppColors.white,
                         fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
             ),
-            SizedBox(height:30,child: VerticalDivider(color: Colors.white54,width: 1,thickness: 1)),
+            SizedBox(
+                height: 30,
+                child: VerticalDivider(
+                    color: AppColors.white54, width: 1, thickness: 1)),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -55,21 +59,24 @@ class HeaderSection extends StatelessWidget {
                   "Status",
                   style: TextStyle(
                       fontSize: 12,
-                      color: Colors.white54,
+                      color: AppColors.white54,
                       fontWeight: FontWeight.bold),
                 ),
                 Obx(
-                      () => Text(
+                  () => Text(
                     model.project.value.status,
                     style: TextStyle(
                         fontSize: 15,
-                        color: Colors.white,
+                        color: AppColors.white,
                         fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
             ),
-            SizedBox(height:30,child: VerticalDivider(color: Colors.white54,width: 1,thickness: 1)),
+            SizedBox(
+                height: 30,
+                child: VerticalDivider(
+                    color: AppColors.white54, width: 1, thickness: 1)),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -77,15 +84,15 @@ class HeaderSection extends StatelessWidget {
                   "Priority",
                   style: TextStyle(
                       fontSize: 12,
-                      color: Colors.white54,
+                      color: AppColors.white54,
                       fontWeight: FontWeight.bold),
                 ),
                 Obx(
-                      () => Text(
+                  () => Text(
                     model.project.value.priority,
                     style: TextStyle(
                         fontSize: 15,
-                        color: Colors.white,
+                        color: AppColors.white,
                         fontWeight: FontWeight.bold),
                   ),
                 ),

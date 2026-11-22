@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
 import 'package:toggle_switch/toggle_switch.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class EventListScreen extends StatelessWidget {
   @override
@@ -32,9 +33,9 @@ class EventListScreen extends StatelessWidget {
                 Center(
                   child: Obx(
                     () => ToggleSwitch(
-                      activeBgColor: [Colors.white12],
-                      activeFgColor: Colors.white,
-                      inactiveFgColor: Colors.white,
+                      activeBgColor: [AppColors.white12],
+                      activeFgColor: AppColors.white,
+                      inactiveFgColor: AppColors.white,
                       inactiveBgColor: Colors.transparent,
                       minWidth: 100,
                       minHeight: 45,
@@ -67,7 +68,7 @@ class EventListScreen extends StatelessWidget {
                         return Card(
                           elevation: 0,
                           margin: EdgeInsets.symmetric(vertical: 5),
-                          color: Colors.white12,
+                          color: AppColors.white12,
                           shape: ButtonBorder(),
                           child: InkWell(
                             borderRadius: BorderRadius.only(
@@ -84,19 +85,19 @@ class EventListScreen extends StatelessWidget {
                                   Text(
                                     item.location,
                                     style: TextStyle(
-                                        color: Colors.white54,
+                                        color: AppColors.white54,
                                         fontSize: 13,
                                         fontWeight: FontWeight.normal),
                                   ),
                                   Text(
                                     item.title,
                                     style: TextStyle(
-                                        color: Colors.white,
+                                        color: AppColors.white,
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold),
                                   ),
                                   Divider(
-                                    color: Colors.white30,
+                                    color: AppColors.white30,
                                     height: 10,
                                   ),
                                   Row(
@@ -110,7 +111,7 @@ class EventListScreen extends StatelessWidget {
                                                 ? ""
                                                 : item.endDate),
                                         style: TextStyle(
-                                            color: Colors.white,
+                                            color: AppColors.white,
                                             fontSize: 12,
                                             fontWeight: FontWeight.normal),
                                       ),
@@ -124,7 +125,7 @@ class EventListScreen extends StatelessWidget {
                                                 ? ""
                                                 : item.endTime),
                                         style: TextStyle(
-                                            color: Colors.white,
+                                            color: AppColors.white,
                                             fontSize: 12,
                                             fontWeight: FontWeight.normal),
                                       ),

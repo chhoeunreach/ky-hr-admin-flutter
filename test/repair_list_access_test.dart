@@ -150,7 +150,97 @@ class _RoleRepository extends RepairPriceRepository {
   }
 }
 
+class _SearchRepository extends RepairPriceRepository {
+  static const brand =
+      RepairBrand(id: 2, name: 'Orchid Mobile', slug: 'orchid');
+  static const series = RepairDeviceSeries(
+    id: 3,
+    name: 'Nova Series',
+    slug: 'nova',
+    brandId: 2,
+    deviceTypeId: 1,
+  );
+  static const matchingDevice = RepairDevice(
+    id: 30,
+    name: 'Phone X',
+    modelNumber: 'NX-500',
+    brand: brand,
+    series: series,
+  );
+  static const otherDevice = RepairDevice(
+    id: 31,
+    name: 'Tablet Y',
+    modelNumber: 'TY-100',
+  );
+
+  final deviceSearches = <String?>[];
+  final fallbackSearches = <String>[];
+  var returnEmptyFromList = false;
+
+  @override
+  Future<Map<String, dynamic>?> fetchPermissions() async => {'can_view': true};
+
+  @override
+  Future<List<RepairBrand>> fetchBrands() async => [_SearchRepository.brand];
+
+  @override
+  Future<List<RepairDeviceType>> fetchDeviceTypes() async => [];
+
+  @override
+  Future<List<RepairDeviceSeries>> fetchSeries({
+    int? brandId,
+    int? deviceTypeId,
+  }) async =>
+      [_SearchRepository.series];
+
+  @override
+  Future<List<RepairDevice>> fetchDevices({
+    String? search,
+    int? brandId,
+    int? deviceTypeId,
+    int? seriesId,
+    int page = 1,
+    int perPage = 20,
+  }) async {
+    deviceSearches.add(search);
+    return returnEmptyFromList ? [] : [matchingDevice, otherDevice];
+  }
+
+  @override
+  Future<List<RepairDevice>> searchDevices(String query) async {
+    fallbackSearches.add(query);
+    return [matchingDevice, otherDevice];
+  }
+}
+
 void main() {
+  test('repair list model search matches name, model, brand and series',
+      () async {
+    final repository = _SearchRepository();
+    final provider = RepairPriceProvider(repository: repository);
+    addTearDown(provider.dispose);
+
+    await provider.initDevicePage();
+    expect(provider.devices,
+        [_SearchRepository.matchingDevice, _SearchRepository.otherDevice]);
+
+    for (final query in ['  phone x  ', 'nx-500', 'ORCHID', 'nova series']) {
+      provider.onDeviceSearchChanged(query);
+      await Future<void>.delayed(const Duration(milliseconds: 350));
+      await Future<void>.delayed(Duration.zero);
+      expect(provider.devices, [_SearchRepository.matchingDevice],
+          reason: 'query: $query');
+    }
+    expect(repository.deviceSearches.last, 'nova series');
+
+    repository.returnEmptyFromList = true;
+    provider.onDeviceSearchChanged('nx-500');
+    await Future<void>.delayed(const Duration(milliseconds: 350));
+    await Future<void>.delayed(Duration.zero);
+    expect(repository.fallbackSearches, ['nx-500']);
+    expect(provider.devices, [_SearchRepository.matchingDevice]);
+  });
+
   testWidgets('Repair List checks access before fetching devices',
       (tester) async {
     Localization.load(jsonDecode(File('assets/i18n/en.json').readAsStringSync())

@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
-import 'package:hexcolor/hexcolor.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class CreateComplainScreen extends StatelessWidget {
   final subject = TextEditingController();
@@ -88,7 +88,7 @@ class CreateComplainScreen extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(vertical: 8.0),
                       child: Text(
                         "Department",
-                        style: TextStyle(color: Colors.white, fontSize: 15),
+                        style: TextStyle(color: AppColors.white, fontSize: 15),
                       ),
                     ),
                     Container(
@@ -104,12 +104,11 @@ class CreateComplainScreen extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.black,
+                                color: AppColors.black,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
-                            items:
-                                model.departments.map((DepartmentApi e) {
+                            items: model.departments.map((DepartmentApi e) {
                               return DropdownMenuItem(
                                 value: e.name,
                                 child: Padding(
@@ -118,7 +117,7 @@ class CreateComplainScreen extends StatelessWidget {
                                   child: Text(
                                     e.name,
                                     style: TextStyle(
-                                        color: Colors.black,
+                                        color: AppColors.black,
                                         fontSize: 14,
                                         fontWeight: FontWeight.bold),
                                   ),
@@ -140,8 +139,8 @@ class CreateComplainScreen extends StatelessWidget {
                                 Icons.arrow_forward_ios_outlined,
                               ),
                               iconSize: 14,
-                              iconEnabledColor: Colors.black,
-                              iconDisabledColor: Colors.grey,
+                              iconEnabledColor: AppColors.black,
+                              iconDisabledColor: AppColors.grey,
                             ),
                             buttonStyleData: ButtonStyleData(
                               height: 50,
@@ -154,7 +153,7 @@ class CreateComplainScreen extends StatelessWidget {
                                     topRight: Radius.circular(0),
                                     bottomLeft: Radius.circular(0),
                                     bottomRight: Radius.circular(10)),
-                                color: HexColor("#FFFFFF"),
+                                color: AppColors.white,
                               ),
                               elevation: 0,
                             ),
@@ -167,7 +166,7 @@ class CreateComplainScreen extends StatelessWidget {
                                     topRight: Radius.circular(10),
                                     bottomLeft: Radius.circular(10),
                                     bottomRight: Radius.circular(10)),
-                                color: HexColor("#FFFFFF"),
+                                color: AppColors.white,
                               ),
                               elevation: 8,
                             ),
@@ -188,7 +187,7 @@ class CreateComplainScreen extends StatelessWidget {
                               child: Text(
                                 "Selected Department",
                                 style: TextStyle(
-                                    color: Colors.white, fontSize: 15),
+                                    color: AppColors.white, fontSize: 15),
                               ),
                             )
                           : SizedBox.shrink(),
@@ -202,7 +201,7 @@ class CreateComplainScreen extends StatelessWidget {
                               shape: ButtonBorder(),
                               margin: EdgeInsets.only(bottom: 10),
                               elevation: 0,
-                              color: Colors.white24,
+                              color: AppColors.white24,
                               child: GestureDetector(
                                 onTap: () {
                                   model.removeDepartment(element);
@@ -214,7 +213,8 @@ class CreateComplainScreen extends StatelessWidget {
                                     children: [
                                       Text(
                                         element.name,
-                                        style: TextStyle(color: Colors.white),
+                                        style:
+                                            TextStyle(color: AppColors.white),
                                       ),
                                       SizedBox(
                                         width: 5,
@@ -222,7 +222,7 @@ class CreateComplainScreen extends StatelessWidget {
                                       Icon(
                                         Icons.close_rounded,
                                         size: 18,
-                                        color: Colors.white,
+                                        color: AppColors.white,
                                       )
                                     ],
                                   ),
@@ -237,7 +237,7 @@ class CreateComplainScreen extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(vertical: 8.0),
                       child: Text(
                         "Employee",
-                        style: TextStyle(color: Colors.white, fontSize: 15),
+                        style: TextStyle(color: AppColors.white, fontSize: 15),
                       ),
                     ),
                     Container(
@@ -252,7 +252,7 @@ class CreateComplainScreen extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.black,
+                                color: AppColors.black,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -265,7 +265,7 @@ class CreateComplainScreen extends StatelessWidget {
                                   child: Text(
                                     e.name,
                                     style: TextStyle(
-                                        color: Colors.black,
+                                        color: AppColors.black,
                                         fontSize: 14,
                                         fontWeight: FontWeight.bold),
                                   ),
@@ -281,8 +281,8 @@ class CreateComplainScreen extends StatelessWidget {
                                 Icons.arrow_forward_ios_outlined,
                               ),
                               iconSize: 14,
-                              iconEnabledColor: Colors.black,
-                              iconDisabledColor: Colors.grey,
+                              iconEnabledColor: AppColors.black,
+                              iconDisabledColor: AppColors.grey,
                             ),
                             buttonStyleData: ButtonStyleData(
                               height: 50,
@@ -295,7 +295,7 @@ class CreateComplainScreen extends StatelessWidget {
                                     topRight: Radius.circular(0),
                                     bottomLeft: Radius.circular(0),
                                     bottomRight: Radius.circular(10)),
-                                color: HexColor("#FFFFFF"),
+                                color: AppColors.white,
                               ),
                               elevation: 0,
                             ),
@@ -308,7 +308,7 @@ class CreateComplainScreen extends StatelessWidget {
                                     topRight: Radius.circular(10),
                                     bottomLeft: Radius.circular(10),
                                     bottomRight: Radius.circular(10)),
-                                color: HexColor("#FFFFFF"),
+                                color: AppColors.white,
                               ),
                               elevation: 8,
                             ),
@@ -329,7 +329,7 @@ class CreateComplainScreen extends StatelessWidget {
                               child: Text(
                                 "Selected Employee",
                                 style: TextStyle(
-                                    color: Colors.white, fontSize: 15),
+                                    color: AppColors.white, fontSize: 15),
                               ),
                             )
                           : SizedBox.shrink(),
@@ -343,7 +343,7 @@ class CreateComplainScreen extends StatelessWidget {
                               shape: ButtonBorder(),
                               margin: EdgeInsets.only(bottom: 10),
                               elevation: 0,
-                              color: Colors.white24,
+                              color: AppColors.white24,
                               child: GestureDetector(
                                 onTap: () {
                                   model.removeEmployee(element);
@@ -355,7 +355,8 @@ class CreateComplainScreen extends StatelessWidget {
                                     children: [
                                       Text(
                                         element.name,
-                                        style: TextStyle(color: Colors.white),
+                                        style:
+                                            TextStyle(color: AppColors.white),
                                       ),
                                       SizedBox(
                                         width: 5,
@@ -363,7 +364,7 @@ class CreateComplainScreen extends StatelessWidget {
                                       Icon(
                                         Icons.close_rounded,
                                         size: 18,
-                                        color: Colors.white,
+                                        color: AppColors.white,
                                       )
                                     ],
                                   ),
@@ -378,7 +379,7 @@ class CreateComplainScreen extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(vertical: 8.0),
                       child: Text(
                         "Subject",
-                        style: TextStyle(color: Colors.white, fontSize: 15),
+                        style: TextStyle(color: AppColors.white, fontSize: 15),
                       ),
                     ),
                     TextFormField(
@@ -393,21 +394,22 @@ class CreateComplainScreen extends StatelessWidget {
                       },
                       maxLines: 1,
                       onTapOutside: (event) {
-                        final FocusScopeNode currentFocus = FocusScope.of(context);
+                        final FocusScopeNode currentFocus =
+                            FocusScope.of(context);
                         if (!currentFocus.hasPrimaryFocus &&
                             currentFocus.focusedChild != null) {
                           FocusManager.instance.primaryFocus?.unfocus();
                         }
                       },
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(color: AppColors.white),
                       //editing controller of this TextField
-                      cursorColor: Colors.white,
+                      cursorColor: AppColors.white,
                       keyboardType: TextInputType.multiline,
                       decoration: InputDecoration(
                         hintText: 'Subject',
-                        hintStyle: TextStyle(color: Colors.white70),
-                        labelStyle: TextStyle(color: Colors.white),
-                        fillColor: Colors.white24,
+                        hintStyle: TextStyle(color: AppColors.white70),
+                        labelStyle: TextStyle(color: AppColors.white),
+                        fillColor: AppColors.white24,
                         filled: true,
                         enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.only(
@@ -439,7 +441,7 @@ class CreateComplainScreen extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(vertical: 8.0),
                       child: Text(
                         "Message",
-                        style: TextStyle(color: Colors.white, fontSize: 15),
+                        style: TextStyle(color: AppColors.white, fontSize: 15),
                       ),
                     ),
                     TextFormField(
@@ -454,21 +456,22 @@ class CreateComplainScreen extends StatelessWidget {
                         return null;
                       },
                       onTapOutside: (event) {
-                        final FocusScopeNode currentFocus = FocusScope.of(context);
+                        final FocusScopeNode currentFocus =
+                            FocusScope.of(context);
                         if (!currentFocus.hasPrimaryFocus &&
                             currentFocus.focusedChild != null) {
                           FocusManager.instance.primaryFocus?.unfocus();
                         }
                       },
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(color: AppColors.white),
                       //editing controller of this TextField
-                      cursorColor: Colors.white,
+                      cursorColor: AppColors.white,
                       keyboardType: TextInputType.multiline,
                       decoration: InputDecoration(
                         hintText: 'Message',
-                        hintStyle: TextStyle(color: Colors.white70),
-                        labelStyle: TextStyle(color: Colors.white),
-                        fillColor: Colors.white24,
+                        hintStyle: TextStyle(color: AppColors.white70),
+                        labelStyle: TextStyle(color: AppColors.white),
+                        fillColor: AppColors.white24,
                         filled: true,
                         enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.only(

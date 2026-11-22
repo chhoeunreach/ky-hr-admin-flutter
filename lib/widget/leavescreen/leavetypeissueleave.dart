@@ -2,16 +2,15 @@ import 'package:cnattendance/model/leave.dart';
 import 'package:cnattendance/provider/leaveprovider.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
-import 'package:hexcolor/hexcolor.dart';
 import 'package:provider/provider.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class LeaveTypeIssueLeave extends StatefulWidget {
-
   @override
   State<StatefulWidget> createState() => LeaveTypeIssueLeaveState();
 }
 
-class LeaveTypeIssueLeaveState extends State<LeaveTypeIssueLeave>{
+class LeaveTypeIssueLeaveState extends State<LeaveTypeIssueLeave> {
   Leave? selectedValue;
 
   @override
@@ -26,7 +25,7 @@ class LeaveTypeIssueLeaveState extends State<LeaveTypeIssueLeave>{
             Icon(
               Icons.list,
               size: 16,
-              color: Colors.white,
+              color: AppColors.white,
             ),
             SizedBox(
               width: 4,
@@ -37,7 +36,7 @@ class LeaveTypeIssueLeaveState extends State<LeaveTypeIssueLeave>{
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: AppColors.white,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -52,7 +51,7 @@ class LeaveTypeIssueLeaveState extends State<LeaveTypeIssueLeave>{
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: AppColors.white,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -62,9 +61,7 @@ class LeaveTypeIssueLeaveState extends State<LeaveTypeIssueLeave>{
         onChanged: (value) {
           selectedValue = value;
           if (selectedValue != null) {
-            setState(() {
-
-            });
+            setState(() {});
           }
         },
         iconStyleData: IconStyleData(
@@ -72,8 +69,8 @@ class LeaveTypeIssueLeaveState extends State<LeaveTypeIssueLeave>{
             Icons.arrow_forward_ios_outlined,
           ),
           iconSize: 14,
-          iconEnabledColor: Colors.black,
-          iconDisabledColor: Colors.grey,
+          iconEnabledColor: AppColors.black,
+          iconDisabledColor: AppColors.grey,
         ),
         buttonStyleData: ButtonStyleData(
           height: 50,
@@ -85,7 +82,7 @@ class LeaveTypeIssueLeaveState extends State<LeaveTypeIssueLeave>{
                 topRight: Radius.circular(0),
                 bottomLeft: Radius.circular(0),
                 bottomRight: Radius.circular(10)),
-            color: HexColor("#FFFFFF"),
+            color: AppColors.white,
           ),
           elevation: 0,
         ),
@@ -98,7 +95,7 @@ class LeaveTypeIssueLeaveState extends State<LeaveTypeIssueLeave>{
                 topRight: Radius.circular(10),
                 bottomLeft: Radius.circular(10),
                 bottomRight: Radius.circular(10)),
-            color: HexColor("#FFFFFF"),
+            color: AppColors.white,
           ),
           elevation: 8,
         ),

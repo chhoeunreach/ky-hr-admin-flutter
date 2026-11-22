@@ -5,6 +5,7 @@ import 'package:cnattendance/data/source/datastore/preferences.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class ChatVoiceBubble extends StatefulWidget {
   final String mediaUrl;
@@ -149,11 +150,11 @@ class _ChatVoiceBubbleState extends State<ChatVoiceBubble> {
 
   @override
   Widget build(BuildContext context) {
-    const foreground = Colors.white;
-    const secondary = Colors.white;
+    const foreground = AppColors.white;
+    const secondary = AppColors.white;
     final playBackground =
-        widget.isIncoming ? const Color(0xff1684f8) : const Color(0x26000000);
-    const playForeground = Colors.white;
+        widget.isIncoming ? AppColors.customFF1684F8 : AppColors.custom26000000;
+    const playForeground = AppColors.white;
     final progress = _playbackProgress();
 
     return ConstrainedBox(
@@ -176,7 +177,7 @@ class _ChatVoiceBubbleState extends State<ChatVoiceBubble> {
                       padding: EdgeInsets.all(9),
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Colors.white,
+                        color: AppColors.white,
                       ),
                     )
                   : Icon(
@@ -194,7 +195,7 @@ class _ChatVoiceBubbleState extends State<ChatVoiceBubble> {
               height: 30,
               child: _Waveform(
                 baseColor: foreground,
-                activeColor: Colors.white,
+                activeColor: AppColors.white,
                 isPlaying: _isPlaying,
                 progress: progress,
               ),
@@ -306,9 +307,8 @@ class _ChatVoiceBubbleState extends State<ChatVoiceBubble> {
         lowerPath.startsWith('chat/audio/') ||
         lowerPath.contains('/voice/') ||
         lowerPath.contains('/audio/')) {
-      final normalizedPath = origPath.startsWith('/')
-          ? '/storage$origPath'
-          : '/storage/$origPath';
+      final normalizedPath =
+          origPath.startsWith('/') ? '/storage$origPath' : '/storage/$origPath';
       return uri.replace(path: normalizedPath).toString();
     }
 

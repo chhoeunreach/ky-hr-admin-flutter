@@ -8,10 +8,11 @@ import 'community_api.dart';
 import 'community_device_gallery.dart';
 import 'community_media.dart';
 import 'community_strings.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
-const _pickerInk = Color(0xff0b0f14);
-const _pickerSurface = Color(0xff161d27);
-const _pickerBlue = Color(0xff1877f2);
+const _pickerInk = AppColors.customFF0B0F14;
+const _pickerSurface = AppColors.customFF161D27;
+const _pickerBlue = AppColors.customFF1877F2;
 
 /// Opens the in-app photo/video gallery (never the document picker).
 Future<List<PlatformFile>> pickCommunityMedia(
@@ -180,7 +181,7 @@ class _CommunityMediaPickerState extends State<CommunityMediaPicker> {
         backgroundColor: _pickerInk,
         appBar: AppBar(
             backgroundColor: _pickerInk,
-            foregroundColor: Colors.white,
+            foregroundColor: AppColors.white,
             elevation: 0,
             leading: IconButton(
                 tooltip: communityText('Close'),
@@ -197,7 +198,7 @@ class _CommunityMediaPickerState extends State<CommunityMediaPicker> {
                             '${_selected.length}/${widget.maxSelection}',
                             style: const TextStyle(
                                 fontWeight: FontWeight.w700,
-                                color: Colors.white70))))
+                                color: AppColors.white70))))
             ]),
         body: _body(pixels),
         bottomNavigationBar: widget.multiple
@@ -210,14 +211,14 @@ class _CommunityMediaPickerState extends State<CommunityMediaPicker> {
                               ? 'Select media to continue'
                               : '${_selected.length} selected'),
                           style: const TextStyle(
-                              color: Colors.white70,
+                              color: AppColors.white70,
                               fontWeight: FontWeight.w600))),
                   FilledButton.icon(
                       onPressed:
                           _selected.isEmpty || _converting ? null : _finish,
                       style: FilledButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: Colors.black,
+                          backgroundColor: AppColors.white,
+                          foregroundColor: AppColors.black,
                           minimumSize: const Size(128, 48),
                           shape: const StadiumBorder(),
                           textStyle: const TextStyle(
@@ -291,7 +292,7 @@ class _CommunityMediaPickerState extends State<CommunityMediaPicker> {
                         width: 22,
                         height: 22,
                         child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white54)));
+                            strokeWidth: 2, color: AppColors.white54)));
               }
               final item = _items[index];
               final number = _selected.containsKey(item.id)
@@ -340,16 +341,16 @@ class _GalleryTile extends StatelessWidget {
                 bottom: 6,
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
                   const Icon(Icons.play_circle_fill_rounded,
-                      color: Colors.white, size: 15),
+                      color: AppColors.white, size: 15),
                   if (label != null) ...[
                     const SizedBox(width: 4),
                     Text(label,
                         style: const TextStyle(
-                            color: Colors.white,
+                            color: AppColors.white,
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
                             shadows: [
-                              Shadow(blurRadius: 4, color: Colors.black)
+                              Shadow(blurRadius: 4, color: AppColors.black)
                             ]))
                   ]
                 ])),
@@ -370,7 +371,7 @@ class _GalleryTile extends StatelessWidget {
                         color: _pickerBlue, shape: BoxShape.circle),
                     child: Text('$number',
                         style: const TextStyle(
-                            color: Colors.white,
+                            color: AppColors.white,
                             fontSize: 12,
                             fontWeight: FontWeight.w800))))
         ]));
@@ -402,8 +403,8 @@ class _GalleryThumbnailState extends State<_GalleryThumbnail> {
         final bytes = snapshot.data;
         if (bytes == null) {
           return const Center(
-              child:
-                  Icon(Icons.image_outlined, color: Colors.white24, size: 26));
+              child: Icon(Icons.image_outlined,
+                  color: AppColors.white24, size: 26));
         }
         return Image.memory(bytes,
             fit: BoxFit.cover,
@@ -411,7 +412,7 @@ class _GalleryThumbnailState extends State<_GalleryThumbnail> {
             cacheWidth: widget.pixels,
             errorBuilder: (_, __, ___) => const Center(
                 child: Icon(Icons.broken_image_outlined,
-                    color: Colors.white24, size: 26)));
+                    color: AppColors.white24, size: 26)));
       });
 }
 
@@ -432,19 +433,19 @@ class _CenterState extends StatelessWidget {
       child: Padding(
           padding: const EdgeInsets.all(32),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Icon(icon, color: Colors.white54, size: 52),
+            Icon(icon, color: AppColors.white54, size: 52),
             const SizedBox(height: 16),
             Text(title,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                    color: Colors.white,
+                    color: AppColors.white,
                     fontSize: 18,
                     fontWeight: FontWeight.w800)),
             const SizedBox(height: 8),
             Text(message,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                    color: Colors.white60, height: 1.4, fontSize: 14)),
+                    color: AppColors.white60, height: 1.4, fontSize: 14)),
             if (action != null) ...[const SizedBox(height: 20), action!]
           ])));
 }

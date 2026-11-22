@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:cnattendance/provider/dashboardprovider.dart';
 import 'community_api.dart';
 import 'community_media.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class FlashViewPresenter {
   static final Set<String> _sessionSeen = {};
@@ -37,7 +38,7 @@ class FlashViewPresenter {
               canPop: false,
               child: AlertDialog(
                 title: Row(children: [
-                  Icon(Icons.bolt, color: Colors.amber),
+                  Icon(Icons.bolt, color: AppColors.amber),
                   SizedBox(width: 8),
                   Expanded(child: Text('${item['title']}'))
                 ]),

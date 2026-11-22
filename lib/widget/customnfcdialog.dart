@@ -11,15 +11,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
-import 'package:hexcolor/hexcolor.dart';
 import 'package:lottie/lottie.dart';
 import 'package:nfc_manager/nfc_manager.dart';
 import 'package:provider/provider.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 enum NFCMODE { scan, add }
 
 class CustomNfcDialog extends StatefulWidget {
   final NFCMODE mode;
+
   /// `checkIn` / `checkOut` from home Scan In / Scan Out; empty = auto.
   final String attendanceStatus;
 
@@ -41,8 +42,7 @@ class CustomDialogState extends State<CustomNfcDialog> {
 
         if (widget.mode == NFCMODE.scan) {
           final provider = context.read<DashboardProvider>();
-          if(provider.isNoteEnabled){
-
+          if (provider.isNoteEnabled) {
             Get.back();
             showModalBottomSheet(
                 context: context,
@@ -55,7 +55,7 @@ class CustomDialogState extends State<CustomNfcDialog> {
                     attendanceStatus: widget.attendanceStatus,
                   );
                 });
-          }else{
+          } else {
             onAttendanceVerify(
                 "nfc", base64.encode(utf8.encode(findKey(tag.data))));
           }
@@ -104,16 +104,16 @@ class CustomDialogState extends State<CustomNfcDialog> {
       if (!mounted) return;
       Navigator.pop(context);
       final retry = await showDialog<bool>(
-        context: rootContext,
-        builder: (context) {
-          return Dialog(
-            child: CustomAlertDialog(
-              failureMessage,
-              actionLabel: translate('attendance_messages.check_again'),
-            ),
-          );
-        },
-      ) ??
+            context: rootContext,
+            builder: (context) {
+              return Dialog(
+                child: CustomAlertDialog(
+                  failureMessage,
+                  actionLabel: translate('attendance_messages.check_again'),
+                ),
+              );
+            },
+          ) ??
           false;
       if (retry) {
         showDialog(
@@ -136,7 +136,8 @@ class CustomDialogState extends State<CustomNfcDialog> {
     try {
       setState(() {
         EasyLoading.show(
-            status: translate('loader.requesting'), maskType: EasyLoadingMaskType.black);
+            status: translate('loader.requesting'),
+            maskType: EasyLoadingMaskType.black);
       });
       await context.read<MoreScreenProvider>().addNfcApi("nfc", identifier);
       if (!mounted) {
@@ -173,7 +174,7 @@ class CustomDialogState extends State<CustomNfcDialog> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.white,
+      color: AppColors.white,
       padding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -196,7 +197,7 @@ class CustomDialogState extends State<CustomNfcDialog> {
             width: double.infinity,
             child: ElevatedButton(
                 style: TextButton.styleFrom(
-                    backgroundColor: HexColor("#036eb7"),
+                    backgroundColor: AppColors.customFF036EB7,
                     shape: ButtonBorder()),
                 onPressed: () {
                   Navigator.pop(context);
@@ -204,7 +205,8 @@ class CustomDialogState extends State<CustomNfcDialog> {
                 },
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 15),
-                  child: Text(translate('common.close'), style: TextStyle(color: Colors.white)),
+                  child: Text(translate('common.close'),
+                      style: TextStyle(color: AppColors.white)),
                 )),
           )
         ],

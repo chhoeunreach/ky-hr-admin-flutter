@@ -6,11 +6,11 @@ import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_translate/flutter_translate.dart';
-import 'package:hexcolor/hexcolor.dart';
 import 'package:intl/intl.dart';
 import 'package:nepali_date_picker/nepali_date_picker.dart' as picker;
 import 'package:nepali_date_picker/nepali_date_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class IssueResignationSheet extends StatefulWidget {
   @override
@@ -146,7 +146,7 @@ class IssueResignationSheetState extends State<IssueResignationSheet> {
                         icon: const Icon(
                           Icons.close,
                           size: 20,
-                          color: Colors.white,
+                          color: AppColors.white,
                         )),
                   ],
                 ),
@@ -156,7 +156,8 @@ class IssueResignationSheetState extends State<IssueResignationSheet> {
                   children: [
                     Text(
                       translate('resignation.apply'),
-                      style: const TextStyle(fontSize: 18, color: Colors.white),
+                      style:
+                          const TextStyle(fontSize: 18, color: AppColors.white),
                     ),
                     IconButton(
                         onPressed: () {
@@ -165,22 +166,23 @@ class IssueResignationSheetState extends State<IssueResignationSheet> {
                         icon: const Icon(
                           Icons.close,
                           size: 20,
-                          color: Colors.white,
+                          color: AppColors.white,
                         )),
                   ],
                 ),
               if (status == "rejected" || status.isEmpty)
                 TextField(
                   controller: startDate,
-                  style: TextStyle(color: Colors.white),
+                  style: TextStyle(color: AppColors.white),
                   //editing controller of this TextField
-                  cursorColor: Colors.white,
+                  cursorColor: AppColors.white,
                   decoration: InputDecoration(
                     hintText: translate('resignation.select_start_date'),
-                    hintStyle: TextStyle(color: Colors.white),
-                    prefixIcon: Icon(Icons.calendar_month, color: Colors.white),
-                    labelStyle: TextStyle(color: Colors.white),
-                    fillColor: Colors.white24,
+                    hintStyle: TextStyle(color: AppColors.white),
+                    prefixIcon:
+                        Icon(Icons.calendar_month, color: AppColors.white),
+                    labelStyle: TextStyle(color: AppColors.white),
+                    fillColor: AppColors.white24,
                     filled: true,
                     enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.only(
@@ -255,16 +257,16 @@ class IssueResignationSheetState extends State<IssueResignationSheet> {
                       FocusManager.instance.primaryFocus?.unfocus();
                     }
                   },
-                  style: TextStyle(color: Colors.white),
+                  style: TextStyle(color: AppColors.white),
                   //editing controller of this TextField
-                  cursorColor: Colors.white,
+                  cursorColor: AppColors.white,
                   keyboardType: TextInputType.multiline,
                   decoration: InputDecoration(
                     hintText: translate('resignation.reason'),
-                    hintStyle: TextStyle(color: Colors.white),
-                    prefixIcon: Icon(Icons.edit_note, color: Colors.white),
-                    labelStyle: TextStyle(color: Colors.white),
-                    fillColor: Colors.white24,
+                    hintStyle: TextStyle(color: AppColors.white),
+                    prefixIcon: Icon(Icons.edit_note, color: AppColors.white),
+                    labelStyle: TextStyle(color: AppColors.white),
+                    fillColor: AppColors.white24,
                     filled: true,
                     enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.only(
@@ -302,7 +304,8 @@ class IssueResignationSheetState extends State<IssueResignationSheet> {
                       '{status}',
                       status.toUpperCase(),
                     ),
-                    style: const TextStyle(fontSize: 15, color: Colors.white),
+                    style:
+                        const TextStyle(fontSize: 15, color: AppColors.white),
                   ),
                 ),
               if (adminRemark.isNotEmpty)
@@ -312,7 +315,8 @@ class IssueResignationSheetState extends State<IssueResignationSheet> {
                   child: Text(
                     translate('resignation.remark_value')
                         .replaceAll('{remark}', adminRemark),
-                    style: const TextStyle(fontSize: 15, color: Colors.white),
+                    style:
+                        const TextStyle(fontSize: 15, color: AppColors.white),
                   ),
                 ),
               gaps(10),
@@ -323,8 +327,8 @@ class IssueResignationSheetState extends State<IssueResignationSheet> {
                   child: TextButton(
                       style: TextButton.styleFrom(
                         backgroundColor: canApply
-                            ? HexColor("#036eb7")
-                            : HexColor("#036eb7").withValues(alpha: .2),
+                            ? AppColors.customFF036EB7
+                            : AppColors.customFF036EB7.withValues(alpha: .2),
                         padding: EdgeInsets.zero,
                         shape: ButtonBorder(),
                       ),
@@ -337,7 +341,7 @@ class IssueResignationSheetState extends State<IssueResignationSheet> {
                         padding: const EdgeInsets.all(20.0),
                         child: Text(
                           translate('resignation.request'),
-                          style: const TextStyle(color: Colors.white),
+                          style: const TextStyle(color: AppColors.white),
                         ),
                       )),
                 ),

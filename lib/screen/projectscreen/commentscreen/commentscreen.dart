@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 
 import 'package:get/get.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class CommentScreen extends StatelessWidget {
   @override
@@ -34,17 +35,28 @@ class CommentScreen extends StatelessWidget {
             child: Stack(
               children: [
                 Positioned(
-                    top: 0, left: 10, right: 10, bottom: 90, child: Column(
+                    top: 0,
+                    left: 10,
+                    right: 10,
+                    bottom: 90,
+                    child: Column(
                       children: [
                         Expanded(child: CommentList()),
                         GestureDetector(
                           onTap: () {
                             model.getComments();
                           },
-                          child: Obx(() => model.commentList.isNotEmpty?Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Text(translate('comment_list_screen.load_more_comments'),style: TextStyle(color: Colors.white),),
-                            ):SizedBox.shrink(),
+                          child: Obx(
+                            () => model.commentList.isNotEmpty
+                                ? Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Text(
+                                      translate(
+                                          'comment_list_screen.load_more_comments'),
+                                      style: TextStyle(color: AppColors.white),
+                                    ),
+                                  )
+                                : SizedBox.shrink(),
                           ),
                         )
                       ],
@@ -54,7 +66,7 @@ class CommentScreen extends StatelessWidget {
                     right: 0,
                     bottom: 90,
                     child: Divider(
-                      color: Colors.white54,
+                      color: AppColors.white54,
                       endIndent: 10,
                       indent: 10,
                     )),
@@ -79,31 +91,35 @@ class CommentScreen extends StatelessWidget {
                                         scrollDirection: Axis.horizontal,
                                         itemCount: model.mentionList.length,
                                         itemBuilder: (context, index) {
-                                          final member = model.mentionList[index];
+                                          final member =
+                                              model.mentionList[index];
                                           return Card(
-                                            color: Colors.white54,
+                                            color: AppColors.white54,
                                             child: Center(
                                               child: Padding(
-                                                padding: const EdgeInsets.symmetric(
-                                                    horizontal: 8.0),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 8.0),
                                                 child: Row(
                                                   children: [
                                                     Text(
                                                       member.name,
                                                       style: TextStyle(
-                                                          color: Colors.white),
+                                                          color:
+                                                              AppColors.white),
                                                     ),
                                                     SizedBox(
                                                       width: 5,
                                                     ),
                                                     GestureDetector(
                                                       onTap: () {
-                                                        model.removeMember(member);
+                                                        model.removeMember(
+                                                            member);
                                                       },
                                                       child: Icon(
                                                         Icons.close,
                                                         size: 15,
-                                                        color: Colors.white,
+                                                        color: AppColors.white,
                                                       ),
                                                     ),
                                                   ],
@@ -128,7 +144,7 @@ class CommentScreen extends StatelessWidget {
                                           horizontal: 8.0),
                                       child: Icon(
                                         Icons.add,
-                                        color: Colors.white,
+                                        color: AppColors.white,
                                       ),
                                     ),
                                   )
@@ -143,7 +159,7 @@ class CommentScreen extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(15),
                                   child: Obx(
                                     () => CachedNetworkImage(
-                                      imageUrl:model.user.value.avatar,
+                                      imageUrl: model.user.value.avatar,
                                       width: 30,
                                       height: 30,
                                       fit: BoxFit.cover,
@@ -156,21 +172,25 @@ class CommentScreen extends StatelessWidget {
                                 controller: model.commentController,
                                 maxLines: 1,
                                 keyboardType: TextInputType.multiline,
-                                style: TextStyle(color: Colors.white, fontSize: 15),
+                                style: TextStyle(
+                                    color: AppColors.white, fontSize: 15),
                                 validator: (value) {
                                   return null;
                                 },
-                                cursorColor: Colors.white,
+                                cursorColor: AppColors.white,
                                 decoration: InputDecoration(
-                                    hintText: translate('comment_list_screen.write_your_comment'),
-                                    hintStyle:
-                                        TextStyle(color: Colors.grey, fontSize: 15),
+                                    hintText: translate(
+                                        'comment_list_screen.write_your_comment'),
+                                    hintStyle: TextStyle(
+                                        color: AppColors.grey, fontSize: 15),
                                     border: OutlineInputBorder(
                                         borderSide: BorderSide.none,
-                                        borderRadius: BorderRadius.circular(10.0)),
+                                        borderRadius:
+                                            BorderRadius.circular(10.0)),
                                     contentPadding:
                                         EdgeInsets.symmetric(horizontal: 10),
-                                    labelStyle: TextStyle(color: Colors.white),
+                                    labelStyle:
+                                        TextStyle(color: AppColors.white),
                                     filled: true,
                                     fillColor: Colors.transparent),
                               )),
@@ -180,7 +200,7 @@ class CommentScreen extends StatelessWidget {
                                 },
                                 child: Icon(
                                   Icons.send,
-                                  color: Colors.white,
+                                  color: AppColors.white,
                                 ),
                               )
                             ],

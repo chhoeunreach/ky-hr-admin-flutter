@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/foundation.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class CreateGroupScreen extends StatefulWidget {
   @override
@@ -43,11 +44,12 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
       if (query.isEmpty) {
         _filteredContacts = List.from(_contacts);
       } else {
-        _filteredContacts = _contacts.where((c) =>
-          c.name.toLowerCase().contains(query) ||
-          c.department.toLowerCase().contains(query) ||
-          c.post.toLowerCase().contains(query)
-        ).toList();
+        _filteredContacts = _contacts
+            .where((c) =>
+                c.name.toLowerCase().contains(query) ||
+                c.department.toLowerCase().contains(query) ||
+                c.post.toLowerCase().contains(query))
+            .toList();
       }
     });
   }
@@ -60,7 +62,10 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
 
       final response = await connect.getResponse(
         Constant.CHAT_CONTACTS,
-        {'Authorization': 'Bearer $token', 'Accept': 'application/json; charset=UTF-8'},
+        {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json; charset=UTF-8'
+        },
       );
 
       final data = _decodeBody(response.body);
@@ -77,7 +82,10 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
           }
         }
       }
-    } catch (error) { if (kDebugMode) debugPrint('Create group: failed to load contacts: $error'); }
+    } catch (error) {
+      if (kDebugMode)
+        debugPrint('Create group: failed to load contacts: $error');
+    }
     setState(() => _loading = false);
   }
 
@@ -85,23 +93,30 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
     final source = await Get.bottomSheet<ImageSource>(
       Container(
         decoration: BoxDecoration(
-          color: const Color(0xFF0A1E3D),
+          color: AppColors.customFF0A1E3D,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2))),
+            Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                    color: AppColors.white24,
+                    borderRadius: BorderRadius.circular(2))),
             const SizedBox(height: 20),
             ListTile(
-              leading: const Icon(Icons.camera_alt, color: Colors.white),
-              title: const Text('Take Photo', style: TextStyle(color: Colors.white)),
+              leading: const Icon(Icons.camera_alt, color: AppColors.white),
+              title: const Text('Take Photo',
+                  style: TextStyle(color: AppColors.white)),
               onTap: () => Get.back(result: ImageSource.camera),
             ),
             ListTile(
-              leading: const Icon(Icons.photo_library, color: Colors.white),
-              title: const Text('Choose from Gallery', style: TextStyle(color: Colors.white)),
+              leading: const Icon(Icons.photo_library, color: AppColors.white),
+              title: const Text('Choose from Gallery',
+                  style: TextStyle(color: AppColors.white)),
               onTap: () => Get.back(result: ImageSource.gallery),
             ),
           ],
@@ -109,7 +124,8 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
       ),
     );
     if (source != null) {
-      final picked = await _picker.pickImage(source: source, maxWidth: 512, maxHeight: 512);
+      final picked = await _picker.pickImage(
+          source: source, maxWidth: 512, maxHeight: 512);
       if (picked != null) {
         setState(() => _avatarFile = File(picked.path));
       }
@@ -133,7 +149,10 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
       await repository.createGroup(
         name: name,
         description: _descController.text.trim(),
-        memberIds: _selectedUserIds.map((e) => int.tryParse(e) ?? 0).where((e) => e > 0).toList(),
+        memberIds: _selectedUserIds
+            .map((e) => int.tryParse(e) ?? 0)
+            .where((e) => e > 0)
+            .toList(),
         avatarFile: _avatarFile,
       );
 
@@ -167,10 +186,12 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
           backgroundColor: Colors.transparent,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.close, color: Colors.white),
+            icon: const Icon(Icons.close, color: AppColors.white),
             onPressed: () => Get.back(),
           ),
-          title: const Text('Create Group', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+          title: const Text('Create Group',
+              style: TextStyle(
+                  color: AppColors.white, fontWeight: FontWeight.w600)),
           centerTitle: true,
         ),
         body: Column(
@@ -180,7 +201,8 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                 slivers: [
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 16),
                       child: Column(
                         children: [
                           GestureDetector(
@@ -189,12 +211,13 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                               children: [
                                 CircleAvatar(
                                   radius: 48,
-                                  backgroundColor: Colors.white12,
+                                  backgroundColor: AppColors.white12,
                                   backgroundImage: _avatarFile != null
                                       ? FileImage(_avatarFile!)
                                       : null,
                                   child: _avatarFile == null
-                                      ? const Icon(Icons.group, size: 44, color: Colors.white54)
+                                      ? const Icon(Icons.group,
+                                          size: 44, color: AppColors.white54)
                                       : null,
                                 ),
                                 Positioned(
@@ -204,11 +227,14 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                                     width: 32,
                                     height: 32,
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF036eb7),
+                                      color: AppColors.customFF036EB7,
                                       shape: BoxShape.circle,
-                                      border: Border.all(color: const Color(0xFF0A1E3D), width: 2),
+                                      border: Border.all(
+                                          color: AppColors.customFF0A1E3D,
+                                          width: 2),
                                     ),
-                                    child: const Icon(Icons.camera_alt, size: 16, color: Colors.white),
+                                    child: const Icon(Icons.camera_alt,
+                                        size: 16, color: AppColors.white),
                                   ),
                                 ),
                               ],
@@ -217,37 +243,45 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                           const SizedBox(height: 16),
                           TextField(
                             controller: _nameController,
-                            style: const TextStyle(color: Colors.white, fontSize: 16),
+                            style: const TextStyle(
+                                color: AppColors.white, fontSize: 16),
                             decoration: InputDecoration(
                               hintText: 'Group Name',
-                              hintStyle: const TextStyle(color: Colors.white38),
+                              hintStyle:
+                                  const TextStyle(color: AppColors.white38),
                               filled: true,
-                              fillColor: Colors.white.withOpacity(0.06),
+                              fillColor:
+                                  AppColors.white.withValues(alpha: 0.06),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide.none,
                               ),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 14),
                             ),
-                            cursorColor: Colors.white,
+                            cursorColor: AppColors.white,
                           ),
                           const SizedBox(height: 10),
                           TextField(
                             controller: _descController,
-                            style: const TextStyle(color: Colors.white, fontSize: 14),
+                            style: const TextStyle(
+                                color: AppColors.white, fontSize: 14),
                             decoration: InputDecoration(
                               hintText: 'Description (optional)',
-                              hintStyle: const TextStyle(color: Colors.white38),
+                              hintStyle:
+                                  const TextStyle(color: AppColors.white38),
                               filled: true,
-                              fillColor: Colors.white.withOpacity(0.06),
+                              fillColor:
+                                  AppColors.white.withValues(alpha: 0.06),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide.none,
                               ),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 12),
                             ),
                             maxLines: 2,
-                            cursorColor: Colors.white,
+                            cursorColor: AppColors.white,
                           ),
                         ],
                       ),
@@ -264,20 +298,25 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                           itemCount: _selectedUserIds.length,
                           itemBuilder: (_, i) {
                             final id = _selectedUserIds.elementAt(i);
-                            final contact = _contacts.cast<ChatContact?>().firstWhere(
-                              (c) => c!.sourceId == id,
-                              orElse: () => null,
-                            );
+                            final contact =
+                                _contacts.cast<ChatContact?>().firstWhere(
+                                      (c) => c!.sourceId == id,
+                                      orElse: () => null,
+                                    );
                             return Padding(
                               padding: const EdgeInsets.only(right: 8),
                               child: Chip(
-                                backgroundColor: const Color(0xFF036eb7),
-                                label: Text(contact?.name ?? id, style: const TextStyle(color: Colors.white, fontSize: 13)),
-                                deleteIcon: const Icon(Icons.close, size: 16, color: Colors.white70),
+                                backgroundColor: AppColors.customFF036EB7,
+                                label: Text(contact?.name ?? id,
+                                    style: const TextStyle(
+                                        color: AppColors.white, fontSize: 13)),
+                                deleteIcon: const Icon(Icons.close,
+                                    size: 16, color: AppColors.white70),
                                 onDeleted: () {
                                   setState(() => _selectedUserIds.remove(id));
                                 },
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20)),
                               ),
                             );
                           },
@@ -286,14 +325,19 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                     ),
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 8),
                       child: Row(
                         children: [
-                          const Icon(Icons.people, color: Colors.white54, size: 18),
+                          const Icon(Icons.people,
+                              color: AppColors.white54, size: 18),
                           const SizedBox(width: 8),
                           Text(
                             'Add Members  ·  ${_selectedUserIds.length} selected',
-                            style: const TextStyle(color: Colors.white54, fontSize: 13, fontWeight: FontWeight.w600),
+                            style: const TextStyle(
+                                color: AppColors.white54,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600),
                           ),
                         ],
                       ),
@@ -301,29 +345,35 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                   ),
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 4),
                       child: TextField(
                         controller: _searchController,
-                        style: const TextStyle(color: Colors.white, fontSize: 14),
+                        style: const TextStyle(
+                            color: AppColors.white, fontSize: 14),
                         decoration: InputDecoration(
                           hintText: 'Search contacts...',
-                          hintStyle: const TextStyle(color: Colors.white38),
-                          prefixIcon: const Icon(Icons.search, color: Colors.white38, size: 20),
+                          hintStyle: const TextStyle(color: AppColors.white38),
+                          prefixIcon: const Icon(Icons.search,
+                              color: AppColors.white38, size: 20),
                           filled: true,
-                          fillColor: Colors.white.withOpacity(0.06),
+                          fillColor: AppColors.white.withValues(alpha: 0.06),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
                             borderSide: BorderSide.none,
                           ),
-                          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                          contentPadding:
+                              const EdgeInsets.symmetric(vertical: 10),
                         ),
-                        cursorColor: Colors.white,
+                        cursorColor: AppColors.white,
                       ),
                     ),
                   ),
                   if (_loading)
                     const SliverFillRemaining(
-                      child: Center(child: CircularProgressIndicator(color: Colors.white)),
+                      child: Center(
+                          child: CircularProgressIndicator(
+                              color: AppColors.white)),
                     )
                   else if (_filteredContacts.isEmpty)
                     SliverFillRemaining(
@@ -331,9 +381,11 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.search_off, color: Colors.white38, size: 48),
+                            Icon(Icons.search_off,
+                                color: AppColors.white38, size: 48),
                             const SizedBox(height: 12),
-                            Text('No contacts found', style: TextStyle(color: Colors.white54)),
+                            Text('No contacts found',
+                                style: TextStyle(color: AppColors.white54)),
                           ],
                         ),
                       ),
@@ -343,7 +395,8 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                       delegate: SliverChildBuilderDelegate(
                         (context, index) {
                           final contact = _filteredContacts[index];
-                          final isSelected = _selectedUserIds.contains(contact.sourceId);
+                          final isSelected =
+                              _selectedUserIds.contains(contact.sourceId);
                           return _ContactTile(
                             contact: contact,
                             isSelected: isSelected,
@@ -368,24 +421,36 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
               child: Container(
                 padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.2),
-                  border: Border(top: BorderSide(color: Colors.white.withOpacity(0.08))),
+                  color: AppColors.black.withValues(alpha: 0.2),
+                  border: Border(
+                      top: BorderSide(
+                          color: AppColors.white.withValues(alpha: 0.08))),
                 ),
                 child: SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: _creating || _selectedUserIds.isEmpty ? null : _createGroup,
+                    onPressed: _creating || _selectedUserIds.isEmpty
+                        ? null
+                        : _createGroup,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF036eb7),
-                      disabledBackgroundColor: Colors.white12,
+                      backgroundColor: AppColors.customFF036EB7,
+                      disabledBackgroundColor: AppColors.white12,
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
                     child: _creating
-                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: AppColors.white))
                         : Text(
                             'Create Group${_selectedUserIds.isNotEmpty ? ' (${_selectedUserIds.length + 1} members)' : ''}',
-                            style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
+                            style: const TextStyle(
+                                color: AppColors.white,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600),
                           ),
                   ),
                 ),
@@ -426,19 +491,21 @@ class _ContactTile extends StatelessWidget {
     return ListTile(
       leading: CircleAvatar(
         radius: 20,
-        backgroundColor: Colors.white12,
-        backgroundImage: contact.avatar.isNotEmpty ? NetworkImage(contact.avatar) : null,
+        backgroundColor: AppColors.white12,
+        backgroundImage:
+            contact.avatar.isNotEmpty ? NetworkImage(contact.avatar) : null,
         child: contact.avatar.isEmpty
-            ? Icon(Icons.person, color: Colors.white38, size: 22)
+            ? Icon(Icons.person, color: AppColors.white38, size: 22)
             : null,
       ),
       title: Text(
         contact.name,
-        style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500),
+        style: const TextStyle(
+            color: AppColors.white, fontSize: 15, fontWeight: FontWeight.w500),
       ),
       subtitle: Text(
         contact.post.isNotEmpty ? contact.post : contact.department,
-        style: const TextStyle(color: Colors.white54, fontSize: 13),
+        style: const TextStyle(color: AppColors.white54, fontSize: 13),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
@@ -447,14 +514,14 @@ class _ContactTile extends StatelessWidget {
         height: 24,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: isSelected ? const Color(0xFF036eb7) : Colors.transparent,
+          color: isSelected ? AppColors.customFF036EB7 : Colors.transparent,
           border: Border.all(
-            color: isSelected ? const Color(0xFF036eb7) : Colors.white38,
+            color: isSelected ? AppColors.customFF036EB7 : AppColors.white38,
             width: 2,
           ),
         ),
         child: isSelected
-            ? const Icon(Icons.check, size: 16, color: Colors.white)
+            ? const Icon(Icons.check, size: 16, color: AppColors.white)
             : null,
       ),
       onTap: () => onToggle(!isSelected),

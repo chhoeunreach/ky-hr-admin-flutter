@@ -5,7 +5,7 @@ import 'package:cnattendance/utils/navigationservice.dart';
 import 'package:cnattendance/widget/buttonborder.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
-import 'package:hexcolor/hexcolor.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 /// Shows a blocking alert when the app cannot reach its primary server or the
 /// backup server. The alert keeps re-checking the connection and only closes
@@ -27,8 +27,7 @@ class ConnectionAlert {
   }) {
     if (_showing) return;
     final state = NavigationService.navigatorKey.currentState;
-    final context =
-        state?.overlay?.context ?? state?.context;
+    final context = state?.overlay?.context ?? state?.context;
     if (context == null) return;
     _showing = true;
     unawaited(showDialog(
@@ -86,8 +85,8 @@ class _ConnectionAlertDialogState extends State<ConnectionAlertDialog> {
   Future<void> _check() async {
     if (_checking || !mounted) return;
     setState(() => _checking = true);
-    final result =
-        await (widget.checkServer ?? ServerStatusService().checkCurrentServer)();
+    final result = await (widget.checkServer ??
+        ServerStatusService().checkCurrentServer)();
     if (!mounted) return;
     if (result.isConnected) {
       Navigator.of(context).pop();
@@ -107,12 +106,12 @@ class _ConnectionAlertDialogState extends State<ConnectionAlertDialog> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         insetPadding: const EdgeInsets.all(24),
         child: Container(
-          color: Colors.white,
+          color: AppColors.white,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.cloud_off, size: 60, color: Colors.redAccent),
+              const Icon(Icons.cloud_off, size: 60, color: AppColors.redAccent),
               const SizedBox(height: 16),
               Text(
                 translate('connection_error.title'),
@@ -120,33 +119,34 @@ class _ConnectionAlertDialogState extends State<ConnectionAlertDialog> {
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black,
+                  color: AppColors.black,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 translate('connection_error.message'),
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 14, color: Colors.black54),
+                style: const TextStyle(fontSize: 14, color: AppColors.black54),
               ),
               const SizedBox(height: 12),
               Text(
                 '${translate('connection_error.primary_server')}: ${widget.primaryUrl}',
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 12, color: Colors.black45),
+                style: const TextStyle(fontSize: 12, color: AppColors.black45),
               ),
               if (widget.fallbackUrl != null)
                 Text(
                   '${translate('connection_error.backup_server')}: ${widget.fallbackUrl}',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 12, color: Colors.black45),
+                  style:
+                      const TextStyle(fontSize: 12, color: AppColors.black45),
                 ),
               const SizedBox(height: 8),
               Text(
-                _lastMessage ??
-                    translate('connection_error.reconnecting'),
+                _lastMessage ?? translate('connection_error.reconnecting'),
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 12, color: Colors.redAccent),
+                style:
+                    const TextStyle(fontSize: 12, color: AppColors.redAccent),
               ),
               const SizedBox(height: 16),
               SizedBox(
@@ -164,7 +164,7 @@ class _ConnectionAlertDialogState extends State<ConnectionAlertDialog> {
                       )
                     : ElevatedButton(
                         style: TextButton.styleFrom(
-                          backgroundColor: HexColor("#036eb7"),
+                          backgroundColor: AppColors.customFF036EB7,
                           shape: ButtonBorder(),
                         ),
                         onPressed: _check,
@@ -172,7 +172,7 @@ class _ConnectionAlertDialogState extends State<ConnectionAlertDialog> {
                           padding: const EdgeInsets.symmetric(vertical: 15),
                           child: Text(
                             translate('connection_error.retry'),
-                            style: const TextStyle(color: Colors.white),
+                            style: const TextStyle(color: AppColors.white),
                           ),
                         ),
                       ),

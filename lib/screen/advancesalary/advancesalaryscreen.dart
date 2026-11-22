@@ -5,6 +5,7 @@ import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class AdvanceSalaryScreen extends StatelessWidget {
   @override
@@ -23,8 +24,11 @@ class AdvanceSalaryScreen extends StatelessWidget {
             onPressed: () {
               model.onAdvanceSalaryCreateClicked();
             },
-            backgroundColor: Colors.blue,
-            child: Icon(Icons.add,color: Colors.white,)),
+            backgroundColor: AppColors.blue,
+            child: Icon(
+              Icons.add,
+              color: AppColors.white,
+            )),
         body: Obx(
           () => SafeArea(
             child: Padding(
@@ -46,26 +50,28 @@ class AdvanceSalaryScreen extends StatelessWidget {
                                 topRight: Radius.circular(0),
                                 bottomLeft: Radius.circular(0),
                                 bottomRight: Radius.circular(10))),
-                        tileColor: Colors.white12,
+                        tileColor: AppColors.white12,
                         onTap: () {
                           model.onAdvanceSalaryClicked(item.id.toString());
                         },
-                        textColor: Colors.white,
-                        iconColor: Colors.white,
+                        textColor: AppColors.white,
+                        iconColor: AppColors.white,
                         title: Text(
                           item.requested_amount,
                           style: TextStyle(fontSize: 18),
                         ),
                         subtitle: Text(
                           item.submittedDate,
-                          style: TextStyle(color: Colors.grey),
+                          style: TextStyle(color: AppColors.grey),
                         ),
                         trailing: GestureDetector(
                           onTap: () {
-                            if(item.status.toLowerCase() == "pending"){
-                              model.onAdvanceSalaryEditClicked(item.id.toString());
-                            }else{
-                              showToast("Accepted/Rejected Advance can't be edited");
+                            if (item.status.toLowerCase() == "pending") {
+                              model.onAdvanceSalaryEditClicked(
+                                  item.id.toString());
+                            } else {
+                              showToast(
+                                  "Accepted/Rejected Advance can't be edited");
                             }
                           },
                           child: Padding(
@@ -75,10 +81,10 @@ class AdvanceSalaryScreen extends StatelessWidget {
                         ),
                         leading: Card(
                             color: item.status.toLowerCase() == "pending"
-                                ? Colors.orange
+                                ? AppColors.orange
                                 : item.status.toLowerCase() == "rejected"
-                                    ? Colors.red
-                                    : Colors.green,
+                                    ? AppColors.red
+                                    : AppColors.green,
                             shape: CircleBorder(),
                             child: Padding(
                               padding: const EdgeInsets.all(15),
@@ -89,7 +95,7 @@ class AdvanceSalaryScreen extends StatelessWidget {
                                         ? "R"
                                         : "A",
                                 style: TextStyle(
-                                    color: Colors.white,
+                                    color: AppColors.white,
                                     fontWeight: FontWeight.bold,
                                     fontSize: 18),
                               ),

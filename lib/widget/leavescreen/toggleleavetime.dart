@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:provider/provider.dart';
 import 'package:toggle_switch/toggle_switch.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class ToggleLeaveTime extends StatelessWidget {
   @override
@@ -30,9 +31,7 @@ class ToggleLeaveTime extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        color: enterprise.isDark
-            ? const Color(0xFF0F172A)
-            : const Color(0xFFF1F5F9),
+        color: enterprise.isDark ? AppColors.ink900 : AppColors.customFFF1F5F9,
         border: Border.all(color: enterprise.cardBorder),
       ),
       child: Card(
@@ -41,7 +40,7 @@ class ToggleLeaveTime extends StatelessWidget {
         margin: EdgeInsets.zero,
         child: ToggleSwitch(
           activeBgColor: [enterprise.accent],
-          activeFgColor: Colors.white,
+          activeFgColor: AppColors.white,
           inactiveFgColor: enterprise.text,
           inactiveBgColor: Colors.transparent,
           minWidth: 88,

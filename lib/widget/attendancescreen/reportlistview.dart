@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:provider/provider.dart';
 import 'package:cnattendance/widget/attendancescreen/attendancecardview.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class ReportListView extends StatelessWidget {
   const ReportListView({super.key, this.asSliver = false});
@@ -84,10 +85,10 @@ class ReportListView extends StatelessWidget {
     return Builder(builder: (context) {
       final enterprise = EnterpriseTheme.of(context);
       final cardColor = enterprise.isDark
-          ? Colors.white.withValues(alpha: 0.12)
-          : Colors.white.withValues(alpha: 0.94);
+          ? AppColors.white.withValues(alpha: 0.12)
+          : AppColors.white.withValues(alpha: 0.94);
       final labelColor = enterprise.isDark
-          ? Colors.white
+          ? AppColors.white
           : enterprise.text.withValues(alpha: 0.78);
 
       Widget summaryCard({
@@ -205,7 +206,7 @@ class ReportListView extends StatelessWidget {
               flex: 1,
               child: Container(
                 child: Text(translate('attendance_screen.date'),
-                    style: TextStyle(fontSize: 12, color: Colors.white),
+                    style: TextStyle(fontSize: 12, color: AppColors.white),
                     textAlign: TextAlign.start),
               ),
             ),
@@ -213,7 +214,7 @@ class ReportListView extends StatelessWidget {
               flex: 1,
               child: Container(
                 child: Text(translate('attendance_screen.day'),
-                    style: TextStyle(fontSize: 12, color: Colors.white),
+                    style: TextStyle(fontSize: 12, color: AppColors.white),
                     textAlign: TextAlign.center),
               ),
             ),
@@ -221,7 +222,7 @@ class ReportListView extends StatelessWidget {
               flex: 3,
               child: Container(
                 child: Text(translate('attendance_screen.start_time'),
-                    style: TextStyle(fontSize: 12, color: Colors.white),
+                    style: TextStyle(fontSize: 12, color: AppColors.white),
                     textAlign: TextAlign.center),
               ),
             ),
@@ -229,7 +230,7 @@ class ReportListView extends StatelessWidget {
               flex: 3,
               child: Container(
                 child: Text(translate('attendance_screen.end_time'),
-                    style: TextStyle(fontSize: 12, color: Colors.white),
+                    style: TextStyle(fontSize: 12, color: AppColors.white),
                     textAlign: TextAlign.center),
               ),
             ),
@@ -239,7 +240,7 @@ class ReportListView extends StatelessWidget {
                 child: Text(translate('attendance_screen.status'),
                     maxLines: 1,
                     overflow: TextOverflow.clip,
-                    style: TextStyle(fontSize: 12, color: Colors.white),
+                    style: TextStyle(fontSize: 12, color: AppColors.white),
                     textAlign: TextAlign.center),
               ),
             ),
@@ -249,7 +250,7 @@ class ReportListView extends StatelessWidget {
                 child: Text(translate('attendance_screen.action'),
                     maxLines: 1,
                     overflow: TextOverflow.clip,
-                    style: TextStyle(fontSize: 12, color: Colors.white),
+                    style: TextStyle(fontSize: 12, color: AppColors.white),
                     textAlign: TextAlign.right),
               ),
             ),

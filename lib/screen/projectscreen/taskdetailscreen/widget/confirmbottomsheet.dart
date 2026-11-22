@@ -4,7 +4,7 @@ import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
-import 'package:hexcolor/hexcolor.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class ConfirmBottomSheet extends StatelessWidget {
   @override
@@ -27,7 +27,7 @@ class ConfirmBottomSheet extends StatelessWidget {
                     Text(
                       translate('task_detail_screen.mark_as_finish'),
                       style: TextStyle(
-                          color: Colors.white,
+                          color: AppColors.white,
                           fontSize: 16,
                           fontWeight: FontWeight.bold),
                     ),
@@ -37,7 +37,7 @@ class ConfirmBottomSheet extends StatelessWidget {
                         },
                         child: Icon(
                           Icons.close,
-                          color: Colors.white,
+                          color: AppColors.white,
                         )),
                   ],
                 ),
@@ -45,16 +45,15 @@ class ConfirmBottomSheet extends StatelessWidget {
               SizedBox(
                 height: 20,
               ),
-
               Padding(
-                padding: EdgeInsets.only(bottom: 8.0,left: 10,right: 10),
+                padding: EdgeInsets.only(bottom: 8.0, left: 10, right: 10),
                 child: Text(
                   translate('task_detail_screen.checklist_complete'),
-                  style: TextStyle(color: Colors.white, fontSize: 18),
+                  style: TextStyle(color: AppColors.white, fontSize: 18),
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.only(top: 8.0,left: 10,right: 10),
+                padding: const EdgeInsets.only(top: 8.0, left: 10, right: 10),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
@@ -63,17 +62,18 @@ class ConfirmBottomSheet extends StatelessWidget {
                         padding: const EdgeInsets.only(right: 5),
                         child: TextButton(
                             style: TextButton.styleFrom(
-                                backgroundColor: HexColor("#036eb7"),
+                                backgroundColor: AppColors.customFF036EB7,
                                 shape: ButtonBorder()),
                             onPressed: () async {
                               Get.back();
-                              controller.checkListTaskToggle(controller.taskDetail.value.id.toString());
+                              controller.checkListTaskToggle(
+                                  controller.taskDetail.value.id.toString());
                             },
                             child: Container(
                               padding: const EdgeInsets.symmetric(vertical: 10),
                               child: Text(
                                 translate('task_detail_screen.confirm'),
-                                style: TextStyle(color: Colors.white),
+                                style: TextStyle(color: AppColors.white),
                               ),
                             )),
                       ),
@@ -83,7 +83,7 @@ class ConfirmBottomSheet extends StatelessWidget {
                         padding: const EdgeInsets.only(left: 5),
                         child: TextButton(
                             style: TextButton.styleFrom(
-                                backgroundColor: HexColor("#036eb7"),
+                                backgroundColor: AppColors.customFF036EB7,
                                 shape: ButtonBorder()),
                             onPressed: () {
                               Get.back();
@@ -92,7 +92,7 @@ class ConfirmBottomSheet extends StatelessWidget {
                               padding: const EdgeInsets.symmetric(vertical: 10),
                               child: Text(
                                 translate('task_detail_screen.go_back'),
-                                style: TextStyle(color: Colors.white),
+                                style: TextStyle(color: AppColors.white),
                               ),
                             )),
                       ),

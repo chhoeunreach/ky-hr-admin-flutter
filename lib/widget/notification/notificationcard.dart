@@ -3,11 +3,11 @@ import 'package:cnattendance/screen/general/generalscreen.dart';
 import 'package:cnattendance/model/notification.dart' as app_notification;
 import 'package:cnattendance/provider/notificationcontroller.dart';
 import 'package:cnattendance/screen/profile/notice_detail_screen.dart';
-import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/widget/buttonborder.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:text_sizer_plus/text_sizer_plus.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class NotificationCard extends StatelessWidget {
   final app_notification.Notification notification;
@@ -21,7 +21,7 @@ class NotificationCard extends StatelessWidget {
     return Card(
       shape: ButtonBorder(),
       elevation: 0,
-      color: notification.isRead ? Colors.white12 : Colors.white24,
+      color: notification.isRead ? AppColors.white12 : AppColors.white24,
       child: InkWell(
         onTap: () async {
           await controller.markNotificationAsRead(notification);
@@ -70,7 +70,7 @@ class NotificationCard extends StatelessWidget {
                 child: Card(
                   shape: ButtonBorder(),
                   elevation: 0,
-                  color: Colors.blueAccent,
+                  color: AppColors.blueAccent,
                   child: Container(
                     width: 60,
                     height: 60,
@@ -79,13 +79,14 @@ class NotificationCard extends StatelessWidget {
                       children: [
                         Text(
                           notification.day,
-                          style: TextStyle(color: Colors.white, fontSize: 20),
+                          style:
+                              TextStyle(color: AppColors.white, fontSize: 20),
                         ),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 5),
                           child: TextSizerPlus(notification.month,
                               maxLines: 1,
-                              style: TextStyle(color: Colors.white)),
+                              style: TextStyle(color: AppColors.white)),
                         ),
                       ],
                     ),
@@ -103,7 +104,7 @@ class NotificationCard extends StatelessWidget {
                         maxLines: 1,
                         softWrap: true,
                         notification.title,
-                        style: TextStyle(color: Colors.white, fontSize: 18),
+                        style: TextStyle(color: AppColors.white, fontSize: 18),
                       ),
                       SizedBox(
                         height: 5,
@@ -113,7 +114,7 @@ class NotificationCard extends StatelessWidget {
                         maxLines: 2,
                         softWrap: true,
                         notification.description,
-                        style: TextStyle(color: Colors.white, fontSize: 12),
+                        style: TextStyle(color: AppColors.white, fontSize: 12),
                       ),
                     ],
                   ),

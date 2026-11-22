@@ -7,6 +7,7 @@ import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:image/image.dart' as img;
 import 'package:path/path.dart' as p;
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class AttendanceSelfieCamera extends StatefulWidget {
   const AttendanceSelfieCamera({super.key});
@@ -178,10 +179,10 @@ class _AttendanceSelfieCameraState extends State<AttendanceSelfieCamera> {
         controller?.description.lensDirection == CameraLensDirection.front;
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppColors.black,
       appBar: AppBar(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
+        backgroundColor: AppColors.black,
+        foregroundColor: AppColors.white,
         title: Text(isFrontCamera
             ? translate('attendance_messages.take_selfie')
             : translate('attendance_messages.take_photo')),
@@ -215,7 +216,7 @@ class _AttendanceSelfieCameraState extends State<AttendanceSelfieCamera> {
                           height: 26,
                           child: CircularProgressIndicator(
                             strokeWidth: 3,
-                            color: Colors.white,
+                            color: AppColors.white,
                           ),
                         )
                       : const Icon(Icons.camera_alt_rounded, size: 34),
@@ -240,7 +241,7 @@ class _AttendanceSelfieCameraState extends State<AttendanceSelfieCamera> {
           child: Text(
             _errorMessage!,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.white),
+            style: const TextStyle(color: AppColors.white),
           ),
         ),
       );
@@ -250,7 +251,7 @@ class _AttendanceSelfieCameraState extends State<AttendanceSelfieCamera> {
       return Center(
         child: Text(
           translate('attendance_messages.camera_not_ready'),
-          style: const TextStyle(color: Colors.white),
+          style: const TextStyle(color: AppColors.white),
         ),
       );
     }

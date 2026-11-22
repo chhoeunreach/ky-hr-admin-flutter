@@ -12,6 +12,7 @@ import 'package:flutter_translate/flutter_translate.dart';
 import 'package:html/parser.dart' as html_parser;
 import 'package:cnattendance/core/ky_security/ky_http.dart';
 import 'package:intl/intl.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class NoticeDetailScreen extends StatefulWidget {
   final app_notification.Notification notice;
@@ -139,11 +140,11 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
                       Container(
                         padding: const EdgeInsets.fromLTRB(18, 18, 18, 24),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: AppColors.white,
                           borderRadius: BorderRadius.circular(22),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.12),
+                              color: AppColors.black.withValues(alpha: 0.12),
                               blurRadius: 24,
                               offset: const Offset(0, 12),
                             ),
@@ -158,12 +159,12 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
                                   width: 36,
                                   height: 36,
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFFEAF2FF),
+                                    color: AppColors.customFFEAF2FF,
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: const Icon(
                                     Icons.article_outlined,
-                                    color: Color(0xFF036EB7),
+                                    color: AppColors.customFF036EB7,
                                     size: 20,
                                   ),
                                 ),
@@ -173,7 +174,7 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
                                     'Description',
                                     style:
                                         theme.textTheme.titleMedium?.copyWith(
-                                      color: const Color(0xFF172033),
+                                      color: AppColors.customFF172033,
                                       fontWeight: FontWeight.w800,
                                     ),
                                   ),
@@ -184,7 +185,7 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
                                     height: 18,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
-                                      color: Color(0xFF036EB7),
+                                      color: AppColors.customFF036EB7,
                                     ),
                                   ),
                               ],
@@ -217,8 +218,8 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
                               width: double.infinity,
                               child: ElevatedButton.icon(
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF036EB7),
-                                  foregroundColor: Colors.white,
+                                  backgroundColor: AppColors.customFF036EB7,
+                                  foregroundColor: AppColors.white,
                                   elevation: 0,
                                   padding:
                                       const EdgeInsets.symmetric(vertical: 14),
@@ -262,7 +263,7 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
   Map<String, Style> _descriptionHtmlStyle() {
     return {
       "body": Style(
-        color: const Color(0xFF263247),
+        color: AppColors.customFF263247,
         fontSize: FontSize(15.5),
         fontWeight: FontWeight.w500,
         lineHeight: const LineHeight(1.65),
@@ -270,16 +271,16 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
         padding: HtmlPaddings.zero,
       ),
       "p": Style(
-        color: const Color(0xFF263247),
+        color: AppColors.customFF263247,
         lineHeight: const LineHeight(1.65),
         margin: Margins.only(bottom: 12),
       ),
       "li": Style(
-        color: const Color(0xFF263247),
+        color: AppColors.customFF263247,
         lineHeight: const LineHeight(1.6),
       ),
       "a": Style(
-        color: const Color(0xFF036EB7),
+        color: AppColors.customFF036EB7,
         textDecoration: TextDecoration.underline,
       ),
     };
@@ -303,7 +304,7 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
           builder: (context, scrollController) {
             return Container(
               decoration: const BoxDecoration(
-                color: Colors.white,
+                color: AppColors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
               ),
               child: SafeArea(
@@ -315,7 +316,7 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
                       width: 44,
                       height: 5,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFD8E0EC),
+                        color: AppColors.customFFD8E0EC,
                         borderRadius: BorderRadius.circular(100),
                       ),
                     ),
@@ -331,7 +332,7 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
-                                color: Color(0xFF172033),
+                                color: AppColors.customFF172033,
                                 fontSize: 18,
                                 fontWeight: FontWeight.w900,
                                 height: 1.2,
@@ -340,13 +341,13 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
                           ),
                           IconButton(
                             icon: const Icon(Icons.close_rounded),
-                            color: const Color(0xFF52607A),
+                            color: AppColors.customFF52607A,
                             onPressed: () => Navigator.pop(context),
                           ),
                         ],
                       ),
                     ),
-                    const Divider(height: 1, color: Color(0xFFE6ECF4)),
+                    const Divider(height: 1, color: AppColors.customFFE6ECF4),
                     Expanded(
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
@@ -364,8 +365,9 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
                         width: double.infinity,
                         child: OutlinedButton.icon(
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFF036EB7),
-                            side: const BorderSide(color: Color(0xFFB9D8F2)),
+                            foregroundColor: AppColors.customFF036EB7,
+                            side: const BorderSide(
+                                color: AppColors.customFFB9D8F2),
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(14),
@@ -413,10 +415,10 @@ class _NoticeHeader extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.14),
+        color: AppColors.white.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.18),
+          color: AppColors.white.withValues(alpha: 0.18),
         ),
       ),
       child: Column(
@@ -427,12 +429,12 @@ class _NoticeHeader extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.18),
+                  color: AppColors.white.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
                   Icons.campaign_outlined,
-                  color: Colors.white,
+                  color: AppColors.white,
                   size: 22,
                 ),
               ),
@@ -441,7 +443,7 @@ class _NoticeHeader extends StatelessWidget {
                 child: Text(
                   DateFormat('dd MMM yyyy').format(notice.date),
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.84),
+                    color: AppColors.white.withValues(alpha: 0.84),
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                   ),
@@ -453,7 +455,7 @@ class _NoticeHeader extends StatelessWidget {
           Text(
             notice.title.trim().isEmpty ? 'Notice' : notice.title,
             style: const TextStyle(
-              color: Colors.white,
+              color: AppColors.white,
               fontSize: 23,
               fontWeight: FontWeight.w800,
               height: 1.25,

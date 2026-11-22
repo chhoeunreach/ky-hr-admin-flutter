@@ -4,6 +4,7 @@ import 'package:cnattendance/screen/projectscreen/taskdetailscreen/taskdetailscr
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:get/get.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 class TaskSection extends StatelessWidget {
   @override
@@ -16,7 +17,9 @@ class TaskSection extends StatelessWidget {
         Text(
           translate('project_detail_screen.tasks'),
           style: TextStyle(
-              color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+              color: AppColors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold),
         ),
         SizedBox(
           height: 10,
@@ -36,7 +39,7 @@ class TaskSection extends StatelessWidget {
                         topLeft: Radius.circular(10),
                         bottomRight: Radius.circular(10))),
                 elevation: 0,
-                color: Colors.white12,
+                color: AppColors.white12,
                 child: GestureDetector(
                   onTap: () {
                     Get.to(TaskDetailScreen(), arguments: {"id": task.id});
@@ -52,7 +55,7 @@ class TaskSection extends StatelessWidget {
                                 maxLines: 2,
                                 style: TextStyle(
                                     height: 1.2,
-                                    color: Colors.white,
+                                    color: AppColors.white,
                                     fontWeight: FontWeight.normal,
                                     fontSize: 15)),
                           ),
@@ -63,8 +66,8 @@ class TaskSection extends StatelessWidget {
                           child: Container(
                             width: 10,
                             color: task.status == "Completed"
-                                ? Colors.green
-                                : Colors.orangeAccent,
+                                ? AppColors.green
+                                : AppColors.orangeAccent,
                           ),
                         )
                       ],

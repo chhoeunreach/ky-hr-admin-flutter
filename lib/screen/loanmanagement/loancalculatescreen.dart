@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:intl/intl.dart';
+import 'package:cnattendance/core/theme/app_colors.dart';
 
 enum InterestType {
   fixed,
@@ -367,13 +368,13 @@ class _SummaryCard extends StatelessWidget {
           Container(
             width: 76,
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.10),
+              color: AppColors.black.withValues(alpha: 0.10),
               borderRadius: const BorderRadius.horizontal(
                 left: Radius.circular(28),
               ),
             ),
             child: const Center(
-              child: Icon(Icons.calculate, color: Colors.white, size: 34),
+              child: Icon(Icons.calculate, color: AppColors.white, size: 34),
             ),
           ),
           Expanded(
@@ -386,7 +387,7 @@ class _SummaryCard extends StatelessWidget {
                   Text(
                     '\$ ${formatter(payment)}',
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AppColors.white,
                       fontSize: 28,
                       fontWeight: FontWeight.w900,
                     ),
@@ -397,7 +398,7 @@ class _SummaryCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.88),
+                      color: AppColors.white.withValues(alpha: 0.88),
                       fontSize: 14,
                       fontWeight: FontWeight.w800,
                     ),
@@ -464,7 +465,7 @@ class _LoanFormCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(22),
             boxShadow: [
               BoxShadow(
-                color: Colors.black
+                color: AppColors.black
                     .withValues(alpha: enterprise.isDark ? 0.28 : 0.10),
                 blurRadius: 24,
                 offset: const Offset(0, 14),
@@ -920,8 +921,8 @@ class _SchedulePaymentTile extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: enterprise.isDark
-            ? Colors.white.withValues(alpha: 0.06)
-            : Colors.white.withValues(alpha: 0.82),
+            ? AppColors.white.withValues(alpha: 0.06)
+            : AppColors.white.withValues(alpha: 0.82),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: enterprise.text.withValues(alpha: 0.08)),
       ),
@@ -1060,8 +1061,8 @@ InputDecoration _fieldDecoration(
 }) {
   final enterprise = EnterpriseTheme.of(context);
   final fillColor = enterprise.isDark
-      ? Colors.white.withValues(alpha: 0.06)
-      : Colors.white.withValues(alpha: 0.78);
+      ? AppColors.white.withValues(alpha: 0.06)
+      : AppColors.white.withValues(alpha: 0.78);
   final borderColor = enterprise.text.withValues(alpha: 0.10);
   final border = OutlineInputBorder(
     borderRadius: BorderRadius.circular(18),
