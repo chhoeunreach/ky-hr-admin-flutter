@@ -202,13 +202,29 @@ class Preferences with ChangeNotifier {
     bool configured,
     Map<String, List<String>> layout, {
     Map<String, Map<String, int>> positions = const {},
+    String initialTab = 'home',
   }) async {
     final prefs = await _sharedPrefs;
     await prefs.setString(_roleMobileLayoutKey, jsonEncode({
       'configured': configured,
       'data': layout,
       'positions': positions,
+      'initial_tab': initialTab,
     }));
+  }
+
+  Future<String> getRoleMobileInitialTab() async {
+    final prefs = await _sharedPrefs;
+    final jsonString = prefs.getString(_roleMobileLayoutKey);
+    if (jsonString == null) return 'home';
+    try {
+      final decoded = jsonDecode(jsonString);
+      return decoded is Map && decoded['initial_tab'] != null
+          ? decoded['initial_tab'].toString()
+          : 'home';
+    } catch (_) {
+      return 'home';
+    }
   }
 
   Future<void> setRailExpanded(bool expanded) async {

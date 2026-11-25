@@ -29,10 +29,14 @@ void main() {
         'user_id': 42,
       }));
 
+  tearDown(() => ServerUrlResolver.onAllServersUnreachable = null);
+
   test(
-      'remembers backup, switches on failure, and returns to recovered primary',
+      'remembers backup, strictly keeps primary on failure and notifies prompt',
       () async {
     var failed = false;
+    (String, String?)? notified;
+    ServerUrlResolver.onAllServersUnreachable = (p, f) => notified = (p, f);
     final resolver = ServerUrlResolver(
       client: MockClient((request) async {
         if (request.url.host == 'primary.example' && failed) {
@@ -44,7 +48,9 @@ void main() {
     final preferences = Preferences(serverUrlResolver: resolver);
     expect(await preferences.getAppUrl(), primary);
     failed = true;
-    expect(await preferences.getAppUrl(), backup);
+    // Strict binding: never secretly connects to backup
+    expect(await preferences.getAppUrl(), primary);
+    expect(notified, (primary, backup));
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getString('app_url'), primary);
     failed = false;
@@ -52,9 +58,13 @@ void main() {
   });
 
   for (final failure in ['timeout', '503']) {
-    test('persisted backup survives restart and handles $failure', () async {
+    test(
+        'persisted backup survives restart and handles $failure without auto-failover',
+        () async {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('server_fallback:$primary', backup);
+      (String, String?)? notified;
+      ServerUrlResolver.onAllServersUnreachable = (p, f) => notified = (p, f);
       final resolver = ServerUrlResolver(client: MockClient((request) async {
         if (request.url.host == 'primary.example') {
           if (failure == 'timeout') throw TimeoutException('Timed out');
@@ -62,20 +72,25 @@ void main() {
         }
         return envelope();
       }));
-      expect(await resolver.resolve(primary, prefs), backup);
+      expect(await resolver.resolve(primary, prefs), primary);
+      expect(notified, (primary, backup));
     });
   }
 
-  test('failed health check selects backup even if primary returns HTTP 401',
+  test(
+      'failed health check keeps primary and notifies prompt even if primary returns HTTP 401',
       () async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('server_fallback:$primary', backup);
+    (String, String?)? notified;
+    ServerUrlResolver.onAllServersUnreachable = (p, f) => notified = (p, f);
     final resolver = ServerUrlResolver(client: MockClient((request) async {
       return request.url.host == 'primary.example'
           ? http.Response('Unauthorized', 401)
           : envelope();
     }));
-    expect(await resolver.resolve(primary, prefs), backup);
+    expect(await resolver.resolve(primary, prefs), primary);
+    expect(notified, (primary, backup));
   });
 
   for (final response in [
@@ -85,34 +100,19 @@ void main() {
     http.Response('Bad gateway', 502),
   ]) {
     test(
-        'unusable primary health response ${response.statusCode}: ${response.body}',
+        'unusable primary health response ${response.statusCode}: ${response.body} keeps primary',
         () async {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('server_fallback:$primary', backup);
+      (String, String?)? notified;
+      ServerUrlResolver.onAllServersUnreachable = (p, f) => notified = (p, f);
       final resolver = ServerUrlResolver(
           client: MockClient((request) async =>
               request.url.host == 'primary.example' ? response : envelope()));
-      expect(await resolver.resolve(primary, prefs), backup);
+      expect(await resolver.resolve(primary, prefs), primary);
+      expect(notified, (primary, backup));
     });
   }
-
-  test('cached backup going offline triggers a fresh primary check', () async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('server_fallback:$primary', backup);
-    var primaryDown = true;
-    var backupDown = false;
-    final resolver = ServerUrlResolver(client: MockClient((request) async {
-      if ((request.url.host == 'primary.example' && primaryDown) ||
-          (request.url.host == 'backup.example' && backupDown)) {
-        throw http.ClientException('Connection refused');
-      }
-      return envelope();
-    }));
-    expect(await resolver.resolve(primary, prefs), backup);
-    primaryDown = false;
-    backupDown = true;
-    expect(await resolver.resolve(primary, prefs), primary);
-  });
 
   test('rejects non-backend backup and keeps configured server when both fail',
       () async {
@@ -175,9 +175,12 @@ void main() {
     expect(count, 2);
   });
 
-  test('a cached healthy primary still fails over once its window expires',
+  test(
+      'a cached healthy primary detects outage once window expires without auto-failover',
       () async {
     var primaryDown = false;
+    (String, String?)? notified;
+    ServerUrlResolver.onAllServersUnreachable = (p, f) => notified = (p, f);
     final resolver = ServerUrlResolver(
       healthyCacheTtl: const Duration(milliseconds: 1),
       client: MockClient((request) async {
@@ -192,22 +195,26 @@ void main() {
     expect(await resolver.resolve(primary, prefs), primary);
     primaryDown = true;
     await Future<void>.delayed(const Duration(milliseconds: 5));
-    expect(await resolver.resolve(primary, prefs), backup);
+    expect(await resolver.resolve(primary, prefs), primary);
+    expect(notified, (primary, backup));
   });
 
-  test('fresh app uses configured backup before login when primary fails',
+  test(
+      'fresh app keeps configured server on outage and prompts instead of auto-failover',
       () async {
     SharedPreferences.setMockInitialValues({});
+    (String, String?)? notified;
+    ServerUrlResolver.onAllServersUnreachable = (p, f) => notified = (p, f);
     final resolver = ServerUrlResolver(client: MockClient((request) async {
       if (request.url.toString().startsWith(BackendServerDefaults.primaryUrl)) {
         throw http.ClientException('Connection refused');
       }
-      expect(request.url.toString(),
-          '${BackendServerDefaults.fallbackUrl}api/app-version');
       return envelope();
     }));
     final preferences = Preferences(serverUrlResolver: resolver);
-    expect(await preferences.getAppUrl(), BackendServerDefaults.fallbackUrl);
+    expect(await preferences.getAppUrl(), BackendServerDefaults.primaryUrl);
+    expect(notified,
+        (BackendServerDefaults.primaryUrl, BackendServerDefaults.fallbackUrl));
   });
 
   for (final missing in [
@@ -216,9 +223,12 @@ void main() {
     'user_token',
     'user_id'
   ]) {
-    test('missing $missing does not block the configured backup', () async {
+    test('missing $missing keeps configured server and notifies prompt',
+        () async {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('server_fallback:$primary', backup);
+      (String, String?)? notified;
+      ServerUrlResolver.onAllServersUnreachable = (p, f) => notified = (p, f);
       var calls = 0;
       final resolver = ServerUrlResolver(client: MockClient((request) async {
         calls++;
@@ -227,10 +237,11 @@ void main() {
         }
         return envelope();
       }));
-      expect(await resolver.resolve(primary, prefs), backup);
+      expect(await resolver.resolve(primary, prefs), primary);
+      expect(notified, (primary, backup));
       final previousCalls = calls;
       await prefs.remove(missing);
-      expect(await resolver.resolve(primary, prefs), backup);
+      expect(await resolver.resolve(primary, prefs), primary);
       expect(calls, greaterThan(previousCalls));
     });
   }
@@ -272,7 +283,7 @@ void main() {
   group('onAllServersUnreachable', () {
     tearDown(() => ServerUrlResolver.onAllServersUnreachable = null);
 
-    test('notified with backup when primary and backup are both down',
+    test('notified with backup when primary is down and backup is configured',
         () async {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('server_fallback:$primary', backup);
@@ -299,19 +310,21 @@ void main() {
       expect(notified, (primary, null));
     });
 
-    test('not notified when the backup is reachable', () async {
+    test('notified even when backup is reachable because primary is down',
+        () async {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('server_fallback:$primary', backup);
-      var notified = false;
-      ServerUrlResolver.onAllServersUnreachable = (_, __) => notified = true;
+      (String, String?)? notified;
+      ServerUrlResolver.onAllServersUnreachable = (p, f) => notified = (p, f);
       final resolver = ServerUrlResolver(client: MockClient((request) async {
         if (request.url.host == 'primary.example') {
           throw http.ClientException('Connection refused');
         }
         return envelope();
       }));
-      expect(await resolver.resolve(primary, prefs), backup);
-      expect(notified, isFalse);
+      // Never auto-failover: strictly returns primary and prompts user
+      expect(await resolver.resolve(primary, prefs), primary);
+      expect(notified, (primary, backup));
     });
 
     test('not notified when the primary is reachable', () async {

@@ -498,6 +498,8 @@ class _TabSwitchingViewState extends State<_TabSwitchingView>
                 node: tabFocusNodes[index],
                 canRequestFocus:
                     active && (ModalRoute.of(context)?.isCurrent ?? true),
+                descendantsAreFocusable:
+                    active && (ModalRoute.of(context)?.isCurrent ?? true),
                 child: Builder(
                   builder: (context) => shouldBuildTab[index]
                       ? (_showAnimation

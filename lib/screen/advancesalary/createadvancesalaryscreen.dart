@@ -1,4 +1,5 @@
 import 'package:cnattendance/provider/createadvancesalarycontroller.dart';
+import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
@@ -9,32 +10,48 @@ class CreateAdvanceSalaryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final model = Get.put(CreateAdvanceSalaryController());
+    final enterprise = EnterpriseTheme.of(context);
+    final inputFill = enterprise.isDark ? AppColors.white12 : AppColors.white;
+    final inputBorderSide = BorderSide(
+      color: enterprise.isDark ? enterprise.cardBorder : AppColors.customFFB8DEFF,
+      width: 1,
+    );
+
     return Container(
       decoration: RadialDecoration(),
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
-          title: Text(translate('create_salary_screen.create_advance_salary')),
+          elevation: 0,
+          iconTheme: IconThemeData(color: enterprise.text),
+          title: Text(
+            translate('create_salary_screen.create_advance_salary'),
+            style: TextStyle(
+              color: enterprise.text,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ),
         bottomNavigationBar: SafeArea(
           child: Container(
-            margin: EdgeInsets.all(20),
+            margin: const EdgeInsets.all(20),
             child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.customFF036EB7,
+                    backgroundColor: enterprise.primary,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(10),
-                            topRight: Radius.circular(0),
-                            bottomLeft: Radius.circular(0),
-                            bottomRight: Radius.circular(10)))),
+                        borderRadius: BorderRadius.circular(12))),
                 onPressed: () {
                   model.checkForm();
                 },
-                child: Padding(
-                  padding: const EdgeInsets.all(15),
-                  child: Text(translate('create_salary_screen.submit')),
+                child: Text(
+                  translate('create_salary_screen.submit'),
+                  style: const TextStyle(
+                    color: AppColors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
                 )),
           ),
         ),
@@ -49,92 +66,66 @@ class CreateAdvanceSalaryScreen extends StatelessWidget {
                   TextFormField(
                     controller: model.expensesController,
                     keyboardType: TextInputType.number,
-                    style: TextStyle(color: AppColors.white),
+                    style: TextStyle(color: enterprise.text, fontSize: 14),
                     validator: (value) {
                       if (value!.isEmpty) {
                         return "Field is required";
                       }
                       return null;
                     },
-                    cursorColor: AppColors.white,
+                    cursorColor: enterprise.primary,
                     decoration: InputDecoration(
                       hintText:
                           translate('create_salary_screen.expected_amount'),
-                      hintStyle: TextStyle(color: AppColors.white70),
-                      labelStyle: TextStyle(color: AppColors.white),
-                      fillColor: AppColors.white24,
+                      hintStyle: TextStyle(color: enterprise.mutedText, fontSize: 14),
+                      labelStyle: TextStyle(color: enterprise.text),
+                      fillColor: inputFill,
                       filled: true,
                       enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(10),
-                              topRight: Radius.circular(0),
-                              bottomLeft: Radius.circular(0),
-                              bottomRight: Radius.circular(10))),
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: inputBorderSide),
                       focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(10),
-                              topRight: Radius.circular(0),
-                              bottomLeft: Radius.circular(0),
-                              bottomRight: Radius.circular(10))),
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: enterprise.primary, width: 1.5)),
                       focusedErrorBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(10),
-                              topRight: Radius.circular(0),
-                              bottomLeft: Radius.circular(0),
-                              bottomRight: Radius.circular(10))),
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppColors.red)),
                       errorBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(10),
-                              topRight: Radius.circular(0),
-                              bottomLeft: Radius.circular(0),
-                              bottomRight: Radius.circular(10))),
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppColors.red)),
                     ),
                   ),
-                  SizedBox(
-                    height: 10,
-                  ),
+                  const SizedBox(height: 14),
                   TextFormField(
                     controller: model.descriptionController,
                     maxLines: 5,
                     keyboardType: TextInputType.name,
-                    style: TextStyle(color: AppColors.white),
+                    style: TextStyle(color: enterprise.text, fontSize: 14),
                     validator: (value) {
                       if (value!.isEmpty) {
                         return "Field is required";
                       }
                       return null;
                     },
-                    cursorColor: AppColors.white,
+                    cursorColor: enterprise.primary,
                     decoration: InputDecoration(
                       hintText: translate('create_salary_screen.reason'),
-                      hintStyle: TextStyle(color: AppColors.white70),
-                      labelStyle: TextStyle(color: AppColors.white),
-                      fillColor: AppColors.white24,
+                      hintStyle: TextStyle(color: enterprise.mutedText, fontSize: 14),
+                      labelStyle: TextStyle(color: enterprise.text),
+                      fillColor: inputFill,
                       filled: true,
                       enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(10),
-                              topRight: Radius.circular(0),
-                              bottomLeft: Radius.circular(0),
-                              bottomRight: Radius.circular(10))),
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: inputBorderSide),
                       focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(10),
-                              topRight: Radius.circular(0),
-                              bottomLeft: Radius.circular(0),
-                              bottomRight: Radius.circular(10))),
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: enterprise.primary, width: 1.5)),
                       focusedErrorBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(10),
-                              topRight: Radius.circular(0),
-                              bottomLeft: Radius.circular(0),
-                              bottomRight: Radius.circular(10))),
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppColors.red)),
                       errorBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(10),
-                              topRight: Radius.circular(0),
-                              bottomLeft: Radius.circular(0),
-                              bottomRight: Radius.circular(10))),
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppColors.red)),
                     ),
                   ),
                 ],

@@ -1,6 +1,6 @@
 import 'package:cnattendance/provider/changepasswordprovider.dart';
+import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/utils/navigationservice.dart';
-import 'package:cnattendance/widget/buttonborder.dart';
 import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -103,226 +103,227 @@ class ChangePasswordState extends State<ChangePassword> {
 
   @override
   Widget build(BuildContext context) {
+    final enterprise = EnterpriseTheme.of(context);
+
+    InputDecoration inputDecoration({
+      required String hint,
+      required IconData icon,
+      Widget? suffix,
+    }) {
+      final inputBg = enterprise.isDark
+          ? AppColors.white.withValues(alpha: 0.10)
+          : AppColors.white;
+      final borderSide = BorderSide(
+        color: enterprise.isDark
+            ? AppColors.white.withValues(alpha: 0.20)
+            : AppColors.customFFB8DEFF,
+      );
+      final radius = BorderRadius.circular(12);
+
+      return InputDecoration(
+        hintText: hint,
+        hintStyle: TextStyle(
+          color: enterprise.mutedText,
+          fontSize: 13,
+        ),
+        prefixIcon: Icon(icon, color: enterprise.primary, size: 20),
+        suffixIcon: suffix,
+        fillColor: inputBg,
+        filled: true,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        border: OutlineInputBorder(borderRadius: radius, borderSide: borderSide),
+        enabledBorder: OutlineInputBorder(borderRadius: radius, borderSide: borderSide),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: radius,
+          borderSide: BorderSide(color: enterprise.primary, width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: radius,
+          borderSide: const BorderSide(color: AppColors.red, width: 1.2),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: radius,
+          borderSide: const BorderSide(color: AppColors.red, width: 1.5),
+        ),
+      );
+    }
+
     return Container(
       decoration: RadialDecoration(),
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
           elevation: 0,
-          title: Text(translate('change_password_screen.change_password')),
+          title: Text(
+            translate('change_password_screen.change_password'),
+            style: TextStyle(
+              color: enterprise.text,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          iconTheme: IconThemeData(color: enterprise.text),
           backgroundColor: Colors.transparent,
         ),
         bottomNavigationBar: SafeArea(
           top: false,
           child: Padding(
             padding: const EdgeInsets.all(20),
-            child: TextButton(
-                style: TextButton.styleFrom(
-                    backgroundColor: AppColors.customFF036EB7,
-                    shape: ButtonBorder(),
-                    fixedSize: Size(double.maxFinite, 55)),
-                onPressed: () {
-                  changePassword();
-                },
-                child: Text(
-                  translate('change_password_screen.change_password'),
-                  style: TextStyle(color: AppColors.white),
-                )),
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: enterprise.primary,
+                foregroundColor: AppColors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                fixedSize: const Size(double.maxFinite, 52),
+                elevation: 3,
+              ),
+              onPressed: changePassword,
+              child: Text(
+                translate('change_password_screen.change_password'),
+                style: const TextStyle(
+                  color: AppColors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
+              ),
+            ),
           ),
         ),
         body: Form(
           key: _form,
           child: SingleChildScrollView(
-            padding: EdgeInsets.all(20),
-            child: Column(
-              children: [
-                TextFormField(
-                  obscureText: _obscureText,
-                  controller: _oldPasswordController,
-                  keyboardType: TextInputType.visiblePassword,
-                  style: TextStyle(color: AppColors.white),
-                  validator: (value) {
-                    if (!validateField(value!)) {
-                      return "Empty Field";
-                    }
-                    return null;
-                  },
-                  cursorColor: AppColors.white,
-                  decoration: InputDecoration(
-                    hintText: translate('change_password_screen.old_password'),
-                    hintStyle: TextStyle(color: AppColors.white70),
-                    prefixIcon: Icon(Icons.lock, color: AppColors.white),
-                    labelStyle: TextStyle(color: AppColors.white),
-                    fillColor: AppColors.white24,
-                    filled: true,
-                    enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(10),
-                            topRight: Radius.circular(0),
-                            bottomLeft: Radius.circular(0),
-                            bottomRight: Radius.circular(10))),
-                    focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(10),
-                            topRight: Radius.circular(0),
-                            bottomLeft: Radius.circular(0),
-                            bottomRight: Radius.circular(10))),
-                    focusedErrorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(10),
-                            topRight: Radius.circular(0),
-                            bottomLeft: Radius.circular(0),
-                            bottomRight: Radius.circular(10))),
-                    errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(10),
-                            topRight: Radius.circular(0),
-                            bottomLeft: Radius.circular(0),
-                            bottomRight: Radius.circular(10))),
-                    suffixIcon: InkWell(
-                      onTap: _toggle,
-                      child: Icon(
-                        _obscureText
-                            ? FontAwesomeIcons.eye
-                            : FontAwesomeIcons.eyeSlash,
-                        size: 15.0,
-                        color: AppColors.white,
+            padding: const EdgeInsets.all(20),
+            child: Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: enterprise.isDark
+                    ? AppColors.white.withValues(alpha: 0.06)
+                    : AppColors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: enterprise.isDark
+                      ? enterprise.cardBorder
+                      : AppColors.customFFB8DEFF,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.black.withValues(
+                        alpha: enterprise.isDark ? 0.20 : 0.05),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  TextFormField(
+                    obscureText: _obscureText,
+                    controller: _oldPasswordController,
+                    keyboardType: TextInputType.visiblePassword,
+                    style: TextStyle(
+                      color: enterprise.text,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                    validator: (value) {
+                      if (!validateField(value!)) {
+                        return "Empty Field";
+                      }
+                      return null;
+                    },
+                    cursorColor: enterprise.primary,
+                    decoration: inputDecoration(
+                      hint: translate('change_password_screen.old_password'),
+                      icon: Icons.lock_outline,
+                      suffix: InkWell(
+                        onTap: _toggle,
+                        child: Icon(
+                          _obscureText
+                              ? FontAwesomeIcons.eye
+                              : FontAwesomeIcons.eyeSlash,
+                          size: 15.0,
+                          color: enterprise.mutedText,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                SizedBox(
-                  height: 10,
-                ),
-                TextFormField(
-                  obscureText: _obscureText,
-                  controller: _newPasswordController,
-                  keyboardType: TextInputType.visiblePassword,
-                  style: TextStyle(color: AppColors.white),
-                  validator: (value) {
-                    if (!validateField(value!)) {
-                      return "Empty Field";
-                    } else {
-                      if (_newPasswordController.text !=
-                          _confirmPasswordController.text) {
-                        return "Password does not match";
+                  const SizedBox(height: 14),
+                  TextFormField(
+                    obscureText: _obscureText,
+                    controller: _newPasswordController,
+                    keyboardType: TextInputType.visiblePassword,
+                    style: TextStyle(
+                      color: enterprise.text,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                    validator: (value) {
+                      if (!validateField(value!)) {
+                        return "Empty Field";
+                      } else {
+                        if (_newPasswordController.text !=
+                            _confirmPasswordController.text) {
+                          return "Password does not match";
+                        }
                       }
-                    }
-                    return null;
-                  },
-                  cursorColor: AppColors.white,
-                  decoration: InputDecoration(
-                    hintText: translate('change_password_screen.new_password'),
-                    hintStyle: TextStyle(color: AppColors.white70),
-                    prefixIcon: Icon(Icons.lock, color: AppColors.white),
-                    labelStyle: TextStyle(color: AppColors.white),
-                    fillColor: AppColors.white24,
-                    filled: true,
-                    enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(10),
-                            topRight: Radius.circular(0),
-                            bottomLeft: Radius.circular(0),
-                            bottomRight: Radius.circular(10))),
-                    focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(10),
-                            topRight: Radius.circular(0),
-                            bottomLeft: Radius.circular(0),
-                            bottomRight: Radius.circular(10))),
-                    focusedErrorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(10),
-                            topRight: Radius.circular(0),
-                            bottomLeft: Radius.circular(0),
-                            bottomRight: Radius.circular(10))),
-                    errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(10),
-                            topRight: Radius.circular(0),
-                            bottomLeft: Radius.circular(0),
-                            bottomRight: Radius.circular(10))),
-                    suffixIcon: InkWell(
-                      onTap: _toggle,
-                      child: Icon(
-                        _obscureText
-                            ? FontAwesomeIcons.eye
-                            : FontAwesomeIcons.eyeSlash,
-                        size: 15.0,
-                        color: AppColors.white,
+                      return null;
+                    },
+                    cursorColor: enterprise.primary,
+                    decoration: inputDecoration(
+                      hint: translate('change_password_screen.new_password'),
+                      icon: Icons.lock_outline,
+                      suffix: InkWell(
+                        onTap: _toggle,
+                        child: Icon(
+                          _obscureText
+                              ? FontAwesomeIcons.eye
+                              : FontAwesomeIcons.eyeSlash,
+                          size: 15.0,
+                          color: enterprise.mutedText,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                SizedBox(
-                  height: 10,
-                ),
-                TextFormField(
-                  obscureText: _obscureText,
-                  controller: _confirmPasswordController,
-                  keyboardType: TextInputType.visiblePassword,
-                  style: TextStyle(color: AppColors.white),
-                  validator: (value) {
-                    if (!validateField(value!)) {
-                      return "Empty Field";
-                    } else {
-                      if (_newPasswordController.text !=
-                          _confirmPasswordController.text) {
-                        return "Password does not match";
+                  const SizedBox(height: 14),
+                  TextFormField(
+                    obscureText: _obscureText,
+                    controller: _confirmPasswordController,
+                    keyboardType: TextInputType.visiblePassword,
+                    style: TextStyle(
+                      color: enterprise.text,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                    validator: (value) {
+                      if (!validateField(value!)) {
+                        return "Empty Field";
+                      } else {
+                        if (_newPasswordController.text !=
+                            _confirmPasswordController.text) {
+                          return "Password does not match";
+                        }
                       }
-                    }
 
-                    return null;
-                  },
-                  cursorColor: AppColors.white,
-                  decoration: InputDecoration(
-                    hintText:
-                        translate('change_password_screen.confirm_password'),
-                    hintStyle: TextStyle(color: AppColors.white70),
-                    prefixIcon: Icon(Icons.lock, color: AppColors.white),
-                    labelStyle: TextStyle(color: AppColors.white),
-                    fillColor: AppColors.white24,
-                    filled: true,
-                    enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(10),
-                            topRight: Radius.circular(0),
-                            bottomLeft: Radius.circular(0),
-                            bottomRight: Radius.circular(10))),
-                    focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(10),
-                            topRight: Radius.circular(0),
-                            bottomLeft: Radius.circular(0),
-                            bottomRight: Radius.circular(10))),
-                    focusedErrorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(10),
-                            topRight: Radius.circular(0),
-                            bottomLeft: Radius.circular(0),
-                            bottomRight: Radius.circular(10))),
-                    errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(10),
-                            topRight: Radius.circular(0),
-                            bottomLeft: Radius.circular(0),
-                            bottomRight: Radius.circular(10))),
-                    suffixIcon: InkWell(
-                      onTap: _toggle,
-                      child: Icon(
-                        _obscureText
-                            ? FontAwesomeIcons.eye
-                            : FontAwesomeIcons.eyeSlash,
-                        size: 15.0,
-                        color: AppColors.white,
+                      return null;
+                    },
+                    cursorColor: enterprise.primary,
+                    decoration: inputDecoration(
+                      hint: translate('change_password_screen.confirm_password'),
+                      icon: Icons.lock_outline,
+                      suffix: InkWell(
+                        onTap: _toggle,
+                        child: Icon(
+                          _obscureText
+                              ? FontAwesomeIcons.eye
+                              : FontAwesomeIcons.eyeSlash,
+                          size: 15.0,
+                          color: enterprise.mutedText,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                SizedBox(
-                  height: 10,
-                ),
-              ],
+                  const SizedBox(height: 6),
+                ],
+              ),
             ),
           ),
         ),

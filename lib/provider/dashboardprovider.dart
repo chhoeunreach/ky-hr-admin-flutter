@@ -19,6 +19,7 @@ import 'package:cnattendance/data/source/network/model/teamsheet/Employee.dart'
     as employees;
 import 'package:cnattendance/data/source/network/model/trainingresponse/trainingresponse.dart';
 import 'package:cnattendance/model/award.dart';
+import 'package:cnattendance/features/daily_records/branch_route_storage.dart';
 import 'package:cnattendance/models/monthly_attendance_summary.dart';
 import 'package:cnattendance/models/top_bonus_employee.dart';
 import 'package:cnattendance/model/holiday.dart';
@@ -109,6 +110,7 @@ class DashboardProvider with ChangeNotifier {
   Map<String, List<String>> mobileLayout = {};
   Map<String, Map<String, int>> mobileLayoutPositions = {};
   bool mobileLayoutConfigured = false;
+  String mobileLayoutInitialTab = 'home';
 
   bool isMobileMenuAt(String menu, String zone) {
     if (!mobileLayoutConfigured || !mobileLayout.containsKey(menu)) return true;
@@ -218,6 +220,7 @@ class DashboardProvider with ChangeNotifier {
     mobileLayout = await preferences.getRoleMobileLayout();
     mobileLayoutPositions = await preferences.getRoleMobileLayoutPositions();
     mobileLayoutConfigured = await preferences.isRoleMobileLayoutConfigured();
+    mobileLayoutInitialTab = await preferences.getRoleMobileInitialTab();
     notifyListeners();
   }
 
@@ -301,10 +304,12 @@ class DashboardProvider with ChangeNotifier {
                   }),
                 )
               : <String, Map<String, int>>{};
+          mobileLayoutInitialTab = layoutPayload['initial_tab']?.toString() ?? 'home';
           await preferences.cacheRoleMobileLayout(
             mobileLayoutConfigured,
             mobileLayout,
             positions: mobileLayoutPositions,
+            initialTab: mobileLayoutInitialTab,
           );
         }
       }
@@ -1374,6 +1379,13 @@ class DashboardProvider with ChangeNotifier {
       final attendanceResponse =
           AttendanceStatusResponse.fromJson(responseData);
 
+      // Auto-clear active route if server indicates route completed upon check-out
+      if (responseData is Map &&
+          responseData['data'] is Map &&
+          responseData['data']['branch_route_completed'] == true) {
+        unawaited(BranchRouteStorage.clearActiveRoute());
+      }
+
       updateAttendanceStatus(EmployeeTodayAttendance(
           checkInAt: attendanceResponse.data.checkInAt,
           checkOutAt: attendanceResponse.data.checkOutAt,
@@ -1387,7 +1399,21 @@ class DashboardProvider with ChangeNotifier {
         preferences.clearPrefs();
         Get.offAll(LoginScreen());
       }
-      final errorMessage = responseData['message'];
+      if (responseData is Map) {
+        final errorMessage = responseData['message']?.toString() ??
+            'Attendance verification failed';
+        final errorCode = responseData['error_code']?.toString();
+        final data = responseData['data'] is Map
+            ? Map<String, dynamic>.from(responseData['data'])
+            : null;
+        throw AttendanceApiException(
+          errorMessage,
+          errorCode: errorCode,
+          statusCode: response.statusCode,
+          data: data,
+        );
+      }
+      final errorMessage = responseData['message']?.toString() ?? response.body;
       throw errorMessage;
     }
   }
@@ -1405,6 +1431,23 @@ class DashboardProvider with ChangeNotifier {
       ),
     ]);
   }
+}
+
+class AttendanceApiException implements Exception {
+  final String message;
+  final String? errorCode;
+  final int statusCode;
+  final Map<String, dynamic>? data;
+
+  const AttendanceApiException(
+    this.message, {
+    this.errorCode,
+    this.statusCode = 400,
+    this.data,
+  });
+
+  @override
+  String toString() => message;
 }
 
 class _WorkspaceLocation {

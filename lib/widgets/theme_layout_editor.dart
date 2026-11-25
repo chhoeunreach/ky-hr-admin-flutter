@@ -1,6 +1,5 @@
 import 'package:cnattendance/model/app_theme_option.dart';
 import 'package:cnattendance/provider/dashboardprovider.dart';
-import 'package:cnattendance/theme/app_theme_data.dart';
 import 'package:cnattendance/theme/app_theme_mode.dart';
 import 'package:cnattendance/theme/theme_layout.dart';
 import 'package:cnattendance/theme/theme_provider.dart';
@@ -24,7 +23,7 @@ class _ThemeLayoutEditorState extends State<ThemeLayoutEditor> {
   bool _saving = false;
 
   AppThemeMode get _effectiveCoreMode =>
-      _themeOption.coreMode ?? AppThemeMode.royalBlueGold;
+      _themeOption.coreMode ?? AppThemeMode.light;
 
   @override
   void initState() {

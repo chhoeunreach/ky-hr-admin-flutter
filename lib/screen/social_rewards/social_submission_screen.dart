@@ -266,32 +266,35 @@ class _SocialSubmissionScreenState extends State<SocialSubmissionScreen> {
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
         ),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _loadTracker,
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(16, 18, 16, 28),
-                children: [
-                  _SocialPointsDashboard(
-                    totalPoints: _totalPoints,
-                    totalPosts: _posts.length,
-                    hasSubmittedToday: _hasSubmittedToday,
-                  ),
-                  const SizedBox(height: 16),
-                  if (!_hasSubmittedToday || _isEditingToday)
-                    _buildEntryForm()
-                  else
-                    _TodayCompleteCard(
-                      reward: _todayReward!,
-                      onEdit: _startEditToday,
+      body: SafeArea(
+        top: false,
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : RefreshIndicator(
+                onRefresh: _loadTracker,
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 28),
+                  children: [
+                    _SocialPointsDashboard(
+                      totalPoints: _totalPoints,
+                      totalPosts: _posts.length,
+                      hasSubmittedToday: _hasSubmittedToday,
                     ),
-                  const SizedBox(height: 18),
-                  _buildPostList(),
-                ],
+                    const SizedBox(height: 16),
+                    if (!_hasSubmittedToday || _isEditingToday)
+                      _buildEntryForm()
+                    else
+                      _TodayCompleteCard(
+                        reward: _todayReward!,
+                        onEdit: _startEditToday,
+                      ),
+                    const SizedBox(height: 18),
+                    _buildPostList(),
+                  ],
+                ),
               ),
-            ),
+      ),
     );
   }
 

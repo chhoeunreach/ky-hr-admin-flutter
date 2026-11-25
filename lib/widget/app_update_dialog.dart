@@ -95,7 +95,7 @@ class AppUpdateDialog extends StatelessWidget {
                     ? descText
                     : (isForceUpdate
                         ? 'តម្រូវឱ្យធ្វើបច្ចុប្បន្នភាពជាចាំបាច់ដើម្បីបន្តប្រើប្រាស់កម្មវិធី។'
-                        : 'កំណែថ្មីនៃ Digital HR ត្រូវបានដាក់ឱ្យប្រើប្រាស់ជាមួយនឹងការកែលម្អបន្ថែម។'),
+                        : 'កំណែថ្មីនៃ KNEAYERNG ត្រូវបានដាក់ឱ្យប្រើប្រាស់ជាមួយនឹងការកែលម្អបន្ថែម។'),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,

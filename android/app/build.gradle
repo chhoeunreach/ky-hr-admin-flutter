@@ -127,9 +127,50 @@ def validateReleaseSecurityConfiguration = tasks.register('validateReleaseSecuri
     }
 }
 
+// The Flutter tool writes GeneratedPluginRegistrant from every non-release
+// invocation (flutter run / pub get / test), which includes dev-only plugins
+// such as integration_test, while Flutter's Gradle plugin keeps those plugins
+// off the release classpath. Re-apply Flutter's release rule immediately before
+// javac so a debug session started during a release build cannot break it.
+def stripDevPluginRegistrants = {
+    def registrantFile = file('src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java')
+    def pluginListFile = rootProject.file('../.flutter-plugins-dependencies')
+    if (!registrantFile.exists() || !pluginListFile.exists()) {
+        return
+    }
+    def pluginList = new groovy.json.JsonSlurper().parse(pluginListFile)
+    def devPlugins = ((pluginList.plugins?.android) ?: []).findAll { it.dev_dependency == true }
+    if (devPlugins.isEmpty()) {
+        return
+    }
+    def registrant = registrantFile.getText('UTF-8')
+    def cleaned = registrant
+    devPlugins.each { plugin ->
+        def marker = "\"Error registering plugin ${plugin.name}, "
+        while (cleaned.contains(marker)) {
+            def markerIndex = cleaned.indexOf(marker)
+            def tryIndex = cleaned.lastIndexOf('try {', markerIndex)
+            def logLineEnd = cleaned.indexOf('\n', markerIndex)
+            def blockEnd = logLineEnd < 0 ? -1 : cleaned.indexOf('}', logLineEnd)
+            if (tryIndex < 0 || blockEnd < 0) {
+                break
+            }
+            cleaned = cleaned.substring(0, tryIndex) + cleaned.substring(blockEnd + 1)
+        }
+    }
+    if (cleaned != registrant) {
+        registrantFile.setText(cleaned, 'UTF-8')
+    }
+}
+
 tasks.configureEach { task ->
     if (task.name == 'compileFlutterBuildRelease') {
         task.dependsOn(validateReleaseSecurityConfiguration)
+    }
+    if (task.name == 'compileReleaseJavaWithJavac') {
+        task.doFirst {
+            stripDevPluginRegistrants()
+        }
     }
 }
 
@@ -191,8 +232,9 @@ android {
                 throw new GradleException("Missing android/key.properties. Configure the approved release signing keystore before building the private APK.")
             }
             signingConfig signingConfigs.release
-            minifyEnabled false
-            shrinkResources false
+            minifyEnabled true
+            shrinkResources true
+            proguardFile 'proguard-rules.pro'
             // Release upload-keystore fingerprint — clones/re-signs fail this check.
             buildConfigField "String", "EXPECTED_SIGNING_CERT_SHA256",
                     "\"${releaseTrustedSigners.join(',')}\""

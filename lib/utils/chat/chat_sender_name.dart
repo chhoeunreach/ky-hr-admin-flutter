@@ -1,6 +1,6 @@
 import 'package:cnattendance/repositories/teamsheetrepository.dart';
 
-const chatAlertFallbackTitle = 'Digital HRMS Chat';
+const chatAlertFallbackTitle = 'KNEAYERNG Chat';
 
 String? chatSenderDisplayName(
   Iterable<Object?> candidates, {

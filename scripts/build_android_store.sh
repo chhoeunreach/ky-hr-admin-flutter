@@ -13,9 +13,12 @@ if [[ ! -f android/key.properties ]]; then
   exit 1
 fi
 
+source "$ROOT_DIR/scripts/android_release_defines.sh"
+android_release_defines
+
 flutter clean
 flutter pub get
-flutter build appbundle --release
+flutter build appbundle --release "${RELEASE_DART_DEFINES[@]}"
 
 echo
 echo "Play Store bundle:"

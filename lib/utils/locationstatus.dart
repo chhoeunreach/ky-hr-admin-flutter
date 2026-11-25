@@ -55,6 +55,10 @@ class LocationStatus {
         final lastKnown = await Geolocator.getLastKnownPosition();
         if (lastKnown != null &&
             DateTime.now().difference(lastKnown.timestamp).inMinutes < 5) {
+          if (lastKnown.isMocked) {
+            return Future.error(
+                'ប្រព័ន្ធបានរកឃើញការប្រើប្រាស់ Fake GPS / Mock Location! សូមបិទជាមុនសិន។');
+          }
           return lastKnown;
         }
       }
@@ -63,7 +67,7 @@ class LocationStatus {
       if (forceHighAccuracy || workspace != "1") {
         locationSettings = const LocationSettings(
           accuracy: LocationAccuracy.high,
-          timeLimit: Duration(seconds: 5),
+          timeLimit: Duration(seconds: 8),
           distanceFilter: 0,
         );
       } else {
@@ -74,10 +78,18 @@ class LocationStatus {
         );
       }
 
-      return await Geolocator.getCurrentPosition(
+      final Position position = await Geolocator.getCurrentPosition(
           locationSettings: locationSettings);
+
+      if (position.isMocked) {
+        return Future.error(
+            'ប្រព័ន្ធបានរកឃើញការប្រើប្រាស់ Fake GPS / Mock Location! សូមបិទជាមុនសិន។');
+      }
+
+      return position;
     } catch (e) {
       if (kDebugMode) debugPrint(e.toString());
+      if (e is String) return Future.error(e);
       return Future.error('Location can not be found');
     }
   }

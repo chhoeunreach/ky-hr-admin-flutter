@@ -3,12 +3,20 @@ import 'dart:convert';
 import 'package:cnattendance/data/source/datastore/preferences.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:cnattendance/core/ky_security/ky_http.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class Connect {
   /// One client for the whole app so Dart's HTTP layer can keep TCP/TLS
   /// connections alive between requests instead of reconnecting per call.
-  static final http.Client _client = http.Client();
+  static http.Client _client = http.Client();
+
+  /// Swaps the shared client so tests can inject a MockClient.
+  /// Passing null restores a fresh default client.
+  @visibleForTesting
+  static void overrideClient(http.Client? client) {
+    _client = client ?? http.Client();
+  }
 
   Future<http.Response> getResponse(
       String url, Map<String, String> headers) async {
@@ -52,6 +60,20 @@ class Connect {
     final encodedBody = jsonEncode(body);
     return KyHttp.postWithClient(_client, uri,
         headers: headers, body: encodedBody);
+  }
+
+  Future<http.Response> putResponse(String url, Map<String, String> headers,
+      Map<String, dynamic> body) async {
+    final preferences = Preferences();
+    final storage = GetStorage();
+    final String language = storage.read("language") ?? "en";
+
+    headers.addEntries({
+      "language": language,
+    }.entries);
+
+    final uri = Uri.parse(await preferences.getAppUrl() + url);
+    return KyHttp.putWithClient(_client, uri, headers: headers, body: body);
   }
 
   Future<http.Response> deleteResponse(

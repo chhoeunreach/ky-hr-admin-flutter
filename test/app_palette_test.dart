@@ -38,9 +38,13 @@ void main() {
 
   test('Original Mode ThemeData installs the semantic color extension', () {
     final theme = AppThemeData.themeData(AppThemeMode.light);
+    final defaults = AppThemeData.info(AppThemeMode.light).colors;
+    final colors = theme.extension<AppColors>();
 
-    expect(theme.extension<AppColors>(), AppColors.light);
-    expect(theme.scaffoldBackgroundColor, AppPalette.emerald50);
+    expect(colors, isNotNull);
+    expect(colors!.primary, defaults.primaryColor);
+    expect(colors.background, defaults.backgroundColor);
+    expect(theme.scaffoldBackgroundColor, defaults.backgroundColor);
   });
 
   test('local theme color overrides keep their selected background and accent',

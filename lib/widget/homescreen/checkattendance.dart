@@ -24,6 +24,7 @@ import 'package:cnattendance/widget/device_clock_gate.dart';
 import 'package:cnattendance/services/device_clock_monitor.dart';
 import 'package:cnattendance/widget/profile/note_bottom_sheet.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:geolocator/geolocator.dart';
@@ -605,6 +606,7 @@ class CheckAttendanceState extends State<CheckAttendance>
       status: translate('attendance_messages.verifying'),
       maskType: EasyLoadingMaskType.black,
     );
+    AttendanceApiException? apiError;
     try {
       final response = await provider.verifyAttendanceApi(
         type,
@@ -617,44 +619,63 @@ class CheckAttendanceState extends State<CheckAttendance>
       );
       message = response.message;
     } catch (error) {
-      message = error.toString();
-      if (_isOfflineQueueableError(error)) {
-        try {
-          await _queueOfflineAttendance(
-            syncService: syncService,
-            provider: provider,
-            type: type,
-            identifier: identifier,
-            note: note,
-            attendanceStatus: attendanceStatus,
-            attendanceSelfie: attendanceSelfie,
-            offlineRequestId: offlineRequestId,
-            recordedAt: recordedAt,
-          );
-          message = translate('attendance_messages.saved_offline');
-        } catch (queueError) {
-          showRetry = true;
-          message = attendanceVerifyFailureMessage(queueError.toString());
-        }
+      if (error is AttendanceApiException) {
+        apiError = error;
+        message = error.message;
+        showRetry = (error.data?['can_retry'] as bool?) ?? true;
+        unawaited(HapticFeedback.heavyImpact());
       } else {
-        showRetry = true;
-        final extra =
-            await provider.buildWorkspaceDistanceInfoIfNeeded(message);
-        message = attendanceVerifyFailureMessage(
-            extra == null ? message : '$message\n\n$extra');
+        message = error.toString();
+        if (_isOfflineQueueableError(error)) {
+          try {
+            await _queueOfflineAttendance(
+              syncService: syncService,
+              provider: provider,
+              type: type,
+              identifier: identifier,
+              note: note,
+              attendanceStatus: attendanceStatus,
+              attendanceSelfie: attendanceSelfie,
+              offlineRequestId: offlineRequestId,
+              recordedAt: recordedAt,
+            );
+            message = translate('attendance_messages.saved_offline');
+          } catch (queueError) {
+            showRetry = true;
+            message = attendanceVerifyFailureMessage(queueError.toString());
+          }
+        } else {
+          showRetry = true;
+          final extra =
+              await provider.buildWorkspaceDistanceInfoIfNeeded(message);
+          message = attendanceVerifyFailureMessage(
+              extra == null ? message : '$message\n\n$extra');
+        }
       }
     } finally {
       EasyLoading.dismiss(animation: true);
     }
 
     if (!mounted) return;
+    final isGeofenceWarning = apiError?.errorCode == 'OUT_OF_GEOFENCE' ||
+        apiError?.errorCode == 'BRANCH_ROUTE_COMPLETED' ||
+        apiError?.errorCode == 'INSUFFICIENT_GPS_ACCURACY';
+    final distance = (apiError?.data?['distance_in_meter'] as num?)?.toDouble();
+    final allowedRadius =
+        (apiError?.data?['allowed_radius_in_meter'] as num?)?.toDouble();
+
     final retry = await showDialog<bool>(
           context: context,
           builder: (_) => Dialog(
             child: CustomAlertDialog(
               message,
+              isWarning: isGeofenceWarning,
+              distanceMeters: distance,
+              allowedRadiusMeters: allowedRadius,
               actionLabel: showRetry
-                  ? translate('attendance_messages.check_again')
+                  ? (isGeofenceWarning
+                      ? 'ផ្ទុក GPS ឡើងវិញ'
+                      : translate('attendance_messages.check_again'))
                   : null,
             ),
           ),

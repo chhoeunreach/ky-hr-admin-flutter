@@ -12,10 +12,13 @@ import 'package:cnattendance/utils/locationstatus.dart';
 import 'package:cnattendance/widget/customalertdialog.dart';
 import 'package:cnattendance/widget/homescreen/checkattendance.dart';
 import 'package:cnattendance/widget/homescreen/overviewdashboard.dart';
+import 'package:cnattendance/features/appearance/app_appearance_api.dart';
+import 'package:cnattendance/features/banner_slideshow/banner_slideshow_api.dart';
 import 'package:cnattendance/widget/premium_background.dart';
 import 'package:cnattendance/theme/app_theme_mode.dart';
 import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/theme/theme_layout.dart';
+import 'package:cnattendance/theme/theme_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_translate/flutter_translate.dart';
@@ -254,6 +257,23 @@ class HomeScreenState extends State<HomeScreen> {
           _dashboardLoadedOnce = true;
           _dashboardLoadFailed = false;
         });
+      }
+
+      if (force && mounted) {
+        unawaited(() async {
+          try {
+            final appearance = await AppAppearanceApi().fetch();
+            if (mounted) {
+              await context.read<ThemeProvider>().applyServerAppearance(appearance);
+            }
+          } catch (_) {}
+        }());
+        unawaited(() async {
+          try {
+            final banner = await BannerSlideshowApi().fetch();
+            await Preferences().saveHomeSlideshow(banner);
+          } catch (_) {}
+        }());
       }
 
       final user = dashboardResponse.data.user;

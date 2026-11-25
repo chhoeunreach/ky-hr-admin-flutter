@@ -7,6 +7,7 @@ import 'package:cnattendance/utils/navigationservice.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:overlay_support/overlay_support.dart';
 
 void main() {
   setUp(() {
@@ -23,16 +24,18 @@ void main() {
       );
 
   Widget host({required Widget Function(BuildContext) dialogBuilder}) =>
-      MaterialApp(
-        home: Scaffold(
-          body: Builder(
-            builder: (context) => ElevatedButton(
-              onPressed: () => showDialog(
-                context: context,
-                barrierDismissible: false,
-                builder: dialogBuilder,
+      OverlaySupport.global(
+        child: MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => ElevatedButton(
+                onPressed: () => showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: dialogBuilder,
+                ),
+                child: const Text('open'),
               ),
-              child: const Text('open'),
             ),
           ),
         ),
@@ -139,5 +142,84 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('https://primary.example/'), findsOneWidget);
     expect(find.textContaining('https://backup.example/'), findsNothing);
+  });
+
+  testWidgets('switching to backup requires user confirmation', (tester) async {
+    String? switchedTo;
+    await tester.pumpWidget(host(
+      dialogBuilder: (_) => ConnectionAlertDialog(
+        primaryUrl: 'https://primary.example/',
+        fallbackUrl: 'https://backup.example/',
+        checkServer: () async => result(false, 'Connection timed out.'),
+        switchServer: (url) async {
+          switchedTo = url;
+          return result(true, 'Connected.');
+        },
+      ),
+    ));
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Switch to Backup Server'), findsOneWidget);
+
+    // Tap switch to backup
+    await tester.tap(find.text('Switch to Backup Server'));
+    await tester.pumpAndSettle();
+
+    // Confirmation dialog appears
+    expect(find.text('Confirm Server Switch'), findsOneWidget);
+    expect(find.textContaining('https://backup.example/'), findsWidgets);
+
+    // Cancel first
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(switchedTo, isNull);
+    expect(find.byType(ConnectionAlertDialog), findsOneWidget);
+
+    // Tap again and confirm
+    await tester.tap(find.text('Switch to Backup Server'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Confirm'));
+    await tester.pumpAndSettle();
+
+    expect(switchedTo, 'https://backup.example/');
+    expect(find.byType(ConnectionAlertDialog), findsNothing);
+    await tester.pump(const Duration(seconds: 5));
+  });
+
+  testWidgets('scanning new QR requires user confirmation before switching',
+      (tester) async {
+    String? switchedTo;
+    await tester.pumpWidget(host(
+      dialogBuilder: (_) => ConnectionAlertDialog(
+        primaryUrl: 'https://primary.example/',
+        checkServer: () async => result(false, 'Connection timed out.'),
+        scanQr: (_) async => 'https://newserver.example/',
+        switchServer: (url) async {
+          switchedTo = url;
+          return result(true, 'Connected.');
+        },
+      ),
+    ));
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Scan New QR Code'), findsOneWidget);
+
+    // Tap scan QR
+    await tester.tap(find.text('Scan New QR Code'));
+    await tester.pumpAndSettle();
+
+    // Confirmation dialog appears
+    expect(find.text('Confirm Server Switch'), findsOneWidget);
+    expect(find.textContaining('https://newserver.example/'), findsWidgets);
+
+    // Confirm switch
+    await tester.tap(find.text('Confirm'));
+    await tester.pumpAndSettle();
+
+    expect(switchedTo, 'https://newserver.example/');
+    expect(find.byType(ConnectionAlertDialog), findsNothing);
+    await tester.pump(const Duration(seconds: 5));
   });
 }

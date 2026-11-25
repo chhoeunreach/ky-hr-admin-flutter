@@ -1,8 +1,7 @@
 import 'package:cnattendance/data/source/network/model/warningresponse/warningresponse.dart';
 import 'package:cnattendance/screen/warningscreen/warningcontroller.dart';
+import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/utils/constant.dart';
-import 'package:cnattendance/widget/buttonborder.dart';
-import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
@@ -11,7 +10,7 @@ import 'package:cnattendance/core/theme/app_colors.dart';
 class WarningBottomSheet extends StatefulWidget {
   final Warning warning;
 
-  WarningBottomSheet(this.warning);
+  const WarningBottomSheet(this.warning, {super.key});
 
   @override
   State<StatefulWidget> createState() => WarningBottomSheetState();
@@ -36,39 +35,64 @@ class WarningBottomSheetState extends State<WarningBottomSheet> {
   @override
   Widget build(BuildContext context) {
     final WarningController model = Get.find();
+    final enterprise = EnterpriseTheme.of(context);
+    final inputFill = enterprise.isDark ? AppColors.white12 : const Color(0xFFF8FAFC);
+    final inputBorderSide = BorderSide(
+      color: enterprise.isDark ? enterprise.cardBorder : AppColors.customFFB8DEFF,
+      width: 1,
+    );
+
     return Container(
-      decoration: RadialDecoration(),
+      decoration: BoxDecoration(
+        color: enterprise.isDark ? const Color(0xFF1E293B) : AppColors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.black.withValues(alpha: enterprise.isDark ? 0.35 : 0.12),
+            blurRadius: 20,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
       padding: EdgeInsets.only(
           top: 20,
           right: 20,
           left: 20,
-          bottom: (MediaQuery.of(context).viewInsets.bottom) + 10),
+          bottom: (MediaQuery.of(context).viewInsets.bottom) + 16),
       child: SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              widget.warning.subject,
-              style: TextStyle(
-                  fontSize: 18,
-                  color: AppColors.white,
-                  fontWeight: FontWeight.bold),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    widget.warning.subject,
+                    style: TextStyle(
+                        fontSize: 18,
+                        color: enterprise.text,
+                        fontWeight: FontWeight.bold),
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(Icons.close, color: enterprise.text, size: 20),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 5.0),
-              child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 6.0),
+              child: SizedBox(
                 width: double.infinity,
                 child: Text(
                   widget.warning.message,
-                  style: TextStyle(fontSize: 15, color: AppColors.white),
+                  style: TextStyle(fontSize: 14, color: enterprise.mutedText),
                 ),
               ),
             ),
             if (widget.warning.response.isEmpty)
-              SizedBox(
-                height: 10,
-              ),
+              const SizedBox(height: 10),
             if (widget.warning.response.isEmpty)
               TextField(
                 textAlignVertical: TextAlignVertical.top,
@@ -81,87 +105,82 @@ class WarningBottomSheetState extends State<WarningBottomSheet> {
                     FocusManager.instance.primaryFocus?.unfocus();
                   }
                 },
-                style: TextStyle(color: AppColors.white),
-                //editing controller of this TextField
-                cursorColor: AppColors.white,
+                style: TextStyle(color: enterprise.text, fontSize: 14),
+                cursorColor: enterprise.primary,
                 keyboardType: TextInputType.multiline,
                 decoration: InputDecoration(
-                  hintText: 'Write a response..',
-                  hintStyle: TextStyle(color: AppColors.white70),
-                  labelStyle: TextStyle(color: AppColors.white),
-                  fillColor: AppColors.white24,
+                  hintText: 'Write a response...',
+                  hintStyle: TextStyle(color: enterprise.mutedText, fontSize: 14),
+                  fillColor: inputFill,
                   filled: true,
                   enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(10),
-                          topRight: Radius.circular(0),
-                          bottomLeft: Radius.circular(0),
-                          bottomRight: Radius.circular(10))),
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: inputBorderSide),
                   focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(10),
-                          topRight: Radius.circular(0),
-                          bottomLeft: Radius.circular(0),
-                          bottomRight: Radius.circular(10))),
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: enterprise.primary, width: 1.5)),
                   focusedErrorBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(10),
-                          topRight: Radius.circular(0),
-                          bottomLeft: Radius.circular(0),
-                          bottomRight: Radius.circular(10))),
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppColors.red)),
                   errorBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(10),
-                          topRight: Radius.circular(0),
-                          bottomLeft: Radius.circular(0),
-                          bottomRight: Radius.circular(10))),
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppColors.red)),
                 ),
               ),
-            if (widget.warning.response.isEmpty)
-              SizedBox(
-                height: 10,
-              ),
             if (widget.warning.response.isNotEmpty)
-              Card(
-                elevation: 0,
-                color: AppColors.white24,
-                shape: ButtonBorder(),
-                margin: EdgeInsets.zero,
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Container(
-                    width: double.infinity,
-                    child: Text(
-                      widget.warning.response,
-                      style: TextStyle(fontSize: 15, color: AppColors.white),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12.0),
+                  decoration: BoxDecoration(
+                    color: enterprise.isDark ? AppColors.white12 : const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: enterprise.isDark ? enterprise.cardBorder : AppColors.customFFB8DEFF,
                     ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Response:',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: enterprise.primary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        widget.warning.response,
+                        style: TextStyle(fontSize: 14, color: enterprise.text),
+                      ),
+                    ],
                   ),
                 ),
               ),
             if (widget.warning.response.isEmpty)
               Container(
                 width: MediaQuery.of(context).size.width,
-                margin: EdgeInsets.symmetric(vertical: 10),
-                child: TextButton(
-                    style: TextButton.styleFrom(
-                      backgroundColor: widget.warning.response.isNotEmpty
-                          ? AppColors.customFF036EB7.withValues(alpha: .5)
-                          : AppColors.customFF036EB7,
-                      padding: EdgeInsets.zero,
-                      shape: ButtonBorder(),
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: enterprise.primary,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
-                    onPressed: widget.warning.response.isNotEmpty
-                        ? null
-                        : () {
-                            sendResponse(model);
-                          },
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Text(
-                        widget.warning.response.isEmpty
-                            ? 'Response'
-                            : "Already Responsed",
-                        style: TextStyle(color: AppColors.white),
+                    onPressed: () {
+                      sendResponse(model);
+                    },
+                    child: const Text(
+                      'Submit Response',
+                      style: TextStyle(
+                        color: AppColors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
                       ),
                     )),
               ),

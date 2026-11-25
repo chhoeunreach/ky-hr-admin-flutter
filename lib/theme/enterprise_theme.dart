@@ -46,6 +46,7 @@ class EnterpriseTheme {
   }
 
   bool get isDark => colors.isDark;
+  bool get isLight => mode == AppThemeMode.light;
   bool get isRoyalDay => mode == AppThemeMode.royalBlueDay || isRoyalLuxuryDay;
   bool get isRoyalLuxuryDay => mode == AppThemeMode.royalBlueGoldKhmerDay;
   bool get isRoyalBlueGold => mode == AppThemeMode.royalBlueGold || isRoyalDay;
@@ -174,15 +175,15 @@ class EnterpriseGlass extends StatelessWidget {
           decoration: BoxDecoration(
             color: AppColors.white,
             borderRadius: BorderRadius.circular(radius),
-            border: Border.all(color: AppColors.customFFB8DEFF),
+            border: Border.all(color: AppColors.customFFE2E8F0),
             boxShadow: const [
               BoxShadow(
-                color: AppColors.custom1A1683E6,
-                blurRadius: 18,
-                offset: Offset(0, 7),
+                color: Color(0x0a0f172a),
+                blurRadius: 16,
+                offset: Offset(0, 4),
               ),
               BoxShadow(
-                color: AppColors.custom55FFFFFF,
+                color: Color(0x050f172a),
                 blurRadius: 4,
                 offset: Offset(0, 1),
               ),

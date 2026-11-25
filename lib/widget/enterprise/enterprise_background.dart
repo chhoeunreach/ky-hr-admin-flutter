@@ -43,6 +43,7 @@ class _PremiumBackgroundState extends State<PremiumBackground> {
   /// Set when the admin-delivered background fails to load so the screen
   /// falls back to the normal themed layers instead of a blank backdrop.
   bool _serverBackgroundFailed = false;
+  String? _activeBackgroundUrl;
 
   @override
   void didChangeDependencies() {
@@ -99,6 +100,31 @@ class _PremiumBackgroundState extends State<PremiumBackground> {
   Widget build(BuildContext context) {
     final enterprise = EnterpriseTheme.of(context);
     final appearance = context.watch<ThemeProvider?>()?.serverAppearance;
+    if (_activeBackgroundUrl != appearance?.backgroundUrl) {
+      _activeBackgroundUrl = appearance?.backgroundUrl;
+      _serverBackgroundFailed = false;
+    }
+    // A screen-provided background is an explicit local choice. Keep it
+    // scoped to that screen instead of allowing global appearance settings to
+    // replace it (Home supplies this only for Day Mode).
+    if (!widget.brandBackdrop && widget.imageBackground != null) {
+      final asset = widget.imageBackground!;
+      final image = asset.toLowerCase().endsWith('.svg')
+          ? SvgPicture.asset(
+              asset,
+              alignment: Alignment.center,
+              fit: BoxFit.cover,
+              excludeFromSemantics: true,
+            )
+          : Image.asset(
+              asset,
+              alignment: Alignment.center,
+              fit: BoxFit.cover,
+              excludeFromSemantics: true,
+              gaplessPlayback: true,
+            );
+      return _imageBackground(image);
+    }
     if (!widget.brandBackdrop &&
         appearance != null &&
         appearance.hasCustomBackground &&
@@ -118,25 +144,6 @@ class _PremiumBackgroundState extends State<PremiumBackground> {
         ),
       );
     }
-    if (!widget.brandBackdrop && widget.imageBackground != null) {
-      final asset = widget.imageBackground!;
-      final image = asset.toLowerCase().endsWith('.svg')
-          ? SvgPicture.asset(
-              asset,
-              alignment: Alignment.center,
-              fit: BoxFit.cover,
-              excludeFromSemantics: true,
-            )
-          : Image.asset(
-              asset,
-              alignment: Alignment.center,
-              fit: BoxFit.cover,
-              excludeFromSemantics: true,
-              gaplessPlayback: true,
-            );
-      return _imageBackground(image);
-    }
-
     if (enterprise.isRoyalDay && !widget.brandBackdrop) {
       return Stack(
         children: [
@@ -157,9 +164,11 @@ class _PremiumBackgroundState extends State<PremiumBackground> {
         ],
       );
     }
+    final cleanDay = enterprise.mode == AppThemeMode.light &&
+        (Provider.of<ThemeProvider?>(context)?.dayModeClean ?? true);
     final recipe = widget.brandBackdrop
         ? _PremiumBackgroundRecipe.branded
-        : _PremiumBackgroundRecipe.forMode(enterprise.mode);
+        : _PremiumBackgroundRecipe.forMode(enterprise.mode, cleanDay: cleanDay);
     return Stack(
       children: [
         RepaintBoundary(
@@ -702,23 +711,42 @@ class _PremiumBackgroundRecipe {
     light: true,
   );
 
-  static _PremiumBackgroundRecipe forMode(AppThemeMode mode) {
+  static _PremiumBackgroundRecipe forMode(AppThemeMode mode,
+      {bool cleanDay = true}) {
     switch (mode) {
       case AppThemeMode.light:
+        if (cleanDay) {
+          return _recipe(
+            colors: const [
+              Color(0xfff8fafc),
+              Color(0xfff8fafc),
+              Color(0xfff1f5f9),
+              Color(0xfff1f5f9),
+            ],
+            mapTint: Colors.transparent,
+            mapOpacity: 0.0,
+            glow: Colors.transparent,
+            accent: const Color(0xff2563eb),
+            wave: Colors.transparent,
+            detail: _BackgroundDetailStyle.none,
+            detailColor: Colors.transparent,
+            light: true,
+          );
+        }
         return _recipe(
           colors: const [
-            AppColors.customFFEEF4FC,
-            AppColors.customFFDBE8FA,
-            AppColors.customFFC6D9F5,
-            AppColors.customFFAECBF0,
+            Color(0xfff8fafc),
+            Color(0xfff1f5f9),
+            Color(0xffeef4fb),
+            Color(0xffe2e8f0),
           ],
-          mapTint: AppColors.customFF2F6FED,
-          mapOpacity: 0.10,
-          glow: AppColors.customFF8AB4FF,
-          accent: AppColors.customFF0284C7,
+          mapTint: const Color(0xff2563eb),
+          mapOpacity: 0.04,
+          glow: const Color(0xffe0e7ff),
+          accent: const Color(0xff2563eb),
           wave: AppColors.white,
           detail: _BackgroundDetailStyle.bubbles,
-          detailColor: AppColors.customFFEAF3FF,
+          detailColor: const Color(0xfff1f5f9),
           light: true,
         );
       case AppThemeMode.dark:

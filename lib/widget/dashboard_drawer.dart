@@ -2,13 +2,16 @@ import 'dart:io';
 
 import 'package:cnattendance/data/source/network/model/dashboard/User.dart';
 import 'package:cnattendance/features/community/social_feed_screen.dart';
+import 'package:cnattendance/features/company_documents/company_documents_screen.dart';
 import 'package:cnattendance/features/pos/pages/pos_workspace_screen.dart';
+import 'package:cnattendance/features/repair_price/pages/repair_device_page.dart';
 import 'package:cnattendance/provider/dashboardprovider.dart';
 import 'package:cnattendance/provider/prefprovider.dart';
-import 'package:cnattendance/screen/dashboard/morescreen.dart';
+import 'package:cnattendance/screen/assetscreen/admin_asset_list_screen.dart';
 import 'package:cnattendance/screen/links/link_list_screen.dart';
 import 'package:cnattendance/screen/loanmanagement/loancalculatescreen.dart';
 import 'package:cnattendance/screen/profile/front_side_preview_page.dart';
+import 'package:cnattendance/screen/profile/teamsheetscreen.dart';
 import 'package:cnattendance/screen/sell_out_report_screen.dart';
 import 'package:cnattendance/screen/social_rewards/social_submission_screen.dart';
 import 'package:cnattendance/theme/enterprise_theme.dart';
@@ -21,6 +24,7 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cnattendance/core/theme/app_colors.dart';
+import 'package:cnattendance/utils/asset_permissions.dart';
 
 Color sidebarForeground(EnterpriseTheme enterprise) {
   final colors = enterprise.colors.gradientColors;
@@ -34,32 +38,6 @@ Color sidebarForeground(EnterpriseTheme enterprise) {
 
 Color sidebarTone(Color color) => Color.lerp(color, AppColors.black, 0.42)!;
 
-void _openRoleMenu(BuildContext context, String menu, int employeeId) {
-  Navigator.of(context).pop();
-  switch (menu) {
-    case 'sell-staff-report':
-      Get.to(() => const PosWorkspaceScreen());
-      break;
-    case 'social-feed':
-      Get.to(() => const SocialFeedScreen());
-      break;
-    case 'loan':
-      Get.to(() => LoanCalculateScreen());
-      break;
-    case 'social-rewards':
-      Get.to(() => SocialSubmissionScreen(employeeId: employeeId));
-      break;
-    case 'id-card':
-      Get.to(() => const FrontSidePreviewPage());
-      break;
-    case 'links':
-      Get.to(() => const LinkListScreen());
-      break;
-    default:
-      Get.to(() => MoreScreen());
-  }
-}
-
 class DashboardDrawer extends StatelessWidget {
   const DashboardDrawer({super.key});
 
@@ -71,126 +49,199 @@ class DashboardDrawer extends StatelessWidget {
     final dashboardProvider = context.watch<DashboardProvider>();
     final branchName = dashboardProvider.branch.trim();
     final paymentQrCodes = dashboardProvider.paymentQrCodes;
-    final drawerWidth =
-        (MediaQuery.sizeOf(context).width * 0.76).clamp(236.0, 280.0);
+    final screen = MediaQuery.sizeOf(context);
+    final safeTop = MediaQuery.paddingOf(context).top;
+    final isMobile = screen.width < 720;
+    final drawerWidth = (screen.width * 0.80).clamp(264.0, 320.0).toDouble();
     return Drawer(
       width: drawerWidth,
       backgroundColor: Colors.transparent,
       surfaceTintColor: Colors.transparent,
-      child: Container(
-        decoration: BoxDecoration(gradient: enterprise.pageGradient),
-        child: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.only(bottom: 12),
-            children: [
-              _paymentQrHeader(
-                context,
-                enterprise,
-                branchName.isEmpty ? 'Branch' : branchName,
-                paymentQrCodes,
+      child: Padding(
+        // Keep the mobile top navigation visible above the drawer surface.
+        padding: EdgeInsets.only(top: isMobile ? safeTop + 56 : 0),
+        child: Container(
+          decoration: BoxDecoration(
+            color: enterprise.isLight ? AppColors.white : null,
+            gradient: enterprise.isLight ? null : enterprise.pageGradient,
+            borderRadius: isMobile
+                ? const BorderRadius.horizontal(right: Radius.circular(24))
+                : BorderRadius.zero,
+            border: enterprise.isLight
+                ? Border.all(color: enterprise.primary.withValues(alpha: .10))
+                : null,
+            boxShadow: [
+              BoxShadow(
+                color: enterprise.primary.withValues(alpha: .14),
+                blurRadius: 24,
+                offset: const Offset(8, 4),
               ),
-              if (!dashboardProvider.mobileLayoutConfigured) ...[
-                _drawerSectionLabel(enterprise, 'Services'),
-                _drawerMenuItem(context, enterprise,
-                    icon: Icons.dashboard_outlined,
-                    label: translate('pos.dashboard'),
-                    permissionKey: 'sell-staff-report', onTap: () {
-                  Navigator.of(context).pop();
-                  Get.to(() => const PosWorkspaceScreen());
-                }),
-                _sellOutDrawerItem(context, enterprise,
-                    translate('home_screen.service_sell'), Icons.point_of_sale),
-                _sellOutDrawerItem(
+            ],
+          ),
+          child: SafeArea(
+            top: false,
+            child: ListView(
+              padding: const EdgeInsets.only(top: 8, bottom: 12),
+              children: [
+                if (enterprise.isLight) _profileHeader(context, enterprise),
+                _paymentQrHeader(
                   context,
                   enterprise,
-                  translate('home_screen.service_sell_sim'),
-                  Icons.sim_card,
-                  serviceTypeValue: 'SellSim',
+                  branchName.isEmpty ? 'Branch' : branchName,
+                  paymentQrCodes,
                 ),
-                _sellOutDrawerItem(context, enterprise,
-                    translate('home_screen.service_material'), Icons.inventory_2_outlined),
-                _sellOutDrawerItem(context, enterprise,
-                    translate('home_screen.service_iron'), Icons.local_laundry_service),
-                _sellOutDrawerItem(context, enterprise,
-                    translate('home_screen.service_repair'), Icons.build_circle_outlined),
-                _sellOutDrawerItem(context, enterprise,
-                    translate('home_screen.service_buy_in'), Icons.add_shopping_cart),
-                _sellOutDrawerItem(
-                  context,
-                  enterprise,
-                  translate('home_screen.service_icloud_cus'),
-                  Icons.cloud_outlined,
-                  serviceTypeValue: 'iCloud Cus',
-                ),
-                _drawerDivider(enterprise),
-                _drawerSectionLabel(enterprise, 'Tools'),
-                _drawerMenuItem(context, enterprise,
-                    icon: Icons.dynamic_feed_outlined,
-                    label: translate('community.social_feed'),
-                    permissionKey: 'social-feed', onTap: () {
-                  Navigator.of(context).pop();
-                  Get.to(() => const SocialFeedScreen());
-                }),
-                _drawerMenuItem(
-                  context,
-                  enterprise,
-                  icon: Icons.calculate_outlined,
-                  label: translate('loan_calculate_screen.loan_calculator'),
-                  permissionKey: 'loan',
-                  onTap: () {
+                ...[
+                  _drawerSectionLabel(enterprise, 'Services'),
+                  _drawerMenuItem(context, enterprise,
+                      icon: Icons.dashboard_outlined,
+                      label: translate('pos.dashboard'),
+                      permissionKey: 'sell-staff-report', onTap: () {
                     Navigator.of(context).pop();
-                    Get.to(() => LoanCalculateScreen());
-                  },
-                ),
-                _drawerMenuItem(
-                  context,
-                  enterprise,
-                  icon: Icons.campaign_outlined,
-                  label: translate('dashboard_screen.social_rewards'),
-                  permissionKey: 'social-rewards',
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    Get.to(() => SocialSubmissionScreen(employeeId: employeeId));
-                  },
-                ),
-                _drawerMenuItem(
-                  context,
-                  enterprise,
-                  icon: Icons.badge_rounded,
-                  label: translate('dashboard_screen.view_my_card'),
-                  permissionKey: 'id-card',
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    Get.to(() => const FrontSidePreviewPage());
-                  },
-                ),
-                _drawerMenuItem(
-                  context,
-                  enterprise,
-                  icon: Icons.link,
-                  label: translate('more_screen.links'),
-                  permissionKey: 'links',
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    Get.to(() => const LinkListScreen());
-                  },
-                ),
-              ],
-              if (dashboardProvider.mobileLayoutConfigured) ...[
-                _drawerDivider(enterprise),
-                _drawerSectionLabel(enterprise, 'Role functions'),
-                for (final menu in dashboardProvider.mobileMenusAt('sidebar'))
-                  if (dashboardProvider.features[menu] == '1')
-                    _drawerMenuItem(
+                    Get.to(() => const PosWorkspaceScreen());
+                  }),
+                  _sellOutDrawerItem(
                       context,
                       enterprise,
-                      icon: Icons.apps_outlined,
-                      label: _roleMenuLabel(menu),
-                      permissionKey: menu,
-                      onTap: () => _openRoleMenu(context, menu, employeeId),
+                      translate('home_screen.service_sell'),
+                      Icons.point_of_sale),
+                  _sellOutDrawerItem(
+                    context,
+                    enterprise,
+                    translate('home_screen.service_sell_sim'),
+                    Icons.sim_card,
+                    serviceTypeValue: 'SellSim',
+                  ),
+                  _sellOutDrawerItem(
+                      context,
+                      enterprise,
+                      translate('home_screen.service_material'),
+                      Icons.inventory_2_outlined),
+                  _sellOutDrawerItem(
+                      context,
+                      enterprise,
+                      translate('home_screen.service_iron'),
+                      Icons.local_laundry_service),
+                  _sellOutDrawerItem(
+                      context,
+                      enterprise,
+                      translate('home_screen.service_repair'),
+                      Icons.build_circle_outlined),
+                  _sellOutDrawerItem(
+                      context,
+                      enterprise,
+                      translate('home_screen.service_buy_in'),
+                      Icons.add_shopping_cart),
+                  _sellOutDrawerItem(
+                    context,
+                    enterprise,
+                    translate('home_screen.service_icloud_cus'),
+                    Icons.cloud_outlined,
+                    serviceTypeValue: 'iCloud Cus',
+                  ),
+                  _drawerDivider(enterprise),
+                  _drawerSectionLabel(enterprise, 'Tools'),
+                  _drawerMenuItem(context, enterprise,
+                      icon: Icons.dynamic_feed_outlined,
+                      label: translate('community.social_feed'),
+                      permissionKey: 'social-feed', onTap: () {
+                    Navigator.of(context).pop();
+                    Get.to(() => const SocialFeedScreen());
+                  }),
+                  _drawerMenuItem(
+                    context,
+                    enterprise,
+                    icon: Icons.calculate_outlined,
+                    label: translate('loan_calculate_screen.loan_calculator'),
+                    permissionKey: 'loan',
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      Get.to(() => LoanCalculateScreen());
+                    },
+                  ),
+                  _drawerMenuItem(
+                    context,
+                    enterprise,
+                    icon: Icons.campaign_outlined,
+                    label: translate('dashboard_screen.social_rewards'),
+                    permissionKey: 'social-rewards',
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      Get.to(
+                          () => SocialSubmissionScreen(employeeId: employeeId));
+                    },
+                  ),
+                  _drawerMenuItem(
+                    context,
+                    enterprise,
+                    icon: Icons.badge_rounded,
+                    label: translate('dashboard_screen.view_my_card'),
+                    permissionKey: 'id-card',
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      Get.to(() => const FrontSidePreviewPage());
+                    },
+                  ),
+                  _drawerMenuItem(
+                    context,
+                    enterprise,
+                    icon: Icons.link,
+                    label: translate('more_screen.links'),
+                    permissionKey: 'links',
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      Get.to(() => const LinkListScreen());
+                    },
+                  ),
+                  _drawerMenuItem(
+                    context,
+                    enterprise,
+                    icon: Icons.inventory_2_outlined,
+                    label: translate('more_screen.admin_assets'),
+                    permissionKey: 'assets-admin',
+                    extraHideCheck: () => !AssetPermissions.canOpenAdmin(
+                      context.watch<DashboardProvider>().features,
                     ),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      Get.to(() => const AdminAssetListScreen());
+                    },
+                  ),
+                  _drawerMenuItem(
+                    context,
+                    enterprise,
+                    icon: Icons.build_circle_outlined,
+                    label: translate('dashboard_screen.repair_list'),
+                    permissionKey: 'repair',
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      Get.to(() => const RepairDevicePage());
+                    },
+                  ),
+                  _drawerMenuItem(
+                    context,
+                    enterprise,
+                    icon: Icons.groups_outlined,
+                    label: translate('more_screen.team_sheet'),
+                    permissionKey: 'team-sheet',
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      Get.to(() => TeamSheetScreen());
+                    },
+                  ),
+                  _drawerMenuItem(
+                    context,
+                    enterprise,
+                    icon: Icons.folder_shared_outlined,
+                    label: translate('more_screen.company_documents'),
+                    permissionKey: 'company-documents',
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      Get.to(() => const CompanyDocumentsScreen());
+                    },
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
@@ -225,19 +276,31 @@ class DashboardDrawer extends StatelessWidget {
     required String label,
     required VoidCallback onTap,
     String? permissionKey,
+    bool Function()? extraHideCheck,
   }) {
     if (permissionKey != null) {
       final dashboard = context.watch<DashboardProvider>();
-      if (dashboard.features[permissionKey] != '1' ||
-          !dashboard.isMobileMenuAt(permissionKey, 'sidebar')) {
+      if (dashboard.features[permissionKey] == '0') {
+        return const SizedBox.shrink();
+      }
+      final layoutKey =
+          permissionKey == 'assets-admin' ? 'assets' : permissionKey;
+      if (!dashboard.isMobileMenuAt(layoutKey, 'sidebar')) {
         return const SizedBox.shrink();
       }
     }
-    final foreground = sidebarForeground(enterprise);
+    if (extraHideCheck != null && extraHideCheck()) {
+      return const SizedBox.shrink();
+    }
+    final foreground = enterprise.isLight
+        ? AppColors.customFF172033
+        : sidebarForeground(enterprise);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
       child: Material(
-        color: enterprise.colors.cardColor.withValues(alpha: 0.28),
+        color: enterprise.isLight
+            ? const Color(0xFFF3F7FF)
+            : enterprise.colors.cardColor.withValues(alpha: 0.28),
         borderRadius: BorderRadius.circular(15),
         child: InkWell(
           borderRadius: BorderRadius.circular(15),
@@ -248,7 +311,9 @@ class DashboardDrawer extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(15),
               border: Border.all(
-                color: foreground.withValues(alpha: 0.10),
+                color: enterprise.isLight
+                    ? const Color(0xFFE1EAF8)
+                    : foreground.withValues(alpha: 0.10),
               ),
             ),
             child: Row(
@@ -298,7 +363,10 @@ class DashboardDrawer extends StatelessWidget {
       child: Text(
         label.toUpperCase(),
         style: TextStyle(
-          color: sidebarForeground(enterprise).withValues(alpha: 0.72),
+          color: (enterprise.isLight
+                  ? AppColors.customFF172033
+                  : sidebarForeground(enterprise))
+              .withValues(alpha: 0.72),
           fontSize: 10,
           fontWeight: FontWeight.w900,
           letterSpacing: 0.7,
@@ -312,7 +380,90 @@ class DashboardDrawer extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: Divider(
         height: 1,
-        color: sidebarForeground(enterprise).withValues(alpha: 0.16),
+        color: enterprise.isLight
+            ? const Color(0xFFE5EDF8)
+            : sidebarForeground(enterprise).withValues(alpha: 0.16),
+      ),
+    );
+  }
+
+  Widget _profileHeader(
+    BuildContext context,
+    EnterpriseTheme enterprise,
+  ) {
+    final user = context.watch<PrefProvider>();
+    final displayName = user.fullname.trim().isNotEmpty
+        ? user.fullname.trim()
+        : user.userName.trim();
+    final avatarUrl = user.avatar.trim();
+    final initial = displayName.isNotEmpty ? displayName.characters.first : '';
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 6, 12, 8),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFFEAF4FF),
+            enterprise.primary.withValues(alpha: .10),
+          ],
+        ),
+        border: Border.all(color: enterprise.primary.withValues(alpha: .12)),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 25,
+            backgroundColor: enterprise.primary.withValues(alpha: .12),
+            backgroundImage:
+                avatarUrl.startsWith('http') ? NetworkImage(avatarUrl) : null,
+            child: avatarUrl.startsWith('http')
+                ? null
+                : Text(
+                    initial.toUpperCase(),
+                    style: TextStyle(
+                      color: enterprise.primary,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 18,
+                    ),
+                  ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  displayName.isNotEmpty ? displayName : 'Welcome',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFF17243B),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  user.userId.trim().isNotEmpty
+                      ? 'ID ${user.userId.trim()}'
+                      : 'Staff account',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFF64748B),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Icon(Icons.verified_rounded, color: enterprise.primary, size: 18),
+        ],
       ),
     );
   }
@@ -857,8 +1008,3 @@ class DashboardDrawer extends StatelessWidget {
     return cleaned.isEmpty ? 'branch' : cleaned;
   }
 }
-
-String _roleMenuLabel(String menu) => menu
-    .split('-')
-    .map((word) => word.isEmpty ? word : '${word[0].toUpperCase()}${word.substring(1)}')
-    .join(' ');

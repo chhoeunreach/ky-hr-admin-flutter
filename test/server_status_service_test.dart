@@ -29,12 +29,15 @@ void main() {
 
   group('ServerStatusService.checkServer', () {
     test(
-        'manual test selects backup after connection refused and forces recovery check',
+        'checkCurrentServer reports primary outage and manual switch to backup works',
         () async {
       var primaryDown = false;
       final client = MockClient((request) async {
         if (request.url.host == 'example.com' && primaryDown) {
           throw http.ClientException('Connection refused');
+        }
+        if (request.url.host == 'backup.example.com') {
+          return http.Response(appEnvelope, 200);
         }
         return http.Response(
           '{"status":true,"message":"Data found","data":'
@@ -49,16 +52,16 @@ void main() {
           ServerStatusService(preferences: preferences, client: client);
       expect((await service.checkCurrentServer()).url, 'https://example.com/');
       primaryDown = true;
-      final backupResult = await service.checkCurrentServer();
-      expect(backupResult.isConnected, isTrue);
-      expect(backupResult.url, 'https://backup.example.com/');
-      expect(backupResult.message, contains('backup'));
-      expect(await preferences.getAppUrl(), 'https://backup.example.com/');
-
-      // The button must bypass even a recently cached backup selection.
-      primaryDown = false;
-      expect((await service.checkCurrentServer()).url, 'https://example.com/');
+      final failedResult = await service.checkCurrentServer();
+      expect(failedResult.isConnected, isFalse);
       expect(await preferences.getAppUrl(), 'https://example.com/');
+
+      // Explicit switch to backup server
+      final switchResult =
+          await service.switchServer('https://backup.example.com/');
+      expect(switchResult.isConnected, isTrue);
+      expect(switchResult.url, 'https://backup.example.com/');
+      expect(await preferences.getAppUrl(), 'https://backup.example.com/');
     });
 
     test('probes the lightweight app-version endpoint', () async {
@@ -107,7 +110,7 @@ void main() {
 
   group('ServerStatusService.switchServer', () {
     test(
-        'backup works before login and preserves successful login across restart',
+        'backup works and preserves successful login across restart after manual switch',
         () async {
       var primaryDown = false;
       final client = MockClient((request) async {
@@ -134,11 +137,17 @@ void main() {
       expect(result.url, 'https://primary.example/');
 
       primaryDown = true;
+      // Never auto-switches: stays configured server
+      expect(await preferences.getAppUrl(), 'https://primary.example/');
+
+      // User explicitly confirms switching to backup:
+      final switchResult =
+          await service.switchServer('https://backup.example/');
+      expect(switchResult.isConnected, isTrue);
       expect(await preferences.getAppUrl(), 'https://backup.example/');
-      primaryDown = false;
 
       // Persist the successful login, then recreate preferences/resolver as on
-      // restart. Failover must keep the session without another scan or login.
+      // restart. Server stays backup without another scan.
       await preferences.saveUser(Login(
         user: User(
             id: 42,
@@ -149,11 +158,10 @@ void main() {
             workspace_type: '1'),
         tokens: 'login-token',
       ));
-      primaryDown = true;
       final restarted =
           Preferences(serverUrlResolver: ServerUrlResolver(client: client));
       expect(await restarted.getAppUrl(), 'https://backup.example/');
-      expect(await restarted.getConfiguredAppUrl(), 'https://primary.example/');
+      expect(await restarted.getConfiguredAppUrl(), 'https://backup.example/');
       expect(await restarted.getUserId(), 42);
       final response = await client.get(
         Uri.parse('${await restarted.getAppUrl()}api/dashboard'),

@@ -1,5 +1,6 @@
 import 'package:cnattendance/model/advancesalary.dart';
 import 'package:cnattendance/provider/advancesalarylistcontroller.dart';
+import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
@@ -11,6 +12,8 @@ class AdvanceSalaryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final model = Get.put(AdvanceSalaryController());
+    final enterprise = EnterpriseTheme.of(context);
+
     return Container(
       decoration: RadialDecoration(),
       child: Scaffold(
@@ -18,21 +21,28 @@ class AdvanceSalaryScreen extends StatelessWidget {
         appBar: AppBar(
           elevation: 0,
           backgroundColor: Colors.transparent,
-          title: Text(translate('advance_salary_screen.advance_salary')),
+          iconTheme: IconThemeData(color: enterprise.text),
+          title: Text(
+            translate('advance_salary_screen.advance_salary'),
+            style: TextStyle(
+              color: enterprise.text,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ),
         floatingActionButton: FloatingActionButton(
             onPressed: () {
               model.onAdvanceSalaryCreateClicked();
             },
-            backgroundColor: AppColors.blue,
-            child: Icon(
+            backgroundColor: enterprise.primary,
+            child: const Icon(
               Icons.add,
               color: AppColors.white,
             )),
         body: Obx(
           () => SafeArea(
             child: Padding(
-              padding: const EdgeInsets.all(15.0),
+              padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 8.0),
               child: RefreshIndicator(
                 onRefresh: () {
                   return model.getTadaList();
@@ -42,27 +52,44 @@ class AdvanceSalaryScreen extends StatelessWidget {
                   itemBuilder: (context, index) {
                     final AdvanceSalary item = model.salaryList[index];
                     return Container(
-                      margin: EdgeInsets.symmetric(vertical: 8),
+                      margin: const EdgeInsets.symmetric(vertical: 6),
+                      decoration: BoxDecoration(
+                        color: enterprise.isDark ? AppColors.white12 : AppColors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: enterprise.isDark
+                              ? enterprise.cardBorder
+                              : AppColors.customFFB8DEFF,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.black.withValues(
+                                alpha: enterprise.isDark ? 0.12 : 0.04),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
                       child: ListTile(
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.only(
-                                topLeft: Radius.circular(10),
-                                topRight: Radius.circular(0),
-                                bottomLeft: Radius.circular(0),
-                                bottomRight: Radius.circular(10))),
-                        tileColor: AppColors.white12,
+                            borderRadius: BorderRadius.circular(14)),
                         onTap: () {
                           model.onAdvanceSalaryClicked(item.id.toString());
                         },
-                        textColor: AppColors.white,
-                        iconColor: AppColors.white,
                         title: Text(
                           item.requested_amount,
-                          style: TextStyle(fontSize: 18),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: enterprise.text,
+                          ),
                         ),
                         subtitle: Text(
                           item.submittedDate,
-                          style: TextStyle(color: AppColors.grey),
+                          style: TextStyle(
+                            color: enterprise.mutedText,
+                            fontSize: 12,
+                          ),
                         ),
                         trailing: GestureDetector(
                           onTap: () {
@@ -76,7 +103,12 @@ class AdvanceSalaryScreen extends StatelessWidget {
                           },
                           child: Padding(
                             padding: const EdgeInsets.all(8.0),
-                            child: Icon(Icons.edit),
+                            child: Icon(
+                              Icons.edit,
+                              color: item.status.toLowerCase() == "pending"
+                                  ? enterprise.primary
+                                  : enterprise.mutedText,
+                            ),
                           ),
                         ),
                         leading: Card(
@@ -85,19 +117,19 @@ class AdvanceSalaryScreen extends StatelessWidget {
                                 : item.status.toLowerCase() == "rejected"
                                     ? AppColors.red
                                     : AppColors.green,
-                            shape: CircleBorder(),
+                            shape: const CircleBorder(),
                             child: Padding(
-                              padding: const EdgeInsets.all(15),
+                              padding: const EdgeInsets.all(12),
                               child: Text(
                                 item.status.toLowerCase() == "pending"
                                     ? "P"
                                     : item.status.toLowerCase() == "rejected"
                                         ? "R"
                                         : "A",
-                                style: TextStyle(
+                                style: const TextStyle(
                                     color: AppColors.white,
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 18),
+                                    fontSize: 16),
                               ),
                             )),
                       ),

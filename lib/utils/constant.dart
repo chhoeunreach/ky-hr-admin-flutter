@@ -254,7 +254,7 @@ void showAlertMessage(String message) {
 String _toastTitle(String message) {
   final parts = message.split('\n');
   final title = parts.first.trim();
-  return title.isEmpty ? 'Digital HRMS' : title;
+  return title.isEmpty ? 'KNEAYERNG' : title;
 }
 
 String _toastBody(String message) {

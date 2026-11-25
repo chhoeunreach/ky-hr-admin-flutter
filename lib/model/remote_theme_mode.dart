@@ -72,10 +72,31 @@ class RemoteThemeMode {
       }
     }
 
+    final rawKey = (json['key'] ?? '').toString();
+    var rawName = (json['name'] ?? '').toString();
+    var rawDesc = (json['description'] ?? '').toString();
+
+    if (rawKey == 'light' ||
+        rawName.toLowerCase() == 'original mode' ||
+        rawName.toLowerCase().contains('original')) {
+      rawName = 'Day Mode';
+      if (rawDesc.isEmpty || rawDesc.toLowerCase().contains('original') || rawDesc.toLowerCase().contains('electric')) {
+        rawDesc = 'Crisp light with royal blue';
+      }
+    } else if (rawKey == 'dark' ||
+        rawName.toLowerCase() == 'dark mode') {
+      rawName = 'Night Mode';
+      if (rawDesc.isEmpty ||
+          rawDesc.toLowerCase().contains('original') ||
+          rawDesc.toLowerCase().contains('dark')) {
+        rawDesc = 'Sleek night mode';
+      }
+    }
+
     return RemoteThemeMode(
-      key: (json['key'] ?? '').toString(),
-      name: (json['name'] ?? '').toString(),
-      description: (json['description'] ?? '').toString(),
+      key: rawKey,
+      name: rawName,
+      description: rawDesc,
       icon: (json['icon'] ?? 'palette').toString(),
       primaryColor: prim,
       secondaryColor: sec,
@@ -90,6 +111,41 @@ class RemoteThemeMode {
       isSystem: json['is_system'] == true || json['is_system'] == 1,
     );
   }
+
+  RemoteThemeMode copyWith({
+    String? key,
+    String? name,
+    String? description,
+    String? icon,
+    Color? primaryColor,
+    Color? secondaryColor,
+    Color? accentColor,
+    Color? backgroundColor,
+    Color? cardColor,
+    Color? textColor,
+    bool? isDark,
+    bool? isActive,
+    List<String>? allowedRoles,
+    List<Color>? gradientColors,
+    bool? isSystem,
+  }) =>
+      RemoteThemeMode(
+        key: key ?? this.key,
+        name: name ?? this.name,
+        description: description ?? this.description,
+        icon: icon ?? this.icon,
+        primaryColor: primaryColor ?? this.primaryColor,
+        secondaryColor: secondaryColor ?? this.secondaryColor,
+        accentColor: accentColor ?? this.accentColor,
+        backgroundColor: backgroundColor ?? this.backgroundColor,
+        cardColor: cardColor ?? this.cardColor,
+        textColor: textColor ?? this.textColor,
+        isDark: isDark ?? this.isDark,
+        isActive: isActive ?? this.isActive,
+        allowedRoles: allowedRoles ?? this.allowedRoles,
+        gradientColors: gradientColors ?? this.gradientColors,
+        isSystem: isSystem ?? this.isSystem,
+      );
 
   Map<String, dynamic> toJson() => {
         'key': key,

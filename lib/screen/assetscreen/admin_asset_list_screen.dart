@@ -1,6 +1,7 @@
 import 'package:cnattendance/core/theme/app_colors.dart';
 import 'package:cnattendance/model/admin_asset.dart';
 import 'package:cnattendance/screen/assetscreen/admin_asset_list_controller.dart';
+import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -11,6 +12,7 @@ class AdminAssetListScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(AdminAssetListController());
+    final enterprise = EnterpriseTheme.of(context);
     final isKhmer = Localizations.localeOf(context).languageCode == 'km';
 
     return Container(
@@ -20,26 +22,27 @@ class AdminAssetListScreen extends StatelessWidget {
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
+          iconTheme: IconThemeData(color: enterprise.text),
           title: Text(
             isKhmer ? 'គ្រប់គ្រងទ្រព្យសម្បត្តិ (Asset)' : 'Asset Management',
-            style: const TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(color: enterprise.text, fontWeight: FontWeight.bold),
           ),
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded),
+            icon: Icon(Icons.arrow_back_ios_new_rounded, color: enterprise.text),
             onPressed: () => Get.back(),
           ),
           actions: [
             IconButton(
-              icon: const Icon(Icons.filter_list_rounded),
+              icon: Icon(Icons.filter_list_rounded, color: enterprise.text),
               tooltip: 'Filter',
-              onPressed: () => _showFilterSheet(context, controller),
+              onPressed: () => _showFilterSheet(context, controller, enterprise),
             ),
           ],
         ),
         floatingActionButton: Obx(() {
           if (!controller.canCreate.value) return const SizedBox.shrink();
           return FloatingActionButton.extended(
-            backgroundColor: AppColors.blue,
+            backgroundColor: enterprise.primary,
             foregroundColor: AppColors.white,
             onPressed: controller.onAddAssetClicked,
             icon: const Icon(Icons.add),
@@ -56,38 +59,44 @@ class AdminAssetListScreen extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
                 child: TextField(
-                  style: const TextStyle(color: AppColors.white),
+                  style: TextStyle(color: enterprise.text),
+                  cursorColor: enterprise.primary,
                   decoration: InputDecoration(
                     hintText: isKhmer
                         ? 'ស្វែងរកឈ្មោះ, លេខកូដ, ស៊េរី...'
                         : 'Search by name, code, serial...',
-                    hintStyle: const TextStyle(color: AppColors.white38, fontSize: 13),
-                    prefixIcon: const Icon(Icons.search, color: AppColors.white70),
+                    hintStyle: TextStyle(color: enterprise.mutedText, fontSize: 13),
+                    prefixIcon: Icon(Icons.search, color: enterprise.primary),
                     suffixIcon: Obx(() {
                       if (controller.searchQuery.value.isEmpty) {
                         return const SizedBox.shrink();
                       }
                       return IconButton(
-                        icon: const Icon(Icons.clear, color: AppColors.white70),
+                        icon: Icon(Icons.clear, color: enterprise.mutedText),
                         onPressed: () => controller.onSearchChanged(''),
                       );
                     }),
                     filled: true,
-                    fillColor: AppColors.white12,
+                    fillColor: enterprise.isDark ? AppColors.white12 : AppColors.white,
                     contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.white24),
+                      borderSide: BorderSide(
+                        color: enterprise.isDark ? enterprise.cardBorder : AppColors.customFFB8DEFF,
+                      ),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.white24),
+                      borderSide: BorderSide(
+                        color: enterprise.isDark ? enterprise.cardBorder : AppColors.customFFB8DEFF,
+                      ),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.blue),
+                      borderSide: BorderSide(color: enterprise.primary, width: 1.5),
                     ),
                   ),
+                  onChanged: controller.onSearchChanged,
                   onSubmitted: controller.onSearchChanged,
                 ),
               ),
@@ -99,13 +108,13 @@ class AdminAssetListScreen extends StatelessWidget {
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   children: [
-                    _statusChip(context, controller, 'All', isKhmer ? 'ទាំងអស់' : 'All'),
+                    _statusChip(context, controller, enterprise, 'All', isKhmer ? 'ទាំងអស់' : 'All'),
                     const SizedBox(width: 8),
-                    _statusChip(context, controller, 'Available', isKhmer ? 'អាចប្រើប្រាស់បាន' : 'Available'),
+                    _statusChip(context, controller, enterprise, 'Available', isKhmer ? 'អាចប្រើប្រាស់បាន' : 'Available'),
                     const SizedBox(width: 8),
-                    _statusChip(context, controller, 'Assigned', isKhmer ? 'បានប្រគល់' : 'Assigned'),
+                    _statusChip(context, controller, enterprise, 'Assigned', isKhmer ? 'បានប្រគល់' : 'Assigned'),
                     const SizedBox(width: 8),
-                    _statusChip(context, controller, 'Maintenance', isKhmer ? 'កំពុងជួសជុល' : 'Maintenance'),
+                    _statusChip(context, controller, enterprise, 'Maintenance', isKhmer ? 'កំពុងជួសជុល' : 'Maintenance'),
                   ],
                 ),
               ),
@@ -118,22 +127,80 @@ class AdminAssetListScreen extends StatelessWidget {
                     return const Center(child: CircularProgressIndicator());
                   }
 
-                  if (controller.assets.isEmpty) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                  if (controller.errorMessage.value != null &&
+                      controller.assets.isEmpty) {
+                    return RefreshIndicator(
+                      onRefresh: () => controller.getAssets(refresh: true),
+                      child: ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
                         children: [
-                          const Icon(
-                            Icons.inventory_2_outlined,
-                            size: 64,
-                            color: AppColors.white38,
+                          SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.45,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.cloud_off_outlined,
+                                    size: 64,
+                                    color: enterprise.mutedText
+                                        .withValues(alpha: 0.5)),
+                                const SizedBox(height: 12),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 32),
+                                  child: Text(
+                                    controller.errorMessage.value!,
+                                    textAlign: TextAlign.center,
+                                    style:
+                                        TextStyle(color: enterprise.mutedText),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                      backgroundColor: enterprise.primary),
+                                  onPressed: () =>
+                                      controller.getAssets(refresh: true),
+                                  child: Text(
+                                    isKhmer ? 'ព្យាយាមម្តងទៀត' : 'Retry',
+                                    style: const TextStyle(
+                                        color: AppColors.white),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                          const SizedBox(height: 12),
-                          Text(
-                            isKhmer
-                                ? 'មិនមានទ្រព្យសម្បត្តិត្រូវបានរកឃើញទេ'
-                                : 'No assets found',
-                            style: const TextStyle(color: AppColors.white70),
+                        ],
+                      ),
+                    );
+                  }
+
+                  if (controller.assets.isEmpty) {
+                    return RefreshIndicator(
+                      onRefresh: () => controller.getAssets(refresh: true),
+                      child: ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: [
+                          SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.45,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.inventory_2_outlined,
+                                  size: 64,
+                                  color: enterprise.mutedText
+                                      .withValues(alpha: 0.5),
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  isKhmer
+                                      ? 'មិនមានទ្រព្យសម្បត្តិត្រូវបានរកឃើញទេ'
+                                      : 'No assets found',
+                                  style:
+                                      TextStyle(color: enterprise.mutedText),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
@@ -144,7 +211,8 @@ class AdminAssetListScreen extends StatelessWidget {
                     onRefresh: () => controller.getAssets(refresh: true),
                     child: NotificationListener<ScrollNotification>(
                       onNotification: (ScrollNotification scrollInfo) {
-                        if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
+                        if (scrollInfo.metrics.pixels >=
+                            scrollInfo.metrics.maxScrollExtent - 80) {
                           controller.loadMore();
                         }
                         return false;
@@ -160,7 +228,7 @@ class AdminAssetListScreen extends StatelessWidget {
                             );
                           }
                           final asset = controller.assets[index];
-                          return _buildAssetCard(context, controller, asset);
+                          return _buildAssetCard(context, controller, enterprise, asset);
                         },
                       ),
                     ),
@@ -177,6 +245,7 @@ class AdminAssetListScreen extends StatelessWidget {
   Widget _statusChip(
     BuildContext context,
     AdminAssetListController controller,
+    EnterpriseTheme enterprise,
     String key,
     String label,
   ) {
@@ -189,16 +258,20 @@ class AdminAssetListScreen extends StatelessWidget {
           duration: const Duration(milliseconds: 180),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.blue : AppColors.white12,
+            color: isSelected
+                ? enterprise.primary
+                : (enterprise.isDark ? AppColors.white12 : AppColors.white),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: isSelected ? AppColors.blue : AppColors.white24,
+              color: isSelected
+                  ? enterprise.primary
+                  : (enterprise.isDark ? enterprise.cardBorder : AppColors.customFFB8DEFF),
             ),
           ),
           child: Text(
             label,
             style: TextStyle(
-              color: isSelected ? AppColors.white : AppColors.white70,
+              color: isSelected ? AppColors.white : enterprise.mutedText,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               fontSize: 12,
             ),
@@ -211,6 +284,7 @@ class AdminAssetListScreen extends StatelessWidget {
   Widget _buildAssetCard(
     BuildContext context,
     AdminAssetListController controller,
+    EnterpriseTheme enterprise,
     AdminAsset asset,
   ) {
     final isKhmer = Localizations.localeOf(context).languageCode == 'km';
@@ -221,17 +295,26 @@ class AdminAssetListScreen extends StatelessWidget {
     if (asset.isWorking == 'no') {
       statusColor = AppColors.orange;
       statusText = isKhmer ? 'ជួសជុល' : 'Maintenance';
-    } else if (asset.assignedTo != null) {
-      statusColor = AppColors.blue;
+    } else if (!asset.isAvailable || asset.assignedTo != null) {
+      statusColor = enterprise.primary;
       statusText = isKhmer ? 'បានប្រគល់' : 'Assigned';
     }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: AppColors.white12,
+        color: enterprise.isDark ? AppColors.white12 : AppColors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.white24),
+        border: Border.all(
+          color: enterprise.isDark ? enterprise.cardBorder : AppColors.customFFB8DEFF,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.black.withValues(alpha: enterprise.isDark ? 0.12 : 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
@@ -247,20 +330,20 @@ class AdminAssetListScreen extends StatelessWidget {
                 child: Container(
                   width: 54,
                   height: 54,
-                  color: AppColors.white12,
+                  color: enterprise.isDark ? AppColors.white12 : const Color(0xFFF1F5F9),
                   child: asset.imageUrl != null && asset.imageUrl!.isNotEmpty
                       ? Image.network(
                           asset.imageUrl!,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => const Icon(
+                          errorBuilder: (_, __, ___) => Icon(
                             Icons.inventory_2_outlined,
-                            color: AppColors.white70,
+                            color: enterprise.mutedText,
                             size: 28,
                           ),
                         )
-                      : const Icon(
+                      : Icon(
                           Icons.inventory_2_outlined,
-                          color: AppColors.white70,
+                          color: enterprise.mutedText,
                           size: 28,
                         ),
                 ),
@@ -279,8 +362,8 @@ class AdminAssetListScreen extends StatelessWidget {
                             asset.name,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: AppColors.white,
+                            style: TextStyle(
+                              color: enterprise.text,
                               fontSize: 15,
                               fontWeight: FontWeight.bold,
                             ),
@@ -307,14 +390,14 @@ class AdminAssetListScreen extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       '${asset.typeName} · ${asset.branchName}',
-                      style: const TextStyle(color: AppColors.white70, fontSize: 12),
+                      style: TextStyle(color: enterprise.mutedText, fontSize: 12),
                     ),
                     if (asset.assetCode.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(top: 2.0),
                         child: Text(
                           '#${asset.assetCode}',
-                          style: const TextStyle(color: AppColors.blue, fontSize: 11, fontWeight: FontWeight.w600),
+                          style: TextStyle(color: enterprise.primary, fontSize: 11, fontWeight: FontWeight.w600),
                         ),
                       ),
                     if (asset.assignedTo != null) ...[
@@ -322,21 +405,21 @@ class AdminAssetListScreen extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: AppColors.blue.withValues(alpha: 0.15),
+                          color: enterprise.primary.withValues(alpha: enterprise.isDark ? 0.2 : 0.08),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.person, size: 12, color: AppColors.blue),
+                            Icon(Icons.person, size: 12, color: enterprise.primary),
                             const SizedBox(width: 4),
                             Flexible(
                               child: Text(
                                 asset.assignedTo!.name,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: AppColors.white,
+                                style: TextStyle(
+                                  color: enterprise.text,
                                   fontSize: 11,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -352,15 +435,15 @@ class AdminAssetListScreen extends StatelessWidget {
 
               // Actions Popup
               PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert, color: AppColors.white70, size: 20),
-                color: const Color(0xFF1E293B),
+                icon: Icon(Icons.more_vert, color: enterprise.mutedText, size: 20),
+                color: enterprise.isDark ? const Color(0xFF1E293B) : AppColors.white,
                 onSelected: (value) {
                   if (value == 'view') {
                     controller.onAssetDetailClicked(asset);
                   } else if (value == 'edit') {
                     controller.onEditAssetClicked(asset);
                   } else if (value == 'delete') {
-                    _confirmDelete(context, controller, asset);
+                    _confirmDelete(context, controller, enterprise, asset);
                   }
                 },
                 itemBuilder: (context) => [
@@ -368,9 +451,9 @@ class AdminAssetListScreen extends StatelessWidget {
                     value: 'view',
                     child: Row(
                       children: [
-                        const Icon(Icons.visibility_outlined, size: 18, color: AppColors.white70),
+                        Icon(Icons.visibility_outlined, size: 18, color: enterprise.mutedText),
                         const SizedBox(width: 8),
-                        Text(isKhmer ? 'មើលលម្អិត' : 'View Detail', style: const TextStyle(color: AppColors.white)),
+                        Text(isKhmer ? 'មើលលម្អិត' : 'View Detail', style: TextStyle(color: enterprise.text)),
                       ],
                     ),
                   ),
@@ -379,9 +462,9 @@ class AdminAssetListScreen extends StatelessWidget {
                       value: 'edit',
                       child: Row(
                         children: [
-                          const Icon(Icons.edit_outlined, size: 18, color: AppColors.blue),
+                          Icon(Icons.edit_outlined, size: 18, color: enterprise.primary),
                           const SizedBox(width: 8),
-                          Text(isKhmer ? 'កែសម្រួល' : 'Edit', style: const TextStyle(color: AppColors.white)),
+                          Text(isKhmer ? 'កែសម្រួល' : 'Edit', style: TextStyle(color: enterprise.text)),
                         ],
                       ),
                     ),
@@ -408,27 +491,28 @@ class AdminAssetListScreen extends StatelessWidget {
   void _confirmDelete(
     BuildContext context,
     AdminAssetListController controller,
+    EnterpriseTheme enterprise,
     AdminAsset asset,
   ) {
     final isKhmer = Localizations.localeOf(context).languageCode == 'km';
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1E293B),
+        backgroundColor: enterprise.isDark ? const Color(0xFF1E293B) : AppColors.white,
         title: Text(
           isKhmer ? 'លុបទ្រព្យសម្បត្តិ?' : 'Delete Asset?',
-          style: const TextStyle(color: AppColors.white),
+          style: TextStyle(color: enterprise.text, fontWeight: FontWeight.bold),
         ),
         content: Text(
           isKhmer
               ? 'តើអ្នកប្រាកដជាចង់លុប "${asset.name}" មែនទេ?'
               : 'Are you sure you want to delete "${asset.name}"?',
-          style: const TextStyle(color: AppColors.white70),
+          style: TextStyle(color: enterprise.mutedText),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text(isKhmer ? 'បោះបង់' : 'Cancel'),
+            child: Text(isKhmer ? 'បោះបង់' : 'Cancel', style: TextStyle(color: enterprise.mutedText)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.red),
@@ -436,7 +520,7 @@ class AdminAssetListScreen extends StatelessWidget {
               Navigator.pop(ctx);
               controller.deleteAsset(asset.id);
             },
-            child: Text(isKhmer ? 'លុប' : 'Delete'),
+            child: Text(isKhmer ? 'លុប' : 'Delete', style: const TextStyle(color: AppColors.white)),
           ),
         ],
       ),
@@ -446,12 +530,13 @@ class AdminAssetListScreen extends StatelessWidget {
   void _showFilterSheet(
     BuildContext context,
     AdminAssetListController controller,
+    EnterpriseTheme enterprise,
   ) {
     final isKhmer = Localizations.localeOf(context).languageCode == 'km';
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: enterprise.isDark ? const Color(0xFF0F172A) : AppColors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -463,12 +548,12 @@ class AdminAssetListScreen extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(Icons.tune_rounded, color: AppColors.blue),
+                Icon(Icons.tune_rounded, color: enterprise.primary),
                 const SizedBox(width: 8),
                 Text(
                   isKhmer ? 'ចម្រាញ់ទិន្នន័យ (Filters)' : 'Filter Assets',
-                  style: const TextStyle(
-                    color: AppColors.white,
+                  style: TextStyle(
+                    color: enterprise.text,
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
                   ),
@@ -480,33 +565,43 @@ class AdminAssetListScreen extends StatelessWidget {
                     controller.onTypeFilterChanged(null);
                     Navigator.pop(ctx);
                   },
-                  child: Text(isKhmer ? 'កំណត់ឡើងវិញ' : 'Reset'),
+                  child: Text(isKhmer ? 'កំណត់ឡើងវិញ' : 'Reset', style: TextStyle(color: enterprise.primary)),
                 ),
               ],
             ),
-            const Divider(color: AppColors.white24),
+            Divider(color: enterprise.isDark ? enterprise.cardBorder : AppColors.customFFB8DEFF),
             const SizedBox(height: 10),
 
             // Branch filter
             DropdownButtonFormField<int>(
-              value: controller.selectedBranchId.value,
-              dropdownColor: const Color(0xFF1E293B),
-              style: const TextStyle(color: AppColors.white),
+              value: controller.branches
+                      .any((b) => b.id == controller.selectedBranchId.value)
+                  ? controller.selectedBranchId.value
+                  : null,
+              dropdownColor: enterprise.isDark ? const Color(0xFF1E293B) : AppColors.white,
+              style: TextStyle(color: enterprise.text),
               decoration: InputDecoration(
                 labelText: isKhmer ? 'ជ្រើសរើសសាខា (Branch)' : 'Filter by Branch',
-                labelStyle: const TextStyle(color: AppColors.white70),
+                labelStyle: TextStyle(color: enterprise.mutedText),
                 filled: true,
-                fillColor: AppColors.white12,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                fillColor: enterprise.isDark ? AppColors.white12 : const Color(0xFFF8FAFC),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: enterprise.isDark ? enterprise.cardBorder : AppColors.customFFB8DEFF),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: enterprise.isDark ? enterprise.cardBorder : AppColors.customFFB8DEFF),
+                ),
               ),
               items: [
                 DropdownMenuItem<int>(
                   value: null,
-                  child: Text(isKhmer ? 'សាខាទាំងអស់ (All Branches)' : 'All Branches'),
+                  child: Text(isKhmer ? 'សាខាទាំងអស់ (All Branches)' : 'All Branches', style: TextStyle(color: enterprise.text)),
                 ),
                 ...controller.branches.map((b) => DropdownMenuItem(
                       value: b.id,
-                      child: Text(b.name),
+                      child: Text(b.name, style: TextStyle(color: enterprise.text)),
                     )),
               ],
               onChanged: (v) {
@@ -518,24 +613,34 @@ class AdminAssetListScreen extends StatelessWidget {
 
             // Type filter
             DropdownButtonFormField<int>(
-              value: controller.selectedTypeId.value,
-              dropdownColor: const Color(0xFF1E293B),
-              style: const TextStyle(color: AppColors.white),
+              value: controller.types
+                      .any((t) => t.id == controller.selectedTypeId.value)
+                  ? controller.selectedTypeId.value
+                  : null,
+              dropdownColor: enterprise.isDark ? const Color(0xFF1E293B) : AppColors.white,
+              style: TextStyle(color: enterprise.text),
               decoration: InputDecoration(
                 labelText: isKhmer ? 'ជ្រើសរើសប្រភេទ (Type)' : 'Filter by Type',
-                labelStyle: const TextStyle(color: AppColors.white70),
+                labelStyle: TextStyle(color: enterprise.mutedText),
                 filled: true,
-                fillColor: AppColors.white12,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                fillColor: enterprise.isDark ? AppColors.white12 : const Color(0xFFF8FAFC),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: enterprise.isDark ? enterprise.cardBorder : AppColors.customFFB8DEFF),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: enterprise.isDark ? enterprise.cardBorder : AppColors.customFFB8DEFF),
+                ),
               ),
               items: [
                 DropdownMenuItem<int>(
                   value: null,
-                  child: Text(isKhmer ? 'ប្រភេទទាំងអស់ (All Types)' : 'All Types'),
+                  child: Text(isKhmer ? 'ប្រភេទទាំងអស់ (All Types)' : 'All Types', style: TextStyle(color: enterprise.text)),
                 ),
                 ...controller.types.map((t) => DropdownMenuItem(
                       value: t.id,
-                      child: Text(t.name),
+                      child: Text(t.name, style: TextStyle(color: enterprise.text)),
                     )),
               ],
               onChanged: (v) {

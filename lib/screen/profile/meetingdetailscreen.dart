@@ -1,7 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cnattendance/provider/meetingcontroller.dart';
 import 'package:cnattendance/screen/profile/employeedetailscreen.dart';
-import 'package:cnattendance/widget/buttonborder.dart';
+import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
@@ -14,8 +14,10 @@ class MeetingDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final model = Get.put(MeetingController());
+    final enterprise = EnterpriseTheme.of(context);
     final args = Get.arguments["id"] as int;
     final item = model.meetingList.where((item) => item.id == args).first;
+
     return Container(
       decoration: RadialDecoration(),
       child: Scaffold(
@@ -23,258 +25,274 @@ class MeetingDetailScreen extends StatelessWidget {
         appBar: AppBar(
           elevation: 0,
           backgroundColor: Colors.transparent,
-          title: Text(translate('meeting_detail_screen.meeting_detail')),
+          iconTheme: IconThemeData(color: enterprise.text),
+          title: Text(
+            translate('meeting_detail_screen.meeting_detail'),
+            style: TextStyle(
+              color: enterprise.text,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ),
         body: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                item.image == ""
-                    ? SizedBox.shrink()
-                    : Column(
-                        children: [
-                          ClipRRect(
-                              borderRadius: BorderRadius.circular(10),
-                              child: CachedNetworkImage(
-                                imageUrl: item.image,
-                                height: 200,
-                                fit: BoxFit.cover,
-                                width: MediaQuery.of(context).size.width,
-                              )),
-                          gaps(10),
-                        ],
-                      ),
+                if (item.image != "") ...[
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: CachedNetworkImage(
+                      imageUrl: item.image,
+                      height: 200,
+                      fit: BoxFit.cover,
+                      width: MediaQuery.of(context).size.width,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 Text(
                   item.title,
-                  style: TextStyle(color: AppColors.white, fontSize: 20),
-                ),
-                SizedBox(
-                  height: 15,
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      flex: 1,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            translate('meeting_list_screen.venue'),
-                            style: TextStyle(color: AppColors.white70),
-                          ),
-                          Text(item.venue,
-                              style: TextStyle(
-                                  color: AppColors.white,
-                                  fontWeight: FontWeight.normal,
-                                  fontSize: 12)),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      height: 30,
-                      child: VerticalDivider(
-                        width: 1,
-                        color: AppColors.white54,
-                      ),
-                    ),
-                    Expanded(
-                      flex: 1,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Text(
-                            "Date",
-                            style: TextStyle(color: AppColors.white70),
-                          ),
-                          Text(item.meetingDate,
-                              style: TextStyle(
-                                  color: AppColors.white,
-                                  fontWeight: FontWeight.normal,
-                                  fontSize: 12)),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      height: 30,
-                      child: VerticalDivider(
-                        width: 1,
-                        color: AppColors.white54,
-                      ),
-                    ),
-                    Expanded(
-                      flex: 1,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            "Time",
-                            style: TextStyle(color: AppColors.white70),
-                          ),
-                          Text(item.meetingStartTime,
-                              style: TextStyle(
-                                  color: AppColors.white,
-                                  fontWeight: FontWeight.normal,
-                                  fontSize: 12)),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                if (item.createdBy.isNotEmpty)
-                  SizedBox(
-                    height: 15,
+                  style: TextStyle(
+                    color: enterprise.text,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
                   ),
-                if (item.createdBy.isNotEmpty)
-                  Card(
-                    elevation: 0,
-                    color: AppColors.white24,
-                    margin: EdgeInsets.zero,
-                    shape: ButtonBorder(),
-                    child: Padding(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                      child: Row(
-                        children: [
-                          Text(
-                            'Host',
-                            style: TextStyle(
-                                color: AppColors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold),
-                          ),
-                          Spacer(),
-                          Text(
-                            '${item.createdBy}',
-                            style: TextStyle(
-                                color: AppColors.white,
-                                fontSize: 15,
-                                fontWeight: FontWeight.normal),
-                          ),
-                        ],
-                      ),
+                ),
+                const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: enterprise.isDark ? AppColors.white12 : AppColors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: enterprise.isDark ? enterprise.cardBorder : AppColors.customFFB8DEFF,
                     ),
                   ),
-                SizedBox(
-                  height: 15,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        flex: 1,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              translate('meeting_list_screen.venue'),
+                              style: TextStyle(color: enterprise.mutedText, fontSize: 11),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              item.venue,
+                              style: TextStyle(
+                                  color: enterprise.text,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(
+                        height: 26,
+                        child: VerticalDivider(
+                          width: 16,
+                          color: enterprise.isDark ? enterprise.cardBorder : AppColors.customFFB8DEFF,
+                        ),
+                      ),
+                      Expanded(
+                        flex: 1,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text(
+                              "Date",
+                              style: TextStyle(color: enterprise.mutedText, fontSize: 11),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              item.meetingDate,
+                              style: TextStyle(
+                                  color: enterprise.text,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(
+                        height: 26,
+                        child: VerticalDivider(
+                          width: 16,
+                          color: enterprise.isDark ? enterprise.cardBorder : AppColors.customFFB8DEFF,
+                        ),
+                      ),
+                      Expanded(
+                        flex: 1,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              "Time",
+                              style: TextStyle(color: enterprise.mutedText, fontSize: 11),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              item.meetingStartTime,
+                              style: TextStyle(
+                                  color: enterprise.text,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                Card(
-                  elevation: 0,
-                  color: AppColors.white24,
-                  margin: EdgeInsets.zero,
-                  shape: ButtonBorder(),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(8.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                if (item.createdBy.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: enterprise.isDark ? AppColors.white12 : AppColors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: enterprise.isDark ? enterprise.cardBorder : AppColors.customFFB8DEFF,
+                      ),
+                    ),
+                    child: Row(
                       children: [
                         Text(
-                          "Description",
+                          'Host',
                           style: TextStyle(
-                              color: AppColors.white,
-                              fontSize: 16,
+                              color: enterprise.primary,
+                              fontSize: 14,
                               fontWeight: FontWeight.bold),
                         ),
-                        SizedBox(
-                          height: 5,
-                        ),
+                        const Spacer(),
                         Text(
-                          item.agenda,
-                          style:
-                              TextStyle(color: AppColors.white, fontSize: 14),
-                        )
+                          item.createdBy,
+                          style: TextStyle(
+                              color: enterprise.text,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600),
+                        ),
                       ],
                     ),
                   ),
+                ],
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14.0),
+                  decoration: BoxDecoration(
+                    color: enterprise.isDark ? AppColors.white12 : AppColors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: enterprise.isDark ? enterprise.cardBorder : AppColors.customFFB8DEFF,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Description",
+                        style: TextStyle(
+                            color: enterprise.text,
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        item.agenda,
+                        style: TextStyle(color: enterprise.mutedText, fontSize: 14),
+                      )
+                    ],
+                  ),
                 ),
-                SizedBox(
-                  height: 15,
-                ),
-                Card(
-                  elevation: 0,
-                  color: AppColors.white24,
-                  margin: EdgeInsets.zero,
-                  shape: ButtonBorder(),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(8.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          translate('meeting_detail_screen.participants'),
-                          style: TextStyle(
-                              color: AppColors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold),
-                        ),
-                        gaps(10),
-                        ListView.separated(
-                            primary: false,
-                            shrinkWrap: true,
-                            itemBuilder: (context, index) {
-                              return GestureDetector(
-                                onTap: () {
-                                  Get.to(EmployeeDetailScreen(), arguments: {
-                                    "employeeId": item.participator[index].id
-                                  });
-                                },
-                                child: ListTile(
-                                  visualDensity: VisualDensity.compact,
-                                  contentPadding:
-                                      EdgeInsets.symmetric(horizontal: 0),
-                                  minVerticalPadding: 0,
-                                  minTileHeight: 35,
-                                  title: Text(
-                                    item.participator[index].name,
-                                    style: TextStyle(fontSize: 15),
-                                  ),
-                                  trailing: Text(
-                                    item.participator[index].post,
-                                    style: TextStyle(fontSize: 15),
-                                  ),
-                                  minLeadingWidth: 1,
-                                  leading: Text(
-                                    "${index + 1}.",
-                                    // Display index
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: AppColors.white,
-                                      fontWeight: FontWeight.normal,
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14.0),
+                  decoration: BoxDecoration(
+                    color: enterprise.isDark ? AppColors.white12 : AppColors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: enterprise.isDark ? enterprise.cardBorder : AppColors.customFFB8DEFF,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        translate('meeting_detail_screen.participants'),
+                        style: TextStyle(
+                            color: enterprise.text,
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 10),
+                      ListView.separated(
+                          primary: false,
+                          shrinkWrap: true,
+                          itemBuilder: (context, index) {
+                            return InkWell(
+                              onTap: () {
+                                Get.to(EmployeeDetailScreen(), arguments: {
+                                  "employeeId": item.participator[index].id
+                                });
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                                child: Row(
+                                  children: [
+                                    Text(
+                                      "${index + 1}.",
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: enterprise.mutedText,
+                                      ),
                                     ),
-                                  ),
-                                  textColor: AppColors.white,
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        item.participator[index].name,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: enterprise.text,
+                                        ),
+                                      ),
+                                    ),
+                                    Text(
+                                      item.participator[index].post,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: enterprise.mutedText,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              );
-                            },
-                            separatorBuilder: (context, index) {
-                              return Divider(
-                                height: 1,
-                                indent: 2,
-                                endIndent: 2,
-                                color: AppColors.white12,
-                              );
-                            },
-                            itemCount: item.participator.length)
-                      ],
-                    ),
+                              ),
+                            );
+                          },
+                          separatorBuilder: (context, index) {
+                            return Divider(
+                              height: 1,
+                              color: enterprise.isDark ? enterprise.cardBorder : AppColors.customFFB8DEFF,
+                            );
+                          },
+                          itemCount: item.participator.length)
+                    ],
                   ),
                 ),
+                const SizedBox(height: 20),
               ],
             ),
           ),
         ),
       ),
-    );
-  }
-
-  Widget gaps(int value) {
-    return const SizedBox(
-      height: 10,
     );
   }
 }

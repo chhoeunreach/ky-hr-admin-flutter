@@ -97,6 +97,11 @@ class ThemeSelector extends StatelessWidget {
                   },
                 ),
               ),
+              if (provider.currentThemeId == AppThemeMode.light.id ||
+                  provider.mode == AppThemeMode.light) ...[
+                const SizedBox(height: 8),
+                _DayModeCleanSettings(provider: provider, enterprise: enterprise),
+              ],
               if (provider.currentThemeId == AppThemeMode.rosePink.id) ...[
                 const SizedBox(height: 8),
                 _RoseEffectSettings(provider: provider, enterprise: enterprise),
@@ -225,6 +230,85 @@ class _RoseEffectSettings extends StatelessWidget {
   }
 }
 
+class _DayModeCleanSettings extends StatelessWidget {
+  const _DayModeCleanSettings({required this.provider, required this.enterprise});
+
+  final ThemeProvider provider;
+  final EnterpriseTheme enterprise;
+
+  @override
+  Widget build(BuildContext context) {
+    final isKhmer = Localizations.localeOf(context).languageCode == 'km';
+    final isClean = provider.dayModeClean;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: enterprise.isDark ? enterprise.surface : AppColors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: enterprise.isDark ? enterprise.cardBorder : AppColors.customFFE2E8F0,
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0a0f172a),
+            blurRadius: 10,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: SwitchListTile.adaptive(
+        dense: true,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+        secondary: Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            color: isClean
+                ? enterprise.primary.withValues(alpha: 0.12)
+                : enterprise.accent.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(
+            isClean ? Icons.blur_off_rounded : Icons.auto_awesome,
+            size: 18,
+            color: isClean ? enterprise.primary : enterprise.accent,
+          ),
+        ),
+        title: Text(
+          isKhmer
+              ? 'ផ្ទៃស្អាតគ្មាន Overlay/Blur (Clean Surface)'
+              : 'Clean Day Surface (No Overlay/Blur)',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: enterprise.text,
+            fontSize: 12.5,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        subtitle: Text(
+          isClean
+              ? (isKhmer
+                  ? 'គំរូដើម៖ ផ្ទៃរាបស្មើ សន្សំថ្ម អក្សរច្បាស់'
+                  : 'Default: Flat, battery-saving & sharp text')
+              : (isKhmer
+                  ? 'កំពុងប្រើ៖ មាន Overlay & Blur ស្រាលៗ'
+                  : 'Active: Soft glow overlay & blur'),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: enterprise.mutedText,
+            fontSize: 11,
+          ),
+        ),
+        value: isClean,
+        activeThumbColor: enterprise.primary,
+        onChanged: (value) => provider.setDayModeClean(value),
+      ),
+    );
+  }
+}
+
 class ThemeSelectorPage extends StatelessWidget {
   const ThemeSelectorPage({Key? key}) : super(key: key);
 
@@ -280,10 +364,6 @@ class ThemeSelectorPage extends StatelessWidget {
     );
   }
 }
-
-Future<void> _showBackgroundOptions(
-    BuildContext context, AppThemeMode mode) =>
-    _showBackgroundOptionsForId(context, mode.id);
 
 Future<void> _showBackgroundOptionsForId(
     BuildContext context, String themeId) async {
@@ -384,7 +464,7 @@ class _ThemePreviewCard extends StatelessWidget {
     required this.selected,
     required this.compact,
   })  : option = option ??
-            AppThemeOption.fromCoreMode(mode ?? AppThemeMode.royalBlueGold),
+            AppThemeOption.fromCoreMode(mode ?? AppThemeMode.light),
         super(key: key);
 
   @override
@@ -487,7 +567,7 @@ class _ThemePreviewCard extends StatelessWidget {
             ),
             SizedBox(height: compact ? 7 : 10),
             Text(
-              option.name,
+              _themeDisplayName(option.name, option.id),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
@@ -499,7 +579,7 @@ class _ThemePreviewCard extends StatelessWidget {
             if (!compact) ...[
               const SizedBox(height: 4),
               Text(
-                option.description,
+                _themeDisplayDescription(option.description, option.id),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -638,4 +718,26 @@ void _showThemeSnack(BuildContext context, String message) {
         duration: const Duration(milliseconds: 1600),
       ),
     );
+}
+
+String _themeDisplayName(String name, String id) {
+  if (id == 'light' || name.toLowerCase().contains('original')) {
+    return 'Day Mode';
+  }
+  if (id == 'dark' || name.toLowerCase() == 'dark mode') {
+    return 'Night Mode';
+  }
+  return name;
+}
+
+String _themeDisplayDescription(String desc, String id) {
+  if (id == 'light' || desc.toLowerCase().contains('original')) {
+    return 'Crisp light with royal blue';
+  }
+  if (id == 'dark' ||
+      desc.toLowerCase().contains('original') ||
+      desc.toLowerCase().contains('dark')) {
+    return 'Sleek night mode';
+  }
+  return desc;
 }

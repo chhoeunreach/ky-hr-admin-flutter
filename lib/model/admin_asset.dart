@@ -62,18 +62,26 @@ class AdminAsset {
       purchasedDate: json['purchased_date']?.toString() ?? '',
       isAvailable: json['is_available'] == 1 ||
           json['is_available'] == true ||
-          json['is_available'] == '1',
+          json['is_available'] == '1' ||
+          json['is_available'] == 'yes' ||
+          json['is_available'] == 'true',
       isWorking: json['is_working']?.toString() ?? 'yes',
       warrantyAvailable: json['warranty_available'] == 1 ||
           json['warranty_available'] == true ||
-          json['warranty_available'] == '1',
+          json['warranty_available'] == '1' ||
+          json['warranty_available'] == 'yes' ||
+          json['warranty_available'] == 'true',
       warrantyEndDate: json['warranty_end_date']?.toString(),
       note: json['note']?.toString() ?? '',
       phoneNumbers: json['phone_numbers']?.toString() ?? '',
       icloud: json['icloud']?.toString() ?? '',
       imageUrl: json['image_url']?.toString(),
       images: json['images'] is List
-          ? (json['images'] as List).map((e) => e.toString()).toList()
+          ? (json['images'] as List)
+              .where((e) => e != null)
+              .map((e) => e.toString())
+              .where((s) => s.isNotEmpty && s != 'null')
+              .toList()
           : [],
       status: json['status']?.toString() ?? 'Available',
       assignedTo: json['assigned_to'] is Map<String, dynamic>
@@ -82,8 +90,9 @@ class AdminAsset {
           : null,
       assignmentHistory: json['assignment_history'] is List
           ? (json['assignment_history'] as List)
+              .whereType<Map>()
               .map((e) => AdminAssetAssignmentHistory.fromJson(
-                  e as Map<String, dynamic>))
+                  Map<String, dynamic>.from(e)))
               .toList()
           : [],
     );
@@ -206,19 +215,22 @@ class AdminAssetFormData {
   factory AdminAssetFormData.fromJson(Map<String, dynamic> json) {
     final typesList = json['types'] is List
         ? (json['types'] as List)
-            .map((e) => AssetDropdownItem.fromJson(e as Map<String, dynamic>))
+            .whereType<Map>()
+            .map((e) => AssetDropdownItem.fromJson(Map<String, dynamic>.from(e)))
             .toList()
         : <AssetDropdownItem>[];
 
     final branchesList = json['branches'] is List
         ? (json['branches'] as List)
-            .map((e) => AssetDropdownItem.fromJson(e as Map<String, dynamic>))
+            .whereType<Map>()
+            .map((e) => AssetDropdownItem.fromJson(Map<String, dynamic>.from(e)))
             .toList()
         : <AssetDropdownItem>[];
 
     final employeesList = json['employees'] is List
         ? (json['employees'] as List)
-            .map((e) => AssetEmployeeItem.fromJson(e as Map<String, dynamic>))
+            .whereType<Map>()
+            .map((e) => AssetEmployeeItem.fromJson(Map<String, dynamic>.from(e)))
             .toList()
         : <AssetEmployeeItem>[];
 

@@ -164,6 +164,11 @@ class HeaderState extends State<HeaderProfile> {
         .take(2)
         .map((word) => word.characters.first)
         .join();
+    final displayName = provider.fullname.trim().isNotEmpty
+        ? provider.fullname.trim()
+        : royal
+            ? translate('royal.employee')
+            : 'សៅរឿន រាជ';
     final royalAvatar = SizedBox.square(
       dimension: avatarSize,
       child: ColoredBox(
@@ -186,15 +191,12 @@ class HeaderState extends State<HeaderProfile> {
     final features = context.watch<DashboardProvider>().features;
     final isEnabledLocation =
         context.watch<DashboardProvider>().isLocationEnabled;
-    // On mobile the sidebar menu is a button pinned at the screen's top-left
-    // corner (see DashboardScreen), so the header keeps only the avatar row.
     final isMobileLayout = MediaQuery.sizeOf(context).width < 720;
-    final showInlineMenu = widget.showMenuButton && !isMobileLayout;
-    final pinnedMenuClearance = isMobileLayout && theme.layout.showMenuButton;
+    final showInlineMenu = widget.showMenuButton;
     final menuOnRight = theme.isRoyalDay && theme.layout.menuOnRight;
 
     final profile = <Widget>[
-      // 1. Menu Squircle Button (desktop rail only; mobile uses the pinned one)
+      // Keep the menu beside the profile and actions on mobile.
       if (showInlineMenu) ...[
         Material(
           color: Colors.transparent,
@@ -258,10 +260,7 @@ class HeaderState extends State<HeaderProfile> {
                               : [RoyalColors.lightGold, theme.accent])
                       : theme.isKhmerHeritage
                           ? [theme.text, theme.accent]
-                          : const [
-                              AppColors.customFF0066FF,
-                              AppColors.customFF5EB1FF
-                            ],
+                          : [theme.primary, theme.accent],
                 ),
               ),
               child: ClipOval(
@@ -313,84 +312,115 @@ class HeaderState extends State<HeaderProfile> {
       ),
       const SizedBox(width: 8),
 
-      // 3. User Info Column: Hello There 👋, Name, Staff Code Pill
-      Expanded(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisSize: MainAxisSize.min,
+      if (isMobileLayout)
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(right: 6),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Flexible(
+                Text(
+                  translate(royal
+                      ? 'royal.${royalGreeting(royalLocalTime(DateTime.now()))}'
+                      : 'home_screen.hello_there'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: labelColor.withValues(alpha: 0.90),
+                    fontSize: 9,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                Text(
+                  displayName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: labelColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        )
+      else
+        Expanded(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: Text(
+                      translate(royal
+                          ? 'royal.${royalGreeting(royalLocalTime(DateTime.now()))}'
+                          : 'home_screen.hello_there'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: labelColor.withValues(alpha: 0.90),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 3),
+                  const Text('👋', style: TextStyle(fontSize: 11)),
+                ],
+              ),
+              Text(
+                displayName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: labelColor,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 2),
+              if (!royal ||
+                  provider.userName.isNotEmpty ||
+                  provider.userId.isNotEmpty)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: theme.isRoyalLuxuryDay
+                        ? KhmerLuxuryColors.deepRoyalBlue
+                        : theme.isRoyalDay
+                            ? theme.primary.withValues(alpha: .12)
+                            : royal ||
+                                    theme.isKhmerHeritage ||
+                                    theme.layout.background != null
+                                ? theme.accent.withValues(alpha: .18)
+                                : AppColors.white.withValues(alpha: 0.22),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                   child: Text(
-                    translate(royal
-                        ? 'royal.${royalGreeting(royalLocalTime(DateTime.now()))}'
-                        : 'home_screen.hello_there'),
+                    royal
+                        ? (provider.userName.isNotEmpty
+                            ? provider.userName
+                            : provider.userId)
+                        : "${provider.userName.isNotEmpty ? provider.userName : 'KY0021'} · Staff",
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: labelColor.withValues(alpha: 0.90),
-                      fontSize: 11,
+                      color:
+                          theme.isRoyalLuxuryDay ? AppColors.white : labelColor,
+                      fontSize: 10,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
-                const SizedBox(width: 3),
-                const Text('👋', style: TextStyle(fontSize: 11)),
-              ],
-            ),
-            Text(
-              provider.fullname.isNotEmpty
-                  ? provider.fullname
-                  : royal
-                      ? translate('royal.employee')
-                      : "សៅរឿន រាជ",
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: labelColor,
-                fontSize: 17,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            const SizedBox(height: 2),
-            if (!royal ||
-                provider.userName.isNotEmpty ||
-                provider.userId.isNotEmpty)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                decoration: BoxDecoration(
-                  color: theme.isRoyalLuxuryDay
-                      ? KhmerLuxuryColors.deepRoyalBlue
-                      : theme.isRoyalDay
-                          ? theme.primary.withValues(alpha: .12)
-                          : royal ||
-                                  theme.isKhmerHeritage ||
-                                  theme.layout.background != null
-                              ? theme.accent.withValues(alpha: .18)
-                              : AppColors.white.withValues(alpha: 0.22),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  royal
-                      ? (provider.userName.isNotEmpty
-                          ? provider.userName
-                          : provider.userId)
-                      : "${provider.userName.isNotEmpty ? provider.userName : 'KY0021'} · Staff",
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color:
-                        theme.isRoyalLuxuryDay ? AppColors.white : labelColor,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-          ],
+            ],
+          ),
         ),
-      ),
     ];
     final actions = <Widget>[
       if (features['chat'] == '1')
@@ -528,14 +558,22 @@ class HeaderState extends State<HeaderProfile> {
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
-        (royal ? 0 : 10) + (pinnedMenuClearance && !menuOnRight ? 48 : 0),
+        royal ? 0 : 10,
         6,
-        (royal ? 0 : 10) + (pinnedMenuClearance && menuOnRight ? 48 : 0),
+        royal ? 0 : 10,
         2,
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final minimumProfileWidth = showInlineMenu ? 164.0 : 116.0;
+          if (isMobileLayout) {
+            return Row(
+              children: [
+                ...profile,
+                ...actions,
+              ],
+            );
+          }
           if (constraints.maxWidth >=
               minimumProfileWidth +
                   actions.length *

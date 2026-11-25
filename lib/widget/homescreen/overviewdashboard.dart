@@ -2,7 +2,6 @@ import 'package:cnattendance/features/community/social_feed_screen.dart';
 import 'package:cnattendance/features/home_highlights/home_highlight_api.dart';
 import 'package:cnattendance/features/home_highlights/home_highlights_screen.dart';
 import 'package:cnattendance/features/repair_price/pages/repair_device_page.dart';
-import 'package:cnattendance/features/repair_price/providers/repair_price_provider.dart';
 import 'package:cnattendance/screen/dashboard/chatlistscreen.dart';
 import 'package:cnattendance/screen/dashboard/morescreen.dart';
 import 'package:cnattendance/theme/theme_layout.dart';
@@ -40,7 +39,6 @@ class _OverviewDashboardState extends State<OverviewDashboard> {
     final _overview = Provider.of<DashboardProvider>(context).overviewList;
     final dashboard = context.watch<DashboardProvider>();
     final features = dashboard.features;
-    final canRepair = context.watch<RepairPriceProvider>().canView;
     final canViewHighlights = features['home_highlight.view'] == '1';
     final employeeId =
         int.tryParse(context.watch<PrefProvider>().userId.trim()) ?? 0;
@@ -170,7 +168,7 @@ class _OverviewDashboardState extends State<OverviewDashboard> {
             );
           },
         ),
-      if (canRepair &&
+      if (features['repair'] != '0' &&
           (widget.forceMenu == 'repair' ||
               enterprise.layout.shows(LayoutItem.repairShortcut)))
         LayoutItem.repairShortcut: _shortcut(

@@ -1,8 +1,10 @@
-import 'package:cnattendance/data/source/datastore/preferences.dart';
+import 'dart:async';
+
 import 'package:cnattendance/model/admin_asset.dart';
 import 'package:cnattendance/repositories/admin_asset_repository.dart';
 import 'package:cnattendance/screen/assetscreen/admin_asset_detail_screen.dart';
 import 'package:cnattendance/screen/assetscreen/admin_asset_form_screen.dart';
+import 'package:cnattendance/utils/asset_permissions.dart';
 import 'package:cnattendance/utils/constant.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -10,11 +12,11 @@ import 'package:get/get.dart';
 
 class AdminAssetListController extends GetxController {
   final repository = AdminAssetRepository();
-  final preferences = Preferences();
 
   final assets = <AdminAsset>[].obs;
   final isLoading = false.obs;
   final isMoreLoading = false.obs;
+  final errorMessage = RxnString();
 
   final searchQuery = ''.obs;
   final selectedStatus = 'All'.obs;
@@ -32,6 +34,8 @@ class AdminAssetListController extends GetxController {
   int _currentPage = 1;
   int _lastPage = 1;
   int totalAssets = 0;
+  int _requestSeq = 0;
+  Timer? _searchDebounce;
 
   @override
   void onInit() {
@@ -41,17 +45,17 @@ class AdminAssetListController extends GetxController {
     getAssets();
   }
 
+  @override
+  void onClose() {
+    _searchDebounce?.cancel();
+    super.onClose();
+  }
+
   Future<void> _checkPermissions() async {
-    final features = await preferences.getFeatures();
-    // If features map is available, use exact granular ability keys; fallback to true if admin
-    if (features.isNotEmpty) {
-      canCreate.value = features['create_assets'] == '1' ||
-          features['assets-admin'] == '1';
-      canEdit.value = features['edit_assets'] == '1' ||
-          features['assets-admin'] == '1';
-      canDelete.value = features['delete_assets'] == '1' ||
-          features['assets-admin'] == '1';
-    }
+    final result = await AssetPermissions.crud();
+    canCreate.value = result.create;
+    canEdit.value = result.edit;
+    canDelete.value = result.delete;
   }
 
   Future<void> loadFormData() async {
@@ -65,10 +69,13 @@ class AdminAssetListController extends GetxController {
     }
   }
 
-  Future<void> getAssets({bool refresh = true}) async {
+  Future<void> getAssets({bool refresh = true, int? page}) async {
+    final seq = ++_requestSeq;
+    final targetPage = page ?? (refresh ? 1 : _currentPage);
     if (refresh) {
       _currentPage = 1;
       isLoading.value = true;
+      errorMessage.value = null;
     }
 
     try {
@@ -91,35 +98,61 @@ class AdminAssetListController extends GetxController {
         branchId: selectedBranchId.value,
         isAvailable: isAvailable,
         isWorking: isWorking,
-        page: _currentPage,
+        page: targetPage,
       );
+
+      // Discard out-of-order responses.
+      if (seq != _requestSeq) return;
 
       if (refresh) {
         assets.value = result.assets;
+        _currentPage = 1;
       } else {
         assets.addAll(result.assets);
+        _currentPage = targetPage;
       }
 
       totalAssets = result.total;
       _lastPage = result.lastPage;
+      errorMessage.value = null;
     } catch (e) {
+      if (seq != _requestSeq) return;
       if (kDebugMode) debugPrint('Error loading assets: $e');
+      final msg = unknownError(e);
+      if (refresh && assets.isEmpty) {
+        errorMessage.value = msg;
+      } else if (!refresh) {
+        showToast(msg);
+      } else {
+        showToast(msg);
+      }
     } finally {
-      isLoading.value = false;
-      isMoreLoading.value = false;
+      if (seq == _requestSeq) {
+        isLoading.value = false;
+        isMoreLoading.value = false;
+      }
     }
   }
 
   Future<void> loadMore() async {
-    if (_currentPage >= _lastPage || isMoreLoading.value) return;
+    if (_currentPage >= _lastPage || isMoreLoading.value || isLoading.value) {
+      return;
+    }
     isMoreLoading.value = true;
-    _currentPage++;
-    await getAssets(refresh: false);
+    final nextPage = _currentPage + 1;
+    await getAssets(refresh: false, page: nextPage);
   }
 
   void onSearchChanged(String query) {
     searchQuery.value = query;
-    getAssets(refresh: true);
+    _searchDebounce?.cancel();
+    if (query.isEmpty) {
+      getAssets(refresh: true);
+      return;
+    }
+    _searchDebounce = Timer(const Duration(milliseconds: 400), () {
+      getAssets(refresh: true);
+    });
   }
 
   void onStatusChanged(String status) {
@@ -187,11 +220,12 @@ class AdminAssetListController extends GetxController {
 
       showToast(message);
       if (success) {
-        assets.removeWhere((item) => item.id == id);
+        // Re-sync list + pagination from server after delete.
+        await getAssets(refresh: true);
       }
     } catch (e) {
       EasyLoading.dismiss(animation: true);
-      showToast(e.toString());
+      showToast(unknownError(e));
     }
   }
 }

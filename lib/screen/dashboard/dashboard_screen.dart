@@ -12,6 +12,7 @@ import 'package:cnattendance/screen/dashboard/leavescreen.dart';
 import 'package:cnattendance/screen/dashboard/attendancescreen.dart';
 import 'package:cnattendance/screen/dashboard/morescreen.dart';
 import 'package:cnattendance/theme/enterprise_theme.dart';
+import 'package:cnattendance/theme/app_theme_mode.dart';
 import 'package:cnattendance/theme/theme_layout.dart';
 import 'package:cnattendance/theme/theme_provider.dart';
 import 'package:cnattendance/widget/dashboard_drawer.dart';
@@ -27,6 +28,24 @@ import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
 import 'package:provider/provider.dart';
 import 'package:cnattendance/features/repair_price/pages/repair_device_page.dart';
 import 'package:cnattendance/features/repair_price/providers/repair_price_provider.dart';
+import 'package:cnattendance/features/company_documents/company_documents_screen.dart';
+import 'package:cnattendance/screen/assetscreen/admin_asset_list_screen.dart';
+import 'package:cnattendance/screen/profile/teamsheetscreen.dart';
+import 'package:cnattendance/screen/profile/noticescreen.dart';
+import 'package:cnattendance/screen/profile/meetingscreen.dart';
+import 'package:cnattendance/screen/profile/supportscreen.dart';
+import 'package:cnattendance/screen/advancesalary/advancesalaryscreen.dart';
+import 'package:cnattendance/screen/complainscreen/complainscreen.dart';
+import 'package:cnattendance/screen/warningscreen/warningscreen.dart';
+import 'package:cnattendance/screen/profile/holidayscreen.dart';
+import 'package:cnattendance/screen/profile/leavecalendarscreen.dart';
+import 'package:cnattendance/screen/profile/front_side_preview_page.dart';
+import 'package:cnattendance/screen/dashboard/projectscreen.dart';
+import 'package:cnattendance/screen/awards/awardsscreen.dart';
+import 'package:cnattendance/screen/training/trainingscreen.dart';
+import 'package:cnattendance/screen/profile/payslipscreen.dart';
+import 'package:cnattendance/screen/tadascreen/tadascreen.dart';
+import 'package:cnattendance/utils/asset_permissions.dart';
 import 'package:cnattendance/features/daily_records/quick_create.dart';
 import 'package:cnattendance/core/theme/app_colors.dart';
 
@@ -51,6 +70,7 @@ class DashboardScreenState extends State<DashboardScreen>
 
   bool _loadedUser = false;
   bool _repairPermissionsStarted = false;
+  bool _initialLandingHandled = false;
   RepairPriceProvider? _repairProvider;
 
   @override
@@ -170,14 +190,14 @@ class DashboardScreenState extends State<DashboardScreen>
     final sidebarFg = sidebarForeground(enterprise);
     final extended = _railExpanded ?? (width >= 1100);
     final features = context.watch<DashboardProvider>().features;
-    final canRepair = context.watch<RepairPriceProvider>().canView;
-    final hasSocialFeed = features['social-feed'] == '1';
+    final hasSocialFeed = features['social-feed'] != '0';
+    final hasRepair = features['repair'] != '0';
 
     final railItems = [
       LayoutItem.home,
       if (hasSocialFeed) LayoutItem.social,
-      if (canRepair) LayoutItem.repair,
-      if (LayoutItem.attendance.allowed(features)) LayoutItem.attendance,
+      if (hasRepair) LayoutItem.repair,
+      if (features['attendance'] != '0') LayoutItem.attendance,
       LayoutItem.more,
     ];
     final repairIndex = railItems.indexOf(LayoutItem.repair);
@@ -198,13 +218,13 @@ class DashboardScreenState extends State<DashboardScreen>
           selectedIcon: const Icon(Icons.dynamic_feed),
           label: Text(translate('community.social_feed')),
         ),
-      if (canRepair)
+      if (hasRepair)
         NavigationRailDestination(
           icon: const Icon(Icons.build_circle_outlined),
           selectedIcon: const Icon(Icons.build_circle),
           label: Text(translate('dashboard_screen.repair_list')),
         ),
-      if (features["attendance"] == "1")
+      if (features["attendance"] != "0")
         NavigationRailDestination(
           icon: const Icon(Icons.analytics_outlined),
           selectedIcon: const Icon(Icons.analytics),
@@ -222,11 +242,11 @@ class DashboardScreenState extends State<DashboardScreen>
         SocialFeedScreen(
             showBackButton: false,
             onImmersiveChanged: _handleSocialFeedImmersive),
-      if (canRepair)
+      if (hasRepair)
         _selectedRailIndex == repairIndex
             ? const RepairDevicePage(showBackButton: false)
             : const SizedBox.shrink(),
-      if (features["attendance"] == "1") AttendanceScreen(),
+      if (features["attendance"] != "0") AttendanceScreen(),
       MoreScreen(),
     ];
     final socialFeedIndex = hasSocialFeed ? 1 : -1;
@@ -384,13 +404,13 @@ class DashboardScreenState extends State<DashboardScreen>
     final sidebarFg = sidebarForeground(enterprise);
     final dashboard = context.watch<DashboardProvider>();
     final features = dashboard.features;
-    final canRepair = context.watch<RepairPriceProvider>().canView;
 
     final tabIds = <LayoutItem>[];
     final tabKeys = <String>[];
     final tabs = <PersistentTabConfig>[];
 
-    void addTab(LayoutItem id, Widget screen, ItemConfig item, {String? tabKey}) {
+    void addTab(LayoutItem id, Widget screen, ItemConfig item,
+        {String? tabKey}) {
       tabIds.add(id);
       tabKeys.add(tabKey ?? id.name);
       tabs.add(PersistentTabConfig(
@@ -401,7 +421,7 @@ class DashboardScreenState extends State<DashboardScreen>
     }
 
     void addBottomMenu(String menu) {
-      if (menu == 'social-feed' && features[menu] == '1') {
+      if (menu == 'social-feed' && features[menu] != '0') {
         addTab(
           LayoutItem.social,
           SocialFeedScreen(
@@ -415,7 +435,7 @@ class DashboardScreenState extends State<DashboardScreen>
         );
         return;
       }
-      if (menu == 'repair' && canRepair) {
+      if (menu == 'repair' && features[menu] != '0') {
         addTab(
           LayoutItem.repair,
           RepairDevicePage(
@@ -434,7 +454,7 @@ class DashboardScreenState extends State<DashboardScreen>
         );
         return;
       }
-      if (menu == 'leave-request' && features[menu] == '1') {
+      if (menu == 'leave-request' && features[menu] != '0') {
         addTab(
           LayoutItem.leave,
           LeaveScreen(),
@@ -445,7 +465,7 @@ class DashboardScreenState extends State<DashboardScreen>
         );
         return;
       }
-      if (menu == 'attendance' && features[menu] == '1') {
+      if (menu == 'attendance' && features[menu] != '0') {
         addTab(
           LayoutItem.attendance,
           AttendanceScreen(),
@@ -456,7 +476,46 @@ class DashboardScreenState extends State<DashboardScreen>
         );
         return;
       }
-      if (dashboard.mobileLayoutConfigured && features[menu] == '1') {
+      if ((menu == 'assets' ||
+              menu == 'admin_assets' ||
+              menu == 'admin-assets') &&
+          AssetPermissions.canOpenAdmin(features)) {
+        addTab(
+          LayoutItem.more,
+          const AdminAssetListScreen(),
+          getItemConfig(
+            const Icon(Icons.inventory_2_outlined),
+            translate('more_screen.admin_assets'),
+          ),
+          tabKey: 'role-assets',
+        );
+        return;
+      }
+      if (menu == 'company-documents' && features[menu] != '0') {
+        addTab(
+          LayoutItem.more,
+          const CompanyDocumentsScreen(),
+          getItemConfig(
+            const Icon(Icons.folder_shared_outlined),
+            translate('more_screen.company_documents'),
+          ),
+          tabKey: 'role-company-documents',
+        );
+        return;
+      }
+      if (menu == 'team-sheet' && features[menu] != '0') {
+        addTab(
+          LayoutItem.more,
+          TeamSheetScreen(),
+          getItemConfig(
+            const Icon(Icons.group),
+            translate('more_screen.team_sheet'),
+          ),
+          tabKey: 'role-team-sheet',
+        );
+        return;
+      }
+      if (dashboard.mobileLayoutConfigured && features[menu] != '0') {
         addTab(
           LayoutItem.more,
           _RoleFunctionTab(menu, _controller),
@@ -480,10 +539,10 @@ class DashboardScreenState extends State<DashboardScreen>
       }
     } else {
       for (final menu in const [
-        'social-feed',
         'repair',
         'leave-request',
         'attendance',
+        'social-feed',
       ]) {
         addBottomMenu(menu);
       }
@@ -496,6 +555,21 @@ class DashboardScreenState extends State<DashboardScreen>
         translate('dashboard_screen.more'),
       ),
     );
+
+    if (!_initialLandingHandled &&
+        dashboard.mobileLayoutConfigured &&
+        dashboard.mobileLayoutInitialTab.isNotEmpty &&
+        dashboard.mobileLayoutInitialTab != 'home') {
+      final target = dashboard.mobileLayoutInitialTab;
+      final targetIndex = tabKeys.indexWhere((k) =>
+          k == target ||
+          k == 'role-$target' ||
+          k.toLowerCase().contains(target.toLowerCase()));
+      if (targetIndex >= 0 && targetIndex < tabs.length) {
+        _controller.jumpToTab(targetIndex);
+      }
+      _initialLandingHandled = true;
+    }
 
     if (_controller.index >= tabs.length) {
       _controller.jumpToTab(0);
@@ -512,6 +586,10 @@ class DashboardScreenState extends State<DashboardScreen>
     final repairDetailOpen =
         isRepairActive && (activeNavigator?.canPop() ?? false);
     final hideMenuButton = immersive || (activeNavigator?.canPop() ?? false);
+    final homeTabIndex = tabIds.indexOf(LayoutItem.home);
+    final homeShowsMenuInProfile = activeTabIndex == homeTabIndex &&
+        enterprise.layout.showMenuButton &&
+        enterprise.layout.shows(LayoutItem.profile);
 
     final visibleTabs = dashboard.mobileLayoutConfigured
         ? List<int>.generate(tabIds.length, (index) => index)
@@ -526,17 +604,19 @@ class DashboardScreenState extends State<DashboardScreen>
       children: [
         PersistentTabView(
           key: ValueKey(
-              'tabs_${features["social-feed"]}_${features["leave-request"]}_${features["attendance"]}_${canRepair}_${dashboard.mobileLayout.hashCode}_${dashboard.mobileLayoutPositions.hashCode}'),
+              'tabs_${features["social-feed"]}_${features["repair"]}_${features["leave-request"]}_${features["attendance"]}_${dashboard.mobileLayout.hashCode}_${dashboard.mobileLayoutPositions.hashCode}'),
           controller: _controller,
           onTabChanged: (index) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) setState(() {});
+              if (mounted) {
+                setState(() {
+                  _repairNavigationVisible = true;
+                });
+              }
             });
             if (index != tabIds.indexOf(LayoutItem.repair)) return;
             final provider = context.read<RepairPriceProvider>();
-            if (provider.deviceLoadingState != RepairLoadingState.initial) {
-              provider.initDevicePage();
-            }
+            provider.initDevicePage();
           },
           backgroundColor: enterprise.layout.background ?? themedChromeColor(),
           handleAndroidBackButtonPress: true,
@@ -546,8 +626,11 @@ class DashboardScreenState extends State<DashboardScreen>
               socialDetailOpen ||
               repairDetailOpen ||
               (isRepairActive && !_repairNavigationVisible),
-          floatingActionButton:
-              showCreateRecord ? const CreateRecordButton() : null,
+          floatingActionButton: showCreateRecord
+              ? CreateRecordButton(
+                  showDeliveryShortcut: features['delivery'] != '0',
+                )
+              : null,
           floatingActionButtonLocation: showCreateRecord
               ? AboveMoreLocation(slot: moreSlot, slots: visibleTabs.length)
               : null,
@@ -560,7 +643,9 @@ class DashboardScreenState extends State<DashboardScreen>
           },
         ),
         // Sidebar menu button pinned at the top-left corner of every tab screen.
-        if (!hideMenuButton && enterprise.layout.showMenuButton)
+        if (!hideMenuButton &&
+            enterprise.layout.showMenuButton &&
+            !homeShowsMenuInProfile)
           Positioned(
             top: 0,
             left: menuOnRight ? null : 12,
@@ -568,37 +653,75 @@ class DashboardScreenState extends State<DashboardScreen>
             child: SafeArea(
               child: Padding(
                 padding: const EdgeInsets.only(top: 6),
-                child: Material(
-                  color: enterprise.isRoyalLuxuryDay
-                      ? KhmerLuxuryColors.iceBlue.withValues(alpha: .94)
-                      : enterprise.colors.backgroundColor
-                          .withValues(alpha: 0.84),
-                  shape:
-                      enterprise.isKhmerHeritage || enterprise.isRoyalBlueGold
-                          ? RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(13),
-                              side: BorderSide(
-                                color: enterprise.isRoyalLuxuryDay
-                                    ? KhmerLuxuryColors.metallicGold
-                                    : enterprise.cardBorder,
-                              ),
-                            )
-                          : const CircleBorder(),
-                  clipBehavior: Clip.antiAlias,
-                  child: IconButton(
-                    tooltip:
-                        MaterialLocalizations.of(context).openAppDrawerTooltip,
-                    icon: Icon(
-                      Icons.menu,
-                      color: enterprise.isRoyalLuxuryDay
-                          ? KhmerLuxuryColors.deepRoyalBlue
-                          : sidebarFg,
-                    ),
-                    onPressed: () {
-                      _openDashboardDrawer(enterprise.layout.menuOnRight);
-                    },
-                  ),
-                ),
+                child: enterprise.isLight
+                    ? Material(
+                        color: AppColors.white,
+                        elevation: 5,
+                        shadowColor: enterprise.primary.withValues(alpha: .18),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          side: BorderSide(
+                            color: enterprise.primary.withValues(alpha: .16),
+                          ),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: InkWell(
+                          onTap: () => _openDashboardDrawer(
+                              enterprise.layout.menuOnRight),
+                          borderRadius: BorderRadius.circular(16),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 11),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.menu_rounded,
+                                    size: 21, color: enterprise.primary),
+                                const SizedBox(width: 9),
+                                // Text(
+                                //   'ម៉ឺនុយ',
+                                //   style: TextStyle(
+                                //     color: enterprise.primary,
+                                //     fontSize: 14,
+                                //     fontWeight: FontWeight.w700,
+                                //   ),
+                                // ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      )
+                    : Material(
+                        color: enterprise.isRoyalLuxuryDay
+                            ? KhmerLuxuryColors.iceBlue.withValues(alpha: .94)
+                            : enterprise.colors.backgroundColor
+                                .withValues(alpha: 0.84),
+                        shape: enterprise.isKhmerHeritage ||
+                                enterprise.isRoyalBlueGold
+                            ? RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(13),
+                                side: BorderSide(
+                                  color: enterprise.isRoyalLuxuryDay
+                                      ? KhmerLuxuryColors.metallicGold
+                                      : enterprise.cardBorder,
+                                ),
+                              )
+                            : const CircleBorder(),
+                        clipBehavior: Clip.antiAlias,
+                        child: IconButton(
+                          tooltip: MaterialLocalizations.of(context)
+                              .openAppDrawerTooltip,
+                          icon: Icon(
+                            Icons.menu,
+                            color: enterprise.isRoyalLuxuryDay
+                                ? KhmerLuxuryColors.deepRoyalBlue
+                                : sidebarFg,
+                          ),
+                          onPressed: () {
+                            _openDashboardDrawer(enterprise.layout.menuOnRight);
+                          },
+                        ),
+                      ),
               ),
             ),
           ),
@@ -632,7 +755,8 @@ class DashboardScreenState extends State<DashboardScreen>
 
 String _roleMenuLabel(String menu) => menu
     .split('-')
-    .map((word) => word.isEmpty ? word : '${word[0].toUpperCase()}${word.substring(1)}')
+    .map((word) =>
+        word.isEmpty ? word : '${word[0].toUpperCase()}${word.substring(1)}')
     .join(' ');
 
 class _RoleFunctionTab extends StatelessWidget {
@@ -643,13 +767,63 @@ class _RoleFunctionTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (menu == 'assets' || menu == 'admin_assets' || menu == 'admin-assets') {
+      return const AdminAssetListScreen();
+    }
+    if (menu == 'company-documents') {
+      return const CompanyDocumentsScreen();
+    }
+    if (menu == 'team-sheet') {
+      return TeamSheetScreen();
+    }
+    if (menu == 'repair') {
+      return const RepairDevicePage();
+    }
+    if (menu == 'notice') {
+      return NoticeScreen();
+    }
+    if (menu == 'meeting') {
+      return MeetingScreen();
+    }
+    if (menu == 'advance-salary') {
+      return AdvanceSalaryScreen();
+    }
+    if (menu == 'support') {
+      return SupportScreen();
+    }
+    if (menu == 'complaint') {
+      return ComplainScreen();
+    }
+    if (menu == 'warning') {
+      return WarningScreen();
+    }
+    if (menu == 'holiday') {
+      return HolidayScreen();
+    }
+    if (menu == 'leave-calendar') {
+      return LeaveCalendarScreen();
+    }
+    if (menu == 'id-card') {
+      return const FrontSidePreviewPage();
+    }
+    if (menu == 'project-management') {
+      return ProjectScreen();
+    }
+    if (menu == 'award') {
+      return AwardsScreen();
+    }
+    if (menu == 'training') {
+      return TrainingScreen();
+    }
+    if (menu == 'tada') {
+      return TadaScreen();
+    }
+    if (menu == 'payroll-management') {
+      return PaySlipScreen();
+    }
     const quickServiceMenus = {
-      'holiday',
       'leave-request',
       'event',
-      'project-management',
-      'award',
-      'training',
       'social-rewards',
       'chat',
       'home-highlights',
@@ -675,42 +849,76 @@ class DashboardNavigationBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final enterprise = EnterpriseTheme.of(context);
+    final isDayMode = enterprise.mode == AppThemeMode.light;
+    final isCleanDay =
+        isDayMode && (context.watch<ThemeProvider?>()?.dayModeClean ?? true);
     final navSurface = Container(
       height: 66,
       decoration: BoxDecoration(
-        gradient: enterprise.isRoyalLuxuryDay
-            ? KhmerLuxuryColors.frosted
-            : enterprise.isRoyalDay
-                ? RoyalDayColors.frosted
-                : enterprise.isRoyalBlueGold
-                    ? const LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [RoyalColors.deepBlue, RoyalColors.navy],
-                      )
-                    : enterprise.pageGradient,
+        color: isCleanDay ? AppColors.white : null,
+        gradient: isCleanDay
+            ? null
+            : isDayMode
+                ? LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppColors.white.withValues(alpha: 0.92),
+                      const Color(0xfff1f5f9).withValues(alpha: 0.88),
+                    ],
+                  )
+                : enterprise.isRoyalLuxuryDay
+                    ? KhmerLuxuryColors.frosted
+                    : enterprise.isRoyalDay
+                        ? RoyalDayColors.frosted
+                        : enterprise.isRoyalBlueGold
+                            ? const LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  RoyalColors.deepBlue,
+                                  RoyalColors.navy
+                                ],
+                              )
+                            : enterprise.pageGradient,
         borderRadius: BorderRadius.circular(28),
         border: Border.all(
-          color: enterprise.accent.withValues(
-            alpha: enterprise.isKhmerHeritage || enterprise.isRoyalBlueGold
-                ? .68
-                : .34,
-          ),
+          color: isCleanDay
+              ? AppColors.customFFE2E8F0
+              : enterprise.accent.withValues(
+                  alpha:
+                      enterprise.isKhmerHeritage || enterprise.isRoyalBlueGold
+                          ? .68
+                          : .34,
+                ),
           width: 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: enterprise.primary.withValues(alpha: 0.18),
-            blurRadius: 24,
-            spreadRadius: 0.5,
-          ),
-          BoxShadow(
-            color: AppColors.black
-                .withValues(alpha: enterprise.isRoyalDay ? .05 : .35),
-            blurRadius: 22,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        boxShadow: isCleanDay
+            ? const [
+                BoxShadow(
+                  color: Color(0x0a0f172a),
+                  blurRadius: 20,
+                  offset: Offset(0, 4),
+                ),
+                BoxShadow(
+                  color: Color(0x050f172a),
+                  blurRadius: 6,
+                  offset: Offset(0, 1),
+                ),
+              ]
+            : [
+                BoxShadow(
+                  color: enterprise.primary.withValues(alpha: 0.18),
+                  blurRadius: 24,
+                  spreadRadius: 0.5,
+                ),
+                BoxShadow(
+                  color: AppColors.black
+                      .withValues(alpha: enterprise.isRoyalDay ? .05 : .35),
+                  blurRadius: 22,
+                  offset: const Offset(0, 8),
+                ),
+              ],
       ),
       child: Row(
         children: [
@@ -732,7 +940,7 @@ class DashboardNavigationBar extends StatelessWidget {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(28),
           child: BackdropFilter(
-            enabled: !enterprise.isRoyalBlueGold,
+            enabled: !isCleanDay && !enterprise.isRoyalBlueGold,
             filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
             child: enterprise.isRoyalLuxuryDay
                 ? KhmerLuxuryFrame(
@@ -772,7 +980,10 @@ class _EnterpriseNavItem extends StatelessWidget {
         ? (enterprise.isRoyalLuxuryDay
             ? KhmerLuxuryColors.darkText
             : enterprise.text)
-        : sidebarForeground(enterprise).withValues(alpha: royal ? .97 : .72);
+        : enterprise.mode == AppThemeMode.light
+            ? AppColors.customFF64748B
+            : sidebarForeground(enterprise)
+                .withValues(alpha: royal ? .97 : .72);
     final customAccent = enterprise.layout.accent;
     final activeColor = customAccent == null
         ? (enterprise.isRoyalDay
@@ -819,10 +1030,15 @@ class _EnterpriseNavItem extends StatelessWidget {
                         ? RoyalColors.goldGradient.colors
                         : heritage
                             ? [enterprise.text, enterprise.accent]
-                            : [
-                                sidebarTone(enterprise.primary),
-                                sidebarTone(enterprise.secondary),
-                              ],
+                            : enterprise.mode == AppThemeMode.light
+                                ? [
+                                    enterprise.primary,
+                                    enterprise.secondary,
+                                  ]
+                                : [
+                                    sidebarTone(enterprise.primary),
+                                    sidebarTone(enterprise.secondary),
+                                  ],
           )
         : null;
 

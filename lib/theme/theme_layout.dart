@@ -30,7 +30,7 @@ enum LayoutItem {
   team(LayoutArea.home, 'My team'),
   home(LayoutArea.tabs, 'Home', pinned: true),
   social(LayoutArea.tabs, 'Social Feed', permission: 'social-feed'),
-  repair(LayoutArea.tabs, 'Repair List'),
+  repair(LayoutArea.tabs, 'Repair List', permission: 'repair'),
   leave(LayoutArea.tabs, 'Leave', permission: 'leave-request'),
   attendance(LayoutArea.tabs, 'Attendance', permission: 'attendance'),
   more(LayoutArea.tabs, 'More', pinned: true),
@@ -43,11 +43,11 @@ enum LayoutItem {
   awards(LayoutArea.shortcuts, 'Awards', permission: 'award'),
   training(LayoutArea.shortcuts, 'Training', permission: 'training'),
   socialPost(LayoutArea.shortcuts, 'Social Post', permission: 'social-rewards'),
-  repairShortcut(LayoutArea.shortcuts, 'Repair List', enabledByDefault: false),
   chatShortcut(LayoutArea.shortcuts, 'Chat',
       permission: 'chat', enabledByDefault: false),
   socialShortcut(LayoutArea.shortcuts, 'Social Feed',
       permission: 'social-feed', enabledByDefault: false),
+  repairShortcut(LayoutArea.shortcuts, 'Repair List', permission: 'repair'),
   highlightsShortcut(LayoutArea.shortcuts, 'Highlights',
       enabledByDefault: false);
 
@@ -67,8 +67,13 @@ enum LayoutItem {
   final bool separateBannerOnly;
   final String? permission;
 
-  bool allowed(Map<String, String> features) =>
-      permission == null || features[permission] == '1';
+  bool allowed(Map<String, String> features) {
+    if (permission == null) return true;
+    if (features.containsKey(permission)) {
+      return features[permission] == '1';
+    }
+    return enabledByDefault;
+  }
 }
 
 class ThemeLayout {

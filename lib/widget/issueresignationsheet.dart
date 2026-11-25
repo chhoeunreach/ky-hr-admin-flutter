@@ -1,8 +1,7 @@
 import 'package:cnattendance/provider/leaveprovider.dart';
+import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/utils/navigationservice.dart';
-import 'package:cnattendance/widget/buttonborder.dart';
 import 'package:cnattendance/widget/customalertdialog.dart';
-import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_translate/flutter_translate.dart';
@@ -124,11 +123,28 @@ class IssueResignationSheetState extends State<IssueResignationSheet> {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<LeaveProvider>(context);
+    final enterprise = EnterpriseTheme.of(context);
+    final inputFill = enterprise.isDark ? AppColors.white12 : const Color(0xFFF8FAFC);
+    final inputBorderSide = BorderSide(
+      color: enterprise.isDark ? enterprise.cardBorder : AppColors.customFFB8DEFF,
+      width: 1,
+    );
+
     return PopScope(
       canPop: !isLoading,
       child: Container(
-        decoration: RadialDecoration(),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        decoration: BoxDecoration(
+          color: enterprise.isDark ? const Color(0xFF1E293B) : AppColors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.black.withValues(alpha: enterprise.isDark ? 0.35 : 0.12),
+              blurRadius: 20,
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         child: SafeArea(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -138,15 +154,15 @@ class IssueResignationSheetState extends State<IssueResignationSheet> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Spacer(),
+                    const Spacer(),
                     IconButton(
                         onPressed: () {
                           Navigator.pop(context);
                         },
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.close,
                           size: 20,
-                          color: AppColors.white,
+                          color: enterprise.text,
                         )),
                   ],
                 ),
@@ -156,58 +172,48 @@ class IssueResignationSheetState extends State<IssueResignationSheet> {
                   children: [
                     Text(
                       translate('resignation.apply'),
-                      style:
-                          const TextStyle(fontSize: 18, color: AppColors.white),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: enterprise.text,
+                      ),
                     ),
                     IconButton(
                         onPressed: () {
                           Navigator.pop(context);
                         },
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.close,
                           size: 20,
-                          color: AppColors.white,
+                          color: enterprise.text,
                         )),
                   ],
                 ),
               if (status == "rejected" || status.isEmpty)
                 TextField(
                   controller: startDate,
-                  style: TextStyle(color: AppColors.white),
-                  //editing controller of this TextField
-                  cursorColor: AppColors.white,
+                  style: TextStyle(color: enterprise.text, fontSize: 14),
+                  cursorColor: enterprise.primary,
                   decoration: InputDecoration(
                     hintText: translate('resignation.select_start_date'),
-                    hintStyle: TextStyle(color: AppColors.white),
+                    hintStyle: TextStyle(color: enterprise.mutedText, fontSize: 14),
                     prefixIcon:
-                        Icon(Icons.calendar_month, color: AppColors.white),
-                    labelStyle: TextStyle(color: AppColors.white),
-                    fillColor: AppColors.white24,
+                        Icon(Icons.calendar_month, color: enterprise.primary),
+                    labelStyle: TextStyle(color: enterprise.text),
+                    fillColor: inputFill,
                     filled: true,
                     enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(10),
-                            topRight: Radius.circular(0),
-                            bottomLeft: Radius.circular(0),
-                            bottomRight: Radius.circular(10))),
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: inputBorderSide),
                     focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(10),
-                            topRight: Radius.circular(0),
-                            bottomLeft: Radius.circular(0),
-                            bottomRight: Radius.circular(10))),
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: enterprise.primary, width: 1.5)),
                     focusedErrorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(10),
-                            topRight: Radius.circular(0),
-                            bottomLeft: Radius.circular(0),
-                            bottomRight: Radius.circular(10))),
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppColors.red)),
                     errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(10),
-                            topRight: Radius.circular(0),
-                            bottomLeft: Radius.circular(0),
-                            bottomRight: Radius.circular(10))),
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppColors.red)),
                   ),
                   readOnly: true,
                   //set it true, so that user will not able to edit text
@@ -257,41 +263,28 @@ class IssueResignationSheetState extends State<IssueResignationSheet> {
                       FocusManager.instance.primaryFocus?.unfocus();
                     }
                   },
-                  style: TextStyle(color: AppColors.white),
-                  //editing controller of this TextField
-                  cursorColor: AppColors.white,
+                  style: TextStyle(color: enterprise.text, fontSize: 14),
+                  cursorColor: enterprise.primary,
                   keyboardType: TextInputType.multiline,
                   decoration: InputDecoration(
                     hintText: translate('resignation.reason'),
-                    hintStyle: TextStyle(color: AppColors.white),
-                    prefixIcon: Icon(Icons.edit_note, color: AppColors.white),
-                    labelStyle: TextStyle(color: AppColors.white),
-                    fillColor: AppColors.white24,
+                    hintStyle: TextStyle(color: enterprise.mutedText, fontSize: 14),
+                    prefixIcon: Icon(Icons.edit_note, color: enterprise.primary),
+                    labelStyle: TextStyle(color: enterprise.text),
+                    fillColor: inputFill,
                     filled: true,
                     enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(10),
-                            topRight: Radius.circular(0),
-                            bottomLeft: Radius.circular(0),
-                            bottomRight: Radius.circular(10))),
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: inputBorderSide),
                     focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(10),
-                            topRight: Radius.circular(0),
-                            bottomLeft: Radius.circular(0),
-                            bottomRight: Radius.circular(10))),
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: enterprise.primary, width: 1.5)),
                     focusedErrorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(10),
-                            topRight: Radius.circular(0),
-                            bottomLeft: Radius.circular(0),
-                            bottomRight: Radius.circular(10))),
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppColors.red)),
                     errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(10),
-                            topRight: Radius.circular(0),
-                            bottomLeft: Radius.circular(0),
-                            bottomRight: Radius.circular(10))),
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppColors.red)),
                   ),
                 ),
               if (status.isNotEmpty && (!canApply || adminRemark.isNotEmpty))
@@ -304,8 +297,11 @@ class IssueResignationSheetState extends State<IssueResignationSheet> {
                       '{status}',
                       status.toUpperCase(),
                     ),
-                    style:
-                        const TextStyle(fontSize: 15, color: AppColors.white),
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: enterprise.text,
+                    ),
                   ),
                 ),
               if (adminRemark.isNotEmpty)
@@ -315,33 +311,38 @@ class IssueResignationSheetState extends State<IssueResignationSheet> {
                   child: Text(
                     translate('resignation.remark_value')
                         .replaceAll('{remark}', adminRemark),
-                    style:
-                        const TextStyle(fontSize: 15, color: AppColors.white),
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: enterprise.mutedText,
+                    ),
                   ),
                 ),
               gaps(10),
               if (status == "rejected" || status.isEmpty)
                 Container(
                   width: MediaQuery.of(context).size.width,
-                  padding: EdgeInsets.only(left: 5),
-                  child: TextButton(
-                      style: TextButton.styleFrom(
+                  padding: const EdgeInsets.only(left: 5),
+                  child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
                         backgroundColor: canApply
-                            ? AppColors.customFF036EB7
-                            : AppColors.customFF036EB7.withValues(alpha: .2),
-                        padding: EdgeInsets.zero,
-                        shape: ButtonBorder(),
+                            ? enterprise.primary
+                            : enterprise.primary.withValues(alpha: .3),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                       onPressed: canApply
                           ? () {
                               issueResignation();
                             }
                           : null,
-                      child: Padding(
-                        padding: const EdgeInsets.all(20.0),
-                        child: Text(
-                          translate('resignation.request'),
-                          style: const TextStyle(color: AppColors.white),
+                      child: Text(
+                        translate('resignation.request'),
+                        style: const TextStyle(
+                          color: AppColors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
                         ),
                       )),
                 ),

@@ -1186,7 +1186,7 @@ class _HomeModelViewState extends State<HomeModelView>
                               crossAxisAlignment: CrossAxisAlignment.start,
                               spacing: 3,
                               children: [
-                                Text('KNEAYERNG  /  DIGITAL HRMS',
+                                Text('KNEAYERNG',
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
@@ -2460,7 +2460,7 @@ class _HomeModelViewState extends State<HomeModelView>
             Color.lerp(enterprise.primary, AppColors.white, 0.38)!,
             Color.lerp(enterprise.primary, enterprise.accent, 0.22)!,
             enterprise.primary,
-            Color.lerp(enterprise.primary, AppColors.customFF0054D7, 0.12)!,
+            Color.lerp(enterprise.primary, enterprise.secondary, 0.24)!,
           ]
         : [
             _premiumTone(enterprise.accent, 0.38),

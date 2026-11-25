@@ -1,4 +1,7 @@
 import 'package:cnattendance/features/community/social_feed_screen.dart';
+import 'package:cnattendance/features/company_documents/company_documents_screen.dart';
+import 'package:cnattendance/features/delivery/delivery_dashboard_screen.dart';
+import 'package:cnattendance/features/repair_price/pages/repair_device_page.dart';
 import 'package:cnattendance/provider/dashboardprovider.dart';
 import 'package:cnattendance/provider/morescreenprovider.dart';
 import 'package:cnattendance/provider/prefprovider.dart';
@@ -36,7 +39,7 @@ import 'package:cnattendance/theme/theme_provider.dart';
 import 'package:cnattendance/screen/training/trainingscreen.dart';
 import 'package:cnattendance/screen/warningscreen/warningscreen.dart';
 import 'package:cnattendance/utils/constant.dart';
-import 'package:cnattendance/widget/enterprise/app_motion.dart';
+import 'package:cnattendance/utils/asset_permissions.dart';
 import 'package:cnattendance/widget/headerprofile.dart';
 import 'package:cnattendance/widgets/theme_selector.dart';
 import 'package:cnattendance/widget/premium_background.dart';
@@ -79,8 +82,11 @@ class MoreScreenState extends State<MoreScreen> {
             context.select<PrefProvider, String>((p) => p.userId).trim()) ??
         0;
     final enterprise = EnterpriseTheme.of(context);
+    final dashboard = context.watch<DashboardProvider>();
     final availableAttendanceMethods =
         attendanceMethod.map((method) => method.toLowerCase()).toList();
+
+    bool showInMore(String menu) => dashboard.isMobileMenuAt(menu, 'sidebar');
 
     void changeAttendanceType(String type) {
       context.read<PrefProvider>().saveAttendanceType(type);
@@ -126,21 +132,24 @@ class MoreScreenState extends State<MoreScreen> {
     }) {
       final isSelected = attendanceType == type;
       final effectiveSelected = enabled && isSelected;
-      final foregroundColor = effectiveSelected || enterprise.isDark
+      final foregroundColor = effectiveSelected
           ? AppColors.white
-          : enterprise.text;
+          : (enterprise.isDark ? AppColors.white : enterprise.text);
       final disabledColor =
           (enterprise.isDark ? AppColors.white : enterprise.text)
-              .withValues(alpha: 0.45);
+              .withValues(alpha: 0.40);
       final borderColor = effectiveSelected
-          ? AppColors.white.withValues(alpha: 0.58)
-          : enterprise.accent.withValues(
-              alpha: enabled ? (enterprise.isDark ? 0.46 : 0.68) : 0.24);
-      final fillColor = enterprise.surface.withValues(
-        alpha: enabled
-            ? (enterprise.isDark ? 0.70 : 0.88)
-            : (enterprise.isDark ? 0.38 : 0.56),
-      );
+          ? (enterprise.isDark
+              ? AppColors.white.withValues(alpha: 0.58)
+              : enterprise.primary)
+          : (enterprise.isDark
+              ? enterprise.accent.withValues(alpha: enabled ? 0.46 : 0.24)
+              : (enabled ? AppColors.customFFB8DEFF : AppColors.customFFE2E8F0));
+      final fillColor = effectiveSelected
+          ? null
+          : (enterprise.isDark
+              ? enterprise.surface.withValues(alpha: enabled ? 0.70 : 0.38)
+              : (enabled ? AppColors.white : AppColors.customFFF1F5F9));
 
       return InkWell(
         borderRadius: BorderRadius.circular(13),
@@ -165,9 +174,9 @@ class MoreScreenState extends State<MoreScreen> {
             boxShadow: [
               BoxShadow(
                 color: (effectiveSelected ? enterprise.accent : AppColors.black)
-                    .withValues(alpha: effectiveSelected ? 0.28 : 0.12),
-                blurRadius: effectiveSelected ? 18 : 10,
-                offset: const Offset(0, 8),
+                    .withValues(alpha: effectiveSelected ? 0.28 : (enterprise.isDark ? 0.12 : 0.05)),
+                blurRadius: effectiveSelected ? 18 : 8,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
@@ -191,6 +200,24 @@ class MoreScreenState extends State<MoreScreen> {
       );
     }
 
+    Widget sectionHeader(String title, {VoidCallback? onLongPress}) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(14, 14, 14, 6),
+        child: GestureDetector(
+          onLongPress: onLongPress,
+          child: Text(
+            title,
+            style: TextStyle(
+              color: enterprise.isDark ? enterprise.text : enterprise.primary,
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 0.3,
+            ),
+          ),
+        ),
+      );
+    }
+
     return FocusDetector(
       onFocusGained: () {
         context.read<MoreScreenProvider>().getFeatures();
@@ -200,163 +227,157 @@ class MoreScreenState extends State<MoreScreen> {
           resizeToAvoidBottomInset: true,
           backgroundColor: Colors.transparent,
           body: SafeArea(
+            child: HomeSurfaceStyle(
+              clean: enterprise.mode == AppThemeMode.light,
               child: SingleChildScrollView(
-            child: Container(
-              width: double.infinity,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const HeaderProfile(showMenuButton: false),
-                  if (features['social-feed'] == '1')
-                    Services(translate('community.social_feed'),
-                        Icons.dynamic_feed_outlined, const SocialFeedScreen()),
-                  Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 6),
-                      child: Text(
-                        translate('more_screen.attendance_default_method'),
-                        style: TextStyle(
-                            color: enterprise.text,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w800),
-                      )),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    child: Wrap(
-                      spacing: 8,
-                      runSpacing: 7,
-                      children: [
-                        attendanceMethodChip(
-                          type: "Default",
-                          icon: Icons.fingerprint,
-                          label: translate('more_screen.default'),
-                          enabled:
-                              availableAttendanceMethods.contains("default"),
+                child: Container(
+                  width: double.infinity,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const HeaderProfile(showMenuButton: false),
+                      if (features['social-feed'] == '1')
+                        Services(translate('community.social_feed'),
+                            Icons.dynamic_feed_outlined, const SocialFeedScreen()),
+                      sectionHeader(translate('more_screen.attendance_default_method')),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        child: Wrap(
+                          spacing: 8,
+                          runSpacing: 7,
+                          children: [
+                            attendanceMethodChip(
+                              type: "Default",
+                              icon: Icons.fingerprint,
+                              label: translate('more_screen.default'),
+                              enabled:
+                                  availableAttendanceMethods.contains("default"),
+                            ),
+                            attendanceMethodChip(
+                              type: "NFC",
+                              icon: Icons.nfc,
+                              label: translate('more_screen.nfc'),
+                              enabled: availableAttendanceMethods.contains("nfc"),
+                            ),
+                            attendanceMethodChip(
+                              type: "QR",
+                              icon: Icons.qr_code,
+                              label: translate('more_screen.qr_code'),
+                              enabled: availableAttendanceMethods.contains("qr"),
+                            ),
+                          ],
                         ),
-                        attendanceMethodChip(
-                          type: "NFC",
-                          icon: Icons.nfc,
-                          label: translate('more_screen.nfc'),
-                          enabled: availableAttendanceMethods.contains("nfc"),
-                        ),
-                        attendanceMethodChip(
-                          type: "QR",
-                          icon: Icons.qr_code,
-                          label: translate('more_screen.qr_code'),
-                          enabled: availableAttendanceMethods.contains("qr"),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 6),
-                      child: Text(
-                        translate('more_screen.account'),
-                        style: TextStyle(
-                            color: enterprise.text,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w800),
-                      )),
-                  if (features["profile"] == "1")
+                      ),
+                      sectionHeader(translate('more_screen.account')),
+                  if (features["profile"] != "0")
                     Services(translate('more_screen.profile'), Icons.person,
                         ProfileScreen()),
-                  if (features["change-password"] == "1")
+                  if (features["change-password"] != "0")
                     Services(translate('more_screen.change_password'),
                         Icons.password, ChangePasswordScreen()),
-                  Padding(
-                      padding: const EdgeInsets.only(
-                          left: 14, right: 14, top: 12, bottom: 6),
-                      child: Text(
-                        translate('more_screen.office_desk'),
-                        style: TextStyle(
-                            color: enterprise.text,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w800),
-                      )),
-                  if (features["team-sheet"] == "1")
+                  sectionHeader(translate('more_screen.management')),
+                  if (features["team-sheet"] != "0" && showInMore("team-sheet"))
                     Services(translate('more_screen.team_sheet'), Icons.group,
                         TeamSheetScreen()),
-                  if (features["groups"] == "1")
+                  if (features["company-documents"] != "0" && showInMore("company-documents"))
+                    Services(translate('more_screen.company_documents'),
+                        Icons.folder_shared_outlined,
+                        const CompanyDocumentsScreen()),
+                  if (features["delivery"] != "0" && showInMore("delivery"))
+                    Services(translate('more_screen.delivery'),
+                        Icons.two_wheeler_rounded,
+                        const DeliveryDashboardScreen()),
+                  if (AssetPermissions.canOpenAdmin(features) && showInMore("assets"))
+                    Services(
+                        translate('more_screen.admin_assets'),
+                        Icons.inventory_2_outlined,
+                        const AdminAssetListScreen()),
+                  if (features["repair"] != "0" && showInMore("repair"))
+                    Services(
+                        translate('dashboard_screen.repair_list'),
+                        Icons.build_circle_outlined,
+                        const RepairDevicePage()),
+                  features["banner-admin"] == "0" || !showInMore("banner-admin")
+                      ? SizedBox.shrink()
+                      : Services(
+                          translate('more_screen.banner_manager'),
+                          Icons.view_carousel_rounded,
+                          const BannerAdminScreen()),
+                  features["advance-salary-admin"] == "0" || !showInMore("advance-salary-admin")
+                      ? SizedBox.shrink()
+                      : Services(
+                          translate('more_screen.admin_advance_salary'),
+                          Icons.admin_panel_settings,
+                          AdminAdvanceSalaryScreen()),
+                  features["social-rewards-admin"] == "0" || !showInMore("social-rewards-admin")
+                      ? SizedBox.shrink()
+                      : Services(translate('more_screen.social_rewards'),
+                          Icons.verified, const AdminSocialRewardsScreen()),
+                  sectionHeader(translate('more_screen.office_desk')),
+                  if (features["groups"] != "0" && showInMore("groups"))
                     Services(translate('more_screen.groups'), Icons.forum,
                         GroupListScreen()),
-                  features["project-management"] != "1"
+                  features["project-management"] == "0" || !showInMore("project-management")
                       ? SizedBox.shrink()
                       : Services(translate('more_screen.project_management'),
                           Icons.work, ProjectScreen()),
-                  features["event"] != "1"
+                  features["event"] == "0" || !showInMore("event")
                       ? SizedBox.shrink()
                       : Services(translate('common.office_events'), Icons.event,
                           EventListScreen()),
-                  features["training"] != "1"
+                  features["training"] == "0" || !showInMore("training")
                       ? SizedBox.shrink()
                       : Services(translate('home_screen.training'), Icons.group,
                           TrainingScreen()),
-                  features["award"] != "1"
+                  features["award"] == "0" || !showInMore("award")
                       ? SizedBox.shrink()
                       : Services(translate('more_screen.awards'),
                           Icons.workspace_premium, AwardsScreen()),
-                  features["assets"] != "1"
+                  features["assets"] == "0" || !showInMore("assets")
                       ? SizedBox.shrink()
                       : Services(translate('common.assets'),
                           Icons.production_quantity_limits, AssetScreen()),
-                  /*features["training"] != "1"
-                                ? SizedBox.shrink()
-                                : Services(translate('more_screen.training'),
-                                    Icons.model_training, TrainingScreen()),*/
-                  if (features["holiday"] == "1")
+                  if (features["holiday"] != "0" && showInMore("holiday"))
                     Services(translate('more_screen.holiday'),
                         Icons.calendar_month, HolidayScreen()),
-                  if (features["notice"] == "1")
+                  if (features["notice"] != "0" && showInMore("notice"))
                     Services(translate('more_screen.notices'), Icons.message,
                         NoticeScreen()),
-                  features["meeting"] != "1"
+                  features["meeting"] == "0" || !showInMore("meeting")
                       ? SizedBox.shrink()
                       : Services(translate('more_screen.meeting'),
                           Icons.meeting_room, MeetingScreen()),
-                  if (features["leave-calendar"] == "1")
+                  if (features["leave-calendar"] != "0" && showInMore("leave-calendar"))
                     Services(translate('more_screen.leave_calendar'),
                         Icons.calendar_month_outlined, LeaveCalendarScreen()),
-                  features["warning"] != "1"
+                  features["warning"] == "0" || !showInMore("warning")
                       ? SizedBox.shrink()
                       : Services(translate('more_screen.warning'),
                           Icons.warning, WarningScreen()),
-                  features["complaint"] != "1"
+                  features["complaint"] == "0" || !showInMore("complaint")
                       ? SizedBox.shrink()
                       : Services(
                           translate('more_screen.complain'),
                           Icons.perm_device_information_outlined,
                           ComplainScreen()),
-                  Padding(
-                      padding: const EdgeInsets.only(
-                          left: 14, right: 14, top: 12, bottom: 6),
-                      child: GestureDetector(
-                        onLongPress: showFeatureDebug,
-                        child: Text(
-                          translate('more_screen.finance'),
-                          style: TextStyle(
-                              color: enterprise.text,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w800),
-                        ),
-                      )),
-                  features["tada"] != "1"
+                  sectionHeader(translate('more_screen.finance'), onLongPress: showFeatureDebug),
+                  features["tada"] == "0" || !showInMore("tada")
                       ? SizedBox.shrink()
                       : Services(translate('more_screen.tada'), Icons.money,
                           TadaScreen()),
-                  features["payroll-management"] != "1"
+                  features["payroll-management"] == "0" || !showInMore("payroll-management")
                       ? SizedBox.shrink()
                       : Services(translate('more_screen.payslip'),
                           Icons.payments_outlined, PaySlipScreen()),
-                  features["payroll-management"] != "1"
+                  features["payroll-management"] == "0" || !showInMore("payroll-management")
                       ? SizedBox.shrink()
                       : Services(translate('more_screen.ssf_history'),
                           Icons.payments, SsfHistoryScreen()),
-                  features["advance-salary"] != "1"
+                  features["advance-salary"] == "0" || !showInMore("advance-salary")
                       ? SizedBox.shrink()
                       : Services(translate('more_screen.advance_salary'),
                           Icons.monetization_on, AdvanceSalaryScreen()),
-                  features["social-rewards"] != "1"
+                  features["social-rewards"] == "0" || !showInMore("social-rewards")
                       ? SizedBox.shrink()
                       : Services(
                           translate('more_screen.social_rewards'),
@@ -364,60 +385,25 @@ class MoreScreenState extends State<MoreScreen> {
                           SocialSubmissionScreen(
                             employeeId: employeeId,
                           )),
-                  if (features["id-card"] == "1")
+                  if (features["id-card"] != "0" && showInMore("id-card"))
                     Services(translate('more_screen.my_id_card'),
                         Icons.badge_rounded, const FrontSidePreviewPage()),
-                  if (features["meeting-attendance"] == "1")
+                  if (features["meeting-attendance"] != "0" && showInMore("meeting-attendance"))
                     Services(
                       translate('more_screen.meeting_attendance'),
                       Icons.qr_code_scanner,
                       const MeetingAttendanceScreen(),
                     ),
-                  features["advance-salary-admin"] != "1"
-                      ? SizedBox.shrink()
-                      : Services(
-                          translate('more_screen.admin_advance_salary'),
-                          Icons.admin_panel_settings,
-                          AdminAdvanceSalaryScreen()),
-                  features["social-rewards-admin"] != "1"
-                      ? SizedBox.shrink()
-                      : Services(translate('more_screen.social_rewards'),
-                          Icons.verified, const AdminSocialRewardsScreen()),
-                  features["banner-admin"] != "1"
-                      ? SizedBox.shrink()
-                      : Services(
-                          translate('more_screen.banner_manager'),
-                          Icons.view_carousel_rounded,
-                          const BannerAdminScreen()),
-                  (features["assets-admin"] != "1" && features["list_assets"] != "1")
-                      ? SizedBox.shrink()
-                      : Services(
-                          translate('more_screen.admin_assets'),
-                          Icons.inventory_2_outlined,
-                          const AdminAssetListScreen()),
-                  /*features["loan"] != "1"
-                                ? SizedBox.shrink()
-                                : Services(translate('more_screen.loans'),
-                                    Icons.handshake_outlined, LoanListScreen()),*/
-                  Padding(
-                      padding: const EdgeInsets.only(
-                          left: 14, right: 14, top: 12, bottom: 6),
-                      child: Text(
-                        translate('more_screen.additional'),
-                        style: TextStyle(
-                            color: enterprise.text,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w800),
-                      )),
+                  sectionHeader(translate('more_screen.additional')),
                   //Services('Issue Ticket', Icons.note, ProfileScreen()),
-                  features["support"] != "1"
+                  features["support"] == "0" || !showInMore("support")
                       ? SizedBox.shrink()
                       : Services(translate('more_screen.support'),
                           Icons.support_agent, SupportScreen()),
-                  if (features["company-rules"] == "1")
+                  if (features["company-rules"] != "0" && showInMore("company-rules"))
                     Services(translate('more_screen.company_rules'),
                         Icons.rule_folder, CompanyRulesScreen()),
-                  if (features["links"] == "1")
+                  if (features["links"] != "0" && showInMore("links"))
                     Services(translate('more_screen.links'), Icons.link,
                         const LinkListScreen()),
                   const ServerStatusTile(),
@@ -431,26 +417,49 @@ class MoreScreenState extends State<MoreScreen> {
                     ProfileScreen(),
                     control: 1,
                   ),
-                  Padding(
-                      padding: const EdgeInsets.only(
-                          left: 14, right: 14, top: 12, bottom: 6),
-                      child: Text(
-                        translate('more_screen.others'),
-                        style: TextStyle(
-                            color: enterprise.text,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w800),
-                      )),
-                  features["dark-mode"] != "1"
+                  sectionHeader(translate('more_screen.others')),
+                  features["dark-mode"] == "0"
                       ? SizedBox.shrink()
                       : Padding(
-                          padding:
-                              EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-                          child: Column(
-                            children: [
-                              ListTile(
-                                trailing: Switch(
-                                  activeThumbColor: AppColors.blue,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 3),
+                          child: EnterpriseGlass(
+                            radius: 14,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
+                            glowOpacity: 0.07,
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 34,
+                                  height: 34,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(11),
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: [
+                                        enterprise.primary,
+                                        enterprise.accent
+                                      ],
+                                    ),
+                                  ),
+                                  child: const Icon(Icons.dark_mode_outlined,
+                                      color: AppColors.white, size: 18),
+                                ),
+                                const SizedBox(width: 9),
+                                Expanded(
+                                  child: Text(
+                                    translate('more_screen.dark_mode'),
+                                    style: TextStyle(
+                                      color: enterprise.text,
+                                      fontSize: 13.5,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                                Switch(
+                                  activeThumbColor: enterprise.primary,
                                   value: selectedThemeMode == AppThemeMode.dark,
                                   onChanged: (value) {
                                     context.read<ThemeProvider>().setMode(value
@@ -458,47 +467,56 @@ class MoreScreenState extends State<MoreScreen> {
                                         : AppThemeMode.light);
                                   },
                                 ),
-                                dense: true,
-                                minLeadingWidth: 5,
-                                leading: Icon(
-                                  Icons.landscape,
-                                  color: enterprise.text,
-                                ),
-                                title: Text(
-                                  translate('more_screen.dark_mode'),
-                                  style: TextStyle(
-                                      color: enterprise.text, fontSize: 13),
-                                ),
-                                onTap: () {
-                                  context.read<ThemeProvider>().setMode(
-                                      selectedThemeMode == AppThemeMode.dark
-                                          ? AppThemeMode.light
-                                          : AppThemeMode.dark);
-                                },
-                                selected: true,
-                              ),
-                              Divider(
-                                height: 1,
-                                color: enterprise.cardBorder,
-                                indent: 15,
-                                endIndent: 15,
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                   const ThemeSelector(),
                   Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-                    child: Column(
-                      children: [
-                        const AnimationSettingsTile(),
-                        Divider(
-                          height: 1,
-                          color: enterprise.cardBorder,
-                          indent: 15,
-                          endIndent: 15,
-                        ),
-                      ],
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 3),
+                    child: EnterpriseGlass(
+                      radius: 14,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      glowOpacity: 0.07,
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 34,
+                            height: 34,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(11),
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  enterprise.primary,
+                                  enterprise.accent
+                                ],
+                              ),
+                            ),
+                            child: const Icon(Icons.animation_rounded,
+                                color: AppColors.white, size: 18),
+                          ),
+                          const SizedBox(width: 9),
+                          Expanded(
+                            child: Text(
+                              translate('more_screen.animation'),
+                              style: TextStyle(
+                                color: enterprise.text,
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                          Switch(
+                            activeThumbColor: enterprise.primary,
+                            value: context.watch<ThemeProvider>().animationsEnabled,
+                            onChanged: context.read<ThemeProvider>().setAnimationsEnabled,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   (!showNfc || features["nfc-qr"] != "1")
@@ -515,7 +533,7 @@ class MoreScreenState extends State<MoreScreen> {
                     ProfileScreen(),
                     control: 4,
                   ),
-                  features["resignation"] != "1"
+                  features["resignation"] != "1" || !showInMore("resignation")
                       ? SizedBox.shrink()
                       : Services(
                           translate('more_screen.resignation'),
@@ -532,7 +550,7 @@ class MoreScreenState extends State<MoreScreen> {
                 ],
               ),
             ),
-          )),
+          ))),
         ),
       ),
     );

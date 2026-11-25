@@ -108,7 +108,7 @@ class _NewDailyRecordScreenState extends State<NewDailyRecordScreen> {
     return PopScope(
       canPop: !_saving,
       child: RecordScaffold(
-        appBar: AppBar(title: Text(title)),
+        appBar: AppBar(title: Text(workText(context, title))),
         body: Form(
           key: _form,
           child: ListView(
@@ -116,48 +116,48 @@ class _NewDailyRecordScreenState extends State<NewDailyRecordScreen> {
             children: [
               TextFormField(
                 controller: _title,
-                decoration: const InputDecoration(labelText: 'Title'),
+                decoration: InputDecoration(labelText: workText(context, 'Title')),
                 maxLength: 180,
                 validator: (value) =>
-                    value?.trim().isNotEmpty == true ? null : 'Enter a title',
+                    value?.trim().isNotEmpty == true ? null : workText(context, 'Enter a title'),
               ),
               recordSpacing,
               TextFormField(
                 controller: _body,
                 decoration: InputDecoration(
                     labelText: switch (kind) {
-                  'incident' => 'What happened?',
-                  'extension' => 'Reason for extension',
-                  'report' => 'Work completed and outstanding items',
-                  _ => 'Details',
+                  'incident' => workText(context, 'What happened?'),
+                  'extension' => workText(context, 'Reason for extension'),
+                  'report' => workText(context, 'Work completed and outstanding items'),
+                  _ => workText(context, 'Details'),
                 }),
                 maxLength: 10000,
                 minLines: 3,
                 maxLines: 8,
                 validator: (value) =>
                     _bodyRequired && value?.trim().isNotEmpty != true
-                        ? 'Enter the details'
+                        ? workText(context, 'Enter the details')
                         : null,
               ),
               if (kind == 'note')
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Private note'),
-                  subtitle: const Text('Visible only to you'),
+                  title: Text(workText(context, 'Private note')),
+                  subtitle: Text(workText(context, 'Visible only to you')),
                   value: _private,
                   onChanged: (value) => setState(() => _private = value),
                 ),
               if (kind == 'incident') ...[
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Critical incident'),
+                  title: Text(workText(context, 'Critical incident')),
                   value: _critical,
                   onChanged: (value) => setState(() => _critical = value),
                 ),
                 TextFormField(
                   controller: _solution,
                   decoration:
-                      const InputDecoration(labelText: 'Solution, if resolved'),
+                      InputDecoration(labelText: workText(context, 'Solution, if resolved')),
                   minLines: 2,
                   maxLines: 6,
                   maxLength: 10000,
@@ -165,7 +165,7 @@ class _NewDailyRecordScreenState extends State<NewDailyRecordScreen> {
               ],
               if (kind == 'extension')
                 RecordDateField(
-                  label: 'Requested deadline',
+                  label: workText(context, 'Requested deadline'),
                   value: _due,
                   required: true,
                   onChanged: (value) => setState(() => _due = value),
@@ -178,10 +178,10 @@ class _NewDailyRecordScreenState extends State<NewDailyRecordScreen> {
               FilledButton(
                 onPressed: _saving ? null : _save,
                 child: Text(_saving
-                    ? 'Saving…'
+                    ? workText(context, 'Saving…')
                     : kind == 'report' || kind == 'extension'
-                        ? 'Submit'
-                        : 'Save record'),
+                        ? workText(context, 'Submit report')
+                        : workText(context, 'Save record')),
               ),
             ],
           ),
@@ -213,7 +213,7 @@ class _MyDailyRecordsScreenState extends State<MyDailyRecordsScreen> {
 
   @override
   Widget build(BuildContext context) => RecordScaffold(
-        appBar: AppBar(title: const Text('My Daily Records')),
+        appBar: AppBar(title: Text(workText(context, 'My Daily Records'))),
         body: Column(
           children: [
             Padding(
@@ -221,12 +221,12 @@ class _MyDailyRecordsScreenState extends State<MyDailyRecordsScreen> {
               child: DropdownButtonFormField<String>(
                 initialValue: _kind,
                 isExpanded: true,
-                decoration: const InputDecoration(labelText: 'Record type'),
+                decoration: InputDecoration(labelText: workText(context, 'Record type')),
                 items: _kinds.entries
                     .map((entry) => DropdownMenuItem(
                         value: entry.key,
                         child:
-                            Text(entry.value, overflow: TextOverflow.ellipsis)))
+                            Text(workText(context, entry.value), overflow: TextOverflow.ellipsis)))
                     .toList(),
                 onChanged: (value) => setState(() => _kind = value ?? ''),
               ),

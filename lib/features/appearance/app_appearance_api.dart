@@ -28,6 +28,18 @@ class AppAppearanceApi {
     final decoded = jsonDecode(utf8.decode(response.bodyBytes));
     final data = decoded is Map ? decoded['data'] : null;
     if (data is! Map) throw const FormatException('Invalid appearance response.');
-    return AppAppearanceConfig.fromJson(Map<String, dynamic>.from(data));
+    final map = Map<String, dynamic>.from(data);
+    final rawUrl = map['background_url']?.toString().trim();
+    if (rawUrl != null &&
+        rawUrl.isNotEmpty &&
+        !rawUrl.startsWith('http://') &&
+        !rawUrl.startsWith('https://') &&
+        !rawUrl.startsWith('assets/')) {
+      final cleanBase =
+          base.endsWith('/') ? base.substring(0, base.length - 1) : base;
+      final cleanPath = rawUrl.startsWith('/') ? rawUrl : '/$rawUrl';
+      map['background_url'] = '$cleanBase$cleanPath';
+    }
+    return AppAppearanceConfig.fromJson(map);
   }
 }

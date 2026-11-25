@@ -1,4 +1,65 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" width="390" height="844">
-<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#CFE6FF"/><stop offset="0.5" stop-color="#E8F3FF"/><stop offset="1" stop-color="#F6FAFF"/></linearGradient></defs>
-<rect width="390" height="844" fill="url(#g)"/><circle cx="330" cy="90" r="120" fill="#FFFFFF" opacity=".5"/><circle cx="40" cy="420" r="100" fill="#BBDEFB" opacity=".4"/><path d="M0,700 C100,660 220,740 390,690 L390,844 L0,844Z" fill="#BBDEFB" opacity=".45"/><path d="M0,760 C120,720 260,800 390,750 L390,844 L0,844Z" fill="#90CAF9" opacity=".35"/>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1920" viewBox="0 0 1080 1920">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#c9e8ff"/>
+      <stop offset="0.48" stop-color="#eef7ff"/>
+      <stop offset="1" stop-color="#cfe9ff"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="55%" r="65%">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".70"/>
+      <stop offset=".58" stop-color="#ffffff" stop-opacity=".12"/>
+      <stop offset="1" stop-color="#8ecbff" stop-opacity=".16"/>
+    </radialGradient>
+    <linearGradient id="hill" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#bce7ff"/>
+      <stop offset="1" stop-color="#76c9f4"/>
+    </linearGradient>
+    <filter id="blur" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="8"/>
+    </filter>
+  </defs>
+
+  <rect width="1080" height="1920" fill="url(#sky)"/>
+  <rect width="1080" height="1920" fill="url(#glow)"/>
+
+  <!-- soft sky glow -->
+  <g fill="#ffffff" opacity=".28" filter="url(#blur)">
+    <ellipse cx="170" cy="270" rx="250" ry="105"/>
+    <ellipse cx="850" cy="430" rx="300" ry="125"/>
+    <ellipse cx="530" cy="910" rx="380" ry="150"/>
+    <ellipse cx="180" cy="1450" rx="260" ry="120"/>
+  </g>
+
+  <!-- distant soft clouds -->
+  <g fill="#ffffff" opacity=".58">
+    <path d="M-40 360c45-70 135-75 185-20 30-75 145-95 195-20 72-15 126 35 130 90H-40z"/>
+    <path d="M650 220c38-64 120-66 162-14 40-78 154-77 192 5 48-8 92 22 104 67H650z"/>
+    <path d="M-60 1120c60-72 155-68 205-10 43-64 150-69 192 5 57-10 105 23 119 69H-60z"/>
+    <path d="M700 1320c52-68 143-67 190-5 45-70 151-72 194 5 40-3 76 20 92 56H700z"/>
+  </g>
+
+  <!-- subtle botanical corners -->
+  <g opacity=".48" fill="#8ed6bb">
+    <path d="M0 0c105 65 155 155 170 270C80 215 25 135 0 0z"/>
+    <path d="M0 70c85 42 130 98 158 175C77 213 27 157 0 70z"/>
+    <path d="M1080 0c-95 70-143 160-155 275 88-57 139-139 155-275z"/>
+    <path d="M1080 90c-77 42-124 101-151 180 78-35 128-92 151-180z"/>
+  </g>
+
+  <!-- lower abstract rolling hills -->
+  <path d="M0 1590c150-92 280-82 420-18 148 68 270 67 405-6 105-57 185-59 255-26v380H0z"
+        fill="url(#hill)" opacity=".48"/>
+  <path d="M0 1690c165-90 300-68 430 5 144 81 276 68 405-12 105-65 178-62 245-30v267H0z"
+        fill="#a9ddfa" opacity=".42"/>
+  <path d="M0 1800c180-80 330-48 470 22 140 70 280 50 410-25 85-48 145-46 200-20v143H0z"
+        fill="#ffffff" opacity=".48"/>
+
+  <!-- pale leaf silhouettes -->
+  <g fill="#78c9f2" opacity=".18">
+    <path d="M80 1920c8-120 65-210 170-275-20 108-72 198-170 275z"/>
+    <path d="M135 1920c35-115 110-190 225-220-48 95-117 166-225 220z"/>
+    <path d="M1000 1920c-8-120-65-210-170-275 20 108 72 198 170 275z"/>
+    <path d="M945 1920c-35-115-110-190-225-220 48 95 117 166 225 220z"/>
+  </g>
 </svg>

@@ -26,10 +26,13 @@ class ThemeProvider extends ChangeNotifier {
     'emoji_effect': false,
   };
 
+  static const String _dayModeCleanKey = 'day_mode_clean_background';
+
   AppThemeMode _mode = AppThemeMode.light;
   String _currentThemeId = AppThemeMode.light.id;
   bool _loaded = false;
   bool _animationsEnabled = true;
+  bool _dayModeClean = true;
   final Map<String, bool> _effects = Map<String, bool>.from(_effectDefaults);
   final Map<String, ThemeLayout> _layouts = {};
   final Map<String, String?> _backgrounds = {};
@@ -40,6 +43,7 @@ class ThemeProvider extends ChangeNotifier {
   String get currentThemeId => _currentThemeId;
   bool get loaded => _loaded;
   bool get animationsEnabled => _animationsEnabled;
+  bool get dayModeClean => _dayModeClean;
   ThemeLayout get layout => layoutForId(_currentThemeId);
   String? backgroundFor(AppThemeMode mode) => _backgrounds[mode.id];
   String? backgroundForId(String id) => _backgrounds[id];
@@ -84,8 +88,8 @@ class ThemeProvider extends ChangeNotifier {
       return options;
     }
     return [
-      AppThemeOption.fromCoreMode(AppThemeMode.royalBlueGold),
       AppThemeOption.fromCoreMode(AppThemeMode.light),
+      AppThemeOption.fromCoreMode(AppThemeMode.royalBlueGold),
     ];
   }
 
@@ -97,7 +101,7 @@ class ThemeProvider extends ChangeNotifier {
         .toList();
     return modes.isNotEmpty
         ? modes
-        : [AppThemeMode.royalBlueGold, AppThemeMode.light];
+        : [AppThemeMode.light, AppThemeMode.royalBlueGold];
   }
 
   /// Global admin-managed appearance (background + floating effects).
@@ -136,7 +140,7 @@ class ThemeProvider extends ChangeNotifier {
     } else if (core != null) {
       baseColors = AppThemeData.info(core).colors;
     } else {
-      baseColors = AppThemeData.info(AppThemeMode.royalBlueGold).colors;
+      baseColors = AppThemeData.info(AppThemeMode.light).colors;
     }
     return layoutForId(id).colorsFor(baseColors);
   }
@@ -152,6 +156,7 @@ class ThemeProvider extends ChangeNotifier {
       _animationsEnabled = true;
     }
     final prefs = await SharedPreferences.getInstance();
+    _dayModeClean = prefs.getBool(_dayModeCleanKey) ?? true;
     final savedMode = prefs.getString(storageKey);
     if (savedMode == null) {
       dynamic legacyLightMode;
@@ -190,10 +195,12 @@ class ThemeProvider extends ChangeNotifier {
 
     final validIds = availableThemeOptions.map((o) => o.id).toSet();
     if (!validIds.contains(_currentThemeId)) {
-      _currentThemeId = validIds.contains(AppThemeMode.royalBlueGold.id)
-          ? AppThemeMode.royalBlueGold.id
-          : (validIds.isNotEmpty ? validIds.first : AppThemeMode.royalBlueGold.id);
-      _mode = AppThemeModeX.tryFromId(_currentThemeId) ?? AppThemeMode.royalBlueGold;
+      _currentThemeId = validIds.contains(AppThemeMode.light.id)
+          ? AppThemeMode.light.id
+          : (validIds.contains(AppThemeMode.royalBlueGold.id)
+              ? AppThemeMode.royalBlueGold.id
+              : (validIds.isNotEmpty ? validIds.first : AppThemeMode.light.id));
+      _mode = AppThemeModeX.tryFromId(_currentThemeId) ?? AppThemeMode.light;
     }
     _syncLegacyStorage(_mode);
     _loaded = true;
@@ -203,7 +210,20 @@ class ThemeProvider extends ChangeNotifier {
   /// Applies the admin-managed theme modes and colors, filtering visible themes
   /// by is_active and user role.
   Future<void> applyRemoteThemeModes(List<RemoteThemeMode> modes) async {
-    _remoteThemeModes = modes;
+    _remoteThemeModes = modes.map((m) {
+      if (m.key == 'light' || m.name.toLowerCase().contains('original')) {
+        return m.copyWith(
+          name: 'Day Mode',
+          description: 'Crisp light with royal blue',
+        );
+      } else if (m.key == 'dark' || m.name.toLowerCase() == 'dark mode') {
+        return m.copyWith(
+          name: 'Night Mode',
+          description: 'Sleek night mode',
+        );
+      }
+      return m;
+    }).toList();
     final prefs = await SharedPreferences.getInstance();
     for (final remote in modes) {
       if (!_layouts.containsKey(remote.key)) {
@@ -216,9 +236,11 @@ class ThemeProvider extends ChangeNotifier {
 
     final validIds = availableThemeOptions.map((o) => o.id).toSet();
     if (!validIds.contains(_currentThemeId)) {
-      final fallbackId = validIds.contains(AppThemeMode.royalBlueGold.id)
-          ? AppThemeMode.royalBlueGold.id
-          : (validIds.isNotEmpty ? validIds.first : AppThemeMode.royalBlueGold.id);
+      final fallbackId = validIds.contains(AppThemeMode.light.id)
+          ? AppThemeMode.light.id
+          : (validIds.contains(AppThemeMode.royalBlueGold.id)
+              ? AppThemeMode.royalBlueGold.id
+              : (validIds.isNotEmpty ? validIds.first : AppThemeMode.light.id));
       await setThemeById(fallbackId);
     } else {
       notifyListeners();
@@ -316,6 +338,19 @@ class ThemeProvider extends ChangeNotifier {
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('rose_effect_$key', enabled);
+  }
+
+  Future<void> setDayModeClean(bool clean) async {
+    if (_dayModeClean == clean) return;
+    _dayModeClean = clean;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_dayModeCleanKey, clean);
+    if (ChatUnreadStore.isStorageReady) {
+      try {
+        await GetStorage().write(_dayModeCleanKey, clean);
+      } catch (_) {}
+    }
   }
 
   Future<void> setAnimationsEnabled(bool enabled) async {

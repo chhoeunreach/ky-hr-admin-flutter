@@ -15,12 +15,24 @@ import 'work_records_screen.dart';
 import 'work_record_editor.dart';
 import 'branch_mission_editor.dart';
 import 'work_labels.dart';
+import 'active_mission_floating_button.dart';
+export 'active_mission_floating_button.dart';
 import 'package:cnattendance/core/theme/app_colors.dart';
+import 'package:cnattendance/data/source/datastore/preferences.dart';
+import 'package:cnattendance/features/delivery/active_delivery_screen.dart';
+import 'package:cnattendance/features/delivery/delivery_dashboard_screen.dart';
+import 'package:cnattendance/features/delivery/delivery_api.dart';
+import 'package:cnattendance/features/delivery/delivery_model.dart';
 
 class CreateRecordButton extends StatefulWidget {
-  const CreateRecordButton({super.key, this.api});
+  const CreateRecordButton({
+    super.key,
+    this.api,
+    this.showDeliveryShortcut = false,
+  });
 
   final DailyRecordsApi? api;
+  final bool showDeliveryShortcut;
 
   @override
   State<CreateRecordButton> createState() => _CreateRecordButtonState();
@@ -48,6 +60,13 @@ class _CreateRecordButtonState extends State<CreateRecordButton> {
     if (!mounted) return;
     setState(() => _sheetOpen = false);
     if (choice == null) return;
+
+    if (choice == 'delivery-task') {
+      await Navigator.of(context, rootNavigator: true).push<void>(
+        MaterialPageRoute(builder: (_) => const DeliveryDashboardScreen()),
+      );
+      return;
+    }
 
     if (choice == 'branch-mission') {
       final saved = await showModalBottomSheet<bool>(
@@ -138,7 +157,7 @@ class _CreateRecordButtonState extends State<CreateRecordButton> {
         ),
       ),
     );
-    return Stack(
+    final fab = Stack(
       clipBehavior: Clip.none,
       children: [
         button,
@@ -158,6 +177,204 @@ class _CreateRecordButtonState extends State<CreateRecordButton> {
             ),
           ),
       ],
+    );
+
+    // Keep a stable Column root (with the FAB always at index 0) so opening
+    // the sheet never recreates the button subtree — a type swap here would
+    // reset AnimatedRotation mid-flight and snap the + icon to its target.
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      verticalDirection: VerticalDirection.up,
+      children: [
+        fab,
+        if (!_sheetOpen) ...[
+          const SizedBox(height: 8),
+          DedicatedMissionFloatingButton(api: widget.api),
+          if (widget.showDeliveryShortcut) ...[
+            const SizedBox(height: 8),
+            const _DeliveryShortcutButton(),
+          ],
+        ],
+      ],
+    );
+  }
+}
+
+class _DeliveryShortcutButton extends StatefulWidget {
+  const _DeliveryShortcutButton();
+
+  @override
+  State<_DeliveryShortcutButton> createState() =>
+      _DeliveryShortcutButtonState();
+}
+
+class _DeliveryShortcutButtonState extends State<_DeliveryShortcutButton> {
+  final _api = DeliveryApi();
+  DeliveryModel? _activeDelivery;
+  Timer? _statusTimer;
+  Timer? _clockTimer;
+  DateTime _now = DateTime.now();
+  bool _isRefreshing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshActiveDelivery();
+    _statusTimer = Timer.periodic(
+      const Duration(seconds: 30),
+      (_) => _refreshActiveDelivery(),
+    );
+    _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted && _activeDelivery != null) {
+        setState(() => _now = DateTime.now());
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _statusTimer?.cancel();
+    _clockTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _refreshActiveDelivery() async {
+    if (_isRefreshing) return;
+    _isRefreshing = true;
+    try {
+      final active = await _api.getActiveDelivery();
+      if (mounted) setState(() => _activeDelivery = active);
+    } catch (_) {
+      // Keep the last known active state when temporarily offline.
+    } finally {
+      _isRefreshing = false;
+    }
+  }
+
+  String _elapsedLabel(DeliveryModel delivery) {
+    final start = delivery.startedAt ?? _now;
+    final elapsed = _now.difference(start);
+    final hours = elapsed.inHours;
+    final minutes = elapsed.inMinutes.remainder(60);
+    final seconds = elapsed.inSeconds.remainder(60);
+    if (hours > 0) {
+      return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}';
+    }
+    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _open() async {
+    final active = _activeDelivery;
+    if (active == null) {
+      await Navigator.of(context, rootNavigator: true).push<void>(
+        MaterialPageRoute(builder: (_) => const DeliveryDashboardScreen()),
+      );
+    } else {
+      await Navigator.of(context, rootNavigator: true).push<void>(
+        MaterialPageRoute(
+          builder: (_) => ActiveDeliveryScreen(delivery: active),
+        ),
+      );
+    }
+    if (mounted) _refreshActiveDelivery();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = EnterpriseTheme.of(context);
+    final active = _activeDelivery;
+    final statusColor = Colors.green.shade700;
+    final activeStatus = active?.status == 'arrived' ? 'ដល់គោលដៅ' : 'កំពុងដឹក';
+    final label = active == null
+        ? 'ដឹកជញ្ជូន'
+        : '$activeStatus • ${_elapsedLabel(active)}';
+    return Tooltip(
+      message: active == null
+          ? workText(context, 'Delivery')
+          : 'ចុចដើម្បីបន្តការដឹកជញ្ជូន',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _open,
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: theme.colors.cardColor.withValues(alpha: 0.92),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: (active == null ? theme.accent : statusColor)
+                    .withValues(alpha: 0.55),
+                width: 1.2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: (active == null ? Colors.black : statusColor)
+                      .withValues(alpha: active == null ? 0.12 : 0.2),
+                  blurRadius: active == null ? 8 : 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (active != null) ...[
+                  AnimatedScale(
+                    scale: _now.second.isEven ? 1 : 1.2,
+                    duration: const Duration(milliseconds: 450),
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: statusColor,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: statusColor.withValues(alpha: 0.35),
+                            blurRadius: 5,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                ],
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: (active == null ? theme.accent : statusColor)
+                        .withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    active == null
+                        ? Icons.two_wheeler_rounded
+                        : Icons.local_shipping_rounded,
+                    size: 15,
+                    color: active == null ? theme.accent : statusColor,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: active == null ? 12 : 11,
+                    fontWeight: FontWeight.bold,
+                    color: active == null ? theme.text : statusColor,
+                  ),
+                ),
+                if (active != null) ...[
+                  const SizedBox(width: 4),
+                  Icon(Icons.chevron_right_rounded,
+                      size: 16, color: statusColor),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -334,13 +551,16 @@ class _QuickCreateState extends State<_QuickCreate> {
   late Future<RecordData> _access = _capabilities();
   bool _full = false;
   bool _canSubmit = false;
+  bool _canDeliver = true;
 
   Future<RecordData> _capabilities() async {
     final access = await widget.api.get('capabilities');
+    final features = await Preferences().getFeatures();
     if (mounted) {
       setState(() {
         _full = recordFlag(access['work_records']);
         _canSubmit = access['can_submit_report'] == true;
+        _canDeliver = features['delivery'] != '0';
       });
     }
     return access;
@@ -348,6 +568,7 @@ class _QuickCreateState extends State<_QuickCreate> {
 
   static const _workActions = [
     ('branch-mission', Icons.alt_route_rounded, 'Branch Route'),
+    ('delivery-task', Icons.two_wheeler_rounded, 'Delivery'),
     ('activity', Icons.work_outline, 'Daily Activity'),
     ('work-incident', Icons.report_problem_outlined, 'Incident Report'),
     ('todo', Icons.task_alt_outlined, 'To-do / Task'),
@@ -356,6 +577,7 @@ class _QuickCreateState extends State<_QuickCreate> {
 
   static const _recordActions = [
     ('branch-mission', Icons.alt_route_rounded, 'Branch Route'),
+    ('delivery-task', Icons.two_wheeler_rounded, 'Delivery'),
     ('note', Icons.sticky_note_2_outlined, 'New note'),
     ('todo', Icons.task_alt_outlined, 'New to-do'),
     ('incident', Icons.report_problem_outlined, 'Record incident'),
@@ -435,7 +657,8 @@ class _QuickCreateState extends State<_QuickCreate> {
                           final actions = [
                             for (final (value, icon, label)
                                 in (_full ? _workActions : _recordActions))
-                              if (value != 'report' || _canSubmit)
+                              if ((value != 'report' || _canSubmit) &&
+                                  (value != 'delivery-task' || _canDeliver))
                                 _action(context, theme, value, icon, label,
                                     stacked: twoColumns),
                           ];

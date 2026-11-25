@@ -340,7 +340,7 @@ class _RepairPriceDetailView extends StatelessWidget {
               hintText: translate('repair_screen.search_service_hint'),
               initialValue: provider.serviceSearchQuery,
               onChanged: provider.onServiceSearchChanged,
-              onClear: () => provider.onServiceSearchChanged(''),
+              onSubmitted: (_) => provider.submitServiceSearch(),
             ),
           ),
 

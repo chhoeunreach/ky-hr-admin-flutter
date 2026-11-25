@@ -74,15 +74,9 @@ class ServerUrlResolver {
     final cached = _cached[primary];
     if (!forceCheck && cached != null) {
       final age = DateTime.now().difference(cached.checkedAt);
-      if (cached.url == primary) {
+      if (cached.url == primary && age < healthyCacheTtl) {
         // Reuse a recently verified healthy primary without another probe.
-        if (age < healthyCacheTtl) return primary;
-      } else if (age < checkInterval) {
-        // A cached backup can go offline too. Verify it before using it again.
-        if (_isBackend(await _probe(cached.url))) {
-          return cached.url;
-        }
-        _cached.remove(primary);
+        return primary;
       }
     }
     final selected =
@@ -95,7 +89,6 @@ class ServerUrlResolver {
   Future<String> _resolve(String primary, SharedPreferences prefs) async {
     final key = 'server_fallback:$primary';
     final response = await _probe(primary);
-    var selected = primary;
     if (_isBackend(response)) {
       // Only accept configuration from a successful HR backend envelope.
       if (response != null) {
@@ -118,29 +111,23 @@ class ServerUrlResolver {
           // Older servers may not expose backup configuration yet.
         }
       }
+      _cached[primary] = (url: primary, checkedAt: DateTime.now());
     } else {
+      _cached.remove(primary);
       final fallback = normalize(prefs.containsKey(key)
           ? prefs.getString(key)
           : primary == normalize(BackendServerDefaults.primaryUrl)
               ? BackendServerDefaults.fallbackUrl
               : null);
-      if (fallback != null && fallback != primary) {
-        final backupResponse = await _probe(fallback);
-        if (_isBackend(backupResponse)) {
-          selected = fallback;
-        } else {
-          onAllServersUnreachable?.call(primary, fallback);
-        }
-      } else {
-        onAllServersUnreachable?.call(primary, null);
-      }
+      onAllServersUnreachable?.call(
+        primary,
+        fallback != primary ? fallback : null,
+      );
     }
-    // Remember the last verified selection. A healthy primary is reused for
-    // [healthyCacheTtl]; a backup is briefly cached to avoid repeatedly probing
-    // an outage. After the window expires the next call probes again, so a
-    // recovered primary is picked up and a dead one is still detected.
-    _cached[primary] = (url: selected, checkedAt: DateTime.now());
-    return selected;
+    // Strict server binding: never automatically switch to backup behind the scenes.
+    // The connected server remains the selected server until the user explicitly
+    // scans a new QR code or confirms switching to the backup server.
+    return primary;
   }
 
   Future<http.Response?> _probe(String url) async {

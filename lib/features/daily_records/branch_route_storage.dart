@@ -13,12 +13,20 @@ class BranchRouteStorage {
   static const String activeKey = 'active_branch_route';
   static const String historyKey = 'completed_branch_routes';
 
+  static final ValueNotifier<BranchRoute?> activeRouteNotifier =
+      ValueNotifier<BranchRoute?>(null);
+
   static Future<BranchRoute?> getActiveRoute() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final raw = prefs.getString(activeKey);
-      if (raw == null || raw.trim().isEmpty) return null;
-      return BranchRoute.fromJson(raw);
+      if (raw == null || raw.trim().isEmpty) {
+        activeRouteNotifier.value = null;
+        return null;
+      }
+      final route = BranchRoute.fromJson(raw);
+      activeRouteNotifier.value = route;
+      return route;
     } catch (e) {
       debugPrint('Error getting active route: $e');
       return null;
@@ -29,6 +37,7 @@ class BranchRouteStorage {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(activeKey, route.toJson());
+      activeRouteNotifier.value = route;
     } catch (e) {
       debugPrint('Error saving active route: $e');
     }
@@ -38,6 +47,7 @@ class BranchRouteStorage {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(activeKey);
+      activeRouteNotifier.value = null;
     } catch (e) {
       debugPrint('Error clearing active route: $e');
     }
@@ -140,11 +150,14 @@ class BranchRouteStorage {
         'purpose': route.purpose,
         'origin_branch': route.originBranch,
         'target_branches': route.targetBranches,
+        'mission_mode': route.missionMode,
         'departure_time': depTime,
         'arrival_time': arrTime,
         'status': route.status,
         'total_minutes': route.currentDuration.inMinutes,
         'formatted_duration': route.formattedDuration,
+        'final_summary': route.finalSummary,
+        'start_address': route.startAddress,
         if (route.startLatitude != null) 'start_latitude': route.startLatitude,
         if (route.startLongitude != null)
           'start_longitude': route.startLongitude,
@@ -152,14 +165,9 @@ class BranchRouteStorage {
         if (route.endLongitude != null) 'end_longitude': route.endLongitude,
         'checkpoints_count': route.checkpoints.length,
         'checkpoints_data': jsonEncode(checkpointMaps),
+        'supporting_links': route.supportingLinks,
       },
-      'tags': [
-        '#branch-route',
-        '#mission',
-        route.originBranch.split(' - ').first.trim().toLowerCase(),
-        ...route.targetBranches
-            .map((b) => b.split(' - ').first.trim().toLowerCase()),
-      ],
+      'tags': ['#branch-route', '#mission'],
     };
 
     try {

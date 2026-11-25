@@ -1,7 +1,9 @@
+import 'package:cnattendance/features/daily_records/active_mission_floating_button.dart';
 import 'package:cnattendance/features/daily_records/branch_mission_editor.dart';
 import 'package:cnattendance/features/daily_records/branch_route_model.dart';
 import 'package:cnattendance/features/daily_records/branch_route_storage.dart';
 import 'package:cnattendance/features/daily_records/daily_records_api.dart';
+import 'package:cnattendance/features/daily_records/quick_create.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -12,6 +14,7 @@ void main() {
   group('Branch Route Lifecycle & Offline Storage', () {
     setUp(() {
       SharedPreferences.setMockInitialValues({});
+      BranchRouteStorage.activeRouteNotifier.value = null;
     });
 
     test('RouteCheckpoint serializes and deserializes correctly', () {
@@ -164,11 +167,15 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('ចាប់ផ្តើមបេសកកម្មតាមសាខា'), findsOneWidget);
+      expect(find.text('ប្រភេទនៃការចេញដំណើរ (Mission Type) *'), findsOneWidget);
+      expect(find.text('🔄 ចេញក្រៅ & វិលត្រឡប់'), findsOneWidget);
+      expect(find.text('ណែនាំ ⭐'), findsOneWidget);
+      expect(find.text('🚗 បេសកកម្មចល័ត'), findsOneWidget);
       expect(find.text('គោលបំណងបេសកកម្ម (Mission Purpose) *'), findsOneWidget);
       expect(find.text('សាខាចេញដំណើរ (Auto Branch)'), findsOneWidget);
       expect(find.text('ម៉ោងចេញដំណើរ (Server Time)'), findsOneWidget);
       expect(find.text('Server Time'), findsOneWidget);
-      expect(find.text('ថត Selfie & ចាប់ផ្តើមបេសកកម្ម'), findsOneWidget);
+      expect(find.text('ចេញក្រៅ'), findsOneWidget);
 
       // Verify Mandatory Selfie field is removed from form
       expect(find.text('ថតរូប Selfie ផ្ទាល់ (Front Camera)'), findsNothing);
@@ -223,7 +230,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Tap start button while purpose is empty
-      await tester.tap(find.text('ថត Selfie & ចាប់ផ្តើមបេសកកម្ម'));
+      await tester.tap(find.text('ចេញក្រៅ'));
       await tester.pumpAndSettle();
 
       expect(find.text('សូមបញ្ចូលគោលបំណងបេសកកម្ម!'), findsOneWidget);
@@ -252,10 +259,10 @@ void main() {
       expect(find.text('បេសកកម្មកំពុងដំណើរការ'), findsOneWidget);
       expect(find.text('បេសកកម្មកំពុងដំណើរការ (Processing)'), findsOneWidget);
       expect(find.text('ថតរូបផ្សព្វផ្សាយសាខា'), findsOneWidget);
-      // When departed, only "មកដល់សាខា" is allowed
+      // When departed, "មកដល់សាខា" is allowed at bottom, and "បញ្ចប់" at top-right
       expect(find.text('មកដល់សាខា (Arrive at Branch)'), findsOneWidget);
+      expect(find.text('បញ្ចប់'), findsOneWidget);
       expect(find.text('ចេញបន្ត (Depart)'), findsNothing);
-      expect(find.text('បញ្ចប់បេសកកម្ម'), findsNothing);
       expect(find.textContaining('កំពុងធ្វើដំណើរ (ចេញពី៖ សាខាទី១ - ទួលគោក (Toul Kork))'), findsOneWidget);
 
       // Verify mission cannot be cancelled (no cancel button)
@@ -290,8 +297,11 @@ void main() {
 
       expect(find.text('មកដល់សាខា (Arrival Check-in)'), findsOneWidget);
       expect(find.text('សាខាដែលបានមកដល់ (Arrived Branch) *'), findsOneWidget);
-      expect(find.text('ថតរូប Selfie មកដល់សាខា (Mandatory Selfie) *'), findsOneWidget);
-      expect(find.text('រក្សាទុក Check-in សាខានេះ'), findsOneWidget);
+      // No separate work photo & selfie field shown on form
+      expect(find.text('រូបភាពភស្តុតាងការងារ / Selfie (Work Photo & Selfie) *'), findsNothing);
+      expect(find.text('ថតរូប Selfie មកដល់សាខា (Mandatory Selfie) *'), findsNothing);
+      // Save button directly initiates selfie and saves check-in
+      expect(find.text('រក្សាទុក Check-in'), findsOneWidget);
     });
 
     testWidgets('BranchMissionEditor supports asModal rendering with drag handle and close button', (tester) async {
@@ -351,9 +361,9 @@ void main() {
 
       expect(find.text('បេសកកម្មកំពុងដំណើរការ'), findsOneWidget);
       expect(find.textContaining('បានមកដល់៖ សាខាទី២ - សែនសុខ (Sen Sok)'), findsOneWidget);
-      // When arrived, user can depart to next branch or finish mission
+      // When arrived, user can depart to next branch or finish mission at top-right
       expect(find.text('ចេញបន្ត (Depart)'), findsOneWidget);
-      expect(find.text('បញ្ចប់បេសកកម្ម'), findsOneWidget);
+      expect(find.text('បញ្ចប់'), findsOneWidget);
       expect(find.text('មកដល់សាខា (Arrive at Branch)'), findsNothing);
       // Checkpoint card tag
       expect(find.text('មកដល់'), findsOneWidget);
@@ -428,6 +438,7 @@ void main() {
     testWidgets('BranchMissionEditor auto-selects origin branch from system preferences', (tester) async {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('user_branch', 'Sen Sok');
+      await prefs.setStringList('system_branch_names', ['Sen Sok', 'BKK']);
 
       await tester.pumpWidget(MaterialApp(
         home: BranchMissionEditor(api: DailyRecordsApi()),
@@ -435,7 +446,226 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('ប្រព័ន្ធកំណត់ស្វ័យប្រវត្តិ'), findsOneWidget);
-      expect(find.text('សាខាទី២ - សែនសុខ (Sen Sok)'), findsOneWidget);
+      expect(find.text('Sen Sok'), findsOneWidget);
+    });
+
+    testWidgets('BranchMissionEditor toggles between Mode 1 (Round Trip) and Mode 2 (Multi-Branch)', (tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(MaterialApp(
+        home: BranchMissionEditor(api: DailyRecordsApi()),
+      ));
+      await tester.pumpAndSettle();
+
+      // Initially Round-trip (Recommended) is selected
+      expect(find.text('ចេញក្រៅ'), findsOneWidget);
+      expect(find.text('ចាប់ផ្តើមបេសកកម្ម'), findsNothing);
+
+      // Tap Mode 2 (Multi-Branch) card
+      await tester.tap(find.text('🚗 បេសកកម្មចល័ត'));
+      await tester.pumpAndSettle();
+
+      // Button updates to Multi-Branch label
+      expect(find.text('ចាប់ផ្តើមបេសកកម្ម'), findsOneWidget);
+      expect(find.text('ចេញក្រៅ'), findsNothing);
+
+      // Tap Mode 1 (Round-trip) card again
+      await tester.tap(find.text('🔄 ចេញក្រៅ & វិលត្រឡប់'));
+      await tester.pumpAndSettle();
+
+      // Button toggles back to Round-trip label
+      expect(find.text('ចេញក្រៅ'), findsOneWidget);
+      expect(find.text('ចាប់ផ្តើមបេសកកម្ម'), findsNothing);
+    });
+
+    testWidgets('BranchMissionEditor renders Mode 1 (Round Trip) Stage 2 processing view and 1-click return button', (tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      final active = BranchRoute(
+        id: 'route_round_trip_1',
+        purpose: 'ចេញទៅទិញសម្ភារៈការិយាល័យ និងជួបភ្ញៀវ',
+        originBranch: 'សាខាទី១ - ទួលគោក (Toul Kork)',
+        targetBranches: [],
+        status: 'processing',
+        missionMode: 'round_trip',
+        startTime: DateTime.now().subtract(const Duration(minutes: 25)),
+      );
+      await BranchRouteStorage.saveActiveRoute(active);
+
+      await tester.pumpWidget(MaterialApp(
+        home: BranchMissionEditor(api: DailyRecordsApi()),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('🔄 កំពុងបំពេញការងារក្រៅ (Out on Errands)'), findsOneWidget);
+      expect(find.textContaining('ចេញពី៖ សាខាទី១ - ទួលគោក (Toul Kork)'), findsWidgets);
+      expect(find.textContaining('គោលដៅ៖ ត្រឡប់មក សាខាទី១ - ទួលគោក (Toul Kork) វិញ'), findsOneWidget);
+      expect(find.text('ត្រឡប់មកដល់ហាងវិញ'), findsOneWidget);
+
+      // In Round Trip mode, multi-branch checkpoint buttons are not shown
+      expect(find.text('មកដល់សាខា (Arrive at Branch)'), findsNothing);
+      expect(find.text('ចេញបន្ត (Depart)'), findsNothing);
+    });
+
+    testWidgets('BranchMissionEditor allows direct Finish (បញ្ចប់) from top-right action button', (tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      final active = BranchRoute(
+        id: 'route_arrive_finish_test',
+        purpose: 'ចុះដឹកជញ្ជូនឯកសារទៅសាខាបឹងកេងកង',
+        originBranch: 'សាខាទី១ - ទួលគោក (Toul Kork)',
+        targetBranches: ['សាខាទី៤ - បឹងកេងកង (BKK)'],
+        status: 'processing',
+        missionMode: 'multi_branch',
+        startTime: DateTime.now().subtract(const Duration(minutes: 30)),
+      );
+      await BranchRouteStorage.saveActiveRoute(active);
+
+      await tester.pumpWidget(MaterialApp(
+        home: BranchMissionEditor(api: DailyRecordsApi()),
+      ));
+      await tester.pumpAndSettle();
+
+      // Tap top-right "បញ្ចប់"
+      expect(find.text('បញ្ចប់'), findsOneWidget);
+      await tester.tap(find.text('បញ្ចប់'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      // Verify completion sheet opens with destination branch dropdown and selfie for transit
+      expect(find.text('បញ្ចប់បេសកកម្ម (Complete Route)'), findsOneWidget);
+      expect(find.text('សាខាបញ្ចប់ (Final Destination Branch) *'), findsOneWidget);
+      expect(find.text('បញ្ចប់បេសកកម្ម'), findsOneWidget);
+    });
+
+    testWidgets('BranchMissionEditor smart finish when arrived reuses arrival selfie without duplicate dropdown or camera', (tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      final active = BranchRoute(
+        id: 'route_arrived_smart_finish_test',
+        purpose: 'ចុះជួបអតិថិជននៅសាខាចំការមន',
+        originBranch: 'សាខាចម្បង',
+        targetBranches: ['សាខាចំការមន'],
+        status: 'processing',
+        missionMode: 'multi_branch',
+        startTime: DateTime.now().subtract(const Duration(minutes: 45)),
+        checkpoints: [
+          RouteCheckpoint(
+            id: 'cp_arrived_1',
+            branchName: 'សាខាចំការមន',
+            actionType: 'arrival',
+            arrivedAt: DateTime.now().subtract(const Duration(minutes: 10)),
+            photoPaths: ['/tmp/dummy_arrival_selfie.jpg'],
+          ),
+        ],
+      );
+      await BranchRouteStorage.saveActiveRoute(active);
+
+      await tester.pumpWidget(MaterialApp(
+        home: BranchMissionEditor(api: DailyRecordsApi()),
+      ));
+      await tester.pumpAndSettle();
+
+      // Tap top-right "បញ្ចប់"
+      expect(find.text('បញ្ចប់'), findsOneWidget);
+      await tester.tap(find.text('បញ្ចប់'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      // Verify smart finish UI: shows arrived branch without dropdown, no redundant camera prompt
+      expect(find.text('បញ្ចប់បេសកកម្ម (Complete Route)'), findsOneWidget);
+      expect(find.text('សាខាបញ្ចប់ (បានមកដល់រួចរាល់)'), findsOneWidget);
+      expect(find.text('Check-in រួច'), findsOneWidget);
+      expect(find.text('បញ្ចប់បេសកកម្មឥឡូវនេះ'), findsOneWidget);
+
+      // Verify no duplicate dropdown or duplicate camera button
+      expect(find.text('សាខាបញ្ចប់ (Final Destination Branch) *'), findsNothing);
+      expect(find.text('បញ្ចប់បេសកកម្ម'), findsNothing);
+    });
+
+    testWidgets('CreateRecordButton hosts DedicatedMissionFloatingButton directly above it', (tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          floatingActionButton: const CreateRecordButton(),
+        ),
+      ));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      // Verify Dedicated button is rendered directly above the Quick Create FAB
+      expect(find.text('ចេញក្រៅ'), findsOneWidget);
+      expect(find.byIcon(Icons.add), findsOneWidget);
+    });
+
+    testWidgets('DedicatedMissionFloatingButton renders idle button and opens mission modal', (tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          floatingActionButton: DedicatedMissionFloatingButton(api: DailyRecordsApi()),
+        ),
+      ));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.text('ចេញក្រៅ'), findsOneWidget);
+      expect(find.byIcon(Icons.alt_route_rounded), findsOneWidget);
+
+      await tester.tap(find.text('ចេញក្រៅ'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.text('ចាប់ផ្តើមបេសកកម្មតាមសាខា'), findsOneWidget);
+    });
+
+    testWidgets('DedicatedMissionFloatingButton renders live tracking pill when mission active', (tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      final active = BranchRoute(
+        id: 'route_pill_test',
+        purpose: 'ចេញទៅទិញសម្ភារៈ',
+        originBranch: 'សាខាទី១ - ទួលគោក (Toul Kork)',
+        targetBranches: [],
+        status: 'processing',
+        missionMode: 'round_trip',
+        startTime: DateTime.now().subtract(const Duration(minutes: 10)),
+      );
+      await BranchRouteStorage.saveActiveRoute(active);
+
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          floatingActionButton: DedicatedMissionFloatingButton(api: DailyRecordsApi()),
+        ),
+      ));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.textContaining('ការងារក្រៅ'), findsOneWidget);
+      expect(find.byIcon(Icons.replay_circle_filled_rounded), findsOneWidget);
+
+      // Tapping pill opens active mission modal
+      await tester.tap(find.byIcon(Icons.replay_circle_filled_rounded));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.text('បេសកកម្មកំពុងដំណើរការ'), findsOneWidget);
+      expect(find.text('ត្រឡប់មកដល់ហាងវិញ'), findsOneWidget);
     });
   });
 }

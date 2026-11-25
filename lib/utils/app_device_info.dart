@@ -49,7 +49,7 @@ class AppDeviceInfo {
       return _cachedDetails!;
     }
 
-    String appName = 'Digital HR';
+    String appName = 'KNEAYERNG';
     String appVersion = '1.0.0';
     String appBuild = '1';
 

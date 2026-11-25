@@ -1,8 +1,7 @@
 import 'package:cnattendance/data/source/network/model/asssetlistresponse/assetlistresponse.dart';
 import 'package:cnattendance/screen/assetscreen/assetscontroller.dart';
+import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/utils/constant.dart';
-import 'package:cnattendance/widget/buttonborder.dart';
-import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
@@ -21,73 +20,100 @@ class AssetBottomSheetState extends State<AssetBottomSheet> {
   final reason = TextEditingController();
   bool isWorking = true;
 
+  bool get _isReturned =>
+      widget.asset.notes != null && widget.asset.notes!.trim().isNotEmpty;
+
   void dismissLoader() {
-    setState(() {
-      EasyLoading.dismiss(animation: true);
-    });
+    EasyLoading.dismiss(animation: true);
   }
 
   void showLoader() {
-    setState(() {
-      EasyLoading.show(
-          status: "Requesting...", maskType: EasyLoadingMaskType.black);
-    });
+    EasyLoading.show(
+        status: "Requesting...", maskType: EasyLoadingMaskType.black);
+  }
+
+  @override
+  void dispose() {
+    reason.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final AssetController model = Get.find();
+    final AssetController model =
+        Get.isRegistered<AssetController>() ? Get.find() : Get.put(AssetController());
+    final enterprise = EnterpriseTheme.of(context);
+    final inputFill = enterprise.isDark ? AppColors.white12 : const Color(0xFFF8FAFC);
+    final inputBorderSide = BorderSide(
+      color: enterprise.isDark ? enterprise.cardBorder : AppColors.customFFB8DEFF,
+      width: 1,
+    );
+
     return Container(
-      decoration: RadialDecoration(),
+      decoration: BoxDecoration(
+        color: enterprise.isDark ? const Color(0xFF1E293B) : AppColors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.black.withValues(alpha: enterprise.isDark ? 0.35 : 0.12),
+            blurRadius: 20,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
       padding: EdgeInsets.only(
           top: 20,
           right: 20,
           left: 20,
-          bottom: (MediaQuery.of(context).viewInsets.bottom) + 10),
+          bottom: (MediaQuery.of(context).viewInsets.bottom) + 16),
       child: SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: Text(
-                widget.asset.asset,
-                style: TextStyle(
-                    fontSize: 18,
-                    color: AppColors.white,
-                    fontWeight: FontWeight.bold),
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    widget.asset.asset,
+                    style: TextStyle(
+                        fontSize: 18,
+                        color: enterprise.text,
+                        fontWeight: FontWeight.bold),
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(Icons.close, color: enterprise.text, size: 20),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
             ),
-            if (widget.asset.notes == null)
-              SizedBox(
-                height: 10,
-              ),
-            if (widget.asset.notes == null)
+            if (!_isReturned) const SizedBox(height: 10),
+            if (!_isReturned)
               Row(
-                spacing: 10,
                 children: [
                   Text(
-                    "Is Working",
-                    style: TextStyle(color: AppColors.white, fontSize: 15),
+                    "Is Working Condition",
+                    style: TextStyle(
+                      color: enterprise.text,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                  Spacer(),
+                  const Spacer(),
                   Switch(
-                    activeThumbColor: AppColors.blue,
+                    activeThumbColor: enterprise.primary,
                     value: isWorking,
                     onChanged: (value) {
                       setState(() {
-                        isWorking = !isWorking;
+                        isWorking = value;
                       });
                     },
                   )
                 ],
               ),
-            if (widget.asset.notes == null)
-              SizedBox(
-                height: 5,
-              ),
-            if (widget.asset.notes == null)
+            if (!_isReturned) const SizedBox(height: 6),
+            if (!_isReturned)
               TextField(
                 textAlignVertical: TextAlignVertical.top,
                 controller: reason,
@@ -99,87 +125,80 @@ class AssetBottomSheetState extends State<AssetBottomSheet> {
                     FocusManager.instance.primaryFocus?.unfocus();
                   }
                 },
-                style: TextStyle(color: AppColors.white),
-                //editing controller of this TextField
-                cursorColor: AppColors.white,
+                style: TextStyle(color: enterprise.text, fontSize: 14),
+                cursorColor: enterprise.primary,
                 keyboardType: TextInputType.multiline,
                 decoration: InputDecoration(
-                  hintText: 'Write a response..',
-                  hintStyle: TextStyle(color: AppColors.white70),
-                  labelStyle: TextStyle(color: AppColors.white),
-                  fillColor: AppColors.white24,
+                  hintText: 'Write a response...',
+                  hintStyle: TextStyle(color: enterprise.mutedText, fontSize: 14),
+                  fillColor: inputFill,
                   filled: true,
                   enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(10),
-                          topRight: Radius.circular(0),
-                          bottomLeft: Radius.circular(0),
-                          bottomRight: Radius.circular(10))),
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: inputBorderSide),
                   focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(10),
-                          topRight: Radius.circular(0),
-                          bottomLeft: Radius.circular(0),
-                          bottomRight: Radius.circular(10))),
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: enterprise.primary, width: 1.5)),
                   focusedErrorBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(10),
-                          topRight: Radius.circular(0),
-                          bottomLeft: Radius.circular(0),
-                          bottomRight: Radius.circular(10))),
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppColors.red)),
                   errorBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(10),
-                          topRight: Radius.circular(0),
-                          bottomLeft: Radius.circular(0),
-                          bottomRight: Radius.circular(10))),
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppColors.red)),
                 ),
               ),
-            if (widget.asset.notes == null)
-              SizedBox(
-                height: 10,
-              ),
-            if (widget.asset.notes != null)
-              Card(
-                elevation: 0,
-                color: AppColors.white24,
-                shape: ButtonBorder(),
-                margin: EdgeInsets.zero,
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Container(
-                    width: double.infinity,
-                    child: Text(
-                      widget.asset.notes ?? "",
-                      style: TextStyle(fontSize: 15, color: AppColors.white),
-                    ),
+            if (!_isReturned) const SizedBox(height: 12),
+            if (_isReturned)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12.0),
+                decoration: BoxDecoration(
+                  color: enterprise.isDark ? AppColors.white12 : const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: enterprise.isDark ? enterprise.cardBorder : AppColors.customFFB8DEFF,
                   ),
                 ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Remarks / Notes:',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: enterprise.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      widget.asset.notes ?? "",
+                      style: TextStyle(fontSize: 14, color: enterprise.text),
+                    ),
+                  ],
+                ),
               ),
-            if (widget.asset.notes == null)
+            if (!_isReturned)
               Container(
                 width: MediaQuery.of(context).size.width,
-                margin: EdgeInsets.symmetric(vertical: 10),
-                child: TextButton(
-                    style: TextButton.styleFrom(
-                      backgroundColor: widget.asset.notes != null
-                          ? AppColors.customFF036EB7.withValues(alpha: .5)
-                          : AppColors.customFF036EB7,
-                      padding: EdgeInsets.zero,
-                      shape: ButtonBorder(),
+                margin: const EdgeInsets.symmetric(vertical: 6),
+                child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: enterprise.primary,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
-                    onPressed: widget.asset.notes != null
-                        ? null
-                        : () {
-                            sendResponse(model, isWorking);
-                          },
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Text(
-                        widget.asset.notes == null
-                            ? 'Response'
-                            : "Already Responsed",
-                        style: TextStyle(color: AppColors.white),
+                    onPressed: () {
+                      sendResponse(model, isWorking);
+                    },
+                    child: const Text(
+                      'Submit Return',
+                      style: TextStyle(
+                        color: AppColors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
                       ),
                     )),
               ),
@@ -198,12 +217,19 @@ class AssetBottomSheetState extends State<AssetBottomSheet> {
       showLoader();
       final (status, message) =
           await model.sendResponse(widget.asset.id, reason.text, isWorking);
+      if (!mounted) {
+        dismissLoader();
+        return;
+      }
       dismissLoader();
-      model.getAssets();
       showToast(message);
-      Get.back();
+      if (status) {
+        await model.getAssets();
+        if (mounted) Get.back();
+      }
     } catch (e) {
       dismissLoader();
+      if (mounted) showToast(unknownError(e));
     }
   }
 }

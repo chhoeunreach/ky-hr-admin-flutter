@@ -12,6 +12,7 @@ import 'package:cnattendance/features/repair_price/providers/repair_price_provid
 import 'package:cnattendance/features/repair_price/repositories/repair_price_repository.dart';
 import 'package:cnattendance/features/repair_price/services/repair_price_api_service.dart';
 import 'package:cnattendance/features/repair_price/widgets/repair_edit_device_sheet.dart';
+import 'package:cnattendance/features/repair_price/widgets/repair_search_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_translate/flutter_translate.dart';
@@ -213,6 +214,79 @@ class _SearchRepository extends RepairPriceRepository {
   }
 }
 
+class _DevicesDownRepository extends _SearchRepository {
+  var devicesDown = false;
+
+  @override
+  Future<List<RepairDevice>> fetchDevices({
+    String? search,
+    int? brandId,
+    int? deviceTypeId,
+    int? seriesId,
+    int page = 1,
+    int perPage = 20,
+  }) async {
+    if (devicesDown) {
+      deviceSearches.add(search);
+      throw const RepairApiException('device list unavailable',
+          statusCode: 503);
+    }
+    return super.fetchDevices(
+      search: search,
+      brandId: brandId,
+      deviceTypeId: deviceTypeId,
+      seriesId: seriesId,
+      page: page,
+      perPage: perPage,
+    );
+  }
+
+  @override
+  Future<List<RepairDevice>> searchDevices(String query) async {
+    if (devicesDown) {
+      fallbackSearches.add(query);
+      throw const RepairApiException('search unavailable', statusCode: 404);
+    }
+    return super.searchDevices(query);
+  }
+}
+
+class _GatedSearchRepository extends RepairPriceRepository {
+  static const device = RepairDevice(id: 10, name: 'Phone');
+  var deviceFetches = 0;
+  final gate = Completer<void>();
+
+  @override
+  Future<Map<String, dynamic>?> fetchPermissions() async => {'can_view': true};
+
+  @override
+  Future<List<RepairBrand>> fetchBrands() async => [];
+
+  @override
+  Future<List<RepairDeviceType>> fetchDeviceTypes() async => [];
+
+  @override
+  Future<List<RepairDeviceSeries>> fetchSeries({
+    int? brandId,
+    int? deviceTypeId,
+  }) async =>
+      [];
+
+  @override
+  Future<List<RepairDevice>> fetchDevices({
+    String? search,
+    int? brandId,
+    int? deviceTypeId,
+    int? seriesId,
+    int page = 1,
+    int perPage = 20,
+  }) async {
+    deviceFetches++;
+    if (deviceFetches > 1) await gate.future;
+    return [device];
+  }
+}
+
 void main() {
   test('repair list model search matches name, model, brand and series',
       () async {
@@ -399,5 +473,140 @@ void main() {
     final prices = await api.getDeviceServices(10, categoryId: 7);
     expect(pages, ['1', '2']);
     expect(prices.map((price) => price.repairPriceId), [20, 21]);
+  });
+
+  testWidgets('Repair List clear button reloads the device list exactly once',
+      (tester) async {
+    Localization.load(
+        jsonDecode(File('assets/i18n/en.json').readAsStringSync())
+            as Map<String, dynamic>);
+    final repository = _SearchRepository();
+    await tester.pumpWidget(ChangeNotifierProvider(
+      create: (_) => RepairPriceProvider(repository: repository),
+      child: const MaterialApp(home: RepairDevicePage(showBackButton: false)),
+    ));
+    await tester.pumpAndSettle();
+    expect(repository.deviceSearches, [null]);
+
+    await tester.enterText(find.byType(TextField).first, 'nx');
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pump();
+    expect(repository.deviceSearches, [null, 'nx']);
+
+    final before = repository.deviceSearches.length;
+    await tester.tap(find.descendant(
+      of: find.byType(RepairSearchBar),
+      matching: find.byIcon(Icons.close_rounded),
+    ));
+    await tester.pump();
+    await tester.pump();
+    expect(repository.deviceSearches.length, before + 1,
+        reason: 'clear must trigger exactly one reload, not two');
+    expect(repository.deviceSearches.last, isNull);
+  });
+
+  testWidgets('Repair List search submits immediately from the keyboard',
+      (tester) async {
+    Localization.load(
+        jsonDecode(File('assets/i18n/en.json').readAsStringSync())
+            as Map<String, dynamic>);
+    final repository = _SearchRepository();
+    await tester.pumpWidget(ChangeNotifierProvider(
+      create: (_) => RepairPriceProvider(repository: repository),
+      child: const MaterialApp(home: RepairDevicePage(showBackButton: false)),
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField).first, 'phone');
+    // The 300ms debounce must not delay an explicit search submit.
+    await tester.testTextInput.receiveAction(TextInputAction.search);
+    await tester.pump();
+    await tester.pump();
+    expect(repository.deviceSearches, [null, 'phone']);
+    expect(repository.deviceSearches.last, 'phone');
+  });
+
+  testWidgets('Repair List search icon keeps a single focusable layer',
+      (tester) async {
+    Localization.load(
+        jsonDecode(File('assets/i18n/en.json').readAsStringSync())
+            as Map<String, dynamic>);
+    final repository = _SearchRepository();
+    await tester.pumpWidget(ChangeNotifierProvider(
+      create: (_) => RepairPriceProvider(repository: repository),
+      child: const MaterialApp(home: RepairDevicePage(showBackButton: false)),
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField).first, 'nova');
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pump();
+    expect(repository.deviceSearches.last, 'nova');
+
+    // The magnifier icon must not sit behind a second gesture layer:
+    // tapping it focuses the field instead of swallowing the tap.
+    final editable = tester.widget<EditableText>(
+        find.descendant(
+            of: find.byType(RepairSearchBar),
+            matching: find.byType(EditableText)).first);
+    editable.focusNode.unfocus();
+    await tester.pump();
+    expect(editable.focusNode.hasFocus, isFalse);
+
+    await tester.tap(find.descendant(
+      of: find.byType(RepairSearchBar),
+      matching: find.byIcon(Icons.search_rounded),
+    ));
+    await tester.pump();
+    expect(editable.focusNode.hasFocus, isTrue,
+        reason: 'the search icon area must focus the field, not block it');
+  });
+
+  test('failed device search shows error state instead of empty', () async {
+    final repository = _DevicesDownRepository();
+    final provider = RepairPriceProvider(repository: repository);
+    addTearDown(provider.dispose);
+
+    await provider.initDevicePage();
+    expect(provider.deviceLoadingState, RepairLoadingState.loaded);
+
+    repository.devicesDown = true;
+    provider.onDeviceSearchChanged('nx-500');
+    await Future<void>.delayed(const Duration(milliseconds: 350));
+    await Future<void>.delayed(Duration.zero);
+
+    expect(provider.deviceLoadingState, RepairLoadingState.error,
+        reason: 'a failing search must surface an error with retry, '
+            'not the "No devices found" empty state');
+    expect(provider.deviceErrorMessage, contains('device list unavailable'));
+  });
+
+  test('refresh reloads even while a device search load is in flight',
+      () async {
+    final repository = _GatedSearchRepository();
+    final provider = RepairPriceProvider(repository: repository);
+    addTearDown(provider.dispose);
+
+    await provider.initDevicePage();
+    expect(repository.deviceFetches, 1);
+    expect(provider.deviceLoadingState, RepairLoadingState.loaded);
+
+    provider.onDeviceSearchChanged('phone');
+    await Future<void>.delayed(const Duration(milliseconds: 350));
+    await Future<void>.delayed(Duration.zero);
+    expect(repository.deviceFetches, 2,
+        reason: 'the search load must be in flight');
+    expect(provider.deviceLoadingState, RepairLoadingState.loading);
+
+    final refresh = provider.initDevicePage();
+    await Future<void>.delayed(Duration.zero);
+    await Future<void>.delayed(Duration.zero);
+    expect(repository.deviceFetches, 3,
+        reason: 'pull-to-refresh must not be skipped during a search load');
+
+    repository.gate.complete();
+    await refresh;
+    await Future<void>.delayed(Duration.zero);
+    expect(provider.deviceLoadingState, RepairLoadingState.loaded);
   });
 }

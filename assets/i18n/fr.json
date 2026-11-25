@@ -1,11 +1,17 @@
 {
+  "filter": "Filtrer",
   "connection_error": {
     "title": "Cannot connect to server",
     "message": "The server is unreachable. Please check your internet connection and try again.",
     "primary_server": "Primary server",
     "backup_server": "Backup server",
     "reconnecting": "Trying to reconnect...",
-    "retry": "Retry"
+    "retry": "Retry",
+    "switch_backup": "Switch to Backup Server",
+    "scan_new_qr": "Scan New QR Code",
+    "confirm_switch_title": "Confirm Server Switch",
+    "confirm_switch_message": "Are you sure you want to switch to this server?",
+    "switching_server": "Switching server..."
   },
   "dashboard_screen": {
     "home": "Accueil",
@@ -698,7 +704,7 @@
   },
   "app_update": {
     "title": "Update Available!",
-    "optional_desc": "A new version of Digital HR is available with improvements and fixes.",
+    "optional_desc": "A new version of KNEAYERNG is available with improvements and fixes.",
     "mandatory_desc": "A mandatory update is required to continue using the application.",
     "current_version": "Current",
     "latest_version": "Latest",

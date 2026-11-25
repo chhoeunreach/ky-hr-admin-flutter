@@ -60,7 +60,7 @@ void main() {
     tester.view.padding = const FakeViewPadding(bottom: 48);
     addTearDown(tester.view.reset);
     await tester.pumpWidget(MaterialApp(home: ChangePassword()));
-    final submit = find.byType(TextButton);
+    final submit = find.byType(ElevatedButton);
     expect(tester.getBottomLeft(submit).dy, 472);
 
     await tester.enterText(find.byType(TextFormField).first, 'old password');

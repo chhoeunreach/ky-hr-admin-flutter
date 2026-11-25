@@ -264,7 +264,7 @@ class PushNotificationService {
       body: _messageBody(message),
       summary: isChat
           ? (isGroupChat ? _chatSenderTitle(payload) : chatAlertFallbackTitle)
-          : 'Digital HRMS',
+          : 'KNEAYERNG',
       category:
           isChat ? NotificationCategory.Message : NotificationCategory.Reminder,
       notificationLayout: isGroupChat
@@ -789,8 +789,8 @@ class PushNotificationService {
         NotificationChannel(
           channelGroupKey: 'digital_hr_group',
           channelKey: 'digital_hr_channel',
-          channelName: 'Digital Hr notifications',
-          channelDescription: 'Digital HR Alert',
+          channelName: 'KNEAYERNG notifications',
+          channelDescription: 'KNEAYERNG Alert',
           channelShowBadge: true,
           defaultColor: AppColors.customFF9D50DD,
           ledColor: AppColors.white,
@@ -799,8 +799,8 @@ class PushNotificationService {
         NotificationChannel(
           channelGroupKey: 'digital_hr_group',
           channelKey: 'ahpu_channel_11',
-          channelName: 'Digital Hr alerts',
-          channelDescription: 'Digital HR Updates & Alerts',
+          channelName: 'KNEAYERNG alerts',
+          channelDescription: 'KNEAYERNG Updates & Alerts',
           channelShowBadge: true,
           defaultColor: AppColors.customFF9D50DD,
           ledColor: AppColors.white,
@@ -810,7 +810,7 @@ class PushNotificationService {
       channelGroups: [
         NotificationChannelGroup(
           channelGroupKey: 'digital_hr_group',
-          channelGroupName: 'HR group',
+          channelGroupName: 'KNEAYERNG group',
         ),
       ],
       debug: true,

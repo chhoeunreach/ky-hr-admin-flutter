@@ -49,10 +49,27 @@ class AppThemeOption {
     final IconData iconData = core != null
         ? AppThemeData.info(core).icon
         : iconFromString(remote.icon);
+
+    String name = remote.name;
+    String description = remote.description;
+
+    if (core == AppThemeMode.light ||
+        remote.key == 'light' ||
+        name.toLowerCase() == 'original mode' ||
+        name.toLowerCase().contains('original')) {
+      name = 'Day Mode';
+      description = AppThemeData.info(AppThemeMode.light).description;
+    } else if (core == AppThemeMode.dark ||
+        remote.key == 'dark' ||
+        name.toLowerCase() == 'dark mode') {
+      name = 'Night Mode';
+      description = AppThemeData.info(AppThemeMode.dark).description;
+    }
+
     return AppThemeOption(
       id: remote.key,
-      name: remote.name,
-      description: remote.description,
+      name: name,
+      description: description,
       icon: iconData,
       colors: remote.toThemeColors(),
       isDark: remote.isDark,

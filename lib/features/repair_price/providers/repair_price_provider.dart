@@ -52,7 +52,15 @@ class RepairPriceProvider extends ChangeNotifier {
       (service.repairPriceId ?? 0) > 0;
 
   /// Loads the permissions for the current authenticated repair session.
-  Future<void> loadWebPermissions() async {
+  Future<void> loadWebPermissions() {
+    final load = _doLoadWebPermissions();
+    _permissionLoad = load;
+    return load;
+  }
+
+  Future<void>? _permissionLoad;
+
+  Future<void> _doLoadWebPermissions() async {
     _checkingPermissions = true;
     try {
       _permissions = await _repository.fetchPermissions() ?? const {};
@@ -138,8 +146,19 @@ class RepairPriceProvider extends ChangeNotifier {
 
   // --- Page 2 Actions ---
 
+  bool _initializingDevices = false;
+
   Future<void> initDevicePage() async {
-    if (_deviceLoadingState == RepairLoadingState.loading) return;
+    if (_initializingDevices || _disposed) return;
+    _initializingDevices = true;
+    try {
+      await _initDevicePageBody();
+    } finally {
+      _initializingDevices = false;
+    }
+  }
+
+  Future<void> _initDevicePageBody() async {
     final request = ++_deviceRequest;
     _deviceLoadingState = RepairLoadingState.loading;
     _deviceErrorMessage = null;
@@ -184,8 +203,10 @@ class RepairPriceProvider extends ChangeNotifier {
 
   Future<List<RepairDevice>> _fetchDevicesForCurrentQuery() async {
     final query = _deviceSearchQuery.trim();
-    List<RepairDevice> results = [];
+    Object? lastError;
+    List<RepairDevice>? results;
 
+    // 1) Server-side search on the device list endpoint.
     try {
       results = await _repository.fetchDevices(
         search: query.isEmpty ? null : query,
@@ -197,15 +218,43 @@ class RepairPriceProvider extends ChangeNotifier {
       );
     } catch (e) {
       if (query.isEmpty) rethrow;
+      lastError = e;
     }
 
-    if (query.isNotEmpty && results.isEmpty) {
+    // 2) Dedicated search endpoint when list search failed or found nothing.
+    if (query.isNotEmpty && (results == null || results.isEmpty)) {
       try {
-        final searched = await _repository.searchDevices(query);
-        results = searched;
-      } catch (_) {}
+        results = await _repository.searchDevices(query);
+      } catch (e) {
+        lastError ??= e;
+      }
     }
 
+    // 3) Recovery: plain page + client filter, for backends without search.
+    if (query.isNotEmpty &&
+        (results == null || (lastError != null && results.isEmpty))) {
+      try {
+        results = await _repository.fetchDevices(
+          search: null,
+          brandId: _selectedBrandId,
+          deviceTypeId: _selectedDeviceTypeId,
+          seriesId: _selectedSeriesId,
+          page: 1,
+          perPage: RepairPriceConfig.pageSize,
+        );
+      } catch (e) {
+        lastError ??= e;
+      }
+    }
+
+    if (results == null) {
+      throw lastError ?? Exception('Failed to load repair devices');
+    }
+
+    return _filterDevices(results, query);
+  }
+
+  List<RepairDevice> _filterDevices(List<RepairDevice> results, String query) {
     final q = query.toLowerCase();
     return results.where((device) {
       final matchesBrand =
@@ -234,6 +283,12 @@ class RepairPriceProvider extends ChangeNotifier {
         loadDevices();
       });
     }
+  }
+
+  /// Runs the pending device search immediately (keyboard or icon submit).
+  void submitDeviceSearch() {
+    _searchDebounceTimer?.cancel();
+    loadDevices();
   }
 
   void selectBrand(int? brandId) {
@@ -278,6 +333,13 @@ class RepairPriceProvider extends ChangeNotifier {
   }
 
   Future<void> loadDevices() async {
+    // Never flip to "forbidden" while a permission refresh is still running;
+    // wait for it so a search issued during the refresh is not dropped.
+    final pendingPermissions = _permissionLoad;
+    if (_checkingPermissions && pendingPermissions != null) {
+      await pendingPermissions;
+      if (_disposed) return;
+    }
     if (!canView) {
       _deviceLoadingState = RepairLoadingState.forbidden;
       notifyListeners();
@@ -332,22 +394,7 @@ class RepairPriceProvider extends ChangeNotifier {
         perPage: RepairPriceConfig.pageSize,
       );
 
-      final q = query.toLowerCase();
-      final filteredNewDevices = newDevices.where((device) {
-        final matchesBrand =
-            _selectedBrandId == null || device.brand?.id == _selectedBrandId;
-        final matchesType = _selectedDeviceTypeId == null ||
-            device.deviceType?.id == _selectedDeviceTypeId;
-        final matchesSeries =
-            _selectedSeriesId == null || device.series?.id == _selectedSeriesId;
-        final matchesQuery = q.isEmpty ||
-            device.name.toLowerCase().contains(q) ||
-            device.modelNumber.toLowerCase().contains(q) ||
-            (device.brand?.name.toLowerCase().contains(q) ?? false) ||
-            (device.series?.name.toLowerCase().contains(q) ?? false);
-
-        return matchesBrand && matchesType && matchesSeries && matchesQuery;
-      }).toList();
+      final filteredNewDevices = _filterDevices(newDevices, query);
 
       if (filteredNewDevices.isEmpty) {
         _hasMoreDevices = false;
@@ -726,6 +773,12 @@ class RepairPriceProvider extends ChangeNotifier {
         loadServices();
       });
     }
+  }
+
+  /// Runs the pending service search immediately (keyboard or icon submit).
+  void submitServiceSearch() {
+    _searchDebounceTimer?.cancel();
+    loadServices();
   }
 
   void selectCategory(int? categoryId) {

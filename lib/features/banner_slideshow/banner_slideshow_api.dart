@@ -12,22 +12,53 @@ class BannerSlideshowApi {
   final Preferences _preferences;
 
   Future<BannerSlideshowConfig> fetch() async {
+    final base = await _preferences.getAppUrl();
     final body = await _request('GET');
-    return _parseConfig(body);
+    return _parseConfig(body, baseUrl: base);
   }
 
   Future<BannerSlideshowConfig> save(BannerSlideshowConfig config) async {
-    return _parseConfig(await _request('PUT', payload: config.toJson()));
+    final base = await _preferences.getAppUrl();
+    return _parseConfig(await _request('PUT', payload: config.toJson()),
+        baseUrl: base);
   }
 
   Future<BannerSlideshowConfig> reset() async {
-    return _parseConfig(await _request('POST', path: 'reset'));
+    final base = await _preferences.getAppUrl();
+    return _parseConfig(await _request('POST', path: 'reset'), baseUrl: base);
   }
 
-  BannerSlideshowConfig _parseConfig(Map<String, dynamic> body) {
+  BannerSlideshowConfig _parseConfig(Map<String, dynamic> body,
+      {String? baseUrl}) {
     final data = body['data'];
     if (data is! Map) throw const FormatException('Invalid banner response.');
-    return BannerSlideshowConfig.fromJson(Map<String, dynamic>.from(data));
+    final map = Map<String, dynamic>.from(data);
+    if (baseUrl != null && baseUrl.isNotEmpty) {
+      final rawSlides = map['slides'];
+      if (rawSlides is List) {
+        final normalizedSlides = <Map<String, dynamic>>[];
+        for (final item in rawSlides) {
+          if (item is Map) {
+            final slideMap = Map<String, dynamic>.from(item);
+            final img = slideMap['imageUrl']?.toString().trim();
+            if (img != null &&
+                img.isNotEmpty &&
+                !img.startsWith('http://') &&
+                !img.startsWith('https://') &&
+                !img.startsWith('assets/')) {
+              final cleanBase = baseUrl.endsWith('/')
+                  ? baseUrl.substring(0, baseUrl.length - 1)
+                  : baseUrl;
+              final cleanPath = img.startsWith('/') ? img : '/$img';
+              slideMap['imageUrl'] = '$cleanBase$cleanPath';
+            }
+            normalizedSlides.add(slideMap);
+          }
+        }
+        map['slides'] = normalizedSlides;
+      }
+    }
+    return BannerSlideshowConfig.fromJson(map);
   }
 
   Future<Map<String, dynamic>> _request(String method,

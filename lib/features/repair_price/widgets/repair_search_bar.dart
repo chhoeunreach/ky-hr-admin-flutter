@@ -5,6 +5,7 @@ import 'package:cnattendance/core/theme/app_colors.dart';
 class RepairSearchBar extends StatefulWidget {
   final String hintText;
   final ValueChanged<String> onChanged;
+  final ValueChanged<String>? onSubmitted;
   final VoidCallback? onClear;
   final TextEditingController? controller;
   final String? initialValue;
@@ -13,6 +14,7 @@ class RepairSearchBar extends StatefulWidget {
     super.key,
     required this.hintText,
     required this.onChanged,
+    this.onSubmitted,
     this.onClear,
     this.controller,
     this.initialValue,
@@ -55,6 +57,10 @@ class _RepairSearchBarState extends State<RepairSearchBar> {
     }
   }
 
+  void _submit() {
+    widget.onSubmitted?.call(_controller.text);
+  }
+
   @override
   void dispose() {
     if (widget.controller == null) {
@@ -77,6 +83,8 @@ class _RepairSearchBarState extends State<RepairSearchBar> {
       child: TextField(
         controller: _controller,
         onChanged: widget.onChanged,
+        textInputAction: TextInputAction.search,
+        onSubmitted: (_) => _submit(),
         style: TextStyle(
           color: enterprise.text,
           fontSize: 13,

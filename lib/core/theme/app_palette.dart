@@ -470,7 +470,7 @@ abstract final class AppPalette {
   static const customFFB77900 = Color(0xFFB77900);
   static const customFFB87908 = Color(0xFFB87908);
   static const customFFB8860B = Color(0xFFB8860B);
-  static const customFFB8DEFF = Color(0xFFB8DEFF);
+  static const customFFB8DEFF = Color(0xFFE2E8F0);
   static const customFFB8F5D0 = Color(0xFFB8F5D0);
   static const customFFB9D8F2 = Color(0xFFB9D8F2);
   static const customFFBFDDF0 = Color(0xFFBFDDF0);

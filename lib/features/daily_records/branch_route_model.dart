@@ -75,6 +75,7 @@ class BranchRoute {
   final String? finalSummary;
   final int totalMinutes;
   final bool isSynced;
+  final String missionMode; // 'round_trip' | 'multi_branch'
   final List<String> supportingPhotos;
   final List<String> supportingFiles;
   final List<String> supportingLinks;
@@ -86,6 +87,7 @@ class BranchRoute {
     required this.targetBranches,
     required this.status,
     required this.startTime,
+    this.missionMode = 'multi_branch',
     this.startLatitude,
     this.startLongitude,
     this.startSelfiePath,
@@ -105,6 +107,8 @@ class BranchRoute {
 
   bool get isProcessing => status == 'processing';
   bool get isCompleted => status == 'completed';
+  bool get isRoundTrip => missionMode == 'round_trip';
+  bool get isMultiBranch => missionMode == 'multi_branch';
 
   Duration get currentDuration {
     final end = endTime ?? DateTime.now();
@@ -158,6 +162,7 @@ class BranchRoute {
     List<String>? targetBranches,
     String? status,
     DateTime? startTime,
+    String? missionMode,
     double? startLatitude,
     double? startLongitude,
     String? startSelfiePath,
@@ -181,6 +186,7 @@ class BranchRoute {
       targetBranches: targetBranches ?? this.targetBranches,
       status: status ?? this.status,
       startTime: startTime ?? this.startTime,
+      missionMode: missionMode ?? this.missionMode,
       startLatitude: startLatitude ?? this.startLatitude,
       startLongitude: startLongitude ?? this.startLongitude,
       startSelfiePath: startSelfiePath ?? this.startSelfiePath,
@@ -206,6 +212,7 @@ class BranchRoute {
         'target_branches': targetBranches,
         'status': status,
         'start_time': startTime.toIso8601String(),
+        'mission_mode': missionMode,
         'start_latitude': startLatitude,
         'start_longitude': startLongitude,
         'start_selfie_path': startSelfiePath,
@@ -234,6 +241,7 @@ class BranchRoute {
       startTime: map['start_time'] != null
           ? DateTime.tryParse(map['start_time'].toString()) ?? DateTime.now()
           : DateTime.now(),
+      missionMode: (map['mission_mode'] ?? 'multi_branch').toString(),
       startLatitude: map['start_latitude'] != null
           ? double.tryParse(map['start_latitude'].toString())
           : null,

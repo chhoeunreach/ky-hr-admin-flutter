@@ -1,6 +1,6 @@
 import 'package:cnattendance/model/department.dart';
 import 'package:cnattendance/provider/supportcontroller.dart';
-import 'package:cnattendance/widget/buttonborder.dart';
+import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
@@ -12,6 +12,14 @@ class SupportScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final model = Get.put(SupportController());
+    final enterprise = EnterpriseTheme.of(context);
+    final inputFill = enterprise.isDark ? AppColors.white12 : AppColors.white;
+    final inputBorderSide = BorderSide(
+      color:
+          enterprise.isDark ? enterprise.cardBorder : AppColors.customFFB8DEFF,
+      width: 1,
+    );
+
     return Container(
       decoration: RadialDecoration(),
       child: Scaffold(
@@ -19,273 +27,282 @@ class SupportScreen extends StatelessWidget {
         appBar: AppBar(
           elevation: 0,
           backgroundColor: Colors.transparent,
-          title: Text(translate('support_screen.support')),
+          iconTheme: IconThemeData(color: enterprise.text),
+          title: Text(
+            translate('support_screen.support'),
+            style: TextStyle(
+              color: enterprise.text,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           actions: [
             InkWell(
               onTap: () {
                 model.showList();
               },
               child: Padding(
-                padding: EdgeInsets.all(20),
-                child: Icon(Icons.list_alt),
+                padding: const EdgeInsets.all(20),
+                child: Icon(Icons.list_alt, color: enterprise.text),
               ),
             )
           ],
         ),
-        body: SingleChildScrollView(
-          padding:
-              EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
-          child: Form(
-            key: model.form,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Card(
-                  margin: EdgeInsets.symmetric(horizontal: 20),
-                  elevation: 0,
-                  shape: ButtonBorder(),
-                  color: Colors.transparent,
-                  child: Padding(
+        body: SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Form(
+              key: model.form,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 20),
                     padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: enterprise.isDark
+                          ? AppColors.white12
+                          : AppColors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: enterprise.isDark
+                            ? enterprise.cardBorder
+                            : AppColors.customFFB8DEFF,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.black.withValues(
+                              alpha: enterprise.isDark ? 0.12 : 0.04),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
                     child: Column(
                       children: [
                         Icon(Icons.support_agent_rounded,
-                            color: AppColors.white, size: 60),
-                        SizedBox(
-                          height: 10,
-                        ),
+                            color: enterprise.primary, size: 56),
+                        const SizedBox(height: 10),
                         Text(
                           translate('support_screen.help_desk'),
                           style: TextStyle(
-                              color: AppColors.white,
+                              color: enterprise.text,
                               fontSize: 20,
                               fontWeight: FontWeight.bold),
                           textAlign: TextAlign.center,
                         ),
-                        SizedBox(
-                          height: 10,
-                        ),
+                        const SizedBox(height: 6),
                         Text(
                           translate('support_screen.contact_us'),
-                          style:
-                              TextStyle(color: AppColors.white, fontSize: 15),
+                          style: TextStyle(
+                              color: enterprise.mutedText, fontSize: 14),
                           textAlign: TextAlign.center,
                         ),
                       ],
                     ),
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    children: [
-                      Container(
-                        padding: EdgeInsets.symmetric(vertical: 10),
-                        width: double.infinity,
-                        child: DropdownButtonHideUnderline(
-                          child: Obx(
-                            () => DropdownButton2<Department>(
-                              isExpanded: true,
-                              hint: Text(
-                                translate(
-                                    'support_screen.select_department_type'),
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.black,
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          width: double.infinity,
+                          child: DropdownButtonHideUnderline(
+                            child: Obx(
+                              () => DropdownButton2<Department>(
+                                isExpanded: true,
+                                hint: Text(
+                                  translate(
+                                      'support_screen.select_department_type'),
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: enterprise.mutedText,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              items: model.departments.map((Department e) {
-                                return DropdownMenuItem<Department>(
-                                  value: e,
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8.0),
-                                    child: Text(
-                                      e.name,
-                                      style: TextStyle(
-                                          color: AppColors.black,
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold),
+                                items: model.departments.map((Department e) {
+                                  return DropdownMenuItem<Department>(
+                                    value: e,
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8.0),
+                                      child: Text(
+                                        e.name,
+                                        style: TextStyle(
+                                            color: enterprise.text,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600),
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
+                                value: model.selected.value.name == ""
+                                    ? null
+                                    : model.selected.value,
+                                onChanged: (value) {
+                                  if (value != null) {
+                                    model.selected.value = value;
+                                  }
+                                },
+                                iconStyleData: IconStyleData(
+                                  icon: const Icon(
+                                    Icons.arrow_forward_ios_outlined,
+                                  ),
+                                  iconSize: 14,
+                                  iconEnabledColor: enterprise.primary,
+                                  iconDisabledColor: enterprise.mutedText,
+                                ),
+                                buttonStyleData: ButtonStyleData(
+                                  height: 50,
+                                  width: 160,
+                                  padding: const EdgeInsets.only(
+                                      left: 14, right: 14),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(12),
+                                    color: inputFill,
+                                    border: Border.all(
+                                      color: enterprise.isDark
+                                          ? enterprise.cardBorder
+                                          : AppColors.customFFB8DEFF,
                                     ),
                                   ),
-                                );
-                              }).toList(),
-                              value: model.selected.value.name == ""
-                                  ? null
-                                  : model.selected.value,
-                              onChanged: (value) {
-                                if (value != null) {
-                                  model.selected.value = value;
-                                }
-                              },
-                              iconStyleData: IconStyleData(
-                                icon: const Icon(
-                                  Icons.arrow_forward_ios_outlined,
+                                  elevation: 0,
                                 ),
-                                iconSize: 14,
-                                iconEnabledColor: AppColors.black,
-                                iconDisabledColor: AppColors.grey,
-                              ),
-                              buttonStyleData: ButtonStyleData(
-                                height: 50,
-                                width: 160,
-                                padding:
-                                    const EdgeInsets.only(left: 14, right: 14),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.only(
-                                      topLeft: Radius.circular(10),
-                                      topRight: Radius.circular(0),
-                                      bottomLeft: Radius.circular(0),
-                                      bottomRight: Radius.circular(10)),
-                                  color: AppColors.white,
+                                dropdownStyleData: DropdownStyleData(
+                                  maxHeight: 200,
+                                  padding: null,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(12),
+                                    color: enterprise.isDark
+                                        ? const Color(0xFF1E293B)
+                                        : AppColors.white,
+                                    border: Border.all(
+                                      color: enterprise.isDark
+                                          ? enterprise.cardBorder
+                                          : AppColors.customFFB8DEFF,
+                                    ),
+                                  ),
+                                  elevation: 8,
                                 ),
-                                elevation: 0,
-                              ),
-                              dropdownStyleData: DropdownStyleData(
-                                maxHeight: 200,
-                                padding: null,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.only(
-                                      topLeft: Radius.circular(0),
-                                      topRight: Radius.circular(10),
-                                      bottomLeft: Radius.circular(10),
-                                      bottomRight: Radius.circular(10)),
-                                  color: AppColors.white,
+                                menuItemStyleData: const MenuItemStyleData(
+                                  height: 40,
+                                  padding: EdgeInsets.only(left: 14, right: 14),
                                 ),
-                                elevation: 8,
-                              ),
-                              menuItemStyleData: MenuItemStyleData(
-                                height: 40,
-                                padding:
-                                    const EdgeInsets.only(left: 14, right: 14),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                      TextFormField(
-                        controller: model.titleController,
-                        textAlignVertical: TextAlignVertical.top,
-                        keyboardType: TextInputType.emailAddress,
-                        style: TextStyle(color: AppColors.white),
-                        validator: (value) {
-                          if (value!.isEmpty) {
-                            return "Field can't be empty";
-                          }
-                          return null;
-                        },
-                        cursorColor: AppColors.white,
-                        decoration: InputDecoration(
-                          hintText: translate('support_screen.title'),
-                          hintStyle: TextStyle(color: AppColors.grey),
-                          labelStyle: TextStyle(color: AppColors.white),
-                          fillColor: AppColors.white24,
-                          filled: true,
-                          enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.only(
-                                  topLeft: Radius.circular(10),
-                                  topRight: Radius.circular(0),
-                                  bottomLeft: Radius.circular(0),
-                                  bottomRight: Radius.circular(10))),
-                          focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.only(
-                                  topLeft: Radius.circular(10),
-                                  topRight: Radius.circular(0),
-                                  bottomLeft: Radius.circular(0),
-                                  bottomRight: Radius.circular(10))),
-                          focusedErrorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.only(
-                                  topLeft: Radius.circular(10),
-                                  topRight: Radius.circular(0),
-                                  bottomLeft: Radius.circular(0),
-                                  bottomRight: Radius.circular(10))),
-                          errorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.only(
-                                  topLeft: Radius.circular(10),
-                                  topRight: Radius.circular(0),
-                                  bottomLeft: Radius.circular(0),
-                                  bottomRight: Radius.circular(10))),
+                        const SizedBox(height: 6),
+                        TextFormField(
+                          controller: model.titleController,
+                          textAlignVertical: TextAlignVertical.top,
+                          keyboardType: TextInputType.emailAddress,
+                          style:
+                              TextStyle(color: enterprise.text, fontSize: 14),
+                          validator: (value) {
+                            if (value!.isEmpty) {
+                              return "Field can't be empty";
+                            }
+                            return null;
+                          },
+                          cursorColor: enterprise.primary,
+                          decoration: InputDecoration(
+                            hintText: translate('support_screen.title'),
+                            hintStyle: TextStyle(
+                                color: enterprise.mutedText, fontSize: 14),
+                            labelStyle: TextStyle(color: enterprise.text),
+                            fillColor: inputFill,
+                            filled: true,
+                            enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: inputBorderSide),
+                            focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                    color: enterprise.primary, width: 1.5)),
+                            focusedErrorBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide:
+                                    const BorderSide(color: AppColors.red)),
+                            errorBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide:
+                                    const BorderSide(color: AppColors.red)),
+                          ),
                         ),
-                      ),
-                      SizedBox(
-                        height: 10,
-                      ),
-                      TextFormField(
-                        controller: model.descriptionController,
-                        maxLength: 500,
-                        textAlignVertical: TextAlignVertical.top,
-                        maxLines: 10,
-                        keyboardType: TextInputType.emailAddress,
-                        style: TextStyle(color: AppColors.white),
-                        validator: (value) {
-                          if (value!.isEmpty) {
-                            return "Field can't be empty";
-                          }
-                          return null;
-                        },
-                        cursorColor: AppColors.white,
-                        decoration: InputDecoration(
-                          counterStyle: TextStyle(color: AppColors.white),
-                          hintText: translate('support_screen.description'),
-                          hintStyle: TextStyle(color: AppColors.grey),
-                          labelStyle: TextStyle(color: AppColors.white),
-                          fillColor: AppColors.white24,
-                          filled: true,
-                          enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.only(
-                                  topLeft: Radius.circular(10),
-                                  topRight: Radius.circular(0),
-                                  bottomLeft: Radius.circular(0),
-                                  bottomRight: Radius.circular(10))),
-                          focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.only(
-                                  topLeft: Radius.circular(10),
-                                  topRight: Radius.circular(0),
-                                  bottomLeft: Radius.circular(0),
-                                  bottomRight: Radius.circular(10))),
-                          focusedErrorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.only(
-                                  topLeft: Radius.circular(10),
-                                  topRight: Radius.circular(0),
-                                  bottomLeft: Radius.circular(0),
-                                  bottomRight: Radius.circular(10))),
-                          errorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.only(
-                                  topLeft: Radius.circular(10),
-                                  topRight: Radius.circular(0),
-                                  bottomLeft: Radius.circular(0),
-                                  bottomRight: Radius.circular(10))),
+                        const SizedBox(height: 14),
+                        TextFormField(
+                          controller: model.descriptionController,
+                          maxLength: 500,
+                          textAlignVertical: TextAlignVertical.top,
+                          maxLines: 8,
+                          keyboardType: TextInputType.emailAddress,
+                          style:
+                              TextStyle(color: enterprise.text, fontSize: 14),
+                          validator: (value) {
+                            if (value!.isEmpty) {
+                              return "Field can't be empty";
+                            }
+                            return null;
+                          },
+                          cursorColor: enterprise.primary,
+                          decoration: InputDecoration(
+                            counterStyle:
+                                TextStyle(color: enterprise.mutedText),
+                            hintText: translate('support_screen.description'),
+                            hintStyle: TextStyle(
+                                color: enterprise.mutedText, fontSize: 14),
+                            labelStyle: TextStyle(color: enterprise.text),
+                            fillColor: inputFill,
+                            filled: true,
+                            enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: inputBorderSide),
+                            focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                    color: enterprise.primary, width: 1.5)),
+                            focusedErrorBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide:
+                                    const BorderSide(color: AppColors.red)),
+                            errorBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide:
+                                    const BorderSide(color: AppColors.red)),
+                          ),
                         ),
-                      ),
-                      SizedBox(
-                        height: 20,
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width,
-                        child: TextButton(
-                            style: TextButton.styleFrom(
-                              backgroundColor: AppColors.customFF036EB7,
-                              padding: EdgeInsets.zero,
-                              shape: ButtonBorder(),
-                            ),
-                            onPressed: () {
-                              FocusManager.instance.primaryFocus?.unfocus();
-                              model.onSubmitClicked();
-                            },
-                            child: Padding(
-                              padding: EdgeInsets.all(20.0),
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          width: MediaQuery.of(context).size.width,
+                          child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: enterprise.primary,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              onPressed: () {
+                                FocusManager.instance.primaryFocus?.unfocus();
+                                model.onSubmitClicked();
+                              },
                               child: Text(
                                 translate('support_screen.submit'),
-                                style: TextStyle(color: AppColors.white),
-                              ),
-                            )),
-                      )
-                    ],
+                                style: const TextStyle(
+                                  color: AppColors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                ),
+                              )),
+                        )
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

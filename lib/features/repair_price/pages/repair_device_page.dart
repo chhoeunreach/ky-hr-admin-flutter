@@ -200,8 +200,8 @@ class _RepairDeviceViewState extends State<_RepairDeviceView> {
                                       'repair_screen.search_device_hint'),
                                   initialValue: provider.deviceSearchQuery,
                                   onChanged: provider.onDeviceSearchChanged,
-                                  onClear: () =>
-                                      provider.onDeviceSearchChanged(''),
+                                  onSubmitted: (_) =>
+                                      provider.submitDeviceSearch(),
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -532,7 +532,7 @@ class _RepairDeviceViewState extends State<_RepairDeviceView> {
                   crossAxisCount: constraints.maxWidth > 900 ? 3 : 2,
                   crossAxisSpacing: 10,
                   mainAxisSpacing: 10,
-                  mainAxisExtent: 78,
+                  mainAxisExtent: 86,
                 ),
                 itemCount: provider.devices.length +
                     (provider.isLoadingMoreDevices ? 1 : 0),

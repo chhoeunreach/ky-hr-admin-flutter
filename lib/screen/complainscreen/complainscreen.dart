@@ -1,6 +1,6 @@
 import 'package:cnattendance/screen/complainscreen/complaincontroller.dart';
 import 'package:cnattendance/screen/complainscreen/createcomplainscreen.dart';
-import 'package:cnattendance/widget/buttonborder.dart';
+import 'package:cnattendance/theme/enterprise_theme.dart';
 import 'package:cnattendance/widget/profile/complaint_bottom_sheet.dart';
 import 'package:cnattendance/widget/radialDecoration.dart';
 import 'package:flutter/material.dart';
@@ -11,6 +11,8 @@ class ComplainScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final model = Get.put(ComplainController());
+    final enterprise = EnterpriseTheme.of(context);
+
     return Container(
       decoration: RadialDecoration(),
       child: Scaffold(
@@ -18,14 +20,21 @@ class ComplainScreen extends StatelessWidget {
         appBar: AppBar(
           elevation: 0,
           backgroundColor: Colors.transparent,
-          title: Text("Complain"),
+          iconTheme: IconThemeData(color: enterprise.text),
+          title: Text(
+            "Complain",
+            style: TextStyle(
+              color: enterprise.text,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ),
         floatingActionButton: FloatingActionButton(
             onPressed: () {
               Get.to(CreateComplainScreen());
             },
-            backgroundColor: AppColors.blue,
-            child: Icon(
+            backgroundColor: enterprise.primary,
+            child: const Icon(
               Icons.add,
               color: AppColors.white,
             )),
@@ -50,6 +59,7 @@ class ComplainScreen extends StatelessWidget {
                       onTap: () {
                         showModalBottomSheet(
                             elevation: 0,
+                            backgroundColor: Colors.transparent,
                             context: context,
                             isScrollControlled: true,
                             shape: const RoundedRectangleBorder(
@@ -61,13 +71,25 @@ class ComplainScreen extends StatelessWidget {
                             });
                       },
                       child: Card(
-                        shape: ButtonBorder(),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          side: BorderSide(
+                            color: enterprise.isDark
+                                ? enterprise.cardBorder
+                                : AppColors.customFFB8DEFF,
+                          ),
+                        ),
                         color: complaint.response.isEmpty
-                            ? AppColors.red.withValues(alpha: .5)
-                            : AppColors.white24,
-                        elevation: 0,
+                            ? (enterprise.isDark
+                                ? AppColors.red.withValues(alpha: .35)
+                                : const Color(0xFFFEF2F2))
+                            : (enterprise.isDark
+                                ? AppColors.white12
+                                : AppColors.white),
+                        elevation: enterprise.isDark ? 0 : 2,
+                        margin: const EdgeInsets.symmetric(vertical: 6),
                         child: Padding(
-                          padding: const EdgeInsets.all(8.0),
+                          padding: const EdgeInsets.all(12.0),
                           child: Row(
                             children: [
                               Expanded(
@@ -77,15 +99,16 @@ class ComplainScreen extends StatelessWidget {
                                     Text(
                                       complaint.complaintDate,
                                       style: TextStyle(
-                                          color: AppColors.white70,
+                                          color: enterprise.mutedText,
                                           fontSize: 12,
                                           fontWeight: FontWeight.normal),
                                     ),
+                                    const SizedBox(height: 4),
                                     Text(
                                       complaint.subject,
                                       style: TextStyle(
-                                          color: AppColors.white,
-                                          fontSize: 18,
+                                          color: enterprise.text,
+                                          fontSize: 16,
                                           fontWeight: FontWeight.bold),
                                     ),
                                   ],
@@ -95,7 +118,11 @@ class ComplainScreen extends StatelessWidget {
                                 complaint.response.isNotEmpty
                                     ? Icons.reply
                                     : Icons.feedback_rounded,
-                                color: AppColors.white,
+                                color: complaint.response.isNotEmpty
+                                    ? enterprise.primary
+                                    : (enterprise.isDark
+                                        ? AppColors.white70
+                                        : AppColors.red),
                               )
                             ],
                           ),
