@@ -11,6 +11,11 @@ IMAGE="${FLUTTER_DOCKER_IMAGE:-$IMAGE_DEFAULT}"
 
 project_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 
+# The Gradle task validateReleaseSecurityConfiguration refuses release AOT
+# compilation without these defines, so validate them before pulling the image.
+source "${project_dir}/scripts/android_release_defines.sh"
+android_release_defines
+
 echo "Using image: $IMAGE"
 echo "Project dir: $project_dir"
 
@@ -20,12 +25,17 @@ docker pull "$IMAGE"
 uid="$(id -u)"
 gid="$(id -g)"
 
+build_cmd="flutter --version && flutter pub get && flutter build apk --release"
+for define in "${RELEASE_DART_DEFINES[@]}"; do
+  build_cmd+=" $(printf '%q' "$define")"
+done
+
 docker run --rm \
   -u "${uid}:${gid}" \
   -v "${project_dir}:/work" \
   -w /work \
   "$IMAGE" \
-  bash -lc "flutter --version && flutter pub get && flutter build apk --release"
+  bash -lc "$build_cmd"
 
 echo
 echo "APK generated:"

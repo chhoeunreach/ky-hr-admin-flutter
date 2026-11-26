@@ -19,7 +19,7 @@ class KyCertificatePinning {
   static const _rawPins = String.fromEnvironment('KY_SECURITY_SPKI_PINS');
   static const _rawHosts = String.fromEnvironment(
     'KY_SECURITY_PINNED_HOSTS',
-    defaultValue: 'kneayerng.com',
+    defaultValue: 'kneayerng.com,hr.kytech.info,hr.rvstechsolution.com',
   );
 
   static final pins = _rawPins

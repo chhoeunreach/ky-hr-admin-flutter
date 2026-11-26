@@ -11,9 +11,12 @@ if ! security find-identity -v -p codesigning | grep -q "Apple Distribution"; th
   exit 1
 fi
 
+source "$ROOT_DIR/scripts/release_defines.sh"
+release_defines
+
 flutter clean
 flutter pub get
-flutter build ipa --release
+flutter build ipa --release "${RELEASE_DART_DEFINES[@]}"
 
 echo
 echo "iOS archive/IPA output is under:"
