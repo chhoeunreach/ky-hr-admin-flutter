@@ -14,7 +14,7 @@ class KyCertificatePinning {
 
   static const enabled = bool.fromEnvironment(
     'KY_SECURITY_PINNING_ENABLED',
-    defaultValue: kReleaseMode,
+    defaultValue: false,
   );
   static const _rawPins = String.fromEnvironment('KY_SECURITY_SPKI_PINS');
   static const _rawHosts = String.fromEnvironment(

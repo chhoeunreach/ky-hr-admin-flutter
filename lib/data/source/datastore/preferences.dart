@@ -270,6 +270,7 @@ class Preferences with ChangeNotifier {
     await prefs.setString(ATTENDANCE_TYPE, "Default");
     await prefs.setBool(ATTENDANCE_TYPE_USER_SET, false);
     await prefs.setString(APP_URL, "");
+    await prefs.setBool(COMPANY_VERIFY_REQUIRED, true);
 
     await _clearChatUnreadState();
 
@@ -316,7 +317,7 @@ class Preferences with ChangeNotifier {
 
   Future<bool> getCompanyVerifyRequired() async {
     final prefs = await _sharedPrefs;
-    return prefs.getBool(COMPANY_VERIFY_REQUIRED) ?? false;
+    return prefs.getBool(COMPANY_VERIFY_REQUIRED) ?? true;
   }
 
   Future<void> setCompanyVerifyRequired(bool value) async {

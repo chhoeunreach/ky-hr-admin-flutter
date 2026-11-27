@@ -39,6 +39,7 @@ Human lead: **you** (fixes errors, approves, commits)
 | T5 | APK clone protection: signature/package gate, block all services if cloned | opencode (lead) | review | Implemented — needs device smoke test |
 | T6 | Home **Scan In / Scan Out** buttons + full scan chain (QR/NFC/wifi + offline) | opencode (lead) | done | Superseded by T7 — buttons removed per user (keep original single-button flow); `attendanceStatus` plumbing retained |
 | T7 | One-tap **multi-QR router** on home Scan: attendance / queue pass / meeting / payroll / server config | opencode (lead) | review | Implemented — needs device smoke test |
+| T8 | Upgrade toolchain to macOS 26.6+ & Xcode 27, rebuild, re-upload (App Store deadline: **April 2027**; current uploads warn "iOS 26.2 SDK") | human | todo | See `STORE_RELEASE_TODO.md` §6 — do it early 2027, not in a rush |
 
 ## Done
 

@@ -78,7 +78,26 @@ Privacy:
 - NFC tag scanning.
 - Crash/log/diagnostic data if collected.
 
-## 6. Final smoke test
+## 6. Xcode 27 / iOS 27 SDK deadline (April 2027)
+
+App Store Connect currently warns on upload: the app was built with the
+iOS 26.2 SDK (Xcode 26.3). **Starting April 2027, uploads/submissions must
+use the iOS 27 SDK (Xcode 27 or later)** — until then the warning is
+harmless and the build is accepted.
+
+Do this before April 2027 (aim for early 2027 to leave time for fallout):
+
+1. Update macOS to **26.6 or later** (Xcode 27 requirement; currently 26.4.1).
+2. Install **Xcode 27+** (latest stable: 27.2) from the Mac App Store or
+   developer.apple.com/download.
+3. Point the toolchain at it:
+   `sudo xcode-select -s /Applications/Xcode.app && xcodebuild -runFirstLaunch`
+4. Clean rebuild (major Xcode upgrades usually need it):
+   `flutter clean && flutter pub get && cd ios && pod install && cd ..`
+5. Build and upload: `./scripts/build_ios_store.sh`
+6. Confirm the warning is gone (App Store Connect should show iOS 27.x SDK).
+
+## 7. Final smoke test
 
 Before submitting:
 

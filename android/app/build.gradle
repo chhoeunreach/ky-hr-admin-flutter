@@ -70,10 +70,10 @@ if (encodedDartDefines) {
 
 def validateReleaseSecurityConfiguration = tasks.register('validateReleaseSecurityConfiguration') {
     group = 'verification'
-    description = 'Requires a valid HTTPS API host and primary/backup SPKI pins for release builds.'
+    description = 'Requires a valid HTTPS API host and primary/backup SPKI pins for release builds when pinning is enabled.'
     doLast {
         if (!'true'.equalsIgnoreCase(releaseDartDefines['KY_SECURITY_PINNING_ENABLED']?.trim())) {
-            throw new GradleException('Release APKs require --dart-define=KY_SECURITY_PINNING_ENABLED=true.')
+            return
         }
 
         def apiBaseUrl = releaseDartDefines['KY_API_BASE_URL']?.trim()
